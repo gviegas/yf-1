@@ -10,13 +10,18 @@
 
 #include "test.h"
 #include "error.h"
+#include "clock.h"
 
-#undef YF_TESTLN
-#define YF_TESTLN "..............................."
+#undef YF_TEST_LN
+#define YF_TEST_LN "..............................."
+
+#undef YF_TEST_SUBT
+#define YF_TEST_SUBT \
+  printf("%s\n%.*s\n", __func__, (int)strlen(__func__), YF_TEST_LN)
 
 /* Error test. */
 static int test_error(void) {
-  printf("%s\n%.*s\n", __func__, (int)strlen(__func__), YF_TESTLN);
+  YF_TEST_SUBT;
 
   int err;
 
@@ -46,7 +51,25 @@ static int test_error(void) {
 
 /* Clock test. */
 static int test_clock(void) {
-  /* TODO */
+  YF_TEST_SUBT;
+
+  double t1, t2;
+
+  t1 = yf_gettime();
+  printf("\ntime (1) is %f\n", t1);
+  t2 = yf_gettime();
+  printf("time (2) is %f\n", t2);
+  printf("(%fs elapsed)\n", t2 - t1);
+
+  double ts[] = {1.0, 1.5, 0.1, 0.01, 3.125};
+
+  for (size_t i = 0; i < sizeof ts / sizeof ts[0]; ++i) {
+    printf("\nsleeping for %fs...\n", ts[i]);
+    t1 = yf_gettime();
+    yf_sleep(ts[i]);
+    printf("awake! (%fs elapsed)\n", yf_gettime()-t1);
+  }
+
   return 0;
 }
 
@@ -76,7 +99,7 @@ static int test(int argc, char *argv[]) {
   for (size_t i = 0; i < test_n; ++i)
     results += tests[i]() == 0;
 
-  printf("DONE!\n\nNumber of tests executed: %lu\n", test_n);
+  printf("\nDONE!\n\nNumber of tests executed: %lu\n", test_n);
   printf("> #%lu passed\n", results);
   printf("> #%lu failed\n", test_n - results);
   printf("\n(%.0f%% coverage)\n", (double)results / (double)test_n * 100.0);
