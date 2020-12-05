@@ -6,12 +6,41 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 
 #include "test.h"
+#include "error.h"
+
+#undef YF_TESTLN
+#define YF_TESTLN "..............................."
 
 /* Error test. */
 static int test_error(void) {
-  /* TODO */
+  printf("%s\n%.*s\n", __func__, (int)strlen(__func__), YF_TESTLN);
+
+  int err;
+
+  yf_seterr(YF_ERR_NOTFND, "test");
+  err = yf_geterr();
+  if (err != YF_ERR_NOTFND)
+    return -1;
+
+  err = yf_geterr();
+  if (err != YF_ERR_NOTFND)
+    return -1;
+
+  yf_seterr(YF_ERR_LIMIT, NULL);
+  if (err == yf_geterr())
+    return -1;
+
+  if (yf_geterr() != YF_ERR_LIMIT)
+    return -1;
+
+  yf_seterr(YF_ERR_OTHER, "TEST");
+  err = yf_geterr();
+  if (err != YF_ERR_OTHER)
+    return -1;
+
   return 0;
 }
 
