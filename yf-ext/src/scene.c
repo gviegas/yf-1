@@ -1,0 +1,858 @@
+/*
+ * YF
+ * scene.c
+ *
+ * Copyright © 2020 Gustavo C. Viegas.
+ */
+
+#include <stdlib.h>
+#include <stdint.h>
+#include <assert.h>
+
+#include <yf/core/yf-cmdbuf.h>
+
+#include "scene.h"
+#include "coreobj.h"
+#include "resmgr.h"
+#include "texture.h"
+#include "mesh.h"
+#include "model.h"
+#include "list.h"
+#include "hashset.h"
+#include "error.h"
+
+#ifdef YF_DEBUG
+# include <stdio.h>
+# define YF_NODEOBJ_PRINT(nobj, obj) do { \
+   printf("\n-- Nodeobj (debug) --"); \
+   if (nobj == YF_NODEOBJ_MODEL) { \
+    printf("\nmdl obj (%p)", obj); \
+    printf("\nmesh: %p", (void *)yf_model_getmesh((YF_model)obj)); \
+    printf("\ntex: %p", (void *)yf_model_gettex((YF_model)obj)); \
+   } else { printf("\n???"); } \
+   printf("\n--\n"); } while (0)
+#endif
+
+#ifndef YF_MIN
+# define YF_MIN(a, b) (a < b ? a : b)
+#endif
+
+#ifndef YF_MAX
+# define YF_MAX(a, b) (a > b ? a : b)
+#endif
+
+#ifdef YF_USE_FLOAT64
+# define YF_CAMORIG (YF_vec3){0.0, 0.0, -10.0}
+# define YF_CAMTGT  (YF_vec3){0.0, 0.0, 0.0}
+# define YF_CAMASP  1.0
+#else
+# define YF_CAMORIG (YF_vec3){0.0f, 0.0f, -10.0f}
+# define YF_CAMTGT  (YF_vec3){0.0f, 0.0f, 0.0f}
+# define YF_CAMASP  1.0f
+#endif
+
+#undef YF_INSTCAP
+#define YF_INSTCAP 4
+
+#undef YF_BUFLEN
+#define YF_BUFLEN 131072
+
+#define YF_UGLOBSZ_MDL (2 * sizeof(YF_mat4))
+#define YF_UINSTSZ_MDL (2 * sizeof(YF_mat4))
+
+struct YF_scene_o {
+  YF_node node;
+  YF_camera cam;
+  YF_color color;
+  YF_viewport vport;
+  YF_rect sciss;
+};
+
+/* Type defining shared variables available to all scenes. */
+typedef struct {
+  YF_context ctx;
+  YF_buffer buf;
+  unsigned buf_offs;
+  YF_list res_obtd;
+  YF_cmdbuf cb;
+  YF_hashset mdls;
+  YF_hashset mdls_inst;
+} L_vars;
+
+/* Type defining an entry in the list of obtained resources. */
+typedef struct {
+  int resrq;
+  unsigned inst_alloc;
+} L_reso;
+
+/* Type representing key & value for use in the model sets. */
+typedef struct {
+  struct {
+  YF_mesh mesh;
+  YF_texture tex;
+  } key;
+  union {
+    YF_model mdl;
+    YF_model *mdls;
+  };
+  unsigned mdl_n;
+  unsigned mdl_cap;
+} L_kv_mdl;
+
+/* Variables' instance. */
+static L_vars l_vars = {0};
+
+/* Initializes shared variables and prepares required resources. */
+static int init_vars(void);
+
+/* Traverses a scene graph to process its objects. */
+static int traverse_scn(YF_node node, void *arg);
+
+/* Renders model objects. */
+static int render_mdl(YF_scene scn);
+
+/* Renders model objects using instanced drawing. */
+static int render_mdl_inst(YF_scene scn);
+
+/* Copies uniform global data to buffer and updates dtable contents. */
+static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst);
+
+/* Copies uniform instance data to buffer and updates dtable contents. */
+static int copy_uinst(
+  YF_scene scn,
+  int resrq,
+  void *objs,
+  unsigned obj_n,
+  YF_gstate gst,
+  unsigned inst_alloc);
+
+/* Resizes the buffer instance. */
+static size_t resize_buf(size_t new_len);
+
+/* Yields all previously obtained resources. */
+static void yield_res(void);
+
+/* Clears the contents of all object's hashsets. */
+static void clear_hset(void);
+
+/* Functions used by the model sets. */
+static size_t hash_mdl(const void *x);
+static int cmp_mdl(const void *a, const void *b);
+static int dealloc_mdl(void *val, void *arg);
+
+YF_scene yf_scene_init(void) {
+  if (l_vars.ctx == NULL && init_vars() != 0)
+    return NULL;
+
+  YF_scene scn = calloc(1, sizeof(struct YF_scene_o));
+  if (scn == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return NULL;
+  }
+  if ((scn->node = yf_node_init()) == NULL) {
+    yf_scene_deinit(scn);
+    return NULL;
+  }
+  if ((scn->cam = yf_camera_init(YF_CAMORIG, YF_CAMTGT, YF_CAMASP)) == NULL) {
+    yf_scene_deinit(scn);
+    return NULL;
+  }
+  scn->color = YF_COLOR_BLACK;
+
+  return scn;
+}
+
+YF_node yf_scene_getnode(YF_scene scn) {
+  assert(scn != NULL);
+  return scn->node;
+}
+
+YF_camera yf_scene_getcam(YF_scene scn) {
+  assert(scn != NULL);
+  return scn->cam;
+}
+
+YF_color yf_scene_getcolor(YF_scene scn) {
+  assert(scn != NULL);
+  return scn->color;
+}
+
+void yf_scene_setcolor(YF_scene scn, YF_color color) {
+  assert(scn != NULL);
+  scn->color = color;
+}
+
+void yf_scene_deinit(YF_scene scn) {
+  if (scn != NULL) {
+    yf_camera_deinit(scn->cam);
+    yf_node_deinit(scn->node);
+    free(scn);
+  }
+}
+
+int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
+  assert(scn != NULL);
+  assert(pass != NULL);
+  assert(tgt != NULL);
+
+  yf_camera_adjust(scn->cam, (YF_float)dim.width / (YF_float)dim.height);
+  YF_VIEWPORT_FROMDIM2(dim, scn->vport);
+  YF_VIEWPORT_SCISSOR(scn->vport, scn->sciss);
+
+  int r = 0;
+  yf_node_traverse(scn->node, traverse_scn, &r);
+  if (r != 0) {
+    clear_hset();
+    return -1;
+  }
+  int mdl_pend = yf_hashset_getlen(l_vars.mdls) != 0;
+  int mdli_pend = yf_hashset_getlen(l_vars.mdls_inst) != 0;
+
+  l_vars.buf_offs = 0;
+  if ((l_vars.cb = yf_cmdbuf_begin(l_vars.ctx, YF_CMDB_GRAPH)) == NULL) {
+    clear_hset();
+    return -1;
+  }
+  yf_cmdbuf_clearcolor(l_vars.cb, 0, scn->color);
+  yf_cmdbuf_cleardepth(l_vars.cb, 1.0f);
+
+#ifdef YF_DEBUG
+  unsigned exec_n = 0;
+#endif
+
+  do {
+    yf_cmdbuf_settarget(l_vars.cb, tgt);
+    yf_cmdbuf_setvport(l_vars.cb, 0, &scn->vport);
+    yf_cmdbuf_setsciss(l_vars.cb, 0, scn->sciss);
+
+    if (mdl_pend) {
+      if (render_mdl(scn) != 0) {
+        yf_cmdbuf_end(l_vars.cb);
+        yf_cmdbuf_reset(l_vars.ctx);
+        yield_res();
+        clear_hset();
+        return -1;
+      }
+      mdl_pend = yf_hashset_getlen(l_vars.mdls) != 0;
+    }
+
+    if (mdli_pend) {
+      if (render_mdl_inst(scn) != 0) {
+        yf_cmdbuf_end(l_vars.cb);
+        yf_cmdbuf_reset(l_vars.ctx);
+        yield_res();
+        clear_hset();
+        return -1;
+      }
+      mdli_pend = yf_hashset_getlen(l_vars.mdls_inst) != 0;
+    }
+
+    if (yf_cmdbuf_end(l_vars.cb) == 0) {
+      if (yf_cmdbuf_exec(l_vars.ctx) != 0) {
+        yield_res();
+        clear_hset();
+        return -1;
+      }
+    } else {
+      yf_cmdbuf_reset(l_vars.ctx);
+      yield_res();
+      clear_hset();
+      return -1;
+    }
+
+#ifdef YF_DEBUG
+    ++exec_n;
+#endif
+
+    yield_res();
+
+    if (mdl_pend || mdli_pend) {
+      if ((l_vars.cb = yf_cmdbuf_begin(l_vars.ctx, YF_CMDB_GRAPH)) == NULL) {
+        clear_hset();
+        return -1;
+      }
+    } else {
+      break;
+    }
+  } while (1);
+
+#ifdef YF_DEBUG
+  printf("######\n[%s]: executed #%u time(s)\n######\n", __func__, exec_n);
+#endif
+  clear_hset();
+  return 0;
+}
+
+static int init_vars(void) {
+  assert(l_vars.ctx == NULL);
+
+  if ((l_vars.ctx = yf_getctx()) == NULL)
+    return -1;
+
+  /* TODO: Check limits. */
+  unsigned insts[YF_RESRQ_N] = {
+    [YF_RESRQ_MDL] = 128,
+    [YF_RESRQ_MDL4] = 48,
+    [YF_RESRQ_MDL16] = 48,
+    [YF_RESRQ_MDL64] = 16
+  };
+  size_t inst_min = 0;
+  size_t inst_sum = 0;
+  for (unsigned i = 0; i < YF_RESRQ_N; ++i) {
+    inst_min += insts[i] != 0;
+    inst_sum += insts[i];
+  }
+  assert(inst_min > 0);
+  size_t buf_sz;
+
+  do {
+    int failed = 0;
+    buf_sz = 0;
+    for (unsigned i = 0; i < YF_RESRQ_N; ++i) {
+      if (yf_resmgr_setallocn(i, insts[i]) != 0 || yf_resmgr_prealloc(i) != 0) {
+        yf_resmgr_clear();
+        failed = 1;
+        break;
+      }
+      switch (i) {
+        case YF_RESRQ_MDL:
+          buf_sz += insts[i] * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          break;
+        case YF_RESRQ_MDL4:
+          buf_sz += insts[i] * 4 * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          break;
+        case YF_RESRQ_MDL16:
+          buf_sz += insts[i] * 16 * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          break;
+        case YF_RESRQ_MDL64:
+          buf_sz += insts[i] * 64 * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          break;
+        /* TODO: Other objects. */
+        default:
+          assert(0);
+      }
+    }
+    /* proceed if all allocations succeed */
+    if (!failed)
+      break;
+    /* give up if fails to allocate the minimum */
+    if (inst_sum <= inst_min)
+      return -1;
+    /* try again with reduced number of instances */
+    inst_sum = 0;
+    for (unsigned i = 0; i < YF_RESRQ_N; ++i) {
+      if (insts[i] > 0) {
+        insts[i] = YF_MAX(1, insts[i] / 2);
+        inst_sum += insts[i];
+      }
+    }
+  } while (1);
+
+  if ((l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz)) == NULL ||
+    (l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
+    (l_vars.mdls = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
+    (l_vars.mdls_inst = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL)
+  {
+    yf_resmgr_clear();
+    yf_buffer_deinit(l_vars.buf);
+    yf_list_deinit(l_vars.res_obtd);
+    yf_hashset_deinit(l_vars.mdls);
+    yf_hashset_deinit(l_vars.mdls_inst);
+    memset(&l_vars, 0, sizeof l_vars);
+    return -1;
+  }
+
+  return 0;
+}
+
+static int traverse_scn(YF_node node, void *arg) {
+  void *obj = NULL;
+  int nodeobj = yf_node_getobj(node, &obj);
+
+  switch (nodeobj) {
+    case YF_NODEOBJ_MODEL: {
+      YF_model mdl = obj;
+      L_kv_mdl key = {
+        {yf_model_getmesh(mdl), yf_model_gettex(mdl)},
+        {NULL}, 0, 0
+      };
+      L_kv_mdl *val = NULL;
+      if ((val = yf_hashset_search(l_vars.mdls, &key)) != NULL) {
+        /* model with shared resources, move to instanced drawing set */
+        YF_model *mdls = malloc(YF_INSTCAP * sizeof mdl);
+        if (mdls == NULL) {
+          yf_seterr(YF_ERR_NOMEM, __func__);
+          *(int *)arg = -1;
+          return -1;
+        }
+        yf_hashset_remove(l_vars.mdls, val);
+        if (yf_hashset_insert(l_vars.mdls_inst, val) != 0) {
+          free(mdls);
+          *(int *)arg = -1;
+          return -1;
+        }
+        mdls[0] = val->mdl;
+        mdls[1] = mdl;
+        val->mdls = mdls;
+        val->mdl_n = 2;
+        val->mdl_cap = YF_INSTCAP;
+      } else if ((val = yf_hashset_search(l_vars.mdls_inst, &key)) != NULL) {
+        /* another model for instanced drawing */
+        if (val->mdl_n == val->mdl_cap) {
+          YF_model *mdls = realloc(val->mdls, val->mdl_cap * 2 * sizeof mdl);
+          if (mdls == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            *(int *)arg = -1;
+            return -1;
+          }
+          val->mdls = mdls;
+          val->mdl_cap *= 2;
+        }
+        val->mdls[val->mdl_n++] = mdl;
+      } else {
+        /* new unique model */
+        if ((val = malloc(sizeof *val)) == NULL) {
+          yf_seterr(YF_ERR_NOMEM, __func__);
+          *(int *)arg = -1;
+          return -1;
+        }
+        *val = key;
+        if (yf_hashset_insert(l_vars.mdls, val) != 0) {
+          *(int *)arg = -1;
+          return -1;
+        }
+        val->mdl = mdl;
+        val->mdl_n = 1;
+        val->mdl_cap = 1;
+      }
+    } break;
+
+    case YF_NODEOBJ_TERRAIN:
+      /* TODO */
+      assert(0);
+
+    case YF_NODEOBJ_PARTICLE:
+      /* TODO */
+      assert(0);
+
+    case YF_NODEOBJ_QUAD:
+      /* TODO */
+      assert(0);
+
+    case YF_NODEOBJ_LABEL:
+      /* TODO */
+      assert(0);
+
+    case YF_NODEOBJ_LIGHT:
+      /* TODO */
+      assert(0);
+
+    case YF_NODEOBJ_EFFECT:
+      /* TODO */
+      assert(0);
+
+    default:
+      /* this is not a drawable object, nothing to do */
+      break;
+  }
+
+#ifdef YF_DEBUG
+  YF_NODEOBJ_PRINT(nodeobj, obj);
+#endif
+  return 0;
+}
+
+static int render_mdl(YF_scene scn) {
+  YF_gstate gst = NULL;
+  unsigned inst_alloc = 0;
+  L_reso *reso = NULL;
+  YF_texture tex = NULL;
+  YF_mesh mesh = NULL;
+  YF_iter it = YF_NILIT;
+  L_kv_mdl *val = NULL;
+
+  do {
+    val = yf_hashset_next(l_vars.mdls, &it);
+    if (YF_IT_ISNIL(it))
+      break;
+
+    if ((gst = yf_resmgr_obtain(YF_RESRQ_MDL, &inst_alloc)) == NULL) {
+      switch (yf_geterr()) {
+        case YF_ERR_INUSE:
+          /* out of resources, need to execute pending work */
+          return 0;
+        default:
+          return -1;
+      }
+    }
+
+    if ((reso = malloc(sizeof *reso)) == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+    reso->resrq = YF_RESRQ_MDL;
+    reso->inst_alloc = inst_alloc;
+    if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
+      free(reso);
+      return -1;
+    }
+
+    yf_cmdbuf_setgstate(l_vars.cb, gst);
+
+    /* TODO: Copy uniform global data once. */
+    if (copy_uglob(scn, YF_RESRQ_MDL, gst) != 0 ||
+      copy_uinst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
+    {
+      return -1;
+    }
+
+    if ((tex = yf_model_gettex(val->mdl)) != NULL)
+      yf_texture_copyres(
+        tex,
+        yf_gstate_getdtb(gst, YF_RESIDX_INST),
+        inst_alloc,
+        YF_RESBIND_ISTEX,
+        0);
+    else
+      /* TODO: Handle models lacking texture. */
+      assert(0);
+
+    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOB, 0);
+    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
+
+    if ((mesh = yf_model_getmesh(val->mdl)) != NULL)
+      yf_mesh_draw(mesh, l_vars.cb, 1, 0);
+    else
+      /* TODO: Handle models lacking mesh. */
+      assert(0);
+
+    yf_hashset_remove(l_vars.mdls, val);
+    it = YF_NILIT;
+  } while (1);
+
+  return 0;
+}
+
+static int render_mdl_inst(YF_scene scn) {
+  static const int resrq[] = {YF_RESRQ_MDL4, YF_RESRQ_MDL16, YF_RESRQ_MDL64};
+  static const unsigned insts[] = {4, 16, 64};
+  static const int sz = sizeof resrq / sizeof resrq[0];
+
+  unsigned n, rem;
+  int rq_i;
+
+  YF_gstate gst = NULL;
+  unsigned inst_alloc = 0;
+  L_reso *reso = NULL;
+  YF_texture tex = NULL;
+  YF_mesh mesh = NULL;
+  YF_iter it = YF_NILIT;
+  L_kv_mdl *val = NULL;
+  YF_list vals_done = yf_list_init(NULL);
+  if (vals_done == NULL)
+    return -1;
+
+  do {
+    val = yf_hashset_next(l_vars.mdls_inst, &it);
+    if (YF_IT_ISNIL(it))
+      break;
+
+    rem = val->mdl_n;
+    n = 0;
+
+    do {
+      rq_i = 0;
+      for (; rq_i < sz; ++rq_i) {
+        if (insts[rq_i] >= rem)
+          break;
+      }
+      rq_i = YF_MIN(rq_i, sz-1);
+
+      for (int i = rq_i; i >= 0; --i) {
+        if ((gst = yf_resmgr_obtain(resrq[i], &inst_alloc)) != NULL) {
+          n = YF_MIN(insts[i], rem);
+          rem -= n;
+          rq_i = i;
+          break;
+        }
+      }
+      if (gst == NULL) {
+        if (yf_geterr() == YF_ERR_INUSE) {
+          /* out of resources, the remaining instances for this entry
+             will be rendered in future passes */
+          val->mdl_n = rem;
+          break;
+        } else {
+          yf_list_deinit(vals_done);
+          return -1;
+        }
+      }
+
+      if ((reso = malloc(sizeof *reso)) == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        yf_list_deinit(vals_done);
+        return -1;
+      }
+      reso->resrq = resrq[rq_i];
+      reso->inst_alloc = inst_alloc;
+      if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
+        free(reso);
+        yf_list_deinit(vals_done);
+        return -1;
+      }
+
+      yf_cmdbuf_setgstate(l_vars.cb, gst);
+
+      /* TODO: Copy uniform global data only once for each state. */
+      if (copy_uglob(scn, resrq[rq_i], gst) != 0 ||
+        copy_uinst(scn, resrq[rq_i], val->mdls+rem, n, gst, inst_alloc) != 0)
+      {
+        yf_list_deinit(vals_done);
+        return -1;
+      }
+
+      if ((tex = yf_model_gettex(val->mdls[rem])) != NULL)
+        yf_texture_copyres(
+          tex,
+          yf_gstate_getdtb(gst, YF_RESIDX_INST),
+          inst_alloc,
+          YF_RESBIND_ISTEX,
+          0);
+      else
+        /* TODO: Handle models lacking texture. */
+        assert(0);
+
+      yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOB, 0);
+      yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
+
+      if ((mesh = yf_model_getmesh(val->mdls[rem])) != NULL)
+        yf_mesh_draw(mesh, l_vars.cb, n, 0);
+      else
+        /* TODO: Handle models lacking mesh. */
+      assert(0);
+
+      if (rem == 0) {
+        /* cannot invalidate the set iterator */
+        if (yf_list_insert(vals_done, val) == 0)
+          break;
+        yf_list_deinit(vals_done);
+        return -1;
+      }
+    } while (1);
+
+  } while (1);
+
+  it = YF_NILIT;
+  do {
+    val = yf_list_next(vals_done, &it);
+    if (YF_IT_ISNIL(it))
+      break;
+    yf_hashset_remove(l_vars.mdls_inst, val);
+  } while (1);
+  yf_list_deinit(vals_done);
+
+  return 0;
+}
+
+static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst) {
+  YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_GLOB);
+  const YF_slice elems = {0, 1};
+  size_t offs, sz;
+
+  switch (resrq) {
+    case YF_RESRQ_MDL:
+    case YF_RESRQ_MDL4:
+    case YF_RESRQ_MDL16:
+    case YF_RESRQ_MDL64:
+      offs = l_vars.buf_offs;
+      sz = YF_UGLOBSZ_MDL;
+      /* view matrix */
+      if (yf_buffer_copy(
+        l_vars.buf,
+        l_vars.buf_offs,
+        *yf_camera_getview(scn->cam),
+        sizeof(YF_mat4)) != 0)
+      {
+        return -1;
+      }
+      l_vars.buf_offs += sizeof(YF_mat4);
+      /* projection matrix */
+      if (yf_buffer_copy(
+        l_vars.buf,
+        l_vars.buf_offs,
+        *yf_camera_getproj(scn->cam),
+        sizeof(YF_mat4)) != 0)
+      {
+        return -1;
+      }
+      l_vars.buf_offs += sizeof(YF_mat4);
+      if (yf_dtable_copybuf(
+        dtb,
+        0,
+        YF_RESBIND_UGLOB,
+        elems,
+        &l_vars.buf,
+        &offs,
+        &sz) != 0)
+      {
+        return -1;
+      }
+      break;
+
+    default:
+      assert(0);
+  }
+
+  return 0;
+}
+
+static int copy_uinst(
+  YF_scene scn,
+  int resrq,
+  void *objs,
+  unsigned obj_n,
+  YF_gstate gst,
+  unsigned inst_alloc)
+{
+  YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+  const YF_slice elems = {0, 1};
+  size_t offs, sz;
+
+  switch (resrq) {
+    case YF_RESRQ_MDL:
+    case YF_RESRQ_MDL4:
+    case YF_RESRQ_MDL16:
+    case YF_RESRQ_MDL64:
+      offs = l_vars.buf_offs;
+      sz = obj_n * YF_UINSTSZ_MDL;
+      for (unsigned i = 0; i < obj_n; ++i) {
+        YF_model mdl = ((YF_model *)objs)[i];
+        yf_mat4_mul(
+          *yf_model_getmvp(mdl),
+          *yf_camera_getxform(scn->cam),
+          *yf_model_getxform(mdl));
+        /* model matrix */
+        if (yf_buffer_copy(
+          l_vars.buf,
+          l_vars.buf_offs,
+          *yf_model_getxform(mdl),
+          sizeof(YF_mat4)) != 0)
+        {
+          return -1;
+        }
+        l_vars.buf_offs += sizeof(YF_mat4);
+        /* model-view-projection matrix */
+        if (yf_buffer_copy(
+          l_vars.buf,
+          l_vars.buf_offs,
+          *yf_model_getmvp(mdl),
+          sizeof(YF_mat4)) != 0)
+        {
+          return -1;
+        }
+        l_vars.buf_offs += sizeof(YF_mat4);
+      }
+      if (yf_dtable_copybuf(
+        dtb,
+        inst_alloc,
+        YF_RESBIND_UINST,
+        elems,
+        &l_vars.buf,
+        &offs,
+        &sz) != 0)
+      {
+        return -1;
+      }
+      break;
+
+    default:
+      assert(0);
+  }
+
+  return 0;
+}
+
+/* XXX: With buffer now allocated upfront, resize should not be necessary. */
+static size_t resize_buf(size_t new_len) {
+  size_t sz = new_len < SIZE_MAX ? YF_BUFLEN : new_len;
+  while (sz < new_len)
+    sz *= 2;
+  size_t buf_len;
+  yf_buffer_getval(l_vars.buf, &buf_len);
+
+  if (sz != buf_len) {
+    YF_buffer new_buf;
+    if ((new_buf = yf_buffer_init(l_vars.ctx, sz)) == NULL) {
+      if ((new_buf = yf_buffer_init(l_vars.ctx, new_len)) == NULL)
+        return buf_len;
+      else
+        sz = new_len;
+    }
+    YF_cmdbuf cb = yf_cmdbuf_begin(l_vars.ctx, YF_CMDB_GRAPH);
+    if (cb == NULL &&
+      (cb = yf_cmdbuf_begin(l_vars.ctx, YF_CMDB_COMP)) == NULL)
+    {
+      yf_buffer_deinit(new_buf);
+      return buf_len;
+    }
+    yf_cmdbuf_copybuf(
+      cb,
+      new_buf,
+      0,
+      l_vars.buf,
+      0,
+      YF_MIN(sz, buf_len));
+    if (yf_cmdbuf_end(cb) != 0 || yf_cmdbuf_exec(l_vars.ctx) != 0) {
+      yf_buffer_deinit(new_buf);
+      return buf_len;
+    }
+    /* TODO: Handle ongoing work that references the old buffer. */
+    yf_buffer_deinit(l_vars.buf);
+    l_vars.buf = new_buf;
+  }
+
+  return sz;
+}
+
+static void yield_res(void) {
+  YF_iter it = YF_NILIT;
+  L_reso *val;
+  do {
+    val = yf_list_next(l_vars.res_obtd, &it);
+    if (YF_IT_ISNIL(it))
+      break;
+    yf_resmgr_yield(val->resrq, val->inst_alloc);
+    free(val);
+  } while (1);
+  yf_list_clear(l_vars.res_obtd);
+}
+
+static void clear_hset(void) {
+  if (yf_hashset_getlen(l_vars.mdls) != 0) {
+    yf_hashset_each(l_vars.mdls, dealloc_mdl, NULL);
+    yf_hashset_clear(l_vars.mdls);
+  }
+  if (yf_hashset_getlen(l_vars.mdls_inst) != 0) {
+    yf_hashset_each(l_vars.mdls_inst, dealloc_mdl, NULL);
+    yf_hashset_clear(l_vars.mdls_inst);
+  }
+}
+
+static size_t hash_mdl(const void *x) {
+  const L_kv_mdl *kv = x;
+  return (size_t)kv->key.mesh ^ (size_t)kv->key.tex ^ 0x516536655d2b;
+}
+
+static int cmp_mdl(const void *a, const void *b) {
+  const L_kv_mdl *kv1 = a;
+  const L_kv_mdl *kv2 = b;
+  return !((kv1->key.mesh == kv2->key.mesh) && (kv1->key.tex == kv2->key.tex));
+}
+
+static int dealloc_mdl(void *val, void *arg) {
+  L_kv_mdl *kv = val;
+  if (kv->mdl_n > 1)
+    free(kv->mdls);
+  free(val);
+  return 0;
+}
