@@ -14,3 +14,9 @@ local.*
 *.swp
 *.backup
 *.local
+
+#sym links
+*/test/test.c
+*/test/test.h
+!/test/test.c
+!/test/test.h
