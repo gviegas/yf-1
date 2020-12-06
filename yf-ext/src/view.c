@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-clock.h>
 #include <yf/com/yf-error.h>
 #include <yf/core/yf-window.h>
 #include <yf/core/yf-image.h>
@@ -16,7 +17,6 @@
 #include "view.h"
 #include "scene.h"
 #include "coreobj.h"
-#include "clock.h"
 
 struct YF_view_o {
   YF_context ctx;
