@@ -9,10 +9,11 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "window.h"
 #include "context.h"
 #include "image.h"
-#include "error.h"
 
 #ifndef YF_MIN
 # define YF_MIN(a, b) (a < b ? a : b)

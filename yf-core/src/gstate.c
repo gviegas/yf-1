@@ -10,13 +10,14 @@
 #include <limits.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "gstate.h"
 #include "context.h"
 #include "pass.h"
 #include "stage.h"
 #include "dtable.h"
 #include "vinput.h"
-#include "error.h"
 
 YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf) {
   assert(ctx != NULL);

@@ -9,6 +9,8 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "image.h"
 #include "context.h"
 #include "memory.h"
@@ -16,7 +18,6 @@
 #include "cmdbuf.h"
 #include "buffer.h"
 #include "limits.h"
-#include "error.h"
 
 /* Type defining the private data of a 'YF_iview'. */
 typedef struct {

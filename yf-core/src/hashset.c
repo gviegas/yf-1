@@ -13,9 +13,10 @@
 # include <sys/random.h>
 #endif
 
+#include <yf/com/yf-error.h>
+
 #include "hashset.h"
 #include "list.h"
-#include "error.h"
 
 #undef YF_WMINBITS
 #undef YF_WMAXBITS

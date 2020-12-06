@@ -15,7 +15,6 @@
 #include "yf-context.h"
 #include "yf-cstate.h"
 #include "yf-dtable.h"
-#include "yf-error.h"
 #include "yf-event.h"
 #include "yf-gstate.h"
 #include "yf-image.h"

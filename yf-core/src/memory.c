@@ -7,12 +7,13 @@
 
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "memory.h"
 #include "context.h"
 #include "buffer.h"
 #include "image.h"
 #include "vk.h"
-#include "error.h"
 
 /* Selects a suitable memory heap. */
 static int select_memory(

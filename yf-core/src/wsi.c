@@ -8,11 +8,12 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "wsi.h"
 #include "wsi-wayland.h"
 #include "wsi-xcb.h"
 #include "platform.h"
-#include "error.h"
 
 struct YF_wsi_o {
   YF_window win;

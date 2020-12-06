@@ -8,10 +8,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "pass.h"
 #include "context.h"
 #include "limits.h"
-#include "error.h"
 
 #define YF_TGTN 4
 

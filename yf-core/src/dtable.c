@@ -9,12 +9,13 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "dtable.h"
 #include "context.h"
 #include "sampler.h"
 #include "buffer.h"
 #include "image.h"
-#include "error.h"
 
 /* Type defining a key/value for the iview's hashset. */
 typedef struct {
