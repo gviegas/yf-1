@@ -7,9 +7,10 @@
 
 #include <stdlib.h>
 
+#include <yf/com/yf-error.h>
+
 #include "platform.h"
 #include "wsi.h"
-#include "error.h"
 
 /* The current platform for wsi. */
 static int l_pfm_wsi = YF_PLATFORM_WSI_NONE;

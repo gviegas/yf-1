@@ -10,6 +10,9 @@
 #include <dlfcn.h>
 #include <assert.h>
 
+#include <yf/com/yf-list.h>
+#include <yf/com/yf-error.h>
+
 #include <xcb/xcb.h>
 #include "vk.h"
 #include <vulkan/vulkan_xcb.h>
@@ -20,8 +23,6 @@
 #include "event.h"
 #include "pointer.h"
 #include "keyboard.h"
-#include "list.h"
-#include "error.h"
 
 #ifndef YF__UNUSED
 # ifdef __GNUC__

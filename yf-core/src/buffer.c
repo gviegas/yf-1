@@ -10,11 +10,12 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "buffer.h"
 #include "context.h"
 #include "memory.h"
 #include "limits.h"
-#include "error.h"
 
 YF_buffer yf_buffer_init(YF_context ctx, size_t size) {
   assert(ctx != NULL);

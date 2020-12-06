@@ -9,7 +9,6 @@
 #include <assert.h>
 
 #include "keyboard.h"
-#include "error.h"
 
 #ifdef __linux__
 /* Mapping between linux event codes and 'YF_KEY' values. */

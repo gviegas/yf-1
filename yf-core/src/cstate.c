@@ -8,11 +8,12 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "cstate.h"
 #include "context.h"
 #include "stage.h"
 #include "dtable.h"
-#include "error.h"
 
 YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf) {
   assert(ctx != NULL);

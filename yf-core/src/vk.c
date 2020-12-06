@@ -5,8 +5,9 @@
  * Copyright © 2020 Gustavo C. Viegas.
  */
 
+#include <yf/com/yf-error.h>
+
 #include "vk.h"
-#include "error.h"
 
 #if defined(__linux__)
 # include <dlfcn.h>

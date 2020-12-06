@@ -10,9 +10,10 @@
 
 #include <limits.h>
 
+#include <yf/com/yf-hashset.h>
+
 #include "yf-image.h"
 #include "vk.h"
-#include "hashset.h"
 
 typedef struct YF_image_o {
   YF_context ctx;

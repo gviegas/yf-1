@@ -10,7 +10,6 @@
 
 #include "event.h"
 #include "window.h"
-#include "error.h"
 
 /* Type holding an event handler and associated generic data. */
 struct L_fn {

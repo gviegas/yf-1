@@ -5,9 +5,10 @@
  * Copyright © 2020 Gustavo C. Viegas.
  */
 
+#include <yf/com/yf-error.h>
+
 #include "sampler.h"
 #include "context.h"
-#include "error.h"
 
 VkSampler yf_sampler_make(YF_context ctx, int sampler) {
   VkSamplerCreateInfo info = {0};

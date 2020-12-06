@@ -10,8 +10,6 @@
 #include <assert.h>
 
 #include "context.h"
-#include "list.h"
-#include "hashset.h"
 #include "test.h"
 
 /* Context instance. */
@@ -23,15 +21,6 @@ static int print_limits(void);
 /* Prints available features. */
 static int print_features(void);
 
-/* Iteration callback. */
-static int do_each(void *val, void *arg);
-
-/* Tests linked list functionality. */
-static int test_list(void);
-
-/* Tests hashset functionality. */
-static int test_hset(void);
-
 int yf_test_1(void) {
   int r = -1;
   l_ctx = yf_context_init();
@@ -39,8 +28,6 @@ int yf_test_1(void) {
     YF_CTX_PRINT(l_ctx);
     if ((r = print_limits()) != 0) {}
     else if ((r = print_features()) != 0) {}
-    else if ((r = test_list()) != 0) {}
-    else if ((r = test_hset()) != 0) {}
     yf_context_deinit(l_ctx);
   }
   return r;
@@ -283,122 +270,6 @@ static int print_features(void) {
   printf("sparseResidencyAliased: %s\n", av[feat.sparseResidencyAliased]);
   printf("variableMultisampleRate: %s\n", av[feat.variableMultisampleRate]);
   printf("inheritedQueries: %s\n", av[feat.inheritedQueries]);
-  puts("----");
-  return 0;
-}
-
-static int do_each(void *val, void *arg) {
-  printf("%s %s\n", (char *)arg, (char *)val);
-  if (((char *)val)[0] == '!')
-    return -1;
-  return 0;
-}
-
-static int test_list(void) {
-  char *s1 = "one two three";
-  char *s2 = "!abc";
-  char *s3 = "xyz";
-  YF_list list = yf_list_init(NULL);
-  puts("=list=");
-  printf(
-    "insert: %d, %d, %d\n",
-    yf_list_insert(list, s1),
-    yf_list_insert(list, s2),
-    yf_list_insert(list, s3));
-  printf("getlen: %lu\n", yf_list_getlen(list));
-  printf("contains %d\n", yf_list_contains(list, s2));
-  printf("remove: %d\n", yf_list_remove(list, s2));
-  printf("getlen: %lu\n", yf_list_getlen(list));
-  printf("contains: %d\n", yf_list_contains(list, s2));
-  YF_iter it = YF_NILIT;
-  do {
-    char *s = yf_list_next(list, &it);
-    if (YF_IT_ISNIL(it))
-      break;
-    printf("(it) %s\n", s);
-  } while (1);
-  yf_list_each(list, do_each, "<each>");
-  printf("getlen: %lu\n", yf_list_getlen(list));
-  printf("clear\n");
-  yf_list_clear(list);
-  printf("getlen: %lu\n", yf_list_getlen(list));
-  yf_list_deinit(list);
-  puts("----");
-  return 0;
-}
-
-static int test_hset(void) {
-  char *s1 = "??";
-  char *s2 = "Q";
-  char *s3 = "!the end!";
-  char *s4 = "~~~";
-  YF_hashset set = yf_hashset_init(NULL, NULL);
-  assert(set);
-  puts("=hset=");
-  printf(
-    "insert: %d, %d, %d, %d\n",
-    yf_hashset_insert(set, s1),
-    yf_hashset_insert(set, s2),
-    yf_hashset_insert(set, s3),
-    yf_hashset_insert(set, s4));
-  printf("getlen: %lu\n", yf_hashset_getlen(set));
-  printf("contains %d\n", yf_hashset_contains(set, s1));
-  printf("remove: %d\n", yf_hashset_remove(set, s1));
-  printf("getlen: %lu\n", yf_hashset_getlen(set));
-  printf("contains: %d\n", yf_hashset_contains(set, s1));
-  YF_iter it = YF_NILIT;
-  do {
-    char *s = yf_hashset_next(set, &it);
-    if (YF_IT_ISNIL(it))
-      break;
-    printf("(it) %s\n", s);
-  } while (1);
-  yf_hashset_each(set, do_each, "<each>");
-  printf("getlen: %lu\n", yf_hashset_getlen(set));
-  printf("clear\n");
-  yf_hashset_clear(set);
-  printf("getlen: %lu\n", yf_hashset_getlen(set));
-  yf_hashset_deinit(set);
-
-  set = yf_hashset_init(NULL, NULL);
-  assert(set != NULL);
-  size_t vals[53];
-  for (size_t i = 0; i < sizeof vals / sizeof vals[0]; ++i) {
-    vals[i] = i;
-    yf_hashset_insert(set, vals+i);
-  }
-  //for (size_t i = sizeof vals / sizeof vals[0]; i > 1; --i)
-    //yf_hashset_remove(set, vals+i-1);
-  it = YF_NILIT;
-  do {
-    size_t *val = yf_hashset_next(set, &it);
-    if (YF_IT_ISNIL(it))
-      break;
-    printf("(it): %lu\n", *val);
-  } while (1);
-  yf_hashset_deinit(set);
-
-  set = yf_hashset_init(NULL, NULL);
-  assert(set != NULL);
-  for (int v = -5; v < 5; ++v)
-    yf_hashset_insert(set, (void *)v);
-  printf("getlen: %lu\n", yf_hashset_getlen(set));
-  it = YF_NILIT;
-  do {
-    void *v = NULL;
-    if ((v = yf_hashset_next(set, &it)) == (void *)2) {
-      printf("extract next: %d\n", (int)yf_hashset_extract(set, &it));
-      break;
-    }
-    printf("skip next: %d\n", (int)v);
-  } while (1);
-  printf("getlen: %lu\n", yf_hashset_getlen(set));
-  while (yf_hashset_getlen(set) > 0) {
-    void *v = yf_hashset_extract(set, /*NULL*/&it);
-    printf("extract: %d\n", (int)v);
-    printf("getlen: %lu\n", yf_hashset_getlen(set));
-  }
-
   puts("----");
   return 0;
 }
