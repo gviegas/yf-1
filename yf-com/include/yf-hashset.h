@@ -8,9 +8,12 @@
 #ifndef YF_YF_HASHSET_H
 #define YF_YF_HASHSET_H
 
+#include "yf-defs.h"
 #include "yf-hashfn.h"
 #include "yf-cmpfn.h"
 #include "yf-iter.h"
+
+YF_DECLS_BEGIN
 
 /* Opaque type defining a hashset. */
 typedef struct YF_hashset_o *YF_hashset;
@@ -50,5 +53,7 @@ void yf_hashset_clear(YF_hashset set);
 
 /* Deinitializes a hashset. */
 void yf_hashset_deinit(YF_hashset set);
+
+YF_DECLS_END
 
 #endif /* YF_YF_HASHSET_H */

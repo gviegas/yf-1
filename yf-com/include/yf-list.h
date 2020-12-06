@@ -8,8 +8,11 @@
 #ifndef YF_YF_LIST_H
 #define YF_YF_LIST_H
 
+#include "yf-defs.h"
 #include "yf-cmpfn.h"
 #include "yf-iter.h"
+
+YF_DECLS_BEGIN
 
 /* Opaque type defining a linked list. */
 typedef struct YF_list_o *YF_list;
@@ -40,5 +43,7 @@ void yf_list_clear(YF_list list);
 
 /* Deinitializes a linked list. */
 void yf_list_deinit(YF_list list);
+
+YF_DECLS_END
 
 #endif /* YF_YF_LIST_H */
