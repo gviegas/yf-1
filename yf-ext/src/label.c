@@ -8,11 +8,12 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "label.h"
 #include "node.h"
 #include "mesh.h"
 #include "vertex.h"
-#include "error.h"
 
 struct YF_label_o {
   YF_node node;

@@ -8,11 +8,12 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "terrain.h"
 #include "node.h"
 #include "mesh.h"
 #include "vertex.h"
-#include "error.h"
 
 struct YF_terrain_o {
   YF_node node;

@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
 #include <yf/core/yf-buffer.h>
 
 #include "mesh.h"
@@ -18,7 +19,6 @@
 #include "coreobj.h"
 #include "filetype.h"
 #include "filetype-obj.h"
-#include "error.h"
 
 #ifdef YF_DEBUG
 # include <stdio.h>

@@ -8,9 +8,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "font.h"
 #include "filetype.h"
-#include "error.h"
 
 struct YF_font_o {
   /* TODO */

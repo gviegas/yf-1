@@ -9,11 +9,12 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "particle.h"
 #include "node.h"
 #include "mesh.h"
 #include "vertex.h"
-#include "error.h"
 
 #undef YF_NRND
 #define YF_NRND ((YF_float)rand() / (YF_float)RAND_MAX)

@@ -8,9 +8,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "model.h"
 #include "node.h"
-#include "error.h"
 
 struct YF_model_o {
   YF_node node;

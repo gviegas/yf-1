@@ -10,6 +10,7 @@
 #include <time.h>
 #include <assert.h>
 
+#include <yf/com/yf-clock.h>
 #include <yf/core/yf-core.h>
 #include "yf-ext.h"
 
@@ -18,7 +19,6 @@
 #include "vertex.h"
 #include "mesh.h"
 #include "texture.h"
-#include "clock.h"
 
 #define YF_MAX(a, b) (a > b ? a : b);
 

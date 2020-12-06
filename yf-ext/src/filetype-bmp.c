@@ -10,10 +10,10 @@
 #include <stddef.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
 #include <yf/core/yf-image.h>
 
 #include "filetype-bmp.h"
-#include "error.h"
 
 /* TODO: Handle endianness. */
 

@@ -11,8 +11,12 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "filetype-otf.h"
-#include "error.h"
+
+/* TODO */
+#include "yf-common.h"
 
 #ifdef _DEFAULT_SOURCE
 #include <endian.h>
