@@ -27,26 +27,29 @@ static int test_error(void) {
 
   int err;
 
+  printf("\nerr code/info: %d/%s\n", yf_geterr(), yf_geterrinfo());
+
   yf_seterr(YF_ERR_NOTFND, "test");
   err = yf_geterr();
   if (err != YF_ERR_NOTFND)
     return -1;
 
-  err = yf_geterr();
-  if (err != YF_ERR_NOTFND)
-    return -1;
+  printf("err code/info: %d/%s\n", yf_geterr(), yf_geterrinfo());
 
   yf_seterr(YF_ERR_LIMIT, NULL);
   if (err == yf_geterr())
     return -1;
-
   if (yf_geterr() != YF_ERR_LIMIT)
     return -1;
+
+  printf("err code/info: %d/%s\n", yf_geterr(), yf_geterrinfo());
 
   yf_seterr(YF_ERR_OTHER, "TEST");
   err = yf_geterr();
   if (err != YF_ERR_OTHER)
     return -1;
+
+  printf("err code/info: %d/%s\n", yf_geterr(), yf_geterrinfo());
 
   puts("");
   return 0;
