@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
 
 #include "test.h"
 #include "error.h"
@@ -14,14 +15,13 @@
 #include "list.h"
 #include "hashset.h"
 
-#undef YF_TEST_LN
-#define YF_TEST_LN "..............................."
-
-#undef YF_TEST_SUBT
+#define YF_TEST_ALL "all"
+#define YF_TEST_SUBLN "..............................."
 #define YF_TEST_SUBT \
-  printf("%s\n%.*s\n", __func__, (int)strlen(__func__), YF_TEST_LN)
+  printf("%s\n%.*s\n", __func__, (int)strlen(__func__), YF_TEST_SUBLN)
 
 /* Error test. */
+#define YF_TEST_ERROR "error"
 static int test_error(void) {
   YF_TEST_SUBT;
 
@@ -53,6 +53,7 @@ static int test_error(void) {
 }
 
 /* Clock test. */
+#define YF_TEST_CLOCK "clock"
 static int test_clock(void) {
   YF_TEST_SUBT;
 
@@ -78,6 +79,7 @@ static int test_clock(void) {
 }
 
 /* List test. */
+#define YF_TEST_LIST "list"
 static int list_cb(void *val, void *arg) {
   printf("%c,%p ", *(int *)val, arg);
   return 0;
@@ -233,6 +235,7 @@ static int test_list(void) {
 }
 
 /* Hashset test. */
+#define YF_TEST_HASHSET "hashset"
 static size_t hashset_hash(const void *x) {
   if (x == NULL)
     return 1<<24;
@@ -475,17 +478,46 @@ static int test_hashset(void) {
 
 /* Test function. */
 static int test(int argc, char *argv[]) {
-  int (* const tests[])(void) = {
-    test_error,
-    test_clock,
-    test_list,
-    test_hashset
-  };
-  const size_t test_n = sizeof tests / sizeof tests[0];
+  assert(argc > 0);
+  size_t test_n;
+  size_t results;
 
-  size_t results = 0;
-  for (size_t i = 0; i < test_n; ++i)
-    results += tests[i]() == 0;
+  if (strcmp(argv[0], YF_TEST_ERROR) == 0) {
+    test_n = 1;
+    results = test_error() == 0;
+  } else if (strcmp(argv[0], YF_TEST_CLOCK) == 0) {
+    test_n = 1;
+    results = test_clock() == 0;
+  } else if (strcmp(argv[0], YF_TEST_LIST) == 0) {
+    test_n = 1;
+    results = test_list() == 0;
+  } else if (strcmp(argv[0], YF_TEST_HASHSET) == 0) {
+    test_n = 1;
+    results = test_hashset() == 0;
+  } else if (strcmp(argv[0], YF_TEST_ALL) == 0) {
+    int (* const tests[])(void) = {
+      test_error,
+      test_clock,
+      test_list,
+      test_hashset
+    };
+    test_n = sizeof tests / sizeof tests[0];
+
+    results = 0;
+    for (size_t i = 0; i < test_n; ++i)
+      results += tests[i]() == 0;
+  } else {
+    fprintf(
+      stderr,
+      "! No test named '%s'. Try:\n%s\n%s\n%s\n%s\n%s\n",
+      argv[0],
+      YF_TEST_ERROR,
+      YF_TEST_CLOCK,
+      YF_TEST_LIST,
+      YF_TEST_HASHSET,
+      YF_TEST_ALL);
+    return -1;
+  }
 
   printf("\nDONE!\n\nNumber of tests executed: %lu\n", test_n);
   printf("> #%lu passed\n", results);
