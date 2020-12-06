@@ -13,7 +13,7 @@
 YF_DECLS_BEGIN
 
 /* Sets the error code variable. */
-int yf_seterr(int err, const char *info);
+void yf_seterr(int err, const char *info);
 
 /* Gets the last error code. */
 int yf_geterr(void);
