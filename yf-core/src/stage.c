@@ -9,11 +9,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-hashset.h>
 #include <yf/com/yf-error.h>
 
 #include "stage.h"
 #include "context.h"
-#include "hashset.h"
 
 #define YF_MODWRD 4
 #define YF_MODBLK (YF_MODWRD * 256)

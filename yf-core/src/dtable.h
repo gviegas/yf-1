@@ -8,9 +8,10 @@
 #ifndef YF_DTABLE_H
 #define YF_DTABLE_H
 
+#include <yf/com/yf-hashset.h>
+
 #include "yf-dtable.h"
 #include "vk.h"
-#include "hashset.h"
 
 typedef struct YF_dtable_o {
   YF_context ctx;
