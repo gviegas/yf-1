@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-hashset.h>
 #include <yf/com/yf-error.h>
 #include <yf/core/yf-image.h>
 
@@ -16,7 +17,6 @@
 #include "coreobj.h"
 #include "filetype.h"
 #include "filetype-bmp.h"
-#include "hashset.h"
 
 #ifdef YF_DEBUG
 # include <stdio.h>
