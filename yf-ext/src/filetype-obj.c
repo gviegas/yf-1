@@ -10,10 +10,11 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "filetype-obj.h"
 #include "vertex.h"
 #include "hashset.h"
-#include "error.h"
 
 #undef YF_INITCAP
 #define YF_INITCAP 1024

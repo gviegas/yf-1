@@ -10,11 +10,12 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "resmgr.h"
 #include "coreobj.h"
 #include "node.h"
 #include "vertex.h"
-#include "error.h"
 
 #ifdef YF_DEBUG
 # define YF_RESMGR_PRINT(info) do { \

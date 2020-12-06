@@ -8,8 +8,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "node.h"
-#include "error.h"
 
 struct YF_node_o {
   YF_node parent;

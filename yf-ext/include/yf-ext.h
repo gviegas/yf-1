@@ -11,7 +11,6 @@
 /* EXT interface. */
 #include "yf-camera.h"
 #include "yf-common.h"
-#include "yf-error.h"
 #include "yf-filetype.h"
 #include "yf-font.h"
 #include "yf-keyboard.h"

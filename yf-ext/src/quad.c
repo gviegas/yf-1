@@ -9,11 +9,12 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "quad.h"
 #include "node.h"
 #include "mesh.h"
 #include "vertex.h"
-#include "error.h"
 
 struct YF_quad_o {
   YF_node node;

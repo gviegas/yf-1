@@ -9,7 +9,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
 #include <yf/core/yf-core.h>
+
 #include "clock.h"
 #include "filetype-bmp.h"
 #include "test.h"

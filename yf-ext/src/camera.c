@@ -10,8 +10,9 @@
 #include <math.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
+
 #include "camera.h"
-#include "error.h"
 
 #ifdef YF_DEBUG
 # include <stdio.h>

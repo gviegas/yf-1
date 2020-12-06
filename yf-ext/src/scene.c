@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <assert.h>
 
+#include <yf/com/yf-error.h>
 #include <yf/core/yf-cmdbuf.h>
 
 #include "scene.h"
@@ -19,7 +20,6 @@
 #include "model.h"
 #include "list.h"
 #include "hashset.h"
-#include "error.h"
 
 #ifdef YF_DEBUG
 # include <stdio.h>
