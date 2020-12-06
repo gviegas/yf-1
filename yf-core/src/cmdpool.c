@@ -8,12 +8,12 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-list.h>
 #include <yf/com/yf-error.h>
 
 #include "cmdpool.h"
 #include "cmdbuf.h"
 #include "context.h"
-#include "list.h"
 
 #ifndef YF_MIN
 # define YF_MIN(a, b) (a < b ? a : b)

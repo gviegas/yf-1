@@ -10,7 +10,6 @@
 #include <assert.h>
 
 #include "context.h"
-#include "list.h"
 #include "hashset.h"
 #include "test.h"
 
@@ -26,9 +25,6 @@ static int print_features(void);
 /* Iteration callback. */
 static int do_each(void *val, void *arg);
 
-/* Tests linked list functionality. */
-static int test_list(void);
-
 /* Tests hashset functionality. */
 static int test_hset(void);
 
@@ -39,7 +35,6 @@ int yf_test_1(void) {
     YF_CTX_PRINT(l_ctx);
     if ((r = print_limits()) != 0) {}
     else if ((r = print_features()) != 0) {}
-    else if ((r = test_list()) != 0) {}
     else if ((r = test_hset()) != 0) {}
     yf_context_deinit(l_ctx);
   }
@@ -291,39 +286,6 @@ static int do_each(void *val, void *arg) {
   printf("%s %s\n", (char *)arg, (char *)val);
   if (((char *)val)[0] == '!')
     return -1;
-  return 0;
-}
-
-static int test_list(void) {
-  char *s1 = "one two three";
-  char *s2 = "!abc";
-  char *s3 = "xyz";
-  YF_list list = yf_list_init(NULL);
-  puts("=list=");
-  printf(
-    "insert: %d, %d, %d\n",
-    yf_list_insert(list, s1),
-    yf_list_insert(list, s2),
-    yf_list_insert(list, s3));
-  printf("getlen: %lu\n", yf_list_getlen(list));
-  printf("contains %d\n", yf_list_contains(list, s2));
-  printf("remove: %d\n", yf_list_remove(list, s2));
-  printf("getlen: %lu\n", yf_list_getlen(list));
-  printf("contains: %d\n", yf_list_contains(list, s2));
-  YF_iter it = YF_NILIT;
-  do {
-    char *s = yf_list_next(list, &it);
-    if (YF_IT_ISNIL(it))
-      break;
-    printf("(it) %s\n", s);
-  } while (1);
-  yf_list_each(list, do_each, "<each>");
-  printf("getlen: %lu\n", yf_list_getlen(list));
-  printf("clear\n");
-  yf_list_clear(list);
-  printf("getlen: %lu\n", yf_list_getlen(list));
-  yf_list_deinit(list);
-  puts("----");
   return 0;
 }
 
