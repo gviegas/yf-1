@@ -12,7 +12,10 @@
 
 YF_DECLS_BEGIN
 
-/* Retrieves the last error code. */
+/* Sets the error code variable. */
+int yf_seterr(int err, const char *info);
+
+/* Gets the last error code. */
 int yf_geterr(void);
 
 /* Prints the last error code. */
