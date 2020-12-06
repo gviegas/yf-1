@@ -8,11 +8,17 @@
 #ifndef YF_YF_CMPFN_H
 #define YF_YF_CMPFN_H
 
+#include "yf-defs.h"
+
+YF_DECLS_BEGIN
+
 /* Type defining a generic comparison function. */
 typedef int (*YF_cmpfn)(const void *, const void *);
 
 /* Compares the values of two pointers.
    This is the default comparison function, performed on the pointers. */
 int yf_cmp(const void *ptr1, const void *ptr2);
+
+YF_DECLS_END
 
 #endif /* YF_YF_CMPFN_H */
