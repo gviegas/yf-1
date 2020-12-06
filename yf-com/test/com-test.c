@@ -11,6 +11,7 @@
 #include "test.h"
 #include "error.h"
 #include "clock.h"
+#include "list.h"
 
 #undef YF_TEST_LN
 #define YF_TEST_LN "..............................."
@@ -46,6 +47,7 @@ static int test_error(void) {
   if (err != YF_ERR_OTHER)
     return -1;
 
+  puts("");
   return 0;
 }
 
@@ -70,12 +72,160 @@ static int test_clock(void) {
     printf("awake! (%fs elapsed)\n", yf_gettime()-t1);
   }
 
+  puts("");
   return 0;
 }
 
 /* List test. */
+static int list_cb(void *val, void *arg) {
+  printf("%c,%p ", *(int *)val, arg);
+  return 0;
+}
 static int test_list(void) {
-  /* TODO */
+  YF_TEST_SUBT;
+
+  int a = 'a';
+  int b = 'b';
+  int c = 'c';
+  int d = 'd';
+
+  YF_list ls = yf_list_init(NULL);
+
+  if (yf_list_getlen(ls) != 0)
+    return -1;
+  if (yf_list_contains(ls, NULL))
+    return -1;
+
+  yf_list_insert(ls, &a);
+  if (yf_list_getlen(ls) != 1)
+    return -1;
+  if (!yf_list_contains(ls, &a))
+    return -1;
+
+  yf_list_insert(ls, &b);
+  if (yf_list_getlen(ls) != 2)
+    return -1;
+  if (!yf_list_contains(ls, &b))
+    return -1;
+  if (!yf_list_contains(ls, &a))
+    return -1;
+
+  yf_list_insert(ls, &c);
+  if (yf_list_getlen(ls) != 3)
+    return -1;
+  if (!yf_list_contains(ls, &c))
+    return -1;
+  if (!yf_list_contains(ls, &b))
+    return -1;
+  if (!yf_list_contains(ls, &a))
+    return -1;
+  if (yf_list_contains(ls, &d))
+    return -1;
+
+  yf_list_remove(ls, &b);
+  if (yf_list_getlen(ls) != 2)
+    return -1;
+  if (yf_list_contains(ls, &b))
+    return -1;
+  if (!yf_list_contains(ls, &a))
+    return -1;
+  if (!yf_list_contains(ls, &c))
+    return -1;
+
+  yf_list_remove(ls, &a);
+  if (yf_list_getlen(ls) != 1)
+    return -1;
+  if (yf_list_contains(ls, &a))
+    return -1;
+  if (yf_list_contains(ls, &b))
+    return -1;
+  if (!yf_list_contains(ls, &c))
+    return -1;
+
+  yf_list_insert(ls, &d);
+  if (yf_list_getlen(ls) != 2)
+    return -1;
+  if (!yf_list_contains(ls, &c))
+    return -1;
+  if (!yf_list_contains(ls, &d))
+    return -1;
+  if (yf_list_contains(ls, &a))
+    return -1;
+  if (yf_list_contains(ls, &b))
+    return -1;
+
+  yf_list_insert(ls, &b);
+  if (yf_list_getlen(ls) != 3)
+    return -1;
+  if (!yf_list_contains(ls, &b))
+    return -1;
+  if (!yf_list_contains(ls, &c))
+    return -1;
+  if (!yf_list_contains(ls, &d))
+    return -1;
+  if (yf_list_contains(ls, &a))
+    return -1;
+
+  YF_iter it;
+
+  printf("\n(list beg) ");
+  it = YF_NILIT;
+  for (;;) {
+    int *v = yf_list_next(ls, &it);
+    if (YF_IT_ISNIL(it))
+      break;
+    printf("%c ", *v);
+  }
+  puts("(list end)");
+
+  printf("(list beg) ");
+  yf_list_each(ls, list_cb, NULL);
+  puts("(list end)");
+
+  yf_list_remove(ls, &c);
+
+  printf("(list beg) ");
+  it = YF_NILIT;
+  for (;;) {
+    int *v = yf_list_next(ls, &it);
+    if (YF_IT_ISNIL(it))
+      break;
+    printf("%c ", *v);
+  }
+  puts("(list end)");
+
+  printf("(list beg) ");
+  yf_list_each(ls, list_cb, NULL);
+  puts("(list end)");
+
+  yf_list_clear(ls);
+
+  printf("(list beg) ");
+  it = YF_NILIT;
+  for (;;) {
+    int *v = yf_list_next(ls, &it);
+    if (YF_IT_ISNIL(it))
+      break;
+    printf("%c ", *v);
+  }
+  puts("(list end)");
+
+  printf("(list beg) ");
+  yf_list_each(ls, list_cb, NULL);
+  puts("(list end)");
+
+  if (yf_list_getlen(ls) != 0)
+    return -1;
+  if (yf_list_contains(ls, &a))
+    return -1;
+  if (yf_list_contains(ls, &b))
+    return -1;
+  if (yf_list_contains(ls, &c))
+    return -1;
+  if (yf_list_contains(ls, &d))
+    return -1;
+
+  puts("");
   return 0;
 }
 
