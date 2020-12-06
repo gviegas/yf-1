@@ -8,9 +8,9 @@
 #ifndef YF_HASHSET_H
 #define YF_HASHSET_H
 
+#include <yf/com/yf-iter.h>
 #include "hashfn.h"
 #include "cmpfn.h"
-#include "iter.h"
 
 /* Opaque type defining a hashset. */
 typedef struct YF_hashset_o *YF_hashset;

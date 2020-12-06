@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <assert.h>
 
+#include <yf/com/yf-list.h>
 #include <yf/com/yf-error.h>
 #include <yf/core/yf-cmdbuf.h>
 
@@ -18,7 +19,6 @@
 #include "texture.h"
 #include "mesh.h"
 #include "model.h"
-#include "list.h"
 #include "hashset.h"
 
 #ifdef YF_DEBUG
