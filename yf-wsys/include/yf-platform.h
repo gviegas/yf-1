@@ -8,6 +8,10 @@
 #ifndef YF_YF_PLATFORM_H
 #define YF_YF_PLATFORM_H
 
+#include <yf/com/yf-defs.h>
+
+YF_DECLS_BEGIN
+
 /* Types of platform. */
 #define YF_PLATFORM_NONE    0
 #define YF_PLATFORM_WAYLAND 1
@@ -18,5 +22,7 @@
 
 /* Gets the platform in use. */
 int yf_getplatform(void);
+
+YF_DECLS_END
 
 #endif /* YF_YF_PLATFORM_H */
