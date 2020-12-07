@@ -19,12 +19,12 @@ typedef struct {
   int (*toggle)(void *);
   int (*settitle)(void *, const char *);
   void (*getsize)(void *, unsigned *, unsigned *);
-  void (*getwidth)(void *);
-  void (*getheight)(void *);
+  unsigned (*getwidth)(void *);
+  unsigned (*getheight)(void *);
   void (*deinit)(void *);
 } YF_win_imp;
 
 /* Gets the window implementation. */
-YF_win_imp *yf_window_getimp(void);
+const YF_win_imp *yf_getwinimp(void);
 
 #endif /* YF_WINDOW_H */
