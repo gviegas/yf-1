@@ -43,12 +43,6 @@ int yf_window_settitle(YF_window win, const char *title);
 /* Gets window size. */
 void yf_window_getsize(YF_window win, unsigned *width, unsigned *height);
 
-/* Gets window width. */
-unsigned yf_window_getwidth(YF_window win);
-
-/* Gets window height. */
-unsigned yf_window_getheight(YF_window win);
-
 /* Deinitializes a window. */
 void yf_window_deinit(YF_window win);
 

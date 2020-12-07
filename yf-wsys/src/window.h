@@ -12,19 +12,17 @@
 
 /* Type defining a specific window implementation. */
 typedef struct {
-  void *(*init)(unsigned, unsigned, const char *, unsigned);
-  int (*open)(void *);
-  int (*close)(void *);
-  int (*resize)(void *, unsigned, unsigned);
-  int (*toggle)(void *);
-  int (*settitle)(void *, const char *);
-  void (*getsize)(void *, unsigned *, unsigned *);
-  unsigned (*getwidth)(void *);
-  unsigned (*getheight)(void *);
-  void (*deinit)(void *);
+  void *(*init)(unsigned w, unsigned h, const char *title, unsigned creat);
+  int (*open)(void *win);
+  int (*close)(void *win);
+  int (*resize)(void *win, unsigned w, unsigned h);
+  int (*toggle)(void *win);
+  int (*settitle)(void *win, const char *title);
+  void (*getsize)(void *win, unsigned *w, unsigned *h);
+  void (*deinit)(void *win);
 } YF_win_imp;
 
 /* Gets the window implementation. */
-const YF_win_imp *yf_getwinimp(void);
+void yf_getwinimp(YF_win_imp *imp);
 
 #endif /* YF_WINDOW_H */
