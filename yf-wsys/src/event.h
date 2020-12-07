@@ -20,6 +20,6 @@ typedef struct {
 } YF_evt_imp;
 
 /* Gets the event implementation. */
-const YF_evt_imp *yf_getevtimp(void);
+void yf_getevtimp(YF_evt_imp *imp);
 
 #endif /* YF_EVENT_H */

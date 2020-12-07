@@ -10,7 +10,7 @@
 
 #include "event.h"
 
-/* Type defining and event function and its data argument. */
+/* Type defining an event function and its 'data' argument. */
 typedef struct {
   YF_evtfn fn;
   void *data;
@@ -34,17 +34,14 @@ static L_evtfn l_leavept  = { {.leave_pt  = NULL}, NULL };
 static L_evtfn l_motionpt = { {.motion_pt = NULL}, NULL };
 static L_evtfn l_buttonpt = { {.button_pt = NULL}, NULL };
 
-/* Mask representing installed handlers. */
+/* Mask of installed handlers. */
 static int l_mask = YF_EVT_NONE;
 
 int yf_pollevt(unsigned evt_mask) {
-  assert(l_imp.poll != dummy_poll);
   return l_imp.poll(evt_mask);
 }
 
 void yf_setevtfn(int evt, YF_evtfn fn, void *data) {
-  assert(l_imp.changed != dummy_changed);
-
   switch (evt) {
     case YF_EVT_CLOSEWD:
       l_closewd.fn.close_wd = fn.close_wd;
@@ -150,9 +147,13 @@ unsigned yf_getevtmask(void) {
 }
 
 static int dummy_poll(unsigned evt_mask) {
-  /* TODO */
+  yf_getevtimp(&l_imp);
+  return l_imp.poll(evt_mask);
+  /* never called again */
 }
 
 static void dummy_changed(int evt) {
-  /* TODO */
+  yf_getevtimp(&l_imp);
+  l_imp.changed(evt);
+  /* never called again */
 }
