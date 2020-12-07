@@ -8,6 +8,8 @@
 #ifndef YF_EVENT_H
 #define YF_EVENT_H
 
+#include "yf-event.h"
+
 /* Type defining a specific event implementation. */
 typedef struct {
   int (*poll)(unsigned);
