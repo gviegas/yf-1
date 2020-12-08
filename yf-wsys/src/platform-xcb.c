@@ -45,8 +45,10 @@ static void changed_evt(int);
 
 const YF_evt_imp yf_g_evtxcb = {.poll = poll_evt, .changed = changed_evt};
 
-/* Variables are set by 'yf_loadxcb' and unset by 'yf_unldxcb'. */
-YF_xcbvars yf_g_xcbvars = {0};
+/* Global variables setting. */
+static int set_vars(void);
+
+YF_varsxcb yf_g_varsxcb = {0};
 
 /* Shared object handle. */
 static void *l_handle = NULL;
@@ -239,6 +241,16 @@ int yf_loadxcb(void) {
     }
   }
 
+  if (set_vars() != 0) {
+    yf_unldxcb();
+    return -1;
+  }
+
+  if ((l_wins = yf_list_init(NULL)) == NULL) {
+    yf_unldxcb();
+    return -1;
+  }
+
   return 0;
 }
 
@@ -256,9 +268,9 @@ void yf_unldxcb(void) {
     l_wins = NULL;
   }
 
-  if (yf_g_xcbvars.conn != NULL) {
-    YF_XCB_DISCONNECT(yf_g_xcbvars.conn);
-    memset(&yf_g_xcbvars, 0, sizeof yf_g_xcbvars);
+  if (yf_g_varsxcb.conn != NULL) {
+    YF_XCB_DISCONNECT(yf_g_varsxcb.conn);
+    memset(&yf_g_varsxcb, 0, sizeof yf_g_varsxcb);
   }
 
   if (l_handle != NULL) {
@@ -266,6 +278,88 @@ void yf_unldxcb(void) {
     l_handle = NULL;
     memset(l_addrs, 0, sizeof l_addrs);
   }
+}
+
+static int set_vars(void) {
+  assert(l_handle != NULL);
+  assert(yf_g_varsxcb.conn == NULL);
+
+  int res;
+
+  YF_XCB_CONNECT(yf_g_varsxcb.conn, NULL, NULL);
+  YF_XCB_CONNECTION_HAS_ERROR(res, yf_g_varsxcb.conn);
+  if (res != 0) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
+  }
+
+  const xcb_setup_t *setup = NULL;
+  xcb_screen_iterator_t screen_it;
+
+  YF_XCB_GET_SETUP(setup, yf_g_varsxcb.conn);
+  if (setup == NULL) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
+  }
+  YF_XCB_SETUP_ROOTS_ITERATOR(screen_it, setup);
+  yf_g_varsxcb.visual = screen_it.data->root_visual;
+  yf_g_varsxcb.root_win = screen_it.data->root;
+  yf_g_varsxcb.white_px = screen_it.data->white_pixel;
+  yf_g_varsxcb.black_px = screen_it.data->black_pixel;
+
+  xcb_atom_t *const atoms[] = {
+    &yf_g_varsxcb.atom.proto,
+    &yf_g_varsxcb.atom.del,
+    &yf_g_varsxcb.atom.title,
+    &yf_g_varsxcb.atom.utf8,
+    &yf_g_varsxcb.atom.clss
+  };
+  const char *atom_names[] = {
+    "WM_PROTOCOLS",
+    "WM_DELETE_WINDOW",
+    "WM_NAME",
+    "UTF8_STR",
+    "WM_CLASS"
+  };
+  xcb_intern_atom_cookie_t atom_cookie;
+  xcb_intern_atom_reply_t *atom_reply = NULL;
+  xcb_generic_error_t *err = NULL;
+
+  for (size_t i = 0; i < (sizeof atoms / sizeof atoms[0]); ++i) {
+    YF_XCB_INTERN_ATOM(atom_cookie, yf_g_varsxcb.conn, 0,
+        strlen(atom_names[i]), atom_names[i]);
+    YF_XCB_INTERN_ATOM_REPLY(atom_reply, yf_g_varsxcb.conn, atom_cookie, &err);
+    if (err != NULL || atom_reply == NULL) {
+      yf_seterr(YF_ERR_OTHER, __func__);
+      free(err);
+      free(atom_reply);
+      return -1;
+    }
+    *atoms[i] = atom_reply->atom;
+    free(atom_reply);
+    atom_reply = NULL;
+  }
+
+  uint32_t val_mask = XCB_KB_AUTO_REPEAT_MODE;
+  uint32_t val_list[] = {XCB_AUTO_REPEAT_MODE_OFF};
+  xcb_void_cookie_t cookie;
+
+  YF_XCB_CHANGE_KEYBOARD_CONTROL_CHECKED(cookie, yf_g_varsxcb.conn, val_mask,
+      val_list);
+  YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+  if (err != NULL) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    free(err);
+    return -1;
+  }
+
+  YF_XCB_FLUSH(res, yf_g_varsxcb.conn);
+  if (res <= 0) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
+  }
+
+  return 0;
 }
 
 static void *init_win(unsigned width, unsigned height, const char *title,

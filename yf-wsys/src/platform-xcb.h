@@ -28,8 +28,8 @@ typedef struct {
   xcb_connection_t *conn;
   xcb_visualid_t visual;
   xcb_window_t root_win;
-  uint32_t white_pix;
-  uint32_t black_pix;
+  uint32_t white_px;
+  uint32_t black_px;
   struct {
     xcb_atom_t proto;
     xcb_atom_t del;
@@ -37,10 +37,10 @@ typedef struct {
     xcb_atom_t utf8;
     xcb_atom_t clss;
   } atom;
-} YF_xcbvars;
+} YF_varsxcb;
 
 /* Global variables instance.
    This data is initialized by 'yf_loadxcb'. */
-extern YF_xcbvars yf_g_xcbvars;
+extern YF_varsxcb yf_g_varsxcb;
 
 #endif /* YF_PLATFORM_XCB_H */
