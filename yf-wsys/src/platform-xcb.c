@@ -16,6 +16,17 @@
 #include "platform-xcb.h"
 #include "platform.h"
 
+#ifndef YF_APP_ID
+# define YF_APP_ID "unknown.app.id"
+#endif
+
+#ifndef YF_APP_NAME
+# define YF_APP_NAME "Unknown app"
+#endif
+
+#undef YF_STR_MAXLEN
+#define YF_STR_MAXLEN 60
+
 #define YF_LIBXCB "libxcb.so"
 
 /* Window implementation functions. */
@@ -365,8 +376,108 @@ static int set_vars(void) {
 static void *init_win(unsigned width, unsigned height, const char *title,
     unsigned creat_mask)
 {
-  /* TODO */
-  return NULL;
+  assert(l_handle != NULL);
+  assert(yf_g_varsxcb.conn != NULL);
+
+  if (width == 0 || height == 0) {
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return NULL;
+  }
+
+  L_win *win = calloc(1, sizeof(L_win));
+  if (win == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return NULL;
+  }
+
+  YF_XCB_GENERATE_ID(win->win_id, yf_g_varsxcb.conn);
+
+  xcb_generic_error_t *err = NULL;
+  xcb_void_cookie_t cookie;
+  uint32_t val_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
+  uint32_t val_list[2];
+  val_list[0] = yf_g_varsxcb.black_px;
+  val_list[1] =
+    XCB_EVENT_MASK_KEY_PRESS |
+    XCB_EVENT_MASK_KEY_RELEASE |
+    XCB_EVENT_MASK_BUTTON_PRESS |
+    XCB_EVENT_MASK_BUTTON_RELEASE |
+    XCB_EVENT_MASK_ENTER_WINDOW |
+    XCB_EVENT_MASK_LEAVE_WINDOW |
+    XCB_EVENT_MASK_POINTER_MOTION |
+    XCB_EVENT_MASK_BUTTON_MOTION |
+    XCB_EVENT_MASK_EXPOSURE |
+    XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+    XCB_EVENT_MASK_FOCUS_CHANGE;
+
+  YF_XCB_CREATE_WINDOW_CHECKED(cookie, yf_g_varsxcb.conn, 0, win->win_id,
+      yf_g_varsxcb.root_win, 0, 0, width, height, 0,
+      XCB_WINDOW_CLASS_INPUT_OUTPUT, yf_g_varsxcb.visual, val_mask, val_list);
+  YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+  if (err != NULL) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    free(win);
+    free(err);
+    return NULL;
+  }
+
+  YF_XCB_CHANGE_PROPERTY_CHECKED(cookie, yf_g_varsxcb.conn,
+      XCB_PROP_MODE_REPLACE, win->win_id, yf_g_varsxcb.atom.proto,
+      XCB_ATOM_ATOM, 32, 1, &yf_g_varsxcb.atom.del);
+  YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+  if (err != NULL) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    deinit_win(win);
+    free(err);
+    return NULL;
+  }
+
+  size_t len = title == NULL ? 0 : strnlen(title, YF_STR_MAXLEN-1);
+
+  YF_XCB_CHANGE_PROPERTY_CHECKED(cookie, yf_g_varsxcb.conn,
+      XCB_PROP_MODE_REPLACE, win->win_id, yf_g_varsxcb.atom.title,
+      yf_g_varsxcb.atom.utf8, 8, len, title);
+  YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+  if (err != NULL) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    deinit_win(win);
+    free(err);
+    return NULL;
+  }
+
+  len = strnlen(YF_APP_NAME, YF_STR_MAXLEN);
+  size_t len2 = strnlen(YF_APP_ID, YF_STR_MAXLEN);
+  char clss[YF_STR_MAXLEN * 2] = {'\0', '\0'};
+  if (len < YF_STR_MAXLEN && len2 < YF_STR_MAXLEN){
+    strcpy(clss, YF_APP_NAME);
+    strcpy(clss+len+1, YF_APP_ID);
+    len += len2 + 2;
+  } else {
+    len = 2;
+  }
+
+  YF_XCB_CHANGE_PROPERTY_CHECKED(cookie, yf_g_varsxcb.conn,
+      XCB_PROP_MODE_REPLACE, win->win_id, yf_g_varsxcb.atom.clss,
+      XCB_ATOM_STRING, 8, len, clss);
+  YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+  if (err != NULL) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    deinit_win(win);
+    free(err);
+    return NULL;
+  }
+
+  int res;
+
+  YF_XCB_FLUSH(res, yf_g_varsxcb.conn);
+  if (res <= 0) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    deinit_win(win);
+    return NULL;
+  }
+
+  yf_list_insert(l_wins, win);
+  return win;
 }
 
 static int open_win(void *win) {
