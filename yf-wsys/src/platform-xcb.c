@@ -10,6 +10,7 @@
 #include <dlfcn.h>
 #include <assert.h>
 
+#include <yf/com/yf-list.h>
 #include <yf/com/yf-error.h>
 
 #include "platform-xcb.h"
@@ -200,6 +201,22 @@ res, connection, value_mask, value_list) do { \
   *(void **)(&fn) = l_addrs[YF_SYM_CHANGE_KEYBOARD_CONTROL_CHECKED]; \
   res = fn(connection, value_mask, value_list); } while (0)
 
+/* Type defining the data of a window object. */
+typedef struct {
+  xcb_window_t win_id;
+} L_win;
+
+/* List containing the 'L_win' data of all created windows. */
+static YF_list l_wins = NULL;
+
+/* Gets the 'L_win' data for a given xcb window id.
+   This assumes that an entry exists in 'l_wins' with the provided id. */
+#define YF_GETWINDATA(data, win_id) do { \
+  assert(l_wins != NULL && yf_list_getlen(l_wins) > 0); \
+  YF_iter it = YF_NILLIT; \
+  do data = yf_list_next(l_wins, &it); while (data->win_id != win_id); \
+  } while (0)
+
 int yf_loadxcb(void) {
   if (l_handle != NULL)
     return 0;
@@ -226,10 +243,28 @@ int yf_loadxcb(void) {
 }
 
 void yf_unldxcb(void) {
+  if (l_wins != NULL) {
+    L_win *win;
+    YF_iter it = YF_NILIT;
+    for (;;) {
+      win = yf_list_next(l_wins, &it);
+      if (YF_IT_ISNIL(it))
+        break;
+      deinit_win(win);
+    }
+    yf_list_deinit(l_wins);
+    l_wins = NULL;
+  }
+
+  if (yf_g_xcbvars.conn != NULL) {
+    YF_XCB_DISCONNECT(yf_g_xcbvars.conn);
+    memset(&yf_g_xcbvars, 0, sizeof yf_g_xcbvars);
+  }
+
   if (l_handle != NULL) {
     dlclose(l_handle);
     l_handle = NULL;
-    memset(&yf_g_xcbvars, 0, sizeof yf_g_xcbvars);
+    memset(l_addrs, 0, sizeof l_addrs);
   }
 }
 
