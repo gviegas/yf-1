@@ -329,7 +329,7 @@ static int set_vars(void) {
     "WM_PROTOCOLS",
     "WM_DELETE_WINDOW",
     "WM_NAME",
-    "UTF8_STR",
+    "UTF8_STRING",
     "WM_CLASS"
   };
   xcb_intern_atom_cookie_t atom_cookie;
@@ -378,6 +378,8 @@ static void *init_win(unsigned width, unsigned height, const char *title,
 {
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
+
+  /* TODO: Use creation mask. */
 
   if (width == 0 || height == 0) {
     yf_seterr(YF_ERR_INVARG, __func__);
@@ -481,15 +483,47 @@ static void *init_win(unsigned width, unsigned height, const char *title,
 }
 
 static int open_win(void *win) {
+  assert(l_handle != NULL);
+  assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
-  /* TODO */
-  return -1;
+
+  /* TODO: Store the window state (closed, etc.). */
+
+  xcb_window_t win_id = ((L_win *)win)->win_id;
+  xcb_void_cookie_t cookie;
+  xcb_generic_error_t *err = NULL;
+
+  YF_XCB_MAP_WINDOW_CHECKED(cookie, yf_g_varsxcb.conn, win_id);
+  YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+  if (err != NULL) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    free(err);
+    return -1;
+  }
+
+  return 0;
 }
 
 static int close_win(void *win) {
+  assert(l_handle != NULL);
+  assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
-  /* TODO */
-  return -1;
+
+  /* TODO: Store the window state (closed, etc.). */
+
+  xcb_window_t win_id = ((L_win *)win)->win_id;
+  xcb_void_cookie_t cookie;
+  xcb_generic_error_t *err = NULL;
+
+  YF_XCB_UNMAP_WINDOW_CHECKED(cookie, yf_g_varsxcb.conn, win_id);
+  YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+  if (err != NULL) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    free(err);
+    return -1;
+  }
+
+  return 0;
 }
 
 static int resize_win(void *win, unsigned width, unsigned height) {
