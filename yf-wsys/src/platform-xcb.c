@@ -216,6 +216,11 @@ res, connection, value_mask, value_list) do { \
 
 /* Type defining the data of a window object. */
 typedef struct {
+  unsigned creat_mask;
+  unsigned width;
+  unsigned height;
+  int open;
+  int fullscreen;
   xcb_window_t win_id;
 } L_win;
 
@@ -379,8 +384,6 @@ static void *init_win(unsigned width, unsigned height, const char *title,
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
 
-  /* TODO: Use creation mask. */
-
   if (width == 0 || height == 0) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return NULL;
@@ -391,6 +394,11 @@ static void *init_win(unsigned width, unsigned height, const char *title,
     yf_seterr(YF_ERR_NOMEM, __func__);
     return NULL;
   }
+  win->creat_mask = creat_mask;
+  win->width = width;
+  win->height = height;
+  win->open = 0;
+  win->fullscreen = 0;
 
   YF_XCB_GENERATE_ID(win->win_id, yf_g_varsxcb.conn);
 
@@ -478,6 +486,22 @@ static void *init_win(unsigned width, unsigned height, const char *title,
     return NULL;
   }
 
+  /* TODO: Handle remaining creation flags. */
+
+  if (!(creat_mask & YF_WINCREAT_HIDDEN)) {
+    if (open_win(win) != 0) {
+      deinit_win(win);
+      return NULL;
+    }
+  }
+
+  if (creat_mask & YF_WINCREAT_FULLSCREEN) {
+    if (toggle_win(win) != 0) {
+      deinit_win(win);
+      return NULL;
+    }
+  }
+
   yf_list_insert(l_wins, win);
   return win;
 }
@@ -487,7 +511,8 @@ static int open_win(void *win) {
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
 
-  /* TODO: Store the window state (closed, etc.). */
+  if (((L_win *)win)->open)
+    return 0;
 
   xcb_window_t win_id = ((L_win *)win)->win_id;
   xcb_void_cookie_t cookie;
@@ -501,6 +526,7 @@ static int open_win(void *win) {
     return -1;
   }
 
+  ((L_win *)win)->open = 1;
   return 0;
 }
 
@@ -509,7 +535,8 @@ static int close_win(void *win) {
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
 
-  /* TODO: Store the window state (closed, etc.). */
+  if (!((L_win *)win)->open)
+    return 0;
 
   xcb_window_t win_id = ((L_win *)win)->win_id;
   xcb_void_cookie_t cookie;
@@ -523,6 +550,7 @@ static int close_win(void *win) {
     return -1;
   }
 
+  ((L_win *)win)->open = 0;
   return 0;
 }
 
@@ -530,8 +558,6 @@ static int resize_win(void *win, unsigned width, unsigned height) {
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
-
-  /* TODO: Store the window size. */
 
   if (width == 0 || height == 0) {
     yf_seterr(YF_ERR_INVARG, __func__);
@@ -552,6 +578,8 @@ static int resize_win(void *win, unsigned width, unsigned height) {
     return -1;
   }
 
+  ((L_win *)win)->width = width;
+  ((L_win *)win)->height = height;
   return 0;
 }
 
