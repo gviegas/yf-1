@@ -14,7 +14,8 @@
 #include <yf/com/yf-error.h>
 
 #include "platform-xcb.h"
-#include "platform.h"
+#include "yf-keyboard.h"
+#include "yf-pointer.h"
 
 #ifndef YF_APP_ID
 # define YF_APP_ID "unknown.app.id"
@@ -636,8 +637,133 @@ static void deinit_win(void *win) {
 }
 
 static int poll_evt(unsigned evt_mask) {
-  /* TODO */
-  return -1;
+  assert(l_handle != NULL);
+  assert(yf_g_varsxcb.conn != NULL);
+
+  const unsigned mask = evt_mask & yf_getevtmask();
+  if (evt_mask == YF_EVT_NONE)
+    return 0;
+
+  unsigned type;
+  xcb_generic_event_t *event = NULL;
+
+  do {
+    YF_XCB_POLL_FOR_EVENT(event, yf_g_varsxcb.conn);
+    if (event == NULL)
+      break;
+    type = event->response_type & ~0x80;
+
+    switch (type) {
+      case XCB_KEY_PRESS:
+      case XCB_KEY_RELEASE: {
+        if (!(mask & YF_EVT_KEYKB))
+          break;
+        xcb_key_press_event_t *key_evt = (xcb_key_press_event_t *)event;
+
+        /* TODO: Key code convesion. (= conv(ev->detail - 8)) */
+        int key = YF_KEY_UNKNOWN;
+
+        int state;
+        if (type == XCB_KEY_PRESS)
+          state = YF_KEYSTATE_PRESSED;
+        else
+          state = YF_KEYSTATE_RELEASED;
+
+        static uint16_t prev_evt_state = 0;
+        static unsigned prev_mod_mask = 0;
+        unsigned mod_mask = prev_mod_mask;
+
+        if (key_evt->state != prev_evt_state) {
+          mod_mask = 0;
+
+          if (key_evt->state & XCB_MOD_MASK_LOCK)
+            mod_mask |= YF_KEYMOD_CAPSLOCK;
+          if (key_evt->state & XCB_MOD_MASK_SHIFT)
+            mod_mask |= YF_KEYMOD_SHIFT;
+          if (key_evt->state & XCB_MOD_MASK_CONTROL)
+            mod_mask |= YF_KEYMOD_CTRL;
+          if (key_evt->state & XCB_MOD_MASK_1)
+            mod_mask |= YF_KEYMOD_ALT;
+
+          prev_mod_mask = mod_mask;
+          prev_evt_state = key_evt->state;
+        }
+
+        YF_evtfn fn;
+        void *data;
+        yf_getevtfn(YF_EVT_KEYKB, &fn, &data);
+        fn.key_kb(key, state, mod_mask, data);
+      } break;
+
+      case XCB_BUTTON_PRESS:
+      case XCB_BUTTON_RELEASE: {
+        if (!(mask & YF_EVT_BUTTONPT))
+          break;
+        xcb_button_press_event_t *btn_evt = (xcb_button_press_event_t*)event;
+
+        int btn;
+        switch (btn_evt->detail) {
+          case XCB_BUTTON_INDEX_1:
+            btn = YF_BTN_LEFT;
+            break;
+          case XCB_BUTTON_INDEX_2:
+            btn = YF_BTN_RIGHT;
+            break;
+          case XCB_BUTTON_INDEX_3:
+            btn = YF_BTN_MIDDLE;
+            break;
+          case XCB_BUTTON_INDEX_4:
+          case XCB_BUTTON_INDEX_5:
+            /* TODO: Scroll. */
+          default:
+            btn = YF_BTN_UNKNOWN;
+        }
+
+        int state;
+        if (type == XCB_BUTTON_PRESS)
+          state = YF_BTNSTATE_PRESSED;
+        else
+          state = YF_BTNSTATE_RELEASED;
+
+        int x = btn_evt->event_x;
+        int y = btn_evt->event_y;
+
+        YF_evtfn fn;
+        void *data;
+        yf_getevtfn(YF_EVT_BUTTONPT, &fn, &data);
+        fn.button_pt(btn, state, x, y, data);
+      } break;
+
+      case XCB_MOTION_NOTIFY: {
+      } break;
+
+      case XCB_ENTER_NOTIFY: {
+      } break;
+
+      case XCB_LEAVE_NOTIFY: {
+      } break;
+
+      case XCB_FOCUS_IN: {
+      } break;
+
+      case XCB_FOCUS_OUT: {
+      } break;
+
+      case XCB_EXPOSE: {
+      } break;
+
+      case XCB_CONFIGURE_NOTIFY: {
+      } break;
+
+      case XCB_CLIENT_MESSAGE: {
+      } break;
+
+      default:
+        break;
+    }
+
+    free(event);
+  } while (1);
 }
 
 static void changed_evt(int evt) {
