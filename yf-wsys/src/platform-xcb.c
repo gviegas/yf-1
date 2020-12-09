@@ -31,7 +31,7 @@
 #define YF_LIBXCB "libxcb.so"
 
 /* Window implementation functions. */
-static void *init_win(unsigned, unsigned, const char *, unsigned);
+static void *init_win(unsigned, unsigned, const char *, unsigned, YF_window);
 static int open_win(void *);
 static int close_win(void *);
 static int resize_win(void *, unsigned, unsigned);
@@ -217,6 +217,7 @@ res, connection, value_mask, value_list) do { \
 
 /* Type defining the data of a window object. */
 typedef struct {
+  YF_window wrapper;
   unsigned creat_mask;
   unsigned width;
   unsigned height;
@@ -380,7 +381,7 @@ static int set_vars(void) {
 }
 
 static void *init_win(unsigned width, unsigned height, const char *title,
-    unsigned creat_mask)
+    unsigned creat_mask, YF_window wrapper)
 {
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
@@ -395,6 +396,8 @@ static void *init_win(unsigned width, unsigned height, const char *title,
     yf_seterr(YF_ERR_NOMEM, __func__);
     return NULL;
   }
+
+  win->wrapper = wrapper;
   win->creat_mask = creat_mask;
   win->width = width;
   win->height = height;
@@ -589,7 +592,9 @@ static int toggle_win(void *win) {
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
+
   /* TODO */
+
   return -1;
 }
 
@@ -660,7 +665,7 @@ static int poll_evt(unsigned evt_mask) {
           break;
         xcb_key_press_event_t *key_evt = (xcb_key_press_event_t *)event;
 
-        /* TODO: Key code conversion. (= conv(ev->detail - 8)) */
+        /* TODO: Key code conversion. (= conv(detail - 8)) */
         int key = YF_KEY_UNKNOWN;
 
         int state;
@@ -762,8 +767,7 @@ static int poll_evt(unsigned evt_mask) {
         YF_evtfn fn;
         void *data;
         yf_getevtfn(YF_EVT_ENTERPT, &fn, &data);
-        /* TODO: Wrapper window. */
-        fn.enter_pt(win/*->wrapper*/, x, y, data);
+        fn.enter_pt(win->wrapper, x, y, data);
       } break;
 
       case XCB_LEAVE_NOTIFY: {
@@ -777,8 +781,7 @@ static int poll_evt(unsigned evt_mask) {
         YF_evtfn fn;
         void *data;
         yf_getevtfn(YF_EVT_LEAVEPT, &fn, &data);
-        /* TODO: Wrapper window. */
-        fn.leave_pt(win/*->wrapper*/, data);
+        fn.leave_pt(win->wrapper, data);
       } break;
 
       case XCB_FOCUS_IN: {
@@ -792,8 +795,7 @@ static int poll_evt(unsigned evt_mask) {
         YF_evtfn fn;
         void *data;
         yf_getevtfn(YF_EVT_ENTERKB, &fn, &data);
-        /* TODO: Wrapper window. */
-        fn.enter_kb(win/*->wrapper*/, data);
+        fn.enter_kb(win->wrapper, data);
       } break;
 
       case XCB_FOCUS_OUT: {
@@ -807,8 +809,7 @@ static int poll_evt(unsigned evt_mask) {
         YF_evtfn fn;
         void *data;
         yf_getevtfn(YF_EVT_LEAVEKB, &fn, &data);
-        /* TODO: Wrapper window. */
-        fn.leave_kb(win/*->wrapper*/, data);
+        fn.leave_kb(win->wrapper, data);
       } break;
 
       case XCB_EXPOSE: {
@@ -832,8 +833,7 @@ static int poll_evt(unsigned evt_mask) {
         YF_evtfn fn;
         void *data;
         yf_getevtfn(YF_EVT_RESIZEWD, &fn, &data);
-        /* TODO: Wrapper window. */
-        fn.resize_wd(win/*->wrapper*/, win->width, win->height, data);
+        fn.resize_wd(win->wrapper, win->width, win->height, data);
       } break;
 
       case XCB_CLIENT_MESSAGE: {
@@ -854,9 +854,8 @@ static int poll_evt(unsigned evt_mask) {
 
         YF_evtfn fn;
         void *data;
-        /* TODO: Wrapper window. */
         yf_getevtfn(YF_EVT_CLOSEWD, &fn, &data);
-        fn.close_wd(win/*->wrapper*/, data);
+        fn.close_wd(win->wrapper, data);
       } break;
 
       default:
