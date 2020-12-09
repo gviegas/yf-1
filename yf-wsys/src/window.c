@@ -32,7 +32,7 @@ YF_window yf_window_init(unsigned width, unsigned height, const char *title,
     return NULL;
   }
 
-  win->data = l_imp.init(width, height, title, creat_mask);
+  win->data = l_imp.init(width, height, title, creat_mask, win);
   if (win->data == NULL) {
     free(win);
     return NULL;
