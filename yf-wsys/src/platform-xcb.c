@@ -575,6 +575,7 @@ static int resize_win(void *win, unsigned width, unsigned height) {
   YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
   if (err != NULL) {
     yf_seterr(YF_ERR_OTHER, __func__);
+    free(err);
     return -1;
   }
 
@@ -584,20 +585,44 @@ static int resize_win(void *win, unsigned width, unsigned height) {
 }
 
 static int toggle_win(void *win) {
+  assert(l_handle != NULL);
+  assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
   /* TODO */
   return -1;
 }
 
 static int settitle_win(void *win, const char *title) {
+  assert(l_handle != NULL);
+  assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
-  /* TODO */
-  return -1;
+
+  xcb_window_t win_id = ((L_win *)win)->win_id;
+  xcb_void_cookie_t cookie;
+  xcb_generic_error_t *err = NULL;
+  size_t len = title == NULL ? 0 : strnlen(title, YF_STR_MAXLEN-1);
+
+  YF_XCB_CHANGE_PROPERTY_CHECKED(cookie, yf_g_varsxcb.conn,
+      XCB_PROP_MODE_REPLACE, win_id, yf_g_varsxcb.atom.title,
+      yf_g_varsxcb.atom.utf8, 8, len, title);
+  YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+  if (err != NULL) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    free(err);
+    return -1;
+  }
+
+  return 0;
 }
 
 static void getsize_win(void *win, unsigned *width, unsigned *height) {
+  assert(l_handle != NULL);
+  assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
-  /* TODO */
+  assert(width != NULL && height != NULL);
+
+  *width = ((L_win *)win)->width;
+  *height = ((L_win *)win)->height;
 }
 
 static void deinit_win(void *win) {
