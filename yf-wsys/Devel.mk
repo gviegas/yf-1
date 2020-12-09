@@ -31,7 +31,7 @@ DEP := $(OBJ:.o=.d)
 CC := /usr/bin/cc
 CC_FLAGS := -std=gnu17 -Wpedantic -Wall -Wextra -g
 
-LD_LIBS := -lyf-com
+LD_LIBS := -ldl -lyf-com
 LD_FLAGS := -iquote $(INCLUDE_DIR) -iquote $(SRC_DIR)
 
 PP := $(CC) -E
