@@ -527,9 +527,32 @@ static int close_win(void *win) {
 }
 
 static int resize_win(void *win, unsigned width, unsigned height) {
+  assert(l_handle != NULL);
+  assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
-  /* TODO */
-  return -1;
+
+  /* TODO: Store the window size. */
+
+  if (width == 0 || height == 0) {
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return -1;
+  }
+
+  xcb_window_t win_id = ((L_win *)win)->win_id;
+  xcb_void_cookie_t cookie;
+  xcb_generic_error_t *err = NULL;
+  uint32_t val_mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
+  uint32_t val_list[] = {width, height};
+
+  YF_XCB_CONFIGURE_WINDOW_CHECKED(cookie, yf_g_varsxcb.conn, win_id, val_mask,
+      val_list);
+  YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+  if (err != NULL) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
+  }
+
+  return 0;
 }
 
 static int toggle_win(void *win) {
@@ -550,7 +573,13 @@ static void getsize_win(void *win, unsigned *width, unsigned *height) {
 }
 
 static void deinit_win(void *win) {
-  /* TODO */
+  if (l_handle != NULL && yf_g_varsxcb.conn != NULL) {
+    xcb_void_cookie_t unused;
+    YF_XCB_DESTROY_WINDOW(unused, yf_g_varsxcb.conn, ((L_win *)win)->win_id);
+  }
+
+  yf_list_remove(l_wins, win);
+  free(win);
 }
 
 static int poll_evt(unsigned evt_mask) {
