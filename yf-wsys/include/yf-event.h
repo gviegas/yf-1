@@ -21,16 +21,15 @@ typedef union {
   /* Window. */
 #define YF_EVT_CLOSEWD  0x0001
 #define YF_EVT_RESIZEWD 0x0002
-  void (*close_wd)(YF_window *win, void *data);
-  void (*resize_wd)(YF_window *win, unsigned width, unsigned height,
-      void *data);
+  void (*close_wd)(YF_window win, void *data);
+  void (*resize_wd)(YF_window win, unsigned width, unsigned height, void *data);
 
   /* Keyboard. */
 #define YF_EVT_ENTERKB 0x0010
 #define YF_EVT_LEAVEKB 0x0020
 #define YF_EVT_KEYKB   0x0040
-  void (*enter_kb)(YF_window *win, void *data);
-  void (*leave_kb)(YF_window *win, void *data);
+  void (*enter_kb)(YF_window win, void *data);
+  void (*leave_kb)(YF_window win, void *data);
   void (*key_kb)(int key, int state, unsigned mod_mask, void *data);
 
   /* Pointer. */
@@ -38,8 +37,8 @@ typedef union {
 #define YF_EVT_LEAVEPT  0x0200
 #define YF_EVT_MOTIONPT 0x0400
 #define YF_EVT_BUTTONPT 0x0800
-  void (*enter_pt)(YF_window *win, int x, int y, void *data);
-  void (*leave_pt)(YF_window *win, void *data);
+  void (*enter_pt)(YF_window win, int x, int y, void *data);
+  void (*leave_pt)(YF_window win, void *data);
   void (*motion_pt)(int x, int y, void *data);
   void (*button_pt)(int btn, int state, int x, int y, void *data);
 
