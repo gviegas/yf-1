@@ -12,13 +12,18 @@
 
 /* Type defining a specific window implementation. */
 typedef struct {
-  void *(*init)(unsigned w, unsigned h, const char *title, unsigned creat);
+  /* Implementations return a pointer to their internal data on 'init',
+     which is then provided as parameter for the remaining window functions.
+     The 'wrapper' object is the client interface to this internal data. */
+  void *(*init)(unsigned width, unsigned height, const char *title,
+      unsigned creat_mask, YF_window wrapper);
+
   int (*open)(void *win);
   int (*close)(void *win);
-  int (*resize)(void *win, unsigned w, unsigned h);
+  int (*resize)(void *win, unsigned width, unsigned height);
   int (*toggle)(void *win);
   int (*settitle)(void *win, const char *title);
-  void (*getsize)(void *win, unsigned *w, unsigned *h);
+  void (*getsize)(void *win, unsigned *width, unsigned *height);
   void (*deinit)(void *win);
 } YF_win_imp;
 
