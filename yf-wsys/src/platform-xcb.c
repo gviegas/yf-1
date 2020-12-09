@@ -230,10 +230,10 @@ static YF_list l_wins = NULL;
 
 /* Gets the 'L_win' data for a given xcb window id.
    This assumes that an entry exists in 'l_wins' with the provided id. */
-#define YF_GETWINDATA(data, win_id) do { \
+#define YF_GETWINDATA(data, id) do { \
   assert(l_wins != NULL && yf_list_getlen(l_wins) > 0); \
-  YF_iter it = YF_NILLIT; \
-  do data = yf_list_next(l_wins, &it); while (data->win_id != win_id); \
+  YF_iter it = YF_NILIT; \
+  do data = yf_list_next(l_wins, &it); while ((data)->win_id != (id)); \
   } while (0)
 
 int yf_loadxcb(void) {
@@ -660,7 +660,7 @@ static int poll_evt(unsigned evt_mask) {
           break;
         xcb_key_press_event_t *key_evt = (xcb_key_press_event_t *)event;
 
-        /* TODO: Key code convesion. (= conv(ev->detail - 8)) */
+        /* TODO: Key code conversion. (= conv(ev->detail - 8)) */
         int key = YF_KEY_UNKNOWN;
 
         int state;
@@ -735,27 +735,128 @@ static int poll_evt(unsigned evt_mask) {
       } break;
 
       case XCB_MOTION_NOTIFY: {
+        if (!(mask & YF_EVT_MOTIONPT))
+          break;
+        xcb_motion_notify_event_t *mot_evt = (xcb_motion_notify_event_t *)event;
+
+        int x = mot_evt->event_x;
+        int y = mot_evt->event_y;
+
+        YF_evtfn fn;
+        void *data;
+        yf_getevtfn(YF_EVT_MOTIONPT, &fn, &data);
+        fn.motion_pt(x, y, data);
       } break;
 
       case XCB_ENTER_NOTIFY: {
+        if (!(mask & YF_EVT_ENTERPT))
+          break;
+        xcb_enter_notify_event_t *entr_evt = (xcb_enter_notify_event_t *)event;
+
+        L_win *win;
+        YF_GETWINDATA(win, entr_evt->event);
+
+        int x = entr_evt->event_x;
+        int y = entr_evt->event_y;
+
+        YF_evtfn fn;
+        void *data;
+        yf_getevtfn(YF_EVT_ENTERPT, &fn, &data);
+        /* TODO: Wrapper window. */
+        fn.enter_pt(win/*->wrapper*/, x, y, data);
       } break;
 
       case XCB_LEAVE_NOTIFY: {
+        if (!(mask & YF_EVT_LEAVEPT))
+          break;
+        xcb_leave_notify_event_t *leav_evt = (xcb_leave_notify_event_t *)event;
+
+        L_win *win;
+        YF_GETWINDATA(win, leav_evt->event);
+
+        YF_evtfn fn;
+        void *data;
+        yf_getevtfn(YF_EVT_LEAVEPT, &fn, &data);
+        /* TODO: Wrapper window. */
+        fn.leave_pt(win/*->wrapper*/, data);
       } break;
 
       case XCB_FOCUS_IN: {
+        if (!(mask & YF_EVT_ENTERKB))
+          break;
+        xcb_focus_in_event_t *foc_evt = (xcb_focus_in_event_t *)event;
+
+        L_win *win;
+        YF_GETWINDATA(win, foc_evt->event);
+
+        YF_evtfn fn;
+        void *data;
+        yf_getevtfn(YF_EVT_ENTERKB, &fn, &data);
+        /* TODO: Wrapper window. */
+        fn.enter_kb(win/*->wrapper*/, data);
       } break;
 
       case XCB_FOCUS_OUT: {
+        if (!(mask & YF_EVT_LEAVEKB))
+          break;
+        xcb_focus_out_event_t *foc_evt = (xcb_focus_out_event_t *)event;
+
+        L_win *win;
+        YF_GETWINDATA(win, foc_evt->event);
+
+        YF_evtfn fn;
+        void *data;
+        yf_getevtfn(YF_EVT_LEAVEKB, &fn, &data);
+        /* TODO: Wrapper window. */
+        fn.leave_kb(win/*->wrapper*/, data);
       } break;
 
       case XCB_EXPOSE: {
+        /* TODO */
       } break;
 
       case XCB_CONFIGURE_NOTIFY: {
+        if (!(mask & YF_EVT_RESIZEWD))
+          break;
+        xcb_configure_notify_event_t *conf_evt;
+        conf_evt = (xcb_configure_notify_event_t *)event;
+
+        L_win *win;
+        YF_GETWINDATA(win, conf_evt->window);
+
+        if (win->width == conf_evt->width && win->height == conf_evt->height)
+          break;
+        win->width = conf_evt->width;
+        win->height = conf_evt->height;
+
+        YF_evtfn fn;
+        void *data;
+        yf_getevtfn(YF_EVT_RESIZEWD, &fn, &data);
+        /* TODO: Wrapper window. */
+        fn.resize_wd(win/*->wrapper*/, win->width, win->height, data);
       } break;
 
       case XCB_CLIENT_MESSAGE: {
+        if (!(mask & YF_EVT_CLOSEWD))
+          break;
+        xcb_client_message_event_t *cli_evt;
+        cli_evt = (xcb_client_message_event_t *)event;
+
+        if (cli_evt->type != yf_g_varsxcb.atom.proto ||
+            cli_evt->data.data32[0] != yf_g_varsxcb.atom.del)
+          break;
+
+        L_win *win;
+        YF_GETWINDATA(win, cli_evt->window);
+
+        /* TODO: Is remappable? */
+        win->open = 0;
+
+        YF_evtfn fn;
+        void *data;
+        /* TODO: Wrapper window. */
+        yf_getevtfn(YF_EVT_CLOSEWD, &fn, &data);
+        fn.close_wd(win/*->wrapper*/, data);
       } break;
 
       default:
@@ -764,6 +865,8 @@ static int poll_evt(unsigned evt_mask) {
 
     free(event);
   } while (1);
+
+  return 0;
 }
 
 static void changed_evt(int evt) {
