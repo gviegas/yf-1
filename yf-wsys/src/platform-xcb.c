@@ -734,10 +734,10 @@ static int poll_evt(unsigned evt_mask) {
             btn = YF_BTN_LEFT;
             break;
           case XCB_BUTTON_INDEX_2:
-            btn = YF_BTN_RIGHT;
+            btn = YF_BTN_MIDDLE;
             break;
           case XCB_BUTTON_INDEX_3:
-            btn = YF_BTN_MIDDLE;
+            btn = YF_BTN_RIGHT;
             break;
           case XCB_BUTTON_INDEX_4:
           case XCB_BUTTON_INDEX_5:
