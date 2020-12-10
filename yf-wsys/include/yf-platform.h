@@ -28,7 +28,7 @@ YF_DECLS_BEGIN
 #define YF_PLATFORM_XCB     2
 #define YF_PLATFORM_WIN32   3
 #define YF_PLATFORM_METAL   4
-#define YF_PLATFORM_OTHER   5
+#define YF_PLATFORM_OTHER   32767
 
 /* Gets the platform in use. */
 int yf_getplatform(void);

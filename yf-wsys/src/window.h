@@ -13,7 +13,7 @@
 /* Type defining a specific window implementation. */
 typedef struct {
   /* Implementations return a pointer to their internal data on 'init',
-     which is then provided as parameter for the remaining window functions.
+     which is then provided as parameter when calling other window functions.
      The 'wrapper' object is the client interface to this internal data. */
   void *(*init)(unsigned width, unsigned height, const char *title,
       unsigned creat_mask, YF_window wrapper);
