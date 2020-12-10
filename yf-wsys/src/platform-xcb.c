@@ -230,13 +230,15 @@ typedef struct {
 /* List containing the 'L_win' data of all created windows. */
 static YF_list l_wins = NULL;
 
-/* Gets the 'L_win' data for a given xcb window id.
-   This assumes that an entry exists in 'l_wins' with the provided id. */
+/* Gets the 'L_win' data for a given xcb window ID.
+   If not found, 'data' will contain the null value. */
 #define YF_GETWINDATA(data, id) do { \
   assert(l_wins != NULL && yf_list_getlen(l_wins) > 0); \
   YF_iter it = YF_NILIT; \
-  do data = yf_list_next(l_wins, &it); while ((data)->win_id != (id)); \
-  } while (0)
+  for (;;) { \
+    data = yf_list_next(l_wins, &it); \
+    if ((data) == NULL || (data)->win_id == (id)) break; \
+  }} while (0)
 
 xcb_connection_t *yf_getconnxcb(void) {
   return yf_g_varsxcb.conn;
@@ -782,6 +784,8 @@ static int poll_evt(unsigned evt_mask) {
 
         L_win *win;
         YF_GETWINDATA(win, entr_evt->event);
+        if (win == NULL)
+          break;
 
         int x = entr_evt->event_x;
         int y = entr_evt->event_y;
@@ -799,6 +803,8 @@ static int poll_evt(unsigned evt_mask) {
 
         L_win *win;
         YF_GETWINDATA(win, leav_evt->event);
+        if (win == NULL)
+          break;
 
         YF_evtfn fn;
         void *data;
@@ -813,6 +819,8 @@ static int poll_evt(unsigned evt_mask) {
 
         L_win *win;
         YF_GETWINDATA(win, foc_evt->event);
+        if (win == NULL)
+          break;
 
         YF_evtfn fn;
         void *data;
@@ -827,6 +835,8 @@ static int poll_evt(unsigned evt_mask) {
 
         L_win *win;
         YF_GETWINDATA(win, foc_evt->event);
+        if (win == NULL)
+          break;
 
         YF_evtfn fn;
         void *data;
@@ -846,6 +856,8 @@ static int poll_evt(unsigned evt_mask) {
 
         L_win *win;
         YF_GETWINDATA(win, conf_evt->window);
+        if (win == NULL)
+          break;
 
         if (win->width == conf_evt->width && win->height == conf_evt->height)
           break;
@@ -870,6 +882,8 @@ static int poll_evt(unsigned evt_mask) {
 
         L_win *win;
         YF_GETWINDATA(win, cli_evt->window);
+        if (win == NULL)
+          break;
 
         YF_evtfn fn;
         void *data;
