@@ -871,9 +871,6 @@ static int poll_evt(unsigned evt_mask) {
         L_win *win;
         YF_GETWINDATA(win, cli_evt->window);
 
-        /* TODO: Is remappable? */
-        win->open = 0;
-
         YF_evtfn fn;
         void *data;
         yf_getevtfn(YF_EVT_CLOSEWD, &fn, &data);
