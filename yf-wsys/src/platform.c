@@ -30,15 +30,19 @@ int yf_getplatform(void) {
 
   if (getenv("WAYLAND_DISPLAY") != NULL) {
     /* TODO: Wayland imp. */
-    /*
-    if (yf_loadwayland() == 0)
+/*
+    if (yf_loadwayland() == 0 && atexit(yf_unldwayland) == 0)
       l_plat = YF_PLATFORM_WAYLAND;
-    */
+    else
+      yf_unldwayland();
+*/
     goto x11;
   } else if (getenv("DISPLAY") != NULL) {
     x11:
-    if (yf_loadxcb() == 0)
+    if (yf_loadxcb() == 0 && atexit(yf_unldxcb) == 0)
       l_plat = YF_PLATFORM_XCB;
+    else
+      yf_unldxcb();
   }
 
   return l_plat;
