@@ -238,6 +238,27 @@ static YF_list l_wins = NULL;
   do data = yf_list_next(l_wins, &it); while ((data)->win_id != (id)); \
   } while (0)
 
+xcb_connection_t *yf_getconnxcb(void) {
+  return yf_g_varsxcb.conn;
+}
+
+xcb_visualid_t yf_getvisualxcb(void) {
+  return yf_g_varsxcb.visual;
+}
+
+xcb_window_t yf_getwindowxcb(YF_window win) {
+  assert(win != NULL);
+
+  /* XXX: Consider querying the 'YF_window' for the 'L_win' data instead. */
+  YF_iter it = YF_NILIT;
+  L_win *data;
+  do
+    data = yf_list_next(l_wins, &it);
+  while (data->wrapper != win);
+
+  return data->win_id;
+}
+
 int yf_loadxcb(void) {
   if (l_handle != NULL)
     return 0;
