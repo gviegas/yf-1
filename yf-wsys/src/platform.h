@@ -10,7 +10,4 @@
 
 #include "yf-platform.h"
 
-/* Sets the platform. */
-void yf_setplatform(int platform);
-
 #endif /* YF_PLATFORM_H */

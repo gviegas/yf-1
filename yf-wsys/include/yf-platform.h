@@ -10,6 +10,16 @@
 
 #include <yf/com/yf-defs.h>
 
+#if defined(__linux__)
+/*
+# include <wayland-client-core.h>
+*/
+# include <xcb/xcb.h>
+#else
+/* TODO */
+# error "Invalid platform"
+#endif /* defined(__linux__) */
+
 YF_DECLS_BEGIN
 
 /* Types of platform. */
@@ -22,6 +32,23 @@ YF_DECLS_BEGIN
 
 /* Gets the platform in use. */
 int yf_getplatform(void);
+
+typedef struct YF_window_o *YF_window;
+
+#if defined(__linux__)
+/* Gets the global xcb connection. */
+xcb_connection_t *yf_getconnxcb(void);
+
+/* Gets the global xcb visual ID. */
+xcb_visualid_t yf_getvisualxcb(void);
+
+/* Gets the xcb window ID associated with a given 'YF_window' object. */
+xcb_window_t yf_getwindowxcb(YF_window win);
+
+#else
+/* TODO */
+# error "Invalid platform"
+#endif /* defined(__linux__) */
 
 YF_DECLS_END
 
