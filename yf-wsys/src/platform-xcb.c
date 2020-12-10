@@ -16,6 +16,7 @@
 #include "platform-xcb.h"
 #include "yf-keyboard.h"
 #include "yf-pointer.h"
+#include "keymap.h"
 
 #ifndef YF_APP_ID
 # define YF_APP_ID "unknown.app.id"
@@ -665,8 +666,8 @@ static int poll_evt(unsigned evt_mask) {
           break;
         xcb_key_press_event_t *key_evt = (xcb_key_press_event_t *)event;
 
-        /* TODO: Key code conversion. (= conv(detail - 8)) */
-        int key = YF_KEY_UNKNOWN;
+        unsigned code = key_evt->detail - 8;
+        int key = YF_KEY_FROM(code);
 
         int state;
         if (type == XCB_KEY_PRESS)
