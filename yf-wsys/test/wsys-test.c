@@ -83,8 +83,49 @@ static const struct L_fn l_fns[] = {
 /* Window test. */
 #define YF_TEST_WINDOW "window"
 static int test_window(void) {
-  /* TODO */
-  return -1;
+  YF_window wins[] = {
+    yf_window_init(400, 240, "#1", 0),
+    yf_window_init(240, 400, "#2", 0),
+    yf_window_init(480, 480, "#3", YF_WINCREAT_HIDDEN)
+  };
+  const size_t n = sizeof wins / sizeof wins[0];
+
+  for (size_t i = 0; i < n; ++i) {
+    if (wins[i] == NULL)
+      return -1;
+  }
+
+  yf_sleep(1.0);
+  yf_window_open(wins[2]);
+  yf_sleep(1.0);
+  yf_window_resize(wins[0], 640, 360);
+  yf_sleep(1.0);
+  yf_window_settitle(wins[1], "WIN2");
+  yf_sleep(1.0);
+  yf_window_close(wins[1]);
+  yf_window_close(wins[2]);
+  yf_sleep(1.0);
+  yf_window_settitle(wins[2], "WIN3");
+  yf_window_resize(wins[2], 800, 600);
+  yf_window_open(wins[2]);
+  yf_sleep(1.0);
+
+  unsigned w, h;
+
+  yf_window_getsize(wins[0], &w, &h);
+  if (w != 640 || h != 360)
+    return -1;
+  yf_window_getsize(wins[1], &w, &h);
+  if (w != 240 || h != 400)
+    return -1;
+  yf_window_getsize(wins[2], &w, &h);
+  if (w != 800 || h != 600)
+    return -1;
+
+  for (size_t i = 0; i < n; ++i)
+    yf_window_deinit(wins[i]);
+
+  return 0;
 }
 
 /* Event test. */
