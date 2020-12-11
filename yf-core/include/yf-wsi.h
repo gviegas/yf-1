@@ -32,7 +32,7 @@ unsigned yf_wsi_getlimit(YF_wsi wsi);
 int yf_wsi_getindex(YF_wsi wsi, int nonblocking);
 
 /* Presents a previously acquired image. */
-int yf_wsi_present(YF_wsi, unsigned index);
+int yf_wsi_present(YF_wsi wsi, unsigned index);
 
 /* Deinitializes a wsi. */
 void yf_wsi_deinit(void);
