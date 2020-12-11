@@ -35,7 +35,7 @@ int yf_wsi_getindex(YF_wsi wsi, int nonblocking);
 int yf_wsi_present(YF_wsi wsi, unsigned index);
 
 /* Deinitializes a wsi. */
-void yf_wsi_deinit(void);
+void yf_wsi_deinit(YF_wsi wsi);
 
 YF_DECLS_END
 
