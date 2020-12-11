@@ -116,7 +116,7 @@ void yf_context_deinit(YF_context ctx) {
   vkDestroyInstance(ctx->instance, NULL);
   free(ctx);
 
-  yf_unloadvk();
+  yf_unldvk();
 }
 
 static int init_instance(YF_context ctx) {
