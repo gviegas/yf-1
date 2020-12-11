@@ -15,7 +15,6 @@
 #include <yf/com/yf-error.h>
 
 #include "context.h"
-#include "platform.h"
 #include "cmdpool.h"
 #include "cmdexec.h"
 
@@ -59,8 +58,6 @@ static int set_dev_exts(YF_context ctx);
 
 YF_context yf_context_init(void) {
   if (yf_loadvk() != 0)
-    return NULL;
-  if (yf_platform_init() != 0)
     return NULL;
 
   YF_context ctx = calloc(1, sizeof(YF_context_o));
@@ -119,7 +116,6 @@ void yf_context_deinit(YF_context ctx) {
   vkDestroyInstance(ctx->instance, NULL);
   free(ctx);
 
-  yf_platform_deinit();
   yf_unloadvk();
 }
 
