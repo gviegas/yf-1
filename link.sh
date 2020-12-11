@@ -13,3 +13,8 @@ ln -sr test/test.h $COM_DIR/test/test.h
 WSYS_DIR=yf-wsys
 ln -sr test/test.c $WSYS_DIR/test/test.c
 ln -sr test/test.h $WSYS_DIR/test/test.h
+
+# yf-core
+CORE_DIR=yf-core
+ln -sr test/test.c $CORE_DIR/test/test.c
+ln -sr test/test.h $CORE_DIR/test/test.h
