@@ -26,6 +26,8 @@ typedef struct YF_context_o {
   int graph_queue_i;
   VkQueue comp_queue;
   int comp_queue_i;
+  VkQueue pres_queue;
+  int pres_queue_i;
 
   unsigned inst_version;
   VkPhysicalDeviceProperties dev_prop;

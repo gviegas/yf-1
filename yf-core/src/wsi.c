@@ -27,6 +27,11 @@ YF_wsi yf_wsi_init(YF_context ctx, YF_window win) {
   assert(ctx != NULL);
   assert(win != NULL);
 
+  if (ctx->pres_queue_i < 0) {
+    yf_seterr(YF_ERR_UNSUP, __func__);
+    return NULL;
+  }
+
   /* TODO */
 
   return NULL;
@@ -77,9 +82,9 @@ void yf_wsi_deinit(YF_wsi wsi) {
   }
 }
 
-int yf_canpresent(VkPhysicalDevice phy_dev, int family) {
+int yf_canpresent(VkPhysicalDevice phy_dev, int queue_i) {
   assert(phy_dev != NULL);
-  assert(family > -1);
+  assert(queue_i > -1);
 
   int plat = yf_getplatform();
   VkBool32 r;
@@ -92,7 +97,7 @@ int yf_canpresent(VkPhysicalDevice phy_dev, int family) {
       /* TODO */
       assert(0);
     case YF_PLATFORM_XCB:
-      r = vkGetPhysicalDeviceXcbPresentationSupportKHR(phy_dev, family,
+      r = vkGetPhysicalDeviceXcbPresentationSupportKHR(phy_dev, queue_i,
           yf_getconnxcb(), yf_getvisualxcb());
       break;
     default:
@@ -108,11 +113,11 @@ int yf_canpresent(VkPhysicalDevice phy_dev, int family) {
     yf_seterr(YF_ERR_OTHER, __func__);
     r = VK_FALSE;
   }
-# endif /* defined(VK_USE_PLATFORM_XCB) */
+# endif /* defined(VK_USE_PLATFORM_XCB_KHR) */
 #elif defined(VK_USE_PLATFORM_XCB)
   /* xcb */
   if (plat == YF_PLATFORM_XCB) {
-    r = vkGetPhysicalDeviceXcbPresentaionSupportKHR(phy_dev, family,
+    r = vkGetPhysicalDeviceXcbPresentaionSupportKHR(phy_dev, queue_i,
         yf_getconnxcb(), yf_getvisualxcb());
   } else {
     yf_seterr(YF_ERR_OTHER, __func__);
@@ -121,15 +126,14 @@ int yf_canpresent(VkPhysicalDevice phy_dev, int family) {
 #else
   /* TODO: Check other platforms. */
   r = VK_FALSE;
-#endif /* defined(VK_USE_PLATFORM_WAYLAND) */
+#endif /* defined(VK_USE_PLATFORM_WAYLAND_KHR) */
 
   return r == VK_TRUE;
 }
 
 static int init_surface(YF_wsi wsi) {
   int plat = yf_getplatform();
-  VkInstance inst = wsi->ctx->instance;
-  VkResult res = ~VK_SUCCESS;
+  VkResult res;
 
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
 # if defined(VK_USE_PLATFORM_XCB_KHR)
@@ -146,13 +150,16 @@ static int init_surface(YF_wsi wsi) {
         .connection = yf_getconnxcb(),
         .window = yf_getwindowxcb(wsi->win),
       };
-      res = vkCreateXcbSurfaceKHR(inst, &info, NULL, &wsi->surface);
-      if (res != VK_SUCCESS)
+      res = vkCreateXcbSurfaceKHR(wsi->ctx->instance, &info, NULL,
+          &wsi->surface);
+      if (res != VK_SUCCESS) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
+        return -1;
+      }
     } break;
     default:
       yf_seterr(YF_ERR_OTHER, __func__);
-      res = ~VK_SUCCESS;
+      return -1;
   }
 # else
   /* wayland */
@@ -161,9 +168,9 @@ static int init_surface(YF_wsi wsi) {
     assert(0);
   } else {
     yf_seterr(YF_ERR_OTHER, __func__);
-    res = ~VK_SUCCESS;
+    return -1;
   }
-# endif /* defined(VK_USE_PLATFORM_XCB) */
+# endif /* defined(VK_USE_PLATFORM_XCB_KHR) */
 #elif defined(VK_USE_PLATFORM_XCB)
   /* xcb */
   if (plat == YF_PLATFORM_XCB) {
@@ -175,19 +182,30 @@ static int init_surface(YF_wsi wsi) {
       .window = yf_getwindowxcb(wsi->win),
     };
     res = vkCreateXcbSurfaceKHR(inst, &info, NULL, &wsi->surface);
-    if (res != VK_SUCCESS)
+    if (res != VK_SUCCESS) {
       yf_seterr(YF_ERR_DEVGEN, __func__);
+      return -1;
+    }
   } else {
     yf_seterr(YF_ERR_OTHER, __func__);
-    res = ~VK_SUCCESS;
+    return -1;
   }
 #else
   /* TODO: Other platforms. */
   yf_seterr(YF_ERR_OTHER, __func__);
-  res = ~VK_SUCCESS;
-#endif
+  return -1;
+#endif /* defined(VK_USE_PLATFORM_WAYLAND_KHR) */
 
-  return res == VK_SUCCESS ? 0 : -1;
+  VkBool32 supported;
+
+  res = vkGetPhysicalDeviceSurfaceSupportKHR(wsi->ctx->phy_dev,
+      wsi->ctx->pres_queue_i, wsi->surface, &supported);
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    return -1;
+  }
+
+  return supported == VK_TRUE ? 0 : -1;
 }
 
 static int query_surface(YF_wsi wsi) {

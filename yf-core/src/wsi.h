@@ -15,8 +15,6 @@ typedef struct YF_wsi_o {
   YF_context ctx;
   YF_window win;
 
-  VkQueue queue;
-  int family;
   VkSurfaceKHR surface;
   VkSwapchainKHR swapchain;
   VkSwapchainCreateInfoKHR sc_info;
@@ -30,6 +28,6 @@ typedef struct YF_wsi_o {
 } YF_wsi_o;
 
 /* Checks whether a given physical device supports presentation. */
-int yf_canpresent(VkPhysicalDevice phy_dev, int family);
+int yf_canpresent(VkPhysicalDevice phy_dev, int queue_i);
 
 #endif /* YF_WSI_H */
