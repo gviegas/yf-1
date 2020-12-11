@@ -1,16 +1,13 @@
 /*
  * YF
- * test1.c
+ * test-capab.c
  *
  * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
 
 #include "context.h"
-#include "test.h"
 
 /* Context instance. */
 static YF_context l_ctx = NULL;
@@ -21,7 +18,8 @@ static int print_limits(void);
 /* Prints available features. */
 static int print_features(void);
 
-int yf_test_1(void) {
+/* Called by the main test. */
+int test_capab0(void) {
   int r = -1;
   l_ctx = yf_context_init();
   if (l_ctx != NULL)  {
