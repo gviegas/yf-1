@@ -64,25 +64,64 @@ const YF_image *yf_wsi_getimages(YF_wsi wsi, unsigned *n) {
   assert(wsi != NULL);
   assert(n != NULL);
 
-  /* TODO */
-
-  return NULL;
+  *n = wsi->img_n;
+  return wsi->imgs;
 }
 
 unsigned yf_wsi_getlimit(YF_wsi wsi) {
   assert(wsi != NULL);
-
-  /* TODO */
-
-  return 0;
+  return wsi->acq_limit;
 }
 
 int yf_wsi_getindex(YF_wsi wsi, int nonblocking) {
   assert(wsi != NULL);
 
-  /* TODO */
+  const uint64_t timeout = nonblocking ? 0 : UINT64_MAX;
+  VkSemaphore sem;
+  unsigned sem_i = 0;
+  for (;; ++sem_i) {
+    if (!wsi->imgs_acq[sem_i]) {
+      sem = wsi->imgs_sem[sem_i];
+      break;
+    }
+  }
+  unsigned img_i;
+  VkResult res = vkAcquireNextImageKHR(wsi->ctx->device, wsi->swapchain,
+      timeout, sem, VK_NULL_HANDLE, &img_i);
 
-  return -1;
+  switch (res) {
+    case VK_SUCCESS:
+      if (sem_i != img_i) {
+        VkSemaphore tmp = wsi->imgs_sem[sem_i];
+        wsi->imgs_sem[sem_i] = wsi->imgs_sem[img_i];
+        wsi->imgs_sem[img_i] = tmp;
+      }
+      /* TODO: Set semaphore for waiting on next submission. */
+      wsi->imgs_acq[img_i] = 1;
+      break;
+
+    case VK_TIMEOUT:
+    case VK_NOT_READY:
+      yf_seterr(YF_ERR_INUSE, __func__);
+      return -1;
+
+    case VK_SUBOPTIMAL_KHR:
+    case VK_ERROR_OUT_OF_DATE_KHR:
+      /* TODO: Notify & recreate swapchain. */
+      yf_seterr(YF_ERR_INVWIN, __func__);
+      return -1;
+
+    case VK_ERROR_SURFACE_LOST_KHR:
+      /* TODO: Notify & (try to) recreate surface and swapchain. */
+      yf_seterr(YF_ERR_DEVGEN, __func__);
+      return -1;
+
+    default:
+      yf_seterr(YF_ERR_DEVGEN, __func__);
+      return -1;
+  }
+
+  return img_i;
 }
 
 int yf_wsi_present(YF_wsi wsi, unsigned index) {
