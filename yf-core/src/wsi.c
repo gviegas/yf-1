@@ -40,9 +40,24 @@ YF_wsi yf_wsi_init(YF_context ctx, YF_window win) {
     return NULL;
   }
 
-  /* TODO */
+  YF_wsi wsi = calloc(1, sizeof(YF_wsi_o));
+  if (wsi == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return NULL;
+  }
 
-  return NULL;
+  wsi->ctx = ctx;
+  wsi->win = win;
+
+  if (init_surface(wsi) != 0 ||
+      query_surface(wsi) != 0 ||
+      create_swapchain(wsi) != 0)
+  {
+    yf_wsi_deinit(wsi);
+    return NULL;
+  }
+
+  return wsi;
 }
 
 const YF_image *yf_wsi_getimages(YF_wsi wsi, unsigned *n) {
@@ -442,6 +457,9 @@ static int create_swapchain(YF_wsi wsi) {
       return -1;
     }
   }
+
+  memset(wsi->imgs_acq, 0, img_n * sizeof *wsi->imgs_acq);
+  wsi->acq_limit = 1 + img_n - wsi->min_img_n;
 
   return 0;
 }
