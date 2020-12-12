@@ -319,8 +319,8 @@ static int query_surface(YF_wsi wsi) {
   if (wsi->ctx->graph_queue_i != wsi->ctx->pres_queue_i) {
     queue_is[0] = wsi->ctx->graph_queue_i;
     queue_is[1] = wsi->ctx->pres_queue_i;
-    shar_mode = VK_SHARING_MODE_CONCURRENT;
     queue_i_n = 2;
+    shar_mode = VK_SHARING_MODE_CONCURRENT;
   }
 
   wsi->sc_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -343,8 +343,105 @@ static int query_surface(YF_wsi wsi) {
   wsi->sc_info.oldSwapchain = VK_NULL_HANDLE;
 
   free(fmts);
+  return 0;
 }
 
 static int create_swapchain(YF_wsi wsi) {
-  /* TODO */
+  assert(wsi != NULL);
+  assert(wsi->surface != VK_NULL_HANDLE);
+
+  VkResult res;
+
+  if (wsi->swapchain != VK_NULL_HANDLE) {
+    wsi->sc_info.oldSwapchain = wsi->swapchain;
+    wsi->swapchain = VK_NULL_HANDLE;
+    res = vkCreateSwapchainKHR(wsi->ctx->device, &wsi->sc_info, NULL,
+        &wsi->swapchain);
+    vkDestroySwapchainKHR(wsi->ctx->device, wsi->sc_info.oldSwapchain, NULL);
+  } else {
+    res = vkCreateSwapchainKHR(wsi->ctx->device, &wsi->sc_info, NULL,
+        &wsi->swapchain);
+  }
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    return -1;
+  }
+
+  VkImage *imgs;
+  unsigned img_n;
+  res = vkGetSwapchainImagesKHR(wsi->ctx->device, wsi->swapchain, &img_n, NULL);
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    return -1;
+  }
+  imgs = malloc(img_n * sizeof *imgs);
+  if (imgs == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  res = vkGetSwapchainImagesKHR(wsi->ctx->device, wsi->swapchain, &img_n, imgs);
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    free(imgs);
+    return -1;
+  }
+
+  if (wsi->imgs != NULL) {
+    for (size_t i = 0; i < wsi->img_n; ++i) {
+      yf_image_deinit(wsi->imgs[i]);
+      wsi->imgs[i] = NULL;
+      vkDestroySemaphore(wsi->ctx->device, wsi->imgs_sem[i], NULL);
+      wsi->imgs_sem[i] = VK_NULL_HANDLE;
+    }
+  }
+
+  void *tmp_img = realloc(wsi->imgs, img_n * sizeof *wsi->imgs);
+  void *tmp_acq = realloc(wsi->imgs_acq, img_n * sizeof *wsi->imgs_acq);
+  void *tmp_sem = realloc(wsi->imgs_sem, img_n * sizeof *wsi->imgs_sem);
+
+  if (tmp_img == NULL || tmp_acq == NULL || tmp_sem == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    free(imgs);
+    return -1;
+  }
+
+  wsi->imgs = tmp_img;
+  wsi->imgs_acq = tmp_acq;
+  wsi->imgs_sem = tmp_sem;
+  wsi->img_n = img_n;
+
+  YF_dim3 dim = {
+    wsi->sc_info.imageExtent.width,
+    wsi->sc_info.imageExtent.height,
+    1
+  };
+  for (size_t i = 0; i < img_n; ++i) {
+    wsi->imgs[i] = yf_image_wrap(wsi->ctx, imgs[i], wsi->sc_info.imageFormat,
+        VK_IMAGE_TYPE_2D, dim, 1, 1, VK_SAMPLE_COUNT_1_BIT,
+        VK_IMAGE_LAYOUT_UNDEFINED);
+    if (wsi->imgs[i] == NULL) {
+      memset(wsi->imgs+i, 0, (img_n - i) * sizeof *wsi->imgs);
+      memset(wsi->imgs_sem, VK_NULL_HANDLE, img_n * sizeof *wsi->imgs_sem);
+      free(imgs);
+      return -1;
+    }
+  }
+
+  free(imgs);
+
+  VkSemaphoreCreateInfo sem_info = {
+    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+    .pNext = NULL,
+    .flags = 0
+  };
+  for (size_t i = 0; i < img_n; ++i) {
+    res = vkCreateSemaphore(wsi->ctx->device, &sem_info, NULL, wsi->imgs_sem+i);
+    if (res != VK_SUCCESS) {
+      size_t sz = (img_n - 1) * sizeof *wsi->imgs_sem;
+      memset(wsi->imgs_sem+i, VK_NULL_HANDLE, sz);
+      return -1;
+    }
+  }
+
+  return 0;
 }
