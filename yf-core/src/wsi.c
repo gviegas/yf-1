@@ -100,7 +100,16 @@ int yf_wsi_present(YF_wsi wsi, unsigned index) {
 
 void yf_wsi_deinit(YF_wsi wsi) {
   if (wsi != NULL) {
-    /* TODO */
+    /* TODO: If any image was acquired: submit, present & wait completion. */
+    vkDestroySwapchainKHR(wsi->ctx->device, wsi->swapchain, NULL);
+    vkDestroySurfaceKHR(wsi->ctx->instance, wsi->surface, NULL);
+    for (size_t i = 0; i < wsi->img_n; ++i) {
+      yf_image_deinit(wsi->imgs[i]);
+      vkDestroySemaphore(wsi->ctx->device, wsi->imgs_sem[i], NULL);
+    }
+    free(wsi->imgs);
+    free(wsi->imgs_acq);
+    free(wsi->imgs_sem);
     free(wsi);
   }
 }
