@@ -13,6 +13,14 @@
 
 #include "wsi.h"
 #include "context.h"
+#include "image.h"
+
+#undef YF_MIN
+#undef YF_MAX
+#undef YF_CLAMP
+#define YF_MIN(a, b) (a) < (b) ? (a) : (b)
+#define YF_MAX(a, b) (a) > (b) ? (a) : (b)
+#define YF_CLAMP(x, a, b) YF_MAX(a, YF_MIN(b, x))
 
 /* Initializes surface. */
 static int init_surface(YF_wsi wsi);
@@ -132,6 +140,9 @@ int yf_canpresent(VkPhysicalDevice phy_dev, int queue_i) {
 }
 
 static int init_surface(YF_wsi wsi) {
+  assert(wsi != NULL);
+  assert(wsi->surface == VK_NULL_HANDLE);
+
   int plat = yf_getplatform();
   VkResult res;
 
@@ -209,7 +220,129 @@ static int init_surface(YF_wsi wsi) {
 }
 
 static int query_surface(YF_wsi wsi) {
-  /* TODO */
+  assert(wsi != NULL);
+  assert(wsi->surface != VK_NULL_HANDLE);
+
+  VkResult res;
+
+  VkSurfaceCapabilitiesKHR capab;
+  res = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(wsi->ctx->phy_dev,
+      wsi->surface, &capab);
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    return -1;
+  }
+
+  /* TODO: Make this configurable. */
+  if (capab.maxImageCount == 0)
+    wsi->img_n = YF_MAX(capab.minImageCount, 3);
+  else
+    wsi->img_n = capab.minImageCount;
+
+  wsi->min_img_n = capab.minImageCount;
+
+  VkCompositeAlphaFlagBitsKHR comp_alpha = VK_COMPOSITE_ALPHA_INHERIT_BIT_KHR;
+  if (!(comp_alpha & capab.supportedCompositeAlpha)) {
+    comp_alpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    if (!(comp_alpha & capab.supportedCompositeAlpha)) {
+      yf_seterr(YF_ERR_UNSUP, __func__);
+      return -1;
+    }
+  }
+
+  unsigned width, height;
+  yf_window_getsize(wsi->win, &width, &height);
+  if (capab.currentExtent.width == 0xffffffff) {
+    width = YF_CLAMP(width, capab.minImageExtent.width,
+        capab.maxImageExtent.width);
+    height = YF_CLAMP(height, capab.minImageExtent.height,
+        capab.maxImageExtent.height);
+  }
+
+  VkSurfaceFormatKHR *fmts;
+  unsigned fmt_n;
+  res = vkGetPhysicalDeviceSurfaceFormatsKHR(wsi->ctx->phy_dev, wsi->surface,
+      &fmt_n, NULL);
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    return -1;
+  }
+  fmts = malloc(fmt_n * sizeof *fmts);
+  if (fmts == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  res = vkGetPhysicalDeviceSurfaceFormatsKHR(wsi->ctx->phy_dev, wsi->surface,
+      &fmt_n, fmts);
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    free(fmts);
+    return -1;
+  }
+
+  const VkFormat pref_fmts[] = {
+    VK_FORMAT_B8G8R8A8_SRGB,
+    VK_FORMAT_B8G8R8A8_UNORM
+  };
+  int fmt_i = -1;
+  for (size_t i = 0; i < (sizeof pref_fmts / sizeof pref_fmts[0]); ++i) {
+    for (size_t j = 0; j < fmt_n; ++j) {
+      if (pref_fmts[i] == fmts[j].format &&
+          fmts[j].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+      {
+        fmt_i = j;
+        break;
+      }
+    }
+  }
+  if (fmt_i == -1) {
+    for (size_t i = 0; i < fmt_n; ++i) {
+      int pixfmt;
+      YF_PIXFMT_TO(fmts[i].format, pixfmt);
+      if (pixfmt != YF_PIXFMT_UNDEF) {
+        fmt_i = i;
+        break;
+      }
+    }
+  }
+  if (fmt_i == -1) {
+    yf_seterr(YF_ERR_UNSUP, __func__);
+    free(fmts);
+    return -1;
+  }
+
+  VkPresentModeKHR pres_mode = VK_PRESENT_MODE_FIFO_KHR;
+
+  unsigned queue_is[2];
+  unsigned queue_i_n = 0;
+  VkSharingMode shar_mode = VK_SHARING_MODE_EXCLUSIVE;
+  if (wsi->ctx->graph_queue_i != wsi->ctx->pres_queue_i) {
+    queue_is[0] = wsi->ctx->graph_queue_i;
+    queue_is[1] = wsi->ctx->pres_queue_i;
+    shar_mode = VK_SHARING_MODE_CONCURRENT;
+    queue_i_n = 2;
+  }
+
+  wsi->sc_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+  wsi->sc_info.pNext = NULL;
+  wsi->sc_info.flags = 0;
+  wsi->sc_info.surface = wsi->surface;
+  wsi->sc_info.minImageCount = wsi->img_n;
+  wsi->sc_info.imageFormat = fmts[fmt_i].format;
+  wsi->sc_info.imageColorSpace = fmts[fmt_i].colorSpace;
+  wsi->sc_info.imageExtent = (VkExtent2D){width, height};
+  wsi->sc_info.imageArrayLayers = 1;
+  wsi->sc_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+  wsi->sc_info.imageSharingMode = shar_mode;
+  wsi->sc_info.queueFamilyIndexCount = queue_i_n;
+  wsi->sc_info.pQueueFamilyIndices = queue_is;
+  wsi->sc_info.preTransform = capab.currentTransform;
+  wsi->sc_info.compositeAlpha = comp_alpha;
+  wsi->sc_info.presentMode = pres_mode;
+  wsi->sc_info.clipped = VK_TRUE;
+  wsi->sc_info.oldSwapchain = VK_NULL_HANDLE;
+
+  free(fmts);
 }
 
 static int create_swapchain(YF_wsi wsi) {
