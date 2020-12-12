@@ -14,6 +14,8 @@
 #include "wsi.h"
 #include "context.h"
 #include "image.h"
+#include "cmdpool.h"
+#include "cmdbuf.h"
 
 #undef YF_MIN
 #undef YF_MAX
@@ -127,14 +129,76 @@ int yf_wsi_getindex(YF_wsi wsi, int nonblocking) {
 int yf_wsi_present(YF_wsi wsi, unsigned index) {
   assert(wsi != NULL);
 
-  if (index >= wsi->img_n) {
+  if (index >= wsi->img_n || !wsi->imgs_acq[index]) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
   }
 
-  /* TODO */
+  const YF_cmdpres *pres;
+  pres = yf_cmdpool_getprio(wsi->ctx, YF_CMDB_GRAPH, NULL, NULL);
+  if (pres == NULL)
+    /* TODO: May need to release the image somehow. */
+    return -1;
 
-  return -1;
+  VkImageMemoryBarrier barrier = {
+    .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+    .pNext = NULL,
+    .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
+    .dstAccessMask = 0,
+    .oldLayout = wsi->imgs[index]->layout,
+    .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+    .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+    .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+    .image = wsi->imgs[index]->image,
+    .subresourceRange = {
+      .aspectMask = wsi->imgs[index]->aspect,
+      .baseMipLevel = 0,
+      .levelCount = 1,
+      .baseArrayLayer = 0,
+      .layerCount = 1
+    }
+  };
+
+  vkCmdPipelineBarrier(pres->pool_res, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+      VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, NULL, 0, NULL, 1, &barrier);
+
+  VkPresentInfoKHR info = {
+    .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+    .pNext = NULL,
+    .waitSemaphoreCount = 0,
+    .pWaitSemaphores = NULL,
+    .swapchainCount = 1,
+    .pSwapchains = &wsi->swapchain,
+    .pImageIndices = &index,
+    .pResults = NULL
+  };
+
+  VkResult res = vkQueuePresentKHR(wsi->ctx->pres_queue, &info);
+
+  wsi->imgs[index]->layout = barrier.newLayout;
+  wsi->imgs_acq[index] = 0;
+
+  switch (res) {
+    case VK_SUCCESS:
+      break;
+
+    case VK_SUBOPTIMAL_KHR:
+    case VK_ERROR_OUT_OF_DATE_KHR:
+      /* TODO: Notify & recreate swapchain. */
+      yf_seterr(YF_ERR_INVWIN, __func__);
+      return -1;
+
+    case VK_ERROR_SURFACE_LOST_KHR:
+      /* TODO: Notify & (try to) recreate surface and swapchain. */
+      yf_seterr(YF_ERR_DEVGEN, __func__);
+      return -1;
+
+    default:
+      yf_seterr(YF_ERR_DEVGEN, __func__);
+      return -1;
+  }
+
+  return 0;
 }
 
 void yf_wsi_deinit(YF_wsi wsi) {
