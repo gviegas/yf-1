@@ -20,7 +20,7 @@
 # define YF_LIBVK "vulkan-1.dll"
 #else
 # error "Invalid platform"
-#endif
+#endif /* defined(__linux__) */
 
 /* Shared object handle. */
 static void *l_handle = NULL;
@@ -39,14 +39,14 @@ int yf_loadvk(void) {
   *(void **)(&vkGetInstanceProcAddr) = dlsym(l_handle, "vkGetInstanceProcAddr");
   if (vkGetInstanceProcAddr == NULL) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
-    yf_unloadvk();
+    yf_unldvk();
     return -1;
   }
 
   return 0;
 }
 
-void yf_unloadvk(void) {
+void yf_unldvk(void) {
   if (l_handle != NULL) {
     dlclose(l_handle);
     l_handle = NULL;
@@ -88,6 +88,21 @@ int yf_setiprocvk(VkInstance instance) {
     YF_IPROCVK(instance, vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
     YF_IPROCVK(instance, vkGetPhysicalDeviceSurfaceFormatsKHR);
     YF_IPROCVK(instance, vkGetPhysicalDeviceSurfacePresentModesKHR);
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+    YF_IPROCVK(instance, vkCreateWaylandSurfaceKHR); /* VK_KHR_wayland_surface */
+    YF_IPROCVK(instance, vkGetPhysicalDeviceWaylandPresentationSupportKHR); /* VK_KHR_wayland_surface */
+#endif
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+    YF_IPROCVK(instance, vkCreateWin32SurfaceKHR); /* VK_KHR_win32_surface */
+    YF_IPROCVK(instance, vkGetPhysicalDeviceWin32PresentationSupportKHR); /* VK_KHR_win32_surface */
+#endif
+#ifdef VK_USE_PLATFORM_XCB_KHR
+    YF_IPROCVK(instance, vkCreateXcbSurfaceKHR); /* VK_KHR_xcb_surface */
+    YF_IPROCVK(instance, vkGetPhysicalDeviceXcbPresentationSupportKHR); /* VK_KHR_xcb_surface */
+#endif
+#ifdef VK_USE_PLATFORM_METAL_EXT
+    YF_IPROCVK(instance, vkCreateMetalSurfaceEXT); /* VK_EXT_metal_surface */
+#endif
     YF_IPROCVK(instance, vkGetDeviceProcAddr);
   }
 
@@ -243,6 +258,21 @@ YF_DEFVK(vkGetPhysicalDeviceSurfaceSupportKHR); /* VK_KHR_surface */
 YF_DEFVK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR); /* VK_KHR_surface */
 YF_DEFVK(vkGetPhysicalDeviceSurfaceFormatsKHR); /* VK_KHR_surface */
 YF_DEFVK(vkGetPhysicalDeviceSurfacePresentModesKHR); /* VK_KHR_surface */
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+YF_DEFVK(vkCreateWaylandSurfaceKHR); /* VK_KHR_wayland_surface */
+YF_DEFVK(vkGetPhysicalDeviceWaylandPresentationSupportKHR); /* VK_KHR_wayland_surface */
+#endif
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+YF_DEFVK(vkCreateWin32SurfaceKHR); /* VK_KHR_win32_surface */
+YF_DEFVK(vkGetPhysicalDeviceWin32PresentationSupportKHR); /* VK_KHR_win32_surface */
+#endif
+#ifdef VK_USE_PLATFORM_XCB_KHR
+YF_DEFVK(vkCreateXcbSurfaceKHR); /* VK_KHR_xcb_surface */
+YF_DEFVK(vkGetPhysicalDeviceXcbPresentationSupportKHR); /* VK_KHR_xcb_surface */
+#endif
+#ifdef VK_USE_PLATFORM_METAL_EXT
+YF_DEFVK(vkCreateMetalSurfaceEXT); /* VK_EXT_metal_surface */
+#endif
 
 /*
  * Device-level proc.

@@ -8,6 +8,8 @@
 #ifndef YF_YF_IMAGE_H
 #define YF_YF_IMAGE_H
 
+#include <stddef.h>
+
 #include "yf-common.h"
 #include "yf-context.h"
 

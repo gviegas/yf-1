@@ -8,6 +8,16 @@
 #ifndef YF_VK_H
 #define YF_VK_H
 
+#if defined(__linux__)
+# define VK_USE_PLATFORM_WAYLAND_KHR
+# define VK_USE_PLATFORM_XCB_KHR
+#elif defined(__APPLE__)
+# define VK_USE_PLATFORM_METAL_EXT
+#elif defined(_WIN32)
+# define VK_USE_PLATFORM_WIN32_KHR
+#else
+# error "Invalid platform"
+#endif /* defined(__linux__) */
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
@@ -15,7 +25,7 @@
 int yf_loadvk(void);
 
 /* Unloads vk lib. */
-void yf_unloadvk(void);
+void yf_unldvk(void);
 
 /* Sets instance-level function pointers. */
 int yf_setiprocvk(VkInstance instance);
@@ -62,6 +72,21 @@ YF_DECLVK(vkGetPhysicalDeviceSurfaceSupportKHR); /* VK_KHR_surface */
 YF_DECLVK(vkGetPhysicalDeviceSurfaceCapabilitiesKHR); /* VK_KHR_surface */
 YF_DECLVK(vkGetPhysicalDeviceSurfaceFormatsKHR); /* VK_KHR_surface */
 YF_DECLVK(vkGetPhysicalDeviceSurfacePresentModesKHR); /* VK_KHR_surface */
+#ifdef VK_USE_PLATFORM_WAYLAND_KHR
+YF_DECLVK(vkCreateWaylandSurfaceKHR); /* VK_KHR_wayland_surface */
+YF_DECLVK(vkGetPhysicalDeviceWaylandPresentationSupportKHR); /* VK_KHR_wayland_surface */
+#endif
+#ifdef VK_USE_PLATFORM_WIN32_KHR
+YF_DECLVK(vkCreateWin32SurfaceKHR); /* VK_KHR_win32_surface */
+YF_DECLVK(vkGetPhysicalDeviceWin32PresentationSupportKHR); /* VK_KHR_win32_surface */
+#endif
+#ifdef VK_USE_PLATFORM_XCB_KHR
+YF_DECLVK(vkCreateXcbSurfaceKHR); /* VK_KHR_xcb_surface */
+YF_DECLVK(vkGetPhysicalDeviceXcbPresentationSupportKHR); /* VK_KHR_xcb_surface */
+#endif
+#ifdef VK_USE_PLATFORM_METAL_EXT
+YF_DECLVK(vkCreateMetalSurfaceEXT); /* VK_EXT_metal_surface */
+#endif
 
 /*
  * Device-level proc.

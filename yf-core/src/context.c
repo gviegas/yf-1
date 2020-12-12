@@ -17,6 +17,7 @@
 #include "context.h"
 #include "cmdpool.h"
 #include "cmdexec.h"
+#include "wsi.h"
 
 #ifndef YF_MIN
 # define YF_MIN(a, b) (a < b ? a : b)
@@ -116,7 +117,7 @@ void yf_context_deinit(YF_context ctx) {
   vkDestroyInstance(ctx->instance, NULL);
   free(ctx);
 
-  yf_unloadvk();
+  yf_unldvk();
 }
 
 static int init_instance(YF_context ctx) {
@@ -227,6 +228,7 @@ static int init_device(YF_context ctx) {
   }
   free(qf_props);
   if (ctx->graph_queue_i == -1 && ctx->comp_queue_i == -1) {
+    /* TODO: Try again with a different device (if available). */
     yf_seterr(YF_ERR_DEVGEN, __func__);
     return -1;
   }
@@ -291,6 +293,19 @@ static int init_device(YF_context ctx) {
       vkGetDeviceQueue(ctx->device, ctx->graph_queue_i, 0, &ctx->graph_queue);
     if (have_comp)
       vkGetDeviceQueue(ctx->device, ctx->comp_queue_i, 0, &ctx->comp_queue);
+  }
+
+  /* TODO: Improve the previous queries for a better chance at finding
+     a presentation-capable queue, which may be a different one altogether. */
+  ctx->pres_queue_i = -1;
+  if (have_graph) {
+    if (yf_canpresent(ctx->phy_dev, ctx->graph_queue_i)) {
+      ctx->pres_queue = ctx->graph_queue;
+      ctx->pres_queue_i = ctx->graph_queue_i;
+    } else if (have_comp && yf_canpresent(ctx->phy_dev, ctx->comp_queue_i)) {
+      ctx->pres_queue = ctx->comp_queue;
+      ctx->pres_queue_i = ctx->comp_queue_i;
+    }
   }
 
   vkGetPhysicalDeviceMemoryProperties(ctx->phy_dev, &ctx->mem_prop);
