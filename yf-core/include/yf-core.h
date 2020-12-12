@@ -22,5 +22,6 @@
 #include "yf-sampler.h"
 #include "yf-stage.h"
 #include "yf-vinput.h"
+#include "yf-wsi.h"
 
 #endif /* YF_YF_CORE_H */
