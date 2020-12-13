@@ -27,6 +27,17 @@ static int test_capab(void) {
   return r;
 }
 
+/* Draw test. */
+#define YF_TEST_DRAW "draw"
+int test_draw0(void);
+static int test_draw(void) {
+  YF_TEST_SUBT;
+  puts("");
+  int r = test_draw0();
+  puts("");
+  return r;
+}
+
 /* Test function. */
 static int test(int argc, char *argv[]) {
   assert(argc > 0);
@@ -36,8 +47,18 @@ static int test(int argc, char *argv[]) {
   if (strcmp(argv[0], YF_TEST_CAPAB) == 0) {
     test_n = 1;
     results = test_capab() == 0;
+  } else if (strcmp(argv[0], YF_TEST_DRAW) == 0) {
+    test_n = 1;
+    results = test_draw() == 0;
+  } else if (strcmp(argv[0], YF_TEST_ALL) == 0) {
+    int (*const tests[])(void) = {test_capab, test_draw};
+    test_n = sizeof tests / sizeof tests[0];
+    results = 0;
+    for (size_t i = 0; i < test_n; ++i)
+      results += tests[i]();
   } else {
-    fprintf(stderr, "! No test named '%s'. Try:\n%s\n", argv[0], YF_TEST_CAPAB);
+    fprintf(stderr, "! No test named '%s'. Try:\n%s\n%s\n%s\n", argv[0],
+        YF_TEST_CAPAB, YF_TEST_DRAW, YF_TEST_ALL);
     return -1;
   }
 
