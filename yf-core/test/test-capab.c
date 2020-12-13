@@ -13,24 +13,6 @@
 static YF_context l_ctx = NULL;
 
 /* Prints device limits. */
-static int print_limits(void);
-
-/* Prints available features. */
-static int print_features(void);
-
-/* Called by the main test. */
-int test_capab0(void) {
-  int r = -1;
-  l_ctx = yf_context_init();
-  if (l_ctx != NULL)  {
-    YF_CTX_PRINT(l_ctx);
-    if ((r = print_limits()) != 0) {}
-    else if ((r = print_features()) != 0) {}
-    yf_context_deinit(l_ctx);
-  }
-  return r;
-}
-
 static int print_limits() {
   VkPhysicalDeviceLimits *lim = &l_ctx->dev_prop.limits;
   puts("=limits=");
@@ -197,6 +179,7 @@ static int print_limits() {
   return 0;
 }
 
+/* Prints available features. */
 static int print_features(void) {
   VkPhysicalDeviceFeatures feat;
   vkGetPhysicalDeviceFeatures(l_ctx->phy_dev, &feat);
@@ -270,4 +253,17 @@ static int print_features(void) {
   printf("inheritedQueries: %s\n", av[feat.inheritedQueries]);
   puts("----");
   return 0;
+}
+
+/* Called by the main test. */
+int yf_test_capab(void) {
+  int r = -1;
+  l_ctx = yf_context_init();
+  if (l_ctx != NULL)  {
+    YF_CTX_PRINT(l_ctx);
+    if ((r = print_limits()) != 0) { }
+    else if ((r = print_features()) != 0) { }
+    yf_context_deinit(l_ctx);
+  }
+  return r;
 }

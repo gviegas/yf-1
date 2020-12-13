@@ -13,8 +13,6 @@
 #include <yf/wsys/yf-event.h>
 #include <yf/wsys/yf-keyboard.h>
 
-#include "test.h"
-
 #include "yf-core.h"
 
 #define YF_WINW 484
@@ -269,7 +267,7 @@ static int run(void) {
 
     before = now;
 
-    printf("[time] %lds %ldns (%.0f fps)\n", now.tv_sec, now.tv_nsec,
+    printf("\n[time] %lds %ldns (%.0f fps)", now.tv_sec, now.tv_nsec,
         (double)999999999 / (double)dt);
   } while (l_vars.key == YF_KEY_UNKNOWN);
 
@@ -278,7 +276,8 @@ static int run(void) {
   return 0;
 }
 
-int test_draw0(void) {
+/* Called by the main test. */
+int yf_test_draw(void) {
   init();
   return run();
 }
