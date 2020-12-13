@@ -144,7 +144,7 @@ int yf_view_render(YF_view view) {
     return -1;
   }
 
-  int next = yf_wsi_getindex(view->wsi, 0);
+  int next = yf_wsi_next(view->wsi, 0);
   if (next < 0) {
     switch (yf_geterr()) {
       case YF_ERR_INVWIN:
