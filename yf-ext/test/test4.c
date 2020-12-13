@@ -14,11 +14,9 @@
 #include "yf-ext.h"
 #include "test.h"
 
-#undef YF_WINWID
-#undef YF_WINDHEI
-#undef YF_FPS
-#define YF_WINWID 960
-#define YF_WINHEI 600
+#define YF_WINW 960
+#define YF_WINH 600
+#define YF_WINT "Model"
 #define YF_FPS 60
 
 #ifndef YF_MIN
@@ -113,11 +111,6 @@ static const YF_mat4 l_xforms[] = {
   }
 };
 
-/* Pointer motion callback. */
-static void on_motion(YF_coord2 coord, void *data) {
-  printf("motion: %.3f, %.3f (%s)\n", coord.x, coord.y, (char *)data);
-}
-
 /* Tests model rendering. */
 static int test_mdl(int instanced);
 
@@ -130,8 +123,9 @@ int yf_test_4(void) {
 
 int test_mdl(int instanced) {
   // Create view
-  YF_dim2 dim = {YF_WINWID, YF_WINHEI};
-  l_vars.view = yf_view_init(dim, "Test 4");
+  YF_window win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
+  assert(win);
+  l_vars.view = yf_view_init(win);
   assert(l_vars.view != NULL);
 
   // Create scene
@@ -197,9 +191,6 @@ int test_mdl(int instanced) {
 
   // Set which scene to render
   yf_view_setscene(l_vars.view, l_vars.scn[0]);
-
-  // Install event handler
-  yf_view_onmotion(on_motion, "ok");
 
   // Start the view's rendering loop
   if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
