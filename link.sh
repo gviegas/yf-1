@@ -18,3 +18,8 @@ ln -sr test/test.h $WSYS_DIR/test/test.h
 CORE_DIR=yf-core
 ln -sr test/test.c $CORE_DIR/test/test.c
 ln -sr test/test.h $CORE_DIR/test/test.h
+
+# yf-ext
+EXT_DIR=yf-ext
+ln -sr test/test.c $EXT_DIR/test/test.c
+ln -sr test/test.h $EXT_DIR/test/test.h
