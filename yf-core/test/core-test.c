@@ -18,22 +18,22 @@
 
 /* Info test. */
 #define YF_TEST_CAPAB "capab"
-int test_capab0(void);
+int yf_test_capab(void);
 static int test_capab(void) {
   YF_TEST_SUBT;
   puts("");
-  int r = test_capab0();
+  int r = yf_test_capab();
   puts("");
   return r;
 }
 
 /* Draw test. */
 #define YF_TEST_DRAW "draw"
-int test_draw0(void);
+int yf_test_draw(void);
 static int test_draw(void) {
   YF_TEST_SUBT;
   puts("");
-  int r = test_draw0();
+  int r = yf_test_draw();
   puts("");
   return r;
 }
@@ -55,7 +55,7 @@ static int test(int argc, char *argv[]) {
     test_n = sizeof tests / sizeof tests[0];
     results = 0;
     for (size_t i = 0; i < test_n; ++i)
-      results += tests[i]();
+      results += tests[i]() == 0;
   } else {
     fprintf(stderr, "! No test named '%s'. Try:\n%s\n%s\n%s\n", argv[0],
         YF_TEST_CAPAB, YF_TEST_DRAW, YF_TEST_ALL);

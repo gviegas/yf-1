@@ -69,7 +69,7 @@ static int test(int argc, char *argv[]) {
     test_n = sizeof tests / sizeof tests[0];
     results = 0;
     for (size_t i = 0; i < test_n; ++i)
-      results += tests[i]();
+      results += tests[i]() == 0;
   } else {
     fprintf(stderr, "! No test named '%s'. Try:\n%s\n%s\n%s\n%s\n", argv[0],
         YF_TEST_NODE, YF_TEST_VECMAT, YF_TEST_MODEL, YF_TEST_ALL);
