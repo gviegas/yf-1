@@ -219,7 +219,7 @@ static void update(void) {
   static const YF_viewport vp = {0.0f, 0.0f, YF_WINW, YF_WINH, 0.0f, 1.0f};
   static const YF_rect sciss = {{0, 0}, {YF_WINW, YF_WINH}};
 
-  int tgt_i = yf_wsi_getindex(l_vars.wsi, 0);
+  int tgt_i = yf_wsi_next(l_vars.wsi, 0);
   assert(tgt_i >= 0);
 
   YF_cmdbuf cb = yf_cmdbuf_begin(l_vars.ctx, YF_CMDB_GRAPH);

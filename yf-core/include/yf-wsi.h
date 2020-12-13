@@ -29,7 +29,7 @@ const YF_image *yf_wsi_getimages(YF_wsi wsi, unsigned *n);
 unsigned yf_wsi_getlimit(YF_wsi wsi);
 
 /* Gets the index of the next writable image. */
-int yf_wsi_getindex(YF_wsi wsi, int nonblocking);
+int yf_wsi_next(YF_wsi wsi, int nonblocking);
 
 /* Presents a previously acquired image. */
 int yf_wsi_present(YF_wsi wsi, unsigned index);

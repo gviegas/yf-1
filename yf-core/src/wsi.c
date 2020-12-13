@@ -75,7 +75,7 @@ unsigned yf_wsi_getlimit(YF_wsi wsi) {
   return wsi->acq_limit;
 }
 
-int yf_wsi_getindex(YF_wsi wsi, int nonblocking) {
+int yf_wsi_next(YF_wsi wsi, int nonblocking) {
   assert(wsi != NULL);
 
   const uint64_t timeout = nonblocking ? 0 : UINT64_MAX;
