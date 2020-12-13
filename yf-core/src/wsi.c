@@ -145,6 +145,7 @@ int yf_wsi_present(YF_wsi wsi, unsigned index) {
     .pNext = NULL,
     .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
     .dstAccessMask = 0,
+    /* TODO: Make sure that the image is keeping the layout up to date. */
     .oldLayout = wsi->imgs[index]->layout,
     .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
     .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
@@ -528,6 +529,9 @@ static int create_swapchain(YF_wsi wsi) {
 
   if (tmp_img == NULL || tmp_acq == NULL || tmp_sem == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
+    free(tmp_img);
+    free(tmp_acq);
+    free(tmp_sem);
     free(imgs);
     return -1;
   }
