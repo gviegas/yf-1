@@ -12,7 +12,7 @@
 
 /* Iteration callback for node. */
 static int do_each_node(YF_node node, void *arg) {
-  int r = (int)arg;
+  int r = (long)arg;
   printf("@%p (%d)\n", (void *)node, r);
   return r;
 }

@@ -10,8 +10,6 @@
 #include <time.h>
 #include <assert.h>
 
-#include <yf/core/yf-core.h>
-
 #include "yf-ext.h"
 
 #define YF_WINW 960
@@ -147,6 +145,7 @@ static void update(double elapsed_time) {
 int yf_test_model(void) {
   srand(time(NULL));
   const int instanced = rand() & 1;
+  printf("## %s rendering ##\n\n", instanced ? "Instanced" : "Non-instanced");
 
   /* Create view */
   l_vars.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
