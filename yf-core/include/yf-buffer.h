@@ -10,7 +10,8 @@
 
 #include <stddef.h>
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
+
 #include "yf-context.h"
 
 YF_DECLS_BEGIN

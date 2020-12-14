@@ -8,9 +8,9 @@
 #ifndef YF_YF_WSI_H
 #define YF_YF_WSI_H
 
+#include <yf/com/yf-defs.h>
 #include <yf/wsys/yf-window.h>
 
-#include "yf-common.h"
 #include "yf-context.h"
 #include "yf-image.h"
 

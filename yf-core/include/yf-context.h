@@ -8,7 +8,7 @@
 #ifndef YF_YF_CONTEXT_HH
 #define YF_YF_CONTEXT_HH
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
 
 YF_DECLS_BEGIN
 

@@ -8,7 +8,8 @@
 #ifndef YF_YF_CSTATE_H
 #define YF_YF_CSTATE_H
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
+
 #include "yf-stage.h"
 #include "yf-dtable.h"
 
