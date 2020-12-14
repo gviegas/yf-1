@@ -8,7 +8,8 @@
 #ifndef YF_YF_LABEL_H
 #define YF_YF_LABEL_H
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
+
 #include "yf-node.h"
 #include "yf-matrix.h"
 #include "yf-mesh.h"

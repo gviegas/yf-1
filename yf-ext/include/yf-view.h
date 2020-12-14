@@ -8,9 +8,9 @@
 #ifndef YF_YF_VIEW_H
 #define YF_YF_VIEW_H
 
+#include <yf/com/yf-defs.h>
 #include <yf/wsys/yf-window.h>
 
-#include "yf-common.h"
 #include "yf-scene.h"
 
 YF_DECLS_BEGIN

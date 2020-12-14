@@ -8,7 +8,9 @@
 #ifndef YF_YF_MATRIX_H
 #define YF_YF_MATRIX_H
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
+#include <yf/com/yf-types.h>
+
 #include "yf-vector.h"
 
 YF_DECLS_BEGIN

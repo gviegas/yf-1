@@ -15,9 +15,6 @@
 
 #include "filetype-otf.h"
 
-/* TODO */
-#include "yf-common.h"
-
 #ifdef _DEFAULT_SOURCE
 #include <endian.h>
 #else
@@ -1611,6 +1608,7 @@ static int fill_str(
 
 
 ////////////////
+typedef struct { float x, y; } YF_coord2;
 
 YF_coord2 *trace_glyph(char c, uint16_t *coord_n) {
   assert(c >= l_fm.first_code && c-l_fm.first_code < l_fm.entry_n);

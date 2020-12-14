@@ -8,7 +8,7 @@
 #ifndef YF_YF_MESH_H
 #define YF_YF_MESH_H
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
 
 YF_DECLS_BEGIN
 
