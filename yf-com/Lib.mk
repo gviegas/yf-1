@@ -41,7 +41,9 @@ LD_LIBS := -lm
 LD_FLAGS := -iquote $(INCLUDE_DIR) -iquote $(SRC_DIR)
 
 PP := $(CC) -E
-PP_FLAGS := -D YF_COM
+#PP_FLAGS := -D YF_COM
+# XXX: Enabling debug flag here for now.
+PP_FLAGS := -D YF_COM -D YF_DEBUG
 
 all:
 
