@@ -8,7 +8,8 @@
 #ifndef YF_YF_CAMERA_H
 #define YF_YF_CAMERA_H
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
+
 #include "yf-matrix.h"
 
 YF_DECLS_BEGIN

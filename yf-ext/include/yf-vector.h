@@ -8,7 +8,8 @@
 #ifndef YF_YF_VECTOR_H
 #define YF_YF_VECTOR_H
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
+#include <yf/com/yf-types.h>
 
 YF_DECLS_BEGIN
 

@@ -8,7 +8,7 @@
 #ifndef YF_YF_TEXTURE_H
 #define YF_YF_TEXTURE_H
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
 
 YF_DECLS_BEGIN
 
