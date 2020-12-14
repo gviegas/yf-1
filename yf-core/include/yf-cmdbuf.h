@@ -8,7 +8,8 @@
 #ifndef YF_YF_CMDBUF_H
 #define YF_YF_CMDBUF_H
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
+
 #include "yf-gstate.h"
 #include "yf-cstate.h"
 #include "yf-buffer.h"

@@ -8,7 +8,8 @@
 #ifndef YF_YF_DTABLE_H
 #define YF_YF_DTABLE_H
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
+
 #include "yf-context.h"
 #include "yf-buffer.h"
 #include "yf-image.h"

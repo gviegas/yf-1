@@ -11,7 +11,6 @@
 /* Core interface. */
 #include "yf-buffer.h"
 #include "yf-cmdbuf.h"
-#include "yf-common.h"
 #include "yf-context.h"
 #include "yf-cstate.h"
 #include "yf-dtable.h"

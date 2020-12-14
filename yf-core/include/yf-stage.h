@@ -8,7 +8,8 @@
 #ifndef YF_YF_STAGE_H
 #define YF_YF_STAGE_H
 
-#include "yf-common.h"
+#include <yf/com/yf-defs.h>
+
 #include "yf-context.h"
 
 YF_DECLS_BEGIN
