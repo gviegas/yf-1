@@ -17,13 +17,19 @@
 
 YF_DECLS_BEGIN
 
-/* Opaque type defining formatted multidimensional data. */
+/**
+ * Opaque type defining formatted multidimensional data.
+ */
 typedef struct YF_image_o *YF_image;
 
-/* Undefined pixel format. */
+/**
+ * Undefined pixel format.
+ */
 #define YF_PIXFMT_UNDEF 0
 
-/* Color formats - normalized, unsigned. */
+/**
+ * Color formats - normalized, unsigned.
+ */
 #define YF_PIXFMT_R8UNORM     16
 #define YF_PIXFMT_RG8UNORM    17
 #define YF_PIXFMT_RGB8UNORM   18
@@ -35,7 +41,9 @@ typedef struct YF_image_o *YF_image;
 #define YF_PIXFMT_RGB16UNORM  24
 #define YF_PIXFMT_RGBA16UNORM 25
 
-/* Color formats - sRGB. */
+/**
+ * Color formats - sRGB.
+ */
 #define YF_PIXFMT_R8SRGB    48
 #define YF_PIXFMT_RG8SRGB   49
 #define YF_PIXFMT_RGB8SRGB  50
@@ -43,7 +51,9 @@ typedef struct YF_image_o *YF_image;
 #define YF_PIXFMT_BGR8SRGB  52
 #define YF_PIXFMT_BGRA8SRGB 53
 
-/* Color formats - integer, signed. */
+/**
+ * Color formats - integer, signed.
+ */
 #define YF_PIXFMT_R8INT     80
 #define YF_PIXFMT_RG8INT    81
 #define YF_PIXFMT_RGB8INT   82
@@ -59,7 +69,9 @@ typedef struct YF_image_o *YF_image;
 #define YF_PIXFMT_RGB32INT  92
 #define YF_PIXFMT_RGBA32INT 93
 
-/* Color formats - integer, unsigned. */
+/**
+ * Color formats - integer, unsigned.
+ */
 #define YF_PIXFMT_R8UINT     112
 #define YF_PIXFMT_RG8UINT    113
 #define YF_PIXFMT_RGB8UINT   114
@@ -75,7 +87,9 @@ typedef struct YF_image_o *YF_image;
 #define YF_PIXFMT_RGB32UINT  124
 #define YF_PIXFMT_RGBA32UINT 125
 
-/* Color formats - floating-point. */
+/**
+ * Color formats - floating-point.
+ */
 #define YF_PIXFMT_R16FLOAT    144
 #define YF_PIXFMT_RG16FLOAT   145
 #define YF_PIXFMT_RGB16FLOAT  146
@@ -85,38 +99,68 @@ typedef struct YF_image_o *YF_image;
 #define YF_PIXFMT_RGB32FLOAT  150
 #define YF_PIXFMT_RGBA32FLOAT 151
 
-/* Depth & stencil formats. */
+/**
+ * Depth & stencil formats.
+ */
 #define YF_PIXFMT_D16UNORM       784
 #define YF_PIXFMT_S8UINT         785
 #define YF_PIXFMT_D16UNORMS8UINT 786
 #define YF_PIXFMT_D24UNORMS8UINT 787
 
-/* Initializes a new image. */
-YF_image yf_image_init(
-  YF_context ctx,
-  int pixfmt,
-  YF_dim3 dim,
-  unsigned layers,
-  unsigned levels,
-  unsigned samples);
+/**
+ * Initializes a new image.
+ *
+ * @param ctx: The context.
+ * @param pixfmt: The 'YF_PIXFMT' value representing the pixel format.
+ * @param dim: The size of the image.
+ * @param layers: The number of array layers.
+ * @param layers: The number of mip levels.
+ * @param layers: The sample count.
+ * @return: On success, returns a new image. Otherwise, 'NULL' is returned and
+ *  the global error is set to indicate the cause.
+ */
+YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
+    unsigned layers, unsigned levels, unsigned samples);
 
-/* Copies local data to an image. */
+/**
+ * Copies local data to an image.
+ *
+ * @param img: The image.
+ * @param layers: The destination layers.
+ * @param data: The source data.
+ * @param size: The number of bytes to copy.
+ * @return: On success, returns zero. Otherwise, 'NULL' is returned and the
+ *  global error is set to indicate the cause.
+ */
 int yf_image_copy(YF_image img, YF_slice layers, const void *data, size_t size);
 
-/* Gets values of an image. */
-void yf_image_getval(
-  YF_image img,
-  int *pixfmt,
-  YF_dim3 *dim,
-  unsigned *layers,
-  unsigned *levels,
-  unsigned *samples);
+/**
+ * Gets values of an image.
+ *
+ * @param img: The image.
+ * @param pixfmt: The destination for the pixel format value. Can be 'NULL'.
+ * @param dim: The destination for the image size value. Can be 'NULL'.
+ * @param layers: The destination for the array layers value. Can be 'NULL'.
+ * @param levels: The destination for the mip levels value. Can be 'NULL'.
+ * @param samples: The destination for the sample count value. Can be 'NULL'.
+ */
+void yf_image_getval(YF_image img, int *pixfmt, YF_dim3 *dim,
+    unsigned *layers, unsigned *levels, unsigned *samples);
 
-/* Deinitializes an image. */
+/**
+ * Deinitializes an image.
+ *
+ * @param img: The image to deinitialize. Can be 'NULL'.
+ */
 void yf_image_deinit(YF_image img);
 
-/* Computes the number of bytes necessary to store a single pixel of a
-   given 'YF_PIXFMT'. */
+/**
+ * Computes the number of bytes necessary to store a single pixel of a
+ * given 'YF_PIXFMT'.
+ *
+ * @param pf: The pixel format.
+ * @param sz: The destination for the computed size.
+ */
 #define YF_PIXFMT_SIZEOF(pf, sz) do { \
   switch (pf) { \
     case YF_PIXFMT_R8UNORM: \

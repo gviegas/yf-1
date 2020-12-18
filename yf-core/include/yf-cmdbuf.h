@@ -40,7 +40,7 @@ typedef struct YF_cmdbuf_o *YF_cmdbuf;
  * type, otherwise 'yf_cmdbuf_end()' will fail.
  *
  * @param ctx: The context.
- * @param cmdb: A 'YF_CMDB*' value indicating the command buffer type.
+ * @param cmdb: The 'YF_CMDB' value indicating the command buffer type.
  * @return: On success, returns a command buffer for encoding. Otherwise,
  *  'NULL' is returned and the global error is set to indicate the cause.
  */
