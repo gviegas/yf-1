@@ -44,24 +44,14 @@ typedef struct {
    The caller is responsible for the explicity destruction of the image handle
    and its backing memory. A 'YF_image' created this way must be deinitialized
    before the image handle is destroyed. */
-YF_image yf_image_wrap(
-  YF_context ctx,
-  VkImage image,
-  VkFormat format,
-  VkImageType type,
-  YF_dim3 dim,
-  unsigned layers,
-  unsigned levels,
-  VkSampleCountFlagBits samples,
-  VkImageLayout layout);
+YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
+    VkImageType type, YF_dim3 dim, unsigned layers, unsigned levels,
+    VkSampleCountFlagBits samples, VkImageLayout layout);
 
 /* Gets an image view.
    Every call to this function must be matched by a call to 'ungetiview'. */
-int yf_image_getiview(
-  YF_image img,
-  YF_slice layers,
-  YF_slice levels,
-  YF_iview *iview);
+int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
+    YF_iview *iview);
 
 /* Ungets an image view.
    This function must be called when the iview is not needed anymore. */

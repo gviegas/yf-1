@@ -33,17 +33,12 @@ void yf_cmdpool_reset(YF_context ctx, YF_cmdpres *pres);
 /* Gets the priority command pool resource for a given context.
    If there is no resource in use, one supporting the given 'cmdb' value
    is created and put in the recording state. */
-const YF_cmdpres *yf_cmdpool_getprio(
-  YF_context ctx,
-  int cmdb,
-  void (*callb)(int res, void *arg),
-  void *arg);
+const YF_cmdpres *yf_cmdpool_getprio(YF_context ctx, int cmdb,
+    void (*callb)(int res, void *data), void *data);
 
 /* Checks which priority resources have been used and are pending execution. */
-void yf_cmdpool_checkprio(
-  YF_context ctx,
-  const YF_cmdpres **pres_list,
-  unsigned *pres_n);
+void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdpres **pres_list,
+    unsigned *pres_n);
 
 /* Notifies that a pending priority resource did execute. */
 void yf_cmdpool_notifyprio(YF_context ctx, int result);

@@ -8,7 +8,7 @@
 #ifndef YF_YF_CORE_H
 #define YF_YF_CORE_H
 
-/*
+/**
  * Core interface.
  */
 #include "yf-buffer.h"
