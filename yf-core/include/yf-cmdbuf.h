@@ -53,7 +53,7 @@ YF_cmdbuf yf_cmdbuf_begin(YF_context ctx, int cmdb);
  * any further, no matter the outcome.
  *
  * @param cmdb: The command buffer to end.
- * @return: On success, returns '0'. Otherwise, a non-zero value is returned
+ * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
 int yf_cmdbuf_end(YF_cmdbuf cmdb);
@@ -64,7 +64,7 @@ int yf_cmdbuf_end(YF_cmdbuf cmdb);
  * Resources are once again available for use after this function completes.
  *
  * @param ctx: The context that owns the command buffers to execute.
- * @return: On success, returns '0'. Otherwise, a non-zero value is returned
+ * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
 int yf_cmdbuf_exec(YF_context ctx);
