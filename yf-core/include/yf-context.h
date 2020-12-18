@@ -24,8 +24,8 @@ typedef struct YF_context_o *YF_context;
  *
  * Multiple contexts may not be supported by the implementation.
  *
- * @return: On success, returns a new context object. Otherwise, 'NULL' is
- *  returned and the global error is set to indicate the cause.
+ * @return: On success, returns a new context. Otherwise, 'NULL' is returned
+ *  and the global error is set to indicate the cause.
  */
 YF_context yf_context_init(void);
 

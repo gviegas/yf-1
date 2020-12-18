@@ -25,8 +25,8 @@ typedef struct YF_buffer_o *YF_buffer;
  * Initializes a new buffer.
  *
  * @param size: The size of the buffer to allocate.
- * @return: On success, returns the created buffer. Otherwise, 'NULL' is
- *  returned and the global error is set to indicate the cause.
+ * @return: On success, returns a new buffer. Otherwise, 'NULL' is returned
+ *  and the global error is set to indicate the cause.
  */
 YF_buffer yf_buffer_init(YF_context ctx, size_t size);
 
