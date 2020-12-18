@@ -120,7 +120,7 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
 /**
  * Deinitializes a descriptor table.
  *
- * @param dtb: The dtable to deinitialize.
+ * @param dtb: The dtable to deinitialize. Can be 'NULL'.
  */
 void yf_dtable_deinit(YF_dtable dtb);
 
