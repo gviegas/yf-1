@@ -27,7 +27,7 @@ YF_DECLS_BEGIN
  */
 typedef struct YF_cmdbuf_o *YF_cmdbuf;
 
-/*
+/**
  * Command buffer types.
  */
 #define YF_CMDB_GRAPH 0
