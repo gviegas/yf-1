@@ -15,23 +15,44 @@
 
 YF_DECLS_BEGIN
 
-/* Opaque type defining a compute state. */
+/**
+ * Opaque type defining a compute state.
+ */
 typedef struct YF_cstate_o *YF_cstate;
 
-/* Type defining a compute state configuration. */
+/**
+ * Type defining a compute state configuration.
+ */
 typedef struct {
   YF_stage stg;
   YF_dtable *dtbs;
   unsigned dtb_n;
 } YF_cconf;
 
-/* Initializes a new compute state. */
+/**
+ * Initializes a new compute state.
+ *
+ * @param ctx: The context.
+ * @param conf: The configuration to use.
+ * @return: On success, returns a new state. Otherwise, 'NULL' is returned
+ *  and the global error is set to indicate the cause.
+ */
 YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf);
 
-/* Gets the compute state's dtable for the given 'index'. */
+/**
+ * Gets the compute state's dtable for the given index.
+ *
+ * @param cst: The state.
+ * @param index: The index of the table to retrieve.
+ * @return: The dtable.
+ */
 YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index);
 
-/* Deinitializes a compute state. */
+/**
+ * Deinitializes a compute state.
+ *
+ * param cst: The state to deinitialize. Can be 'NULL'.
+ */
 void yf_cstate_deinit(YF_cstate cst);
 
 YF_DECLS_END

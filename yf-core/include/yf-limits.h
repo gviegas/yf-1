@@ -17,7 +17,9 @@
 
 YF_DECLS_BEGIN
 
-/* Limits. */
+/**
+ * Limits.
+ */
 typedef struct YF_limits {
   struct {
     size_t obj_max;
@@ -75,7 +77,12 @@ typedef struct YF_limits {
   } cmdbuf;
 } YF_limits;
 
-/* Gets the limits of a given context. */
+/**
+ * Gets the limits of a given context.
+ *
+ * @param ctx: The context.
+ * @return: The limits for the context.
+ */
 const YF_limits *yf_getlimits(YF_context ctx);
 
 YF_DECLS_END
