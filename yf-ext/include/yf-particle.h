@@ -17,10 +17,14 @@
 
 YF_DECLS_BEGIN
 
-/* Opaque type defining a particle system. */
+/**
+ * Opaque type defining a particle system.
+ */
 typedef struct YF_particle_o *YF_particle;
 
-/* Type defining particle system parameters. */
+/**
+ * Type defining particle system parameters.
+ */
 typedef struct {
   struct {
     YF_vec3 norm;
@@ -45,31 +49,76 @@ typedef struct {
   } velocity;
 } YF_psys;
 
-/* Initializes a new particle system. */
+/**
+ * Initializes a new particle system.
+ *
+ * @param count: The particle count.
+ * @return: On success, returns a new particle system. Otherwise, 'NULL' is
+ *  returned and the global error is set to indicate the cause.
+ */
 YF_particle yf_particle_init(unsigned count);
 
-/* Gets the node of a particle system. */
+/**
+ * Gets the node of a particle system.
+ *
+ * @param part: The particle system.
+ * @return: The particle system's node.
+ */
 YF_node yf_particle_getnode(YF_particle part);
 
-/* Gets the transformation matrix of a particle system. */
+/**
+ * Gets the transformation matrix of a particle system.
+ *
+ * @param part: The particle system.
+ * @return: The particle system's transformation matrix.
+ */
 YF_mat4 *yf_particle_getxform(YF_particle part);
 
-/* Gets the parameters of a particle system. */
+/**
+ * Gets the parameters of a particle system.
+ *
+ * @param part: The particle system.
+ * @return: The particle system's parameters.
+ */
 YF_psys *yf_particle_getsys(YF_particle part);
 
-/* Gets the mesh of a particle system. */
+/**
+ * Gets the mesh of a particle system.
+ *
+ * @param part: The particle system.
+ * @return: The mesh used by the particle system.
+ */
 YF_mesh yf_particle_getmesh(YF_particle part);
 
-/* Gets the texture of a particle system. */
+/**
+ * Gets the texture of a particle system.
+ *
+ * @param part: The particle system.
+ * @return: The texture used by the particle system, or 'NULL' if none is set.
+ */
 YF_texture yf_particle_gettex(YF_particle part);
 
-/* Sets the texture for a particle system. */
+/**
+ * Sets the texture for a particle system.
+ *
+ * @param part: The particle system.
+ * @param tex: The texture to set. Can be 'NULL'.
+ */
 void yf_particle_settex(YF_particle part, YF_texture tex);
 
-/* Simulates a particle system. */
+/**
+ * Simulates a particle system.
+ *
+ * @param part: The particle system.
+ * @param tm: The time to advance the simulation.
+ */
 void yf_particle_simulate(YF_particle part, double tm);
 
-/* Deinitializes a particle system. */
+/**
+ * Deinitializes a particle system.
+ *
+ * @param part: The particle system to deinitialize. Can be 'NULL'.
+ */
 void yf_particle_deinit(YF_particle part);
 
 YF_DECLS_END
