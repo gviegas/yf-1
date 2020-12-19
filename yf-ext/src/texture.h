@@ -5,7 +5,6 @@
  * Copyright © 2020 Gustavo C. Viegas.
  */
 
-
 #ifndef YF_TEXTURE_H
 #define YF_TEXTURE_H
 
@@ -21,12 +20,8 @@ typedef struct {
 } YF_texdt;
 
 /* Copies image data from a texture to a dtable resource. */
-int yf_texture_copyres(
-  YF_texture tex,
-  YF_dtable dtb,
-  unsigned alloc_i,
-  unsigned binding,
-  unsigned element);
+int yf_texture_copyres(YF_texture tex, YF_dtable dtb, unsigned alloc_i,
+    unsigned binding, unsigned element);
 
 #ifdef YF_DEBUG
 # define YF_TEXDT_PRINT(dt_p) do { \
