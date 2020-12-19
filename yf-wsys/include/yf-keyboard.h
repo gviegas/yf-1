@@ -8,7 +8,9 @@
 #ifndef YF_YF_KEYBOARD_H
 #define YF_YF_KEYBOARD_H
 
-/* Key codes. */
+/**
+ * Key codes.
+ */
 #define YF_KEY_UNKNOWN    0
 #define YF_KEY_GRAVE      1
 #define YF_KEY_1          2
@@ -127,13 +129,17 @@
 #define YF_KEY_F23        115
 #define YF_KEY_F24        116
 
-/* Key modifiers. */
+/**
+ * Key modifiers.
+ */
 #define YF_KEYMOD_CAPSLOCK 0x01
 #define YF_KEYMOD_SHIFT    0x02
 #define YF_KEYMOD_CTRL     0x04
 #define YF_KEYMOD_ALT      0x08
 
-/* Key states. */
+/**
+ * Key states.
+ */
 #define YF_KEYSTATE_RELEASED 0
 #define YF_KEYSTATE_PRESSED  1
 

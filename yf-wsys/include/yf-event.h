@@ -14,7 +14,9 @@ YF_DECLS_BEGIN
 
 typedef struct YF_window_o *YF_window;
 
-/* Type defining event handlers. */
+/**
+ * Type defining event handlers.
+ */
 typedef union {
 #define YF_EVT_NONE 0
 
@@ -46,17 +48,41 @@ typedef union {
 #define YF_EVT_ANY   ~0
 } YF_evtfn;
 
-/* Polls for events.
-   Events not present in 'evt_mask' or with no handler set will be ignored. */
+/**
+ * Polls for events.
+ *
+ * Events not present in 'evt_mask' or with no handler set will be ignored.
+ *
+ * @param evt_mask: A mask of 'YF_EVT' values indicating the events of interest.
+ * @return: On success, returns zero. Otherwise, a non-zero value is returned
+ *  and the global error is set to indicate the cause.
+ */
 int yf_pollevt(unsigned evt_mask);
 
-/* Sets an event handler. */
+/**
+ * Sets an event handler.
+ *
+ * @param evt: The 'YF_EVT' value indicating the event type.
+ * @param fn: The function to set. It must match the provided 'evt' type.
+ * @param data: The generic data to pass on 'fn' calls. Can be 'NULL'.
+ */
 void yf_setevtfn(int evt, YF_evtfn fn, void *data);
 
-/* Gets an event handler. */
+/**
+ * Gets an event handler.
+ *
+ * @param evt: The 'YF_EVT' value indicating the event to get.
+ * @param fn: The destination for the event handler.
+ * @param data: The destination for the generic data argument.
+ */
 void yf_getevtfn(int evt, YF_evtfn *fn, void **data);
 
-/* Gets a mask of 'YF_EVT' bits indicating which handlers are set. */
+/**
+ * Gets a mask of 'YF_EVT' bits indicating which handlers are set.
+ *
+ * @return: A mask of 'YF_EVT' values indicating which events have a non-null
+ *  handler set.
+ */
 unsigned yf_getevtmask(void);
 
 YF_DECLS_END
