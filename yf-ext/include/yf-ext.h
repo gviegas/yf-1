@@ -8,7 +8,9 @@
 #ifndef YF_YF_EXT_H
 #define YF_YF_EXT_H
 
-/* EXT interface. */
+/**
+ * EXT interface.
+ */
 #include "yf-camera.h"
 #include "yf-filetype.h"
 #include "yf-font.h"

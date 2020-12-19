@@ -17,31 +17,72 @@
 
 YF_DECLS_BEGIN
 
-/* Opaque type defining a drawable model. */
+/**
+ * Opaque type defining a drawable model.
+ */
 typedef struct YF_model_o *YF_model;
 
-/* Initializes a new model. */
+/**
+ * Initializes a new model.
+ *
+ * @return: On success, returns a new model. Otherwise, 'NULL' is returned
+ *  and the global error is set to indicate the cause.
+ */
 YF_model yf_model_init(void);
 
-/* Gets the node of a model. */
+/**
+ * Gets the node of a model.
+ *
+ * @param mdl: The model.
+ * @return: The model's node.
+ */
 YF_node yf_model_getnode(YF_model mdl);
 
-/* Gets the transformation matrix of a model. */
+/**
+ * Gets the transformation matrix of a model.
+ *
+ * @param mdl: The model.
+ * @return: The model's transformation matrix.
+ */
 YF_mat4 *yf_model_getxform(YF_model mdl);
 
-/* Gets the mesh of a model. */
+/**
+ * Gets the mesh of a model.
+ *
+ * @param mdl: The model.
+ * @return: The mesh used by the model, or 'NULL' if none is set.
+ */
 YF_mesh yf_model_getmesh(YF_model mdl);
 
-/* Sets the mesh for a model. */
+/**
+ * Sets the mesh for a model.
+ *
+ * @param mdl: The model.
+ * @param mesh: The mesh to set. Can be 'NULL'.
+ */
 void yf_model_setmesh(YF_model mdl, YF_mesh mesh);
 
-/* Gets the texture of a model. */
+/**
+ * Gets the texture of a model.
+ *
+ * @param mdl: The model.
+ * @return: The texture used by the model, or 'NULL' if none is set.
+ */
 YF_texture yf_model_gettex(YF_model mdl);
 
-/* Sets the texture for a model. */
+/**
+ * Sets the texture for a model.
+ *
+ * @param mdl: The model.
+ * @param tex: The texture to set. Can be 'NULL'.
+ */
 void yf_model_settex(YF_model mdl, YF_texture tex);
 
-/* Deinitializes a model. */
+/**
+ * Deinitializes a model.
+ *
+ * @param mdl: The model to deinitialize. Can be 'NULL'.
+ */
 void yf_model_deinit(YF_model mdl);
 
 YF_DECLS_END

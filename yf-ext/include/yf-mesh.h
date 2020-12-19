@@ -12,13 +12,27 @@
 
 YF_DECLS_BEGIN
 
-/* Opaque type defining the mesh data. */
+/**
+ * Opaque type defining the mesh data.
+ */
 typedef struct YF_mesh_o *YF_mesh;
 
-/* Initializes a new mesh. */
+/**
+ * Initializes a new mesh.
+ *
+ * @param filetype: The 'YF_FILETYPE' value indicating the format of the mesh
+ *  file.
+ * @param pathname: The pathname of the mesh file.
+ * @return: On success, returns a new mesh. Otherwise, 'NULL' is returned and
+ *  the global error is set to indicate the cause.
+ */
 YF_mesh yf_mesh_init(int filetype, const char *pathname);
 
-/* Deinitializes a mesh. */
+/**
+ * Deinitializes a mesh.
+ *
+ * @param mesh: The mesh to deinitialize. Can be 'NULL'.
+ */
 void yf_mesh_deinit(YF_mesh mesh);
 
 YF_DECLS_END
