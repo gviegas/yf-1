@@ -17,19 +17,42 @@
 
 YF_DECLS_BEGIN
 
-/* Opaque type defining a drawable text label. */
+/* TODO */
+
+/**
+ * Opaque type defining a drawable text label.
+ */
 typedef struct YF_label_o *YF_label;
 
-/* Initializes a new label. */
+/**
+ * Initializes a new label.
+ *
+ * @return: On success, returns a new label. Otherwise, 'NULL' is returned
+ *  and the global error is set to indicate the cause.
+ */
 YF_label yf_label_init(void);
 
-/* Gets the node of a label. */
+/**
+ * Gets the node of a label.
+ *
+ * @param labl: The label.
+ * @return: The label's node.
+ */
 YF_node yf_label_getnode(YF_label labl);
 
-/* Gets the transformation matrix of a label. */
+/**
+ * Gets the transformation matrix of a label.
+ *
+ * @param labl: The label.
+ * @return: The label's transformation matrix.
+ */
 YF_mat4 *yf_label_getxform(YF_label labl);
 
-/* Deinitializes a label. */
+/**
+ * Deinitializes a label.
+ *
+ * @param labl: The label to deinitialize. Can be 'NULL'.
+ */
 void yf_label_deinit(YF_label labl);
 
 YF_DECLS_END
