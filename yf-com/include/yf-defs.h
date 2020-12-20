@@ -8,7 +8,9 @@
 #ifndef YF_DEFS_H
 #define YF_DEFS_H
 
-/* Linkage macros. */
+/**
+ * Linkage macros.
+ */
 #ifdef __cplusplus
 # define YF_DECLS_BEGIN extern "C" {
 # define YF_DECLS_END }
@@ -17,7 +19,9 @@
 # define YF_DECLS_END
 #endif
 
-/* Compilation attributes. */
+/**
+ * Compilation attributes.
+ */
 #ifndef YF_UNUSED
 # ifdef __GNUC__
 #  define YF_UNUSED __attribute__ ((unused))
@@ -26,7 +30,9 @@
 # endif
 #endif
 
-/* Versioning utilities. */
+/**
+ * Versioning utilities.
+ */
 #define YF_VERSION_MAKE(major, minor, patch) ( \
   (((major) << 20) & 0xfff00000) | \
   (((minor) << 10) & 0x000ffc00) | \
