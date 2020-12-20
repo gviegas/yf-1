@@ -12,11 +12,21 @@
 
 YF_DECLS_BEGIN
 
-/* Type defining a generic comparison function. */
+/**
+ * Type defining a generic comparison function.
+ */
 typedef int (*YF_cmpfn)(const void *, const void *);
 
-/* Compares the values of two pointers.
-   This is the default comparison function, performed on the pointers. */
+/**
+ * Compares the values of two pointers.
+ *
+ * This is the default comparison function, which compares the pointers
+ * themselves.
+ *
+ * @param ptr1: The first pointer.
+ * @param ptr2: The second pointer.
+ * @return: The result of subtracting the second pointer from the first.
+ */
 int yf_cmp(const void *ptr1, const void *ptr2);
 
 YF_DECLS_END

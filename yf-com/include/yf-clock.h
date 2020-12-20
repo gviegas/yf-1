@@ -12,11 +12,21 @@
 
 YF_DECLS_BEGIN
 
-/* Gets the elapsed time, in seconds, relative to some unspecified point
-   in the past. */
+/**
+ * Gets the elapsed time relative to some unspecified point in the past.
+ *
+ * Values returned by subsequent calls to 'yf_gettime' can be used to
+ * calculate elapsed time. The precision is implementation-dependent.
+ *
+ * @return: The elapsed time, in seconds.
+ */
 double yf_gettime(void);
 
-/* Suspends execution for a given interval, in seconds. */
+/**
+ * Suspends execution of the calling thread.
+ *
+ * @param seconds: The interval to sleep for, in seconds.
+ */
 void yf_sleep(double seconds);
 
 YF_DECLS_END

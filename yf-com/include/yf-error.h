@@ -12,19 +12,38 @@
 
 YF_DECLS_BEGIN
 
-/* Sets the error code variable. */
+/**
+ * Sets the error code variable.
+ *
+ * @param err: The 'YF_ERR' value to set.
+ * @param info: Custom info. Can be 'NULL'.
+ */
 void yf_seterr(int err, const char *info);
 
-/* Gets the last error code. */
+/**
+ * Gets the last error code.
+ *
+ * @return: The last 'YF_ERR' value that was set.
+ */
 int yf_geterr(void);
 
-/* Gets the last error info. */
+/**
+ * Gets the last error info.
+ *
+ * TODO: Make constant.
+ *
+ * @return: The last info string that was set.
+ */
 char *yf_geterrinfo(void);
 
-/* Prints the last error. */
+/**
+ * Prints the last error.
+ */
 void yf_printerr(void);
 
-/* Error codes. */
+/**
+ * Error codes.
+ */
 #define YF_ERR_UNKNOWN 1
 #define YF_ERR_NOMEM   2
 #define YF_ERR_INVARG  3
