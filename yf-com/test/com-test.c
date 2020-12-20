@@ -231,6 +231,42 @@ static int test_list(void) {
   if (yf_list_contains(ls, &d))
     return -1;
 
+  yf_list_insertat(ls, NULL, &a);
+  if (yf_list_getlen(ls) != 1)
+    return -1;
+  yf_list_insertat(ls, NULL, &b);
+  yf_list_insertat(ls, NULL, &c);
+  yf_list_insertat(ls, NULL, &d);
+  if (yf_list_getlen(ls) != 4)
+    return -1;
+
+  printf("\n(list beg) ");
+  yf_list_each(ls, list_cb, NULL);
+  puts("(list end)");
+
+  yf_list_clear(ls);
+
+  it = YF_NILIT;
+  yf_list_insertat(ls, &it, &a);
+  if (yf_list_getlen(ls) != 1)
+    return -1;
+  yf_list_insertat(ls, &it, &b);
+  yf_list_insertat(ls, &it, &c);
+  yf_list_insertat(ls, &it, &d);
+  if (yf_list_getlen(ls) != 4)
+    return -1;
+
+  printf("(list beg) ");
+  yf_list_each(ls, list_cb, NULL);
+  puts("(list end)");
+
+  if (YF_IT_ISNIL(it))
+    return -1;
+  if (yf_list_next(ls, &it) != NULL)
+    return -1;
+  if (!YF_IT_ISNIL(it))
+    return -1;
+
   yf_list_deinit(ls);
 
   puts("");
