@@ -31,7 +31,9 @@ YF_list yf_list_init(YF_cmpfn cmp);
 /**
  * Inserts a given value in a linked list.
  *
- * Non-nil iterators that refer to 'list' will become invalid.
+ * The value is inserted at the beginning of the list.
+ *
+ * Non-nil iterators that refer to 'list' become invalid.
  *
  * @param list: The list.
  * @param val: The value to insert.
@@ -41,9 +43,28 @@ YF_list yf_list_init(YF_cmpfn cmp);
 int yf_list_insert(YF_list list, const void *val);
 
 /**
+ * Inserts a given value at a specific position of a linked list.
+ *
+ * The value is inserted after the iterator's current value.
+ *
+ * When called with an invalid iterator, this function is equivalent to
+ * 'yf_list_insert' (i.e., the value is inserted at the beginning of the list).
+ *
+ * The iterator, if not 'NULL', is updated to point to the inserted value.
+ * All other non-nil iterators that refer to 'list' become invalid.
+ *
+ * @param list: The list.
+ * @param it: The iterator. Can be 'NULL'.
+ * @param val: The value to insert.
+ * @return: On success, returns zero. Otherwise, a non-zero value is returned
+ *  and the global error is set to indicate the cause.
+ */
+int yf_list_insertat(YF_list list, YF_iter *it, const void *val);
+
+/**
  * Removes a given value from a linked list.
  *
- * Non-nil iterators that refer to 'list' will become invalid.
+ * Non-nil iterators that refer to 'list' become invalid.
  *
  * @param list: The list.
  * @param val: The value to remove.
@@ -104,7 +125,7 @@ size_t yf_list_getlen(YF_list list);
 /**
  * Removes all elements from a linked list.
  *
- * Non-nil iterators that refer to 'list' will become invalid.
+ * Non-nil iterators that refer to 'list' become invalid.
  *
  * @param list: The list.
  */

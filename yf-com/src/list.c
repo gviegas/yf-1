@@ -56,6 +56,32 @@ int yf_list_insert(YF_list list, const void *val) {
   return 0;
 }
 
+int yf_list_insertat(YF_list list, YF_iter *it, const void *val) {
+  assert(list != NULL);
+  if (it == NULL || YF_IT_ISNIL(*it)) {
+    if (yf_list_insert(list, val) != 0)
+      return -1;
+    if (it != NULL) {
+      it->data[0] = (size_t)list->first;
+      it->data[1] = ~it->data[0];
+    }
+  } else {
+    L_entry *e = malloc(sizeof(L_entry));
+    if (e == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+    L_entry *cur = (L_entry *)it->data[0];
+    e->prev = cur;
+    e->next = cur->next;
+    e->val = val;
+    cur->next = e;
+    ++list->n;
+    it->data[0] = (size_t)e;
+  }
+  return 0;
+}
+
 int yf_list_remove(YF_list list, const void *val) {
   assert(list != NULL);
   L_entry *e = list->first;
