@@ -33,6 +33,8 @@ YF_hashset yf_hashset_init(YF_hashfn hash, YF_cmpfn cmp);
 /**
  * Inserts a given value in a hashset.
  *
+ * Non-nil iterators that refer to 'set' will become invalid.
+ *
  * @param set: The hashset.
  * @param val: The value to insert.
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
@@ -42,6 +44,8 @@ int yf_hashset_insert(YF_hashset set, const void *val);
 
 /**
  * Removes a given value from a hashset.
+ *
+ * Non-nil iterators that refer to 'set' will become invalid.
  *
  * @param set: The hashset.
  * @param val: The value to remove.
@@ -85,7 +89,7 @@ void *yf_hashset_search(YF_hashset set, const void *val);
  * one would need to call 'yf_hashset_getlen' to check whether or not the
  * hashset is empty.
  *
- * NOTE: Mutating the hashset invalidates all iterators.
+ * Non-nil iterators that refer to 'set' will become invalid.
  *
  * @param set: The hashset.
  * @param it: The iterator. Can be 'NULL'.
@@ -104,8 +108,6 @@ void *yf_hashset_extract(YF_hashset set, YF_iter *it);
  * 'NULL' value as a valid element (checking the return value would suffice
  * otherwise).
  *
- * NOTE: Mutating the hashset invalidates all iterators.
- *
  * @param set: The hashset.
  * @param it: The iterator. Can be 'NULL'.
  * @return: If 'set' is empty, returns 'NULL'. If not, and 'it' is either
@@ -120,7 +122,7 @@ void *yf_hashset_next(YF_hashset set, YF_iter *it);
  * This functions completes when the end of the hashset is reached or when
  * the provided callback returns a non-zero value.
  *
- * Do not alter the hashset until this function completes.
+ * The hashset must not be altered until this function completes.
  *
  * @param set: The hashset.
  * @param fn: The function to execute for each value.
@@ -140,7 +142,7 @@ size_t yf_hashset_getlen(YF_hashset set);
 /**
  * Removes all elements from a hashset.
  *
- * NOTE: Mutating the hashset invalidates all iterators.
+ * Non-nil iterators that refer to 'set' will become invalid.
  *
  * @param set: The hashset.
  */

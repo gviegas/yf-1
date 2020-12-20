@@ -11,19 +11,36 @@
 #include <string.h>
 #include <stdint.h>
 
-/* Type defining an iterator. */
+/**
+ * Type defining an iterator.
+ */
 typedef struct {
   size_t data[2];
 } YF_iter;
 
-/* The nil iterator. */
+/**
+ * The nil iterator.
+ */
 #define YF_NILIT (YF_iter){{SIZE_MAX, SIZE_MAX}}
 
-/* Checks whether or not two iterators are equal. */
+/**
+ * Checks whether or not two iterators are equal.
+ *
+ * @param it1: The first iterator.
+ * @param it2: The second iterator.
+ * @return: If 'it1' and 'it2' are equal, returns a non-zero value. Otherwise,
+ *  zero is returned.
+ */
 #define YF_IT_ISEQ(it1, it2) \
   (memcmp((it1).data, (it2).data, sizeof (it1).data) == 0)
 
-/* Checks whether or not a given iterator is nil. */
+/**
+ * Checks whether or not a given iterator is nil.
+ *
+ * @param it: The iterator.
+ * @return: If 'it' is the nil iterator, returns a non-zero value. Otherwise,
+ *  zero is returned.
+ */
 #define YF_IT_ISNIL(it) (YF_IT_ISEQ(it, YF_NILIT))
 
 #endif /* YF_YF_ITER_H */
