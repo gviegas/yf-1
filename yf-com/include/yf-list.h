@@ -74,6 +74,22 @@ int yf_list_insertat(YF_list list, YF_iter *it, const void *val);
 int yf_list_remove(YF_list list, const void *val);
 
 /**
+ * Removes the value from a specific position of a linked list.
+ *
+ * When called with an invalid iterator, this function removes the value
+ * found at the beginning of the list.
+ *
+ * The iterator, if not 'NULL', is updated to point to the next value.
+ * All other non-nil iterators that refer to 'list' become invalid.
+ *
+ * @param list: The list.
+ * @param it: The iterator. Can be 'NULL'.
+ * @return: If 'list' is empty, returns 'NULL'. Otherwise, the removed value
+ *  is returned.
+ */
+void *yf_list_removeat(YF_list list, YF_iter *it);
+
+/**
  * Checks whether or not a linked list contains a given value.
  *
  * @param list: The list.

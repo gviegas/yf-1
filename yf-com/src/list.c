@@ -103,6 +103,35 @@ int yf_list_remove(YF_list list, const void *val) {
   return -1;
 }
 
+void *yf_list_removeat(YF_list list, YF_iter *it) {
+  assert(list != NULL);
+  if (list->first == NULL) {
+    if (it != NULL)
+      *it = YF_NILIT;
+    return NULL;
+  }
+  L_entry *e = NULL;
+  if (it == NULL || YF_IT_ISNIL(*it))
+    e = list->first;
+  else
+    e = (L_entry *)it->data[0];
+  if (e->prev != NULL)
+    e->prev->next = e->next;
+  else
+    list->first = e->next;
+  if (e->next != NULL) {
+    e->next->prev = e->prev;
+    if (it != NULL)
+      it->data[0] = (size_t)e->next;
+  } else if (it != NULL) {
+    *it = YF_NILIT;
+  }
+  void *r = (void *)e->val;
+  free(e);
+  --list->n;
+  return r;
+}
+
 int yf_list_contains(YF_list list, const void *val) {
   assert(list != NULL);
   L_entry *e = list->first;
