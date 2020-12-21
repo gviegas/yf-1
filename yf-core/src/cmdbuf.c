@@ -23,7 +23,7 @@ static _Thread_local YF_cmdbuf l_cbuf = NULL;
 /* Grows the command list. */
 static int grow_cmds(YF_cmdbuf cmdb);
 
-YF_cmdbuf yf_cmdbuf_begin(YF_context ctx, int cmdb) {
+YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdb) {
   assert(ctx != NULL);
 
   YF_cmdbuf *cb_p;
