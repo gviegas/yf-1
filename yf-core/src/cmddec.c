@@ -420,7 +420,6 @@ static int decode_gst(const YF_cmd *cmd) {
     vkCmdBindPipeline(l_gdec->pres->pool_res, VK_PIPELINE_BIND_POINT_GRAPHICS,
         l_gdec->gst->pipeline);
   }
-
   return 0;
 }
 
@@ -751,7 +750,7 @@ static int decode_disp(const YF_cmd *cmd) {
         continue;
 
       if (i >= l_cdec->cst->dtb_n ||
-        l_cdec->dtb.allocs[i] >= l_cdec->cst->dtbs[i]->set_n)
+          l_cdec->dtb.allocs[i] >= l_cdec->cst->dtbs[i]->set_n)
       {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;

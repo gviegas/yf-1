@@ -52,8 +52,8 @@ typedef struct {
 
 /* Type storing a callback from priority resource acquisition. */
 typedef struct {
-  void (*fn)(int, void *);
-  void *arg;
+  void (*callb)(int, void *);
+  void *data;
 } L_callb;
 
 /* Initializes the pool entries. */
@@ -90,7 +90,7 @@ int yf_cmdpool_create(YF_context ctx, unsigned capacity) {
     destroy_priv(ctx);
     return  -1;
   }
-  for (unsigned i = 0; i < sizeof priv->prio / sizeof priv->prio[0]; ++i) {
+  for (unsigned i = 0; i < (sizeof priv->prio / sizeof priv->prio[0]); ++i) {
     priv->prio[i].pool_res = NULL;
     priv->prio[i].res_id = -1;
     priv->prio[i].queue_i = -1;
@@ -116,7 +116,7 @@ int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdpres *pres) {
     return -1;
   }
 
-  int queue_i = -1;;
+  int queue_i = -1;
   switch (cmdbuf) {
     case YF_CMDBUF_GRAPH:
       queue_i = ctx->graph_queue_i;
@@ -189,20 +189,15 @@ void yf_cmdpool_reset(YF_context ctx, YF_cmdpres *pres) {
     return;
 
   L_priv *priv = ctx->cmdp.priv;
-  /* XXX: Assuming every resource has an exclusive pool... */
-  vkResetCommandPool(
-    ctx->device,
-    priv->cmdp->entries[pres->res_id].pool,
-    VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
+  /* XXX: This assumes that every resource has an exclusive pool. */
+  vkResetCommandPool(ctx->device, priv->cmdp->entries[pres->res_id].pool,
+      VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
 
   yf_cmdpool_yield(ctx, pres);
 }
 
-const YF_cmdpres *yf_cmdpool_getprio(
-  YF_context ctx,
-  int cmdbuf,
-  void (*callb)(int res, void *arg),
-  void *arg)
+const YF_cmdpres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
+    void (*callb)(int res, void *data), void *data)
 {
   assert(ctx != NULL);
   assert(ctx->cmdp.priv != NULL);
@@ -257,8 +252,8 @@ const YF_cmdpres *yf_cmdpool_getprio(
       yf_seterr(YF_ERR_NOMEM, __func__);
       return NULL;
     }
-    e->fn = callb;
-    e->arg = arg;
+    e->callb= callb;
+    e->data = data;
     if (yf_list_insert(priv->callbs, e) != 0)
       return NULL;
   }
@@ -266,10 +261,8 @@ const YF_cmdpres *yf_cmdpool_getprio(
   return pres;
 }
 
-void yf_cmdpool_checkprio(
-  YF_context ctx,
-  const YF_cmdpres **pres_list,
-  unsigned *pres_n)
+void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdpres **pres_list,
+    unsigned *pres_n)
 {
   assert(ctx != NULL);
   assert(pres_list != NULL);
@@ -303,7 +296,7 @@ void yf_cmdpool_notifyprio(YF_context ctx, int result) {
     callb = yf_list_next(priv->callbs, &it);
     if (YF_IT_ISNIL(it))
       break;
-    callb->fn(result, callb->arg);
+    callb->callb(result, callb->data);
     free(callb);
   } while (1);
   yf_list_clear(priv->callbs);
@@ -346,21 +339,16 @@ static int init_entries(YF_context ctx, L_cmdp *cmdp) {
     pool_info.queueFamilyIndex = cmdp->entries[i].queue_i;
 
     /* TODO: Consider using only one pool for each queue instead. */
-    res = vkCreateCommandPool(
-      ctx->device,
-      &pool_info,
-      NULL,
-      &cmdp->entries[i].pool);
+    res = vkCreateCommandPool(ctx->device, &pool_info, NULL,
+        &cmdp->entries[i].pool);
     if (res != VK_SUCCESS) {
       yf_seterr(YF_ERR_DEVGEN, __func__);
       return -1;
     }
     alloc_info.commandPool = cmdp->entries[i].pool;
 
-    res = vkAllocateCommandBuffers(
-      ctx->device,
-      &alloc_info,
-      &cmdp->entries[i].buffer);
+    res = vkAllocateCommandBuffers(ctx->device, &alloc_info,
+        &cmdp->entries[i].buffer);
     if (res != VK_SUCCESS) {
       yf_seterr(YF_ERR_DEVGEN, __func__);
       return -1;

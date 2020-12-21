@@ -32,7 +32,7 @@
 typedef struct {
   YF_cmdpres pres;
   void (*callb)(int, void *);
-  void *arg;
+  void *data;
 } L_entry;
 
 /* Type defining queue variables. */
@@ -64,11 +64,8 @@ typedef struct {
 static int init_queue(YF_context ctx, L_cmde *cmde);
 
 /* Enqueues commands in a queue. */
-static int enqueue_pres(
-  L_cmde *cmde,
-  const YF_cmdpres *pres,
-  void (*callb)(int res, void *arg),
-  void *arg);
+static int enqueue_pres(L_cmde *cmde, const YF_cmdpres *pres,
+    void (*callb)(int res, void *data), void *data);
 
 /* Executes a command queue. */
 static int exec_queue(YF_context ctx, L_cmde *cmde);
@@ -122,16 +119,14 @@ int yf_cmdexec_create(YF_context ctx, unsigned capacity) {
   return 0;
 }
 
-int yf_cmdexec_enqueue(
-  YF_context ctx,
-  const YF_cmdpres *pres,
-  void (*callb)(int res, void *arg),
-  void *arg)
+int yf_cmdexec_enqueue(YF_context ctx, const YF_cmdpres *pres,
+    void (*callb)(int res, void *data), void *data)
 {
   assert(ctx != NULL);
   assert(pres != NULL);
   assert(ctx->cmde.priv != NULL);
-  return enqueue_pres(((L_priv *)ctx->cmde.priv)->cmde, pres, callb, arg);
+
+  return enqueue_pres(((L_priv *)ctx->cmde.priv)->cmde, pres, callb, data);
 }
 
 int yf_cmdexec_exec(YF_context ctx) {
@@ -181,6 +176,7 @@ int yf_cmdexec_execprio(YF_context ctx) {
 void yf_cmdexec_reset(YF_context ctx) {
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
+
   reset_queue(ctx, ((L_priv *)ctx->cmde.priv)->cmde);
 }
 
@@ -261,11 +257,8 @@ static int init_queue(YF_context ctx, L_cmde *cmde) {
   return 0;
 }
 
-static int enqueue_pres(
-  L_cmde *cmde,
-  const YF_cmdpres *pres,
-  void (*callb)(int res, void *arg),
-  void *arg)
+static int enqueue_pres(L_cmde *cmde, const YF_cmdpres *pres,
+    void (*callb)(int res, void *data), void *data)
 {
   assert(cmde != NULL);
   assert(pres != NULL);
@@ -283,7 +276,7 @@ static int enqueue_pres(
   }
   memcpy(&qv->entries[qv->n].pres, pres, sizeof *pres);
   qv->entries[qv->n].callb = callb;
-  qv->entries[qv->n].arg = arg;
+  qv->entries[qv->n].data = data;
   qv->buffers[qv->n] = pres->pool_res;
   ++qv->n;
 
@@ -331,7 +324,7 @@ static int exec_queue(YF_context ctx, L_cmde *cmde) {
     for (unsigned j = 0; j < qvs[i]->n; ++j) {
       yf_cmdpool_yield(ctx, &qvs[i]->entries[j].pres);
       if (qvs[i]->entries[j].callb != NULL)
-        qvs[i]->entries[j].callb(r, qvs[i]->entries[j].arg);
+        qvs[i]->entries[j].callb(r, qvs[i]->entries[j].data);
     }
     qvs[i]->n = 0;
   }
@@ -350,7 +343,7 @@ static void reset_queue(YF_context ctx, L_cmde *cmde) {
     for (unsigned j = 0; j < qvs[i]->n; ++j) {
       yf_cmdpool_reset(ctx, &qvs[i]->entries[j].pres);
       if (qvs[i]->entries[j].callb != NULL)
-        qvs[i]->entries[j].callb(-1, qvs[i]->entries[j].arg);
+        qvs[i]->entries[j].callb(-1, qvs[i]->entries[j].data);
     }
     qvs[i]->n = 0;
   }
