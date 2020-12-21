@@ -16,56 +16,30 @@
 
 #define YF_CMDCAP 128
 
-/* Local command buffers for graphics and compute. */
-static _Thread_local YF_cmdbuf l_gbuf = NULL;
-static _Thread_local YF_cmdbuf l_cbuf = NULL;
-
 /* Grows the command list. */
 static int grow_cmds(YF_cmdbuf cmdb);
 
 YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf) {
   assert(ctx != NULL);
 
-  YF_cmdbuf *cb_p;
-  switch (cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      if (l_gbuf != NULL) {
-        yf_seterr(YF_ERR_INUSE, __func__);
-        return NULL;
-      }
-      cb_p = &l_gbuf;
-      break;
-    case YF_CMDBUF_COMP:
-      if (l_cbuf != NULL) {
-        yf_seterr(YF_ERR_INUSE, __func__);
-        return NULL;
-      }
-      cb_p = &l_cbuf;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
-      return NULL;
-  }
-
-  *cb_p = calloc(1, sizeof(YF_cmdbuf_o));
-  if (*cb_p == NULL) {
+  YF_cmdbuf cmdb = calloc(1, sizeof(YF_cmdbuf_o));
+  if (cmdb == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return NULL;
   }
-  (*cb_p)->ctx = ctx;
-  (*cb_p)->cmdbuf = cmdbuf;
-  (*cb_p)->cmds = calloc(YF_CMDCAP, sizeof(YF_cmd));
-  if ((*cb_p)->cmds == NULL) {
+  cmdb->ctx = ctx;
+  cmdb->cmdbuf = cmdbuf;
+  cmdb->cmds = calloc(YF_CMDCAP, sizeof(YF_cmd));
+  if (cmdb->cmds == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    free(*cb_p);
-    *cb_p = NULL;
+    free(cmdb);
     return NULL;
   }
-  (*cb_p)->cmd_n = 0;
-  (*cb_p)->cmd_cap = YF_CMDCAP;
-  (*cb_p)->invalid = 0;
+  cmdb->cmd_n = 0;
+  cmdb->cmd_cap = YF_CMDCAP;
+  cmdb->invalid = 0;
 
-  return *cb_p;
+  return cmdb;
 }
 
 int yf_cmdbuf_end(YF_cmdbuf cmdb) {
@@ -75,18 +49,6 @@ int yf_cmdbuf_end(YF_cmdbuf cmdb) {
   if (!cmdb->invalid)
     r = yf_cmdbuf_decode(cmdb);
 
-  switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      assert(cmdb == l_gbuf);
-      l_gbuf = NULL;
-      break;
-    case YF_CMDBUF_COMP:
-      assert(cmdb == l_cbuf);
-      l_cbuf = NULL;
-      break;
-    default:
-      assert(0);
-  }
   free(cmdb->cmds);
   free(cmdb);
   return r;
