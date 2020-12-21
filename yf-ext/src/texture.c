@@ -246,11 +246,8 @@ static int copy_data(YF_texture tex, const YF_texdt *data) {
   unsigned layer = val->value.lay_i;
   unsigned lay_cap = layers;
   for (; val->value.lay_used[layer]; layer = (layer+1) % lay_cap);
-  YF_slice lay_slc = {layer, 1};
-  size_t sz = 0;
-  YF_PIXFMT_SIZEOF(data->pixfmt, sz);
-  sz *= data->dim.width * data->dim.height;
-  if (yf_image_copy(val->value.img, lay_slc, data->data, sz) != 0) {
+  YF_off3 off = {0, 0, 0};
+  if (yf_image_copy(val->value.img, off, dim, layer, 0, data->data) != 0) {
     if (val->value.lay_n == 0) {
       yf_hashset_remove(l_imges, val);
       yf_image_deinit(val->value.img);
