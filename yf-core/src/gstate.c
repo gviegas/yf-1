@@ -55,10 +55,8 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf) {
   YF_CULLMODE_FROM(conf->cullmode, cullm);
   YF_FRONTFACE_FROM(conf->frontface, fface);
 
-  if (topol == INT_MAX ||
-    polym == INT_MAX ||
-    cullm == INT_MAX ||
-    fface == INT_MAX)
+  if (topol == INT_MAX || polym == INT_MAX ||
+      cullm == INT_MAX || fface == INT_MAX)
   {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     yf_gstate_deinit(gst);
@@ -109,8 +107,8 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf) {
   for (unsigned i = 0; i < conf->stg_n; ++i) {
     VkShaderModule module = yf_getmod(ctx, conf->stgs[i].mod);
     if (module == VK_NULL_HANDLE ||
-      !YF_STAGE_ONE(conf->stgs[i].stage) ||
-      (conf->stgs[i].stage & stg_mask) != 0)
+        !YF_STAGE_ONE(conf->stgs[i].stage) ||
+        (conf->stgs[i].stage & stg_mask) != 0)
     {
       yf_seterr(YF_ERR_INVARG, __func__);
       yf_gstate_deinit(gst);
@@ -336,13 +334,8 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf) {
     .basePipelineHandle = NULL,
     .basePipelineIndex = -1
   };
-  res = vkCreateGraphicsPipelines(
-    ctx->device,
-    ctx->pl_cache,
-    1,
-    &pl_info,
-    NULL,
-    &gst->pipeline);
+  res = vkCreateGraphicsPipelines(ctx->device, ctx->pl_cache, 1, &pl_info,
+      NULL, &gst->pipeline);
   if (res != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     yf_gstate_deinit(gst);
@@ -365,10 +358,9 @@ YF_dtable yf_gstate_getdtb(YF_gstate gst, unsigned index) {
 }
 
 void yf_gstate_deinit(YF_gstate gst) {
-  if (gst == NULL)
-    return;
-
-  vkDestroyPipelineLayout(gst->ctx->device, gst->layout, NULL);
-  vkDestroyPipeline(gst->ctx->device, gst->pipeline, NULL);
-  free(gst);
+  if (gst != NULL) {
+    vkDestroyPipelineLayout(gst->ctx->device, gst->layout, NULL);
+    vkDestroyPipeline(gst->ctx->device, gst->pipeline, NULL);
+    free(gst);
+  }
 }
