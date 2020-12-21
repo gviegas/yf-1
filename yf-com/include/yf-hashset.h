@@ -119,10 +119,10 @@ void *yf_hashset_next(YF_hashset set, YF_iter *it);
 /**
  * Executes a given function for each value in a hashset.
  *
- * This functions completes when the end of the hashset is reached or when
+ * This function completes when the end of the hashset is reached or when
  * the provided callback returns a non-zero value.
  *
- * The hashset must not be altered until this function completes.
+ * The hashset must not be altered until 'yf_hashset_each' completes.
  *
  * @param set: The hashset.
  * @param fn: The function to execute for each value.
