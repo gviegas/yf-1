@@ -119,10 +119,10 @@ void *yf_list_next(YF_list list, YF_iter *it);
 /**
  * Executes a given function for each value in a linked list.
  *
- * This functions completes when the end of the list is reached or when the
+ * This function completes when the end of the list is reached or when the
  * provided callback returns a non-zero value.
  *
- * The list must not be altered until this function completes.
+ * The list must not be altered until 'yf_list_each' completes.
  *
  * @param list: The list.
  * @param fn: The function to execute for each value.

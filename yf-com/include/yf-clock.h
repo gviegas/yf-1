@@ -25,6 +25,9 @@ double yf_gettime(void);
 /**
  * Suspends execution of the calling thread.
  *
+ * This function is signal-aware and will attempt to resume sleeping when
+ * interrupted.
+ *
  * @param seconds: The interval to sleep for, in seconds.
  */
 void yf_sleep(double seconds);
