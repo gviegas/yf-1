@@ -213,8 +213,8 @@ static int copy_data(YF_texture tex, const YF_texdt *data) {
     new_img = yf_image_init(l_ctx, pixfmt, dim, new_lay_cap, levels, samples);
     if (new_img == NULL)
       return -1;
-    YF_cmdbuf cb = yf_cmdbuf_begin(l_ctx, YF_CMDB_GRAPH);
-    if (cb == NULL && (cb = yf_cmdbuf_begin(l_ctx, YF_CMDB_COMP)) == NULL) {
+    YF_cmdbuf cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_GRAPH);
+    if (cb == NULL && (cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_COMP)) == NULL) {
       yf_image_deinit(new_img);
       return -1;
     }

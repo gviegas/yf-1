@@ -209,7 +209,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
   int mdli_pend = yf_hashset_getlen(l_vars.mdls_inst) != 0;
 
   l_vars.buf_offs = 0;
-  if ((l_vars.cb = yf_cmdbuf_begin(l_vars.ctx, YF_CMDB_GRAPH)) == NULL) {
+  if ((l_vars.cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH)) == NULL) {
     clear_hset();
     return -1;
   }
@@ -267,7 +267,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
     yield_res();
 
     if (mdl_pend || mdli_pend) {
-      if ((l_vars.cb = yf_cmdbuf_begin(l_vars.ctx, YF_CMDB_GRAPH)) == NULL) {
+      if ((l_vars.cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH)) == NULL) {
         clear_hset();
         return -1;
       }
@@ -788,9 +788,9 @@ static size_t resize_buf(size_t new_len) {
       else
         sz = new_len;
     }
-    YF_cmdbuf cb = yf_cmdbuf_begin(l_vars.ctx, YF_CMDB_GRAPH);
+    YF_cmdbuf cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH);
     if (cb == NULL &&
-      (cb = yf_cmdbuf_begin(l_vars.ctx, YF_CMDB_COMP)) == NULL)
+      (cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_COMP)) == NULL)
     {
       yf_buffer_deinit(new_buf);
       return buf_len;
