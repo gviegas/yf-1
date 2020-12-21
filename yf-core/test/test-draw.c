@@ -220,7 +220,7 @@ static void update(void) {
   int tgt_i = yf_wsi_next(l_vars.wsi, 0);
   assert(tgt_i >= 0);
 
-  YF_cmdbuf cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDB_GRAPH);
+  YF_cmdbuf cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH);
   assert(cb != NULL);
 
   yf_cmdbuf_setgstate(cb, l_vars.gst);

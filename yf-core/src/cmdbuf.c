@@ -23,19 +23,19 @@ static _Thread_local YF_cmdbuf l_cbuf = NULL;
 /* Grows the command list. */
 static int grow_cmds(YF_cmdbuf cmdb);
 
-YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdb) {
+YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf) {
   assert(ctx != NULL);
 
   YF_cmdbuf *cb_p;
-  switch (cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       if (l_gbuf != NULL) {
         yf_seterr(YF_ERR_INUSE, __func__);
         return NULL;
       }
       cb_p = &l_gbuf;
       break;
-    case YF_CMDB_COMP:
+    case YF_CMDBUF_COMP:
       if (l_cbuf != NULL) {
         yf_seterr(YF_ERR_INUSE, __func__);
         return NULL;
@@ -53,7 +53,7 @@ YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdb) {
     return NULL;
   }
   (*cb_p)->ctx = ctx;
-  (*cb_p)->cmdb = cmdb;
+  (*cb_p)->cmdbuf = cmdbuf;
   (*cb_p)->cmds = calloc(YF_CMDCAP, sizeof(YF_cmd));
   if ((*cb_p)->cmds == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -75,12 +75,12 @@ int yf_cmdbuf_end(YF_cmdbuf cmdb) {
   if (!cmdb->invalid)
     r = yf_cmdbuf_decode(cmdb);
 
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       assert(cmdb == l_gbuf);
       l_gbuf = NULL;
       break;
-    case YF_CMDB_COMP:
+    case YF_CMDBUF_COMP:
       assert(cmdb == l_cbuf);
       l_cbuf = NULL;
       break;
@@ -110,8 +110,8 @@ void yf_cmdbuf_setgstate(YF_cmdbuf cmdb, YF_gstate gst) {
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;
@@ -134,8 +134,8 @@ void yf_cmdbuf_setcstate(YF_cmdbuf cmdb, YF_cstate cst) {
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_COMP:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_COMP:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;
@@ -157,8 +157,8 @@ void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt) {
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;
@@ -185,8 +185,8 @@ void yf_cmdbuf_setvport(
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;
@@ -209,8 +209,8 @@ void yf_cmdbuf_setsciss(YF_cmdbuf cmdb, unsigned index, YF_rect rect) {
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;
@@ -255,8 +255,8 @@ void yf_cmdbuf_setvbuf(
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;
@@ -286,8 +286,8 @@ void yf_cmdbuf_setibuf(
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;
@@ -311,8 +311,8 @@ void yf_cmdbuf_clearcolor(YF_cmdbuf cmdb, unsigned index, YF_color value) {
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;
@@ -335,8 +335,8 @@ void yf_cmdbuf_cleardepth(YF_cmdbuf cmdb, float value) {
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;
@@ -358,8 +358,8 @@ void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value) {
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;
@@ -389,8 +389,8 @@ void yf_cmdbuf_draw(
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;
@@ -417,8 +417,8 @@ void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim) {
     return;
 
   unsigned i;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_COMP:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_COMP:
       i = cmdb->cmd_n++;
       if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
         cmdb->invalid = 1;

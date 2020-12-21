@@ -30,8 +30,8 @@ typedef struct YF_cmdbuf_o *YF_cmdbuf;
 /**
  * Command buffer types.
  */
-#define YF_CMDB_GRAPH 0
-#define YF_CMDB_COMP  1
+#define YF_CMDBUF_GRAPH 0
+#define YF_CMDBUF_COMP  1
 
 /**
  * Gets a command buffer of a given type.
@@ -40,11 +40,11 @@ typedef struct YF_cmdbuf_o *YF_cmdbuf;
  * type, otherwise 'yf_cmdbuf_end()' will fail.
  *
  * @param ctx: The context.
- * @param cmdb: The 'YF_CMDB' value indicating the command buffer type.
+ * @param cmdb: The 'YF_CMDBUF' value indicating the command buffer type.
  * @return: On success, returns a command buffer ready for encoding. Otherwise,
  *  'NULL' is returned and the global error is set to indicate the cause.
  */
-YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdb);
+YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf);
 
 /**
  * Ends a command buffer and enqueues it for execution.

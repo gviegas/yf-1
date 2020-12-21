@@ -149,7 +149,7 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb) {
     return 0;
 
   YF_cmdpres pres;
-  if (yf_cmdpool_obtain(cmdb->ctx, cmdb->cmdb, &pres) != 0)
+  if (yf_cmdpool_obtain(cmdb->ctx, cmdb->cmdbuf, &pres) != 0)
     return -1;
   VkCommandBufferBeginInfo info = {
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -164,8 +164,8 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb) {
   }
 
   int r = 0;
-  switch (cmdb->cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       if (l_gdec != NULL) {
         yf_seterr(YF_ERR_INUSE, __func__);
         r = -1;
@@ -173,7 +173,7 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb) {
       }
       r = decode_graph(cmdb, &pres);
       break;
-    case YF_CMDB_COMP:
+    case YF_CMDBUF_COMP:
       if (l_cdec != NULL) {
         yf_seterr(YF_ERR_INUSE, __func__);
         r = -1;
@@ -246,7 +246,7 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
         r = decode_sciss(cmd);
         break;
       case YF_CMD_DTB:
-        r = decode_dtb(YF_CMDB_GRAPH, cmd);
+        r = decode_dtb(YF_CMDBUF_GRAPH, cmd);
         break;
       case YF_CMD_VBUF:
         r = decode_vbuf(cmd);
@@ -267,13 +267,13 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
         r = decode_draw(cmd);
         break;
       case YF_CMD_CPYBUF:
-        r = decode_cpybuf(YF_CMDB_GRAPH, cmd);
+        r = decode_cpybuf(YF_CMDBUF_GRAPH, cmd);
         break;
       case YF_CMD_CPYIMG:
-        r = decode_cpyimg(YF_CMDB_GRAPH, cmd);
+        r = decode_cpyimg(YF_CMDBUF_GRAPH, cmd);
         break;
       case YF_CMD_SYNC:
-        r = decode_sync(YF_CMDB_GRAPH);
+        r = decode_sync(YF_CMDBUF_GRAPH);
         break;
       default:
         assert(0);
@@ -385,19 +385,19 @@ static int decode_comp(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
         r = decode_cst(cmd);
         break;
       case YF_CMD_DTB:
-        r = decode_dtb(YF_CMDB_COMP, cmd);
+        r = decode_dtb(YF_CMDBUF_COMP, cmd);
         break;
       case YF_CMD_DISP:
         r = decode_disp(cmd);
         break;
       case YF_CMD_CPYBUF:
-        r = decode_cpybuf(YF_CMDB_COMP, cmd);
+        r = decode_cpybuf(YF_CMDBUF_COMP, cmd);
         break;
       case YF_CMD_CPYIMG:
-        r = decode_cpyimg(YF_CMDB_COMP, cmd);
+        r = decode_cpyimg(YF_CMDBUF_COMP, cmd);
         break;
       case YF_CMD_SYNC:
-        r = decode_sync(YF_CMDB_COMP);
+        r = decode_sync(YF_CMDBUF_COMP);
         break;
       default:
         assert(0);
@@ -496,9 +496,9 @@ static int decode_sciss(const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_dtb(int cmdb, const YF_cmd *cmd) {
-  switch (cmdb) {
-    case YF_CMDB_GRAPH:
+static int decode_dtb(int cmdbuf, const YF_cmd *cmd) {
+  switch (cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       if (cmd->dtb.index >= yf_getlimits(l_gdec->ctx)->state.dtable_max) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
@@ -510,7 +510,7 @@ static int decode_dtb(int cmdb, const YF_cmd *cmd) {
         l_gdec->dtb.n++;
       }
       break;
-    case YF_CMDB_COMP:
+    case YF_CMDBUF_COMP:
       if (cmd->dtb.index >= yf_getlimits(l_cdec->ctx)->state.dtable_max) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
@@ -788,21 +788,21 @@ static int decode_disp(const YF_cmd *cmd) {
   return r;
 }
 
-static int decode_cpybuf(int cmdb, const YF_cmd *cmd) {
+static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd) {
   assert(cmd->cpybuf.dst->size >= cmd->cpybuf.dst_offs + cmd->cpybuf.size);
   assert(cmd->cpybuf.src->size >= cmd->cpybuf.src_offs + cmd->cpybuf.size);
   assert(cmd->cpybuf.size > 0);
 
   const YF_cmdpres *pres;
-  switch (cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       if (l_gdec->pass != NULL) {
         vkCmdEndRenderPass(l_gdec->pres->pool_res);
         l_gdec->pass = NULL;
       }
       pres = l_gdec->pres;
       break;
-    case YF_CMDB_COMP:
+    case YF_CMDBUF_COMP:
       pres = l_cdec->pres;
       break;
     default:
@@ -822,7 +822,7 @@ static int decode_cpybuf(int cmdb, const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_cpyimg(int cmdb, const YF_cmd *cmd) {
+static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd) {
   assert(cmd->cpyimg.dst->layers >=
     cmd->cpyimg.dst_layer + cmd->cpyimg.layer_n);
   assert(cmd->cpyimg.src->layers >=
@@ -830,15 +830,15 @@ static int decode_cpyimg(int cmdb, const YF_cmd *cmd) {
   assert(cmd->cpyimg.layer_n > 0);
 
   const YF_cmdpres *pres;
-  switch (cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       if (l_gdec->pass != NULL) {
         vkCmdEndRenderPass(l_gdec->pres->pool_res);
         l_gdec->pass = NULL;
       }
       pres = l_gdec->pres;
       break;
-    case YF_CMDB_COMP:
+    case YF_CMDBUF_COMP:
       pres = l_cdec->pres;
       break;
     default:
@@ -881,18 +881,18 @@ static int decode_cpyimg(int cmdb, const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_sync(int cmdb) {
+static int decode_sync(int cmdbuf) {
   /* TODO: Provide sync. parameters to avoid such dramatic solution. */
   const YF_cmdpres *pres;
-  switch (cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       if (l_gdec->pass != NULL) {
         vkCmdEndRenderPass(l_gdec->pres->pool_res);
         l_gdec->pass = NULL;
       }
       pres = l_gdec->pres;
       break;
-    case YF_CMDB_COMP:
+    case YF_CMDBUF_COMP:
       pres = l_cdec->pres;
       break;
     default:

@@ -226,9 +226,10 @@ int yf_image_copy(
   if (stg_buf == NULL)
     return -1;
   const YF_cmdpres *pres;
-  pres = yf_cmdpool_getprio(img->ctx, YF_CMDB_GRAPH, dealloc_stgbuf, stg_buf);
+  pres = yf_cmdpool_getprio(img->ctx, YF_CMDBUF_GRAPH, dealloc_stgbuf, stg_buf);
   if (pres == NULL) {
-    pres = yf_cmdpool_getprio(img->ctx, YF_CMDB_COMP, dealloc_stgbuf, stg_buf);
+    pres = yf_cmdpool_getprio(img->ctx, YF_CMDBUF_COMP, dealloc_stgbuf,
+        stg_buf);
     if (pres == NULL)
       return -1;
   }

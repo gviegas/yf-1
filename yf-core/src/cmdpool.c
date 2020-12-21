@@ -105,7 +105,7 @@ int yf_cmdpool_create(YF_context ctx, unsigned capacity) {
   return 0;
 }
 
-int yf_cmdpool_obtain(YF_context ctx, int cmdb, YF_cmdpres *pres) {
+int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdpres *pres) {
   assert(ctx != NULL);
   assert(pres != NULL);
   assert(ctx->cmdp.priv != NULL);
@@ -117,11 +117,11 @@ int yf_cmdpool_obtain(YF_context ctx, int cmdb, YF_cmdpres *pres) {
   }
 
   int queue_i = -1;;
-  switch (cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       queue_i = ctx->graph_queue_i;
       break;
-    case YF_CMDB_COMP:
+    case YF_CMDBUF_COMP:
       queue_i = ctx->comp_queue_i;
       break;
     default:
@@ -200,7 +200,7 @@ void yf_cmdpool_reset(YF_context ctx, YF_cmdpres *pres) {
 
 const YF_cmdpres *yf_cmdpool_getprio(
   YF_context ctx,
-  int cmdb,
+  int cmdbuf,
   void (*callb)(int res, void *arg),
   void *arg)
 {
@@ -209,11 +209,11 @@ const YF_cmdpres *yf_cmdpool_getprio(
 
   L_priv *priv = ctx->cmdp.priv;
   int queue_i = -1;
-  switch (cmdb) {
-    case YF_CMDB_GRAPH:
+  switch (cmdbuf) {
+    case YF_CMDBUF_GRAPH:
       queue_i = ctx->graph_queue_i;
       break;
-    case YF_CMDB_COMP:
+    case YF_CMDBUF_COMP:
       queue_i = ctx->comp_queue_i;
       break;
     default:
@@ -235,7 +235,7 @@ const YF_cmdpres *yf_cmdpool_getprio(
 
   if (pres == NULL) {
     pres = priv->prio+priv->prio_n;
-    if (yf_cmdpool_obtain(ctx, cmdb, pres) != 0)
+    if (yf_cmdpool_obtain(ctx, cmdbuf, pres) != 0)
       return NULL;
     ++priv->prio_n;
     VkCommandBufferBeginInfo info = {

@@ -22,7 +22,7 @@ typedef struct {
 int yf_cmdpool_create(YF_context ctx, unsigned capacity);
 
 /* Obtains a resource for a given command buffer type. */
-int yf_cmdpool_obtain(YF_context ctx, int cmdb, YF_cmdpres *pres);
+int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdpres *pres);
 
 /* Yields a previously obtained resource. */
 void yf_cmdpool_yield(YF_context ctx, YF_cmdpres *pres);
@@ -33,7 +33,7 @@ void yf_cmdpool_reset(YF_context ctx, YF_cmdpres *pres);
 /* Gets the priority command pool resource for a given context.
    If there is no resource in use, one supporting the given 'cmdb' value
    is created and put in the recording state. */
-const YF_cmdpres *yf_cmdpool_getprio(YF_context ctx, int cmdb,
+const YF_cmdpres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
     void (*callb)(int res, void *data), void *data);
 
 /* Checks which priority resources have been used and are pending execution. */
