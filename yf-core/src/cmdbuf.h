@@ -13,7 +13,7 @@
 
 typedef struct YF_cmdbuf_o {
   YF_context ctx;
-  int cmdb;
+  int cmdbuf;
   YF_cmd *cmds;
   unsigned cmd_n;
   unsigned cmd_cap;

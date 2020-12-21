@@ -135,7 +135,7 @@ int yf_wsi_present(YF_wsi wsi, unsigned index) {
   }
 
   const YF_cmdpres *pres;
-  pres = yf_cmdpool_getprio(wsi->ctx, YF_CMDB_GRAPH, NULL, NULL);
+  pres = yf_cmdpool_getprio(wsi->ctx, YF_CMDBUF_GRAPH, NULL, NULL);
   if (pres == NULL)
     /* TODO: May need to release the image somehow. */
     return -1;

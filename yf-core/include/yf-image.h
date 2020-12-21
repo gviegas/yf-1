@@ -114,8 +114,8 @@ typedef struct YF_image_o *YF_image;
  * @param pixfmt: The 'YF_PIXFMT' value representing the pixel format.
  * @param dim: The size of the image.
  * @param layers: The number of array layers.
- * @param layers: The number of mip levels.
- * @param layers: The sample count.
+ * @param levels: The number of mip levels.
+ * @param samples: The sample count.
  * @return: On success, returns a new image. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */

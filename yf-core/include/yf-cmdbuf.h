@@ -22,7 +22,7 @@ YF_DECLS_BEGIN
  *
  * Command buffers are context-managed objects into which graphics or
  * compute commands can be encoded.
- * Work is performed by explicitly executing the context's pending
+ * Work is performed through explicit execution of the context's pending
  * command buffers.
  */
 typedef struct YF_cmdbuf_o *YF_cmdbuf;
@@ -30,26 +30,26 @@ typedef struct YF_cmdbuf_o *YF_cmdbuf;
 /**
  * Command buffer types.
  */
-#define YF_CMDB_GRAPH 0
-#define YF_CMDB_COMP  1
+#define YF_CMDBUF_GRAPH 0
+#define YF_CMDBUF_COMP  1
 
 /**
- * Begins a command buffer of a given type.
+ * Gets a command buffer of a given type.
  *
  * The returned command buffer must only receive encodings valid for its
  * type, otherwise 'yf_cmdbuf_end()' will fail.
  *
  * @param ctx: The context.
- * @param cmdb: The 'YF_CMDB' value indicating the command buffer type.
- * @return: On success, returns a command buffer for encoding. Otherwise,
+ * @param cmdb: The 'YF_CMDBUF' value indicating the command buffer type.
+ * @return: On success, returns a command buffer ready for encoding. Otherwise,
  *  'NULL' is returned and the global error is set to indicate the cause.
  */
-YF_cmdbuf yf_cmdbuf_begin(YF_context ctx, int cmdb);
+YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf);
 
 /**
  * Ends a command buffer and enqueues it for execution.
  *
- * After a call to this function, the command buffer must not be used
+ * After a call to this function, the ended command buffer must not be used
  * any further, no matter the outcome.
  *
  * @param cmdb: The command buffer to end.
@@ -151,10 +151,11 @@ void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
  * @param cmdb: The command buffer.
  * @param buf: The index buffer.
  * @param offset: The offset from the beginning of the buffer.
- * @param stride: The stride between adjacent indices.
+ * @param stride: The stride between adjacent indices (i.e., the size of the
+ *  underlying type).
  */
 void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset,
-    short stride);
+    unsigned stride);
 
 /*
  * Clear
