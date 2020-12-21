@@ -27,25 +27,25 @@
    printf("\ndtable - max samplers: %u", (lim_p)->dtable.sampr_max); \
    printf("\ndtable - max image+samplers: %u", (lim_p)->dtable.isamp_max); \
    printf("\ndtable - max copy size (uniform): %lu", \
-    (lim_p)->dtable.cpy_unif_sz_max); \
+      (lim_p)->dtable.cpy_unif_sz_max); \
    printf("\ndtable - max copy size (mutable): %lu", \
-    (lim_p)->dtable.cpy_mut_sz_max); \
+      (lim_p)->dtable.cpy_mut_sz_max); \
    printf("\nvinput - max input attributes: %u", (lim_p)->vinput.attr_max); \
    printf("\nvinput - max input offset: %u", (lim_p)->vinput.offs_max); \
    printf("\nvinput - max input stride: %u", (lim_p)->vinput.strd_max); \
    printf("\npass - max color attachments: %u", (lim_p)->pass.color_max); \
    printf("\npass - max target dimensions: %u, %u", \
-    (lim_p)->pass.dim_max.width, (lim_p)->pass.dim_max.height); \
+      (lim_p)->pass.dim_max.width, (lim_p)->pass.dim_max.height); \
    printf("\npass - max target layers: %u", (lim_p)->pass.layer_max); \
    printf("\nviewport - max: %u", (lim_p)->viewport.max); \
    printf("\nviewport - max dimensions: %u, %u", \
-    (lim_p)->viewport.dim_max.width, (lim_p)->viewport.dim_max.height); \
+      (lim_p)->viewport.dim_max.width, (lim_p)->viewport.dim_max.height); \
    printf("\nviewport - min/max bounds: %.3f, %.3f", \
-    (lim_p)->viewport.bounds_min, (lim_p)->viewport.bounds_max); \
+      (lim_p)->viewport.bounds_min, (lim_p)->viewport.bounds_max); \
    printf("\nstate - max bound dtables: %u", (lim_p)->state.dtable_max); \
    printf("\nstate - max vinputs: %u", (lim_p)->state.vinput_max); \
    printf("\ncmdbuf - max draw index value: %u", \
-    (lim_p)->cmdbuf.draw_idx_max); \
+      (lim_p)->cmdbuf.draw_idx_max); \
    printf("\n--\n"); } while (0)
 #endif
 
