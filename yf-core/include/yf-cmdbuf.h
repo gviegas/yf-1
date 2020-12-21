@@ -151,10 +151,11 @@ void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
  * @param cmdb: The command buffer.
  * @param buf: The index buffer.
  * @param offset: The offset from the beginning of the buffer.
- * @param stride: The stride between adjacent indices.
+ * @param stride: The stride between adjacent indices (i.e., the size of the
+ *  underlying type).
  */
 void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset,
-    short stride);
+    unsigned stride);
 
 /*
  * Clear

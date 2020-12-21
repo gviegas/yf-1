@@ -135,10 +135,8 @@ void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt) {
   }
 }
 
-void yf_cmdbuf_setvport(
-  YF_cmdbuf cmdb,
-  unsigned index,
-  const YF_viewport *vport)
+void yf_cmdbuf_setvport(YF_cmdbuf cmdb, unsigned index,
+    const YF_viewport *vport)
 {
   assert(cmdb != NULL);
   assert(vport != NULL);
@@ -204,11 +202,8 @@ void yf_cmdbuf_setdtable(YF_cmdbuf cmdb, unsigned index, unsigned alloc_i) {
   cmdb->cmds[i].dtb.alloc_i = alloc_i;
 }
 
-void yf_cmdbuf_setvbuf(
-  YF_cmdbuf cmdb,
-  unsigned index,
-  YF_buffer buf,
-  size_t offset)
+void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
+    size_t offset)
 {
   assert(cmdb != NULL);
   assert(buf != NULL);
@@ -235,11 +230,8 @@ void yf_cmdbuf_setvbuf(
   }
 }
 
-void yf_cmdbuf_setibuf(
-  YF_cmdbuf cmdb,
-  YF_buffer buf,
-  size_t offset,
-  short stride)
+void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset,
+    unsigned stride)
 {
   assert(cmdb != NULL);
   assert(buf != NULL);
@@ -336,14 +328,8 @@ void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value) {
   }
 }
 
-void yf_cmdbuf_draw(
-  YF_cmdbuf cmdb,
-  int indexed,
-  unsigned index_base,
-  unsigned vert_n,
-  unsigned inst_n,
-  int vert_id,
-  int inst_id)
+void yf_cmdbuf_draw(YF_cmdbuf cmdb, int indexed, unsigned index_base,
+    unsigned vert_n, unsigned inst_n, int vert_id, int inst_id)
 {
   assert(cmdb != NULL);
 
@@ -395,13 +381,8 @@ void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim) {
   }
 }
 
-void yf_cmdbuf_copybuf(
-  YF_cmdbuf cmdb,
-  YF_buffer dst,
-  size_t dst_offs,
-  YF_buffer src,
-  size_t src_offs,
-  size_t size)
+void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_offs,
+    YF_buffer src, size_t src_offs, size_t size)
 {
   assert(cmdb != NULL);
   assert(dst != NULL);
@@ -423,13 +404,8 @@ void yf_cmdbuf_copybuf(
   cmdb->cmds[i].cpybuf.size = size;
 }
 
-void yf_cmdbuf_copyimg(
-  YF_cmdbuf cmdb,
-  YF_image dst,
-  unsigned dst_layer,
-  YF_image src,
-  unsigned src_layer,
-  unsigned layer_n)
+void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, unsigned dst_layer,
+    YF_image src, unsigned src_layer, unsigned layer_n)
 {
   assert(cmdb != NULL);
   assert(dst != NULL);
