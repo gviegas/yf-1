@@ -267,6 +267,58 @@ static int test_list(void) {
   if (!YF_IT_ISNIL(it))
     return -1;
 
+  int *v;
+  puts("");
+  while ((v = yf_list_next(ls, NULL)) != NULL) {
+    if (*v != *(int *)yf_list_removeat(ls, NULL))
+      return -1;
+    printf("(list beg) ");
+    yf_list_each(ls, list_cb, NULL);
+    puts("(list end)");
+  }
+
+  yf_list_insert(ls, &a);
+  yf_list_insert(ls, &b);
+  yf_list_insert(ls, &c);
+  yf_list_insert(ls, &d);
+
+  it = YF_NILIT;
+  puts("");
+  while ((v = yf_list_next(ls, NULL)) != NULL) {
+    if (*v != *(int *)yf_list_removeat(ls, &it))
+      return -1;
+    printf("(list beg) ");
+    yf_list_each(ls, list_cb, NULL);
+    puts("(list end)");
+  }
+
+  it = YF_NILIT;
+  yf_list_insertat(ls, &it, &a);
+  yf_list_insertat(ls, &it, &b);
+  yf_list_insertat(ls, &it, &c);
+
+  printf("\n(list beg) ");
+  yf_list_each(ls, list_cb, NULL);
+  puts("(list end)");
+
+  it = YF_NILIT;
+  for (;;) {
+    v = yf_list_next(ls, &it);
+    if (*v == b)
+      break;
+  }
+  if (!yf_list_contains(ls, &b))
+    return -1;
+  yf_list_removeat(ls, &it);
+  if (yf_list_contains(ls, &b))
+    return -1;
+  if (yf_list_getlen(ls) != 2)
+    return -1;
+
+  printf("(list beg) ");
+  yf_list_each(ls, list_cb, NULL);
+  puts("(list end)");
+
   yf_list_deinit(ls);
 
   puts("");
