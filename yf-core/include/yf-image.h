@@ -125,14 +125,21 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
 /**
  * Copies local data to an image.
  *
+ * The copy is performed according to the image's format. The actual number of
+ * bytes read from 'data' are derived from the provided parameters scaled by
+ * the 'YF_PIXFMT' size ('data' is assumed to be tightly packed).
+ *
  * @param img: The image.
- * @param layers: The destination layers.
+ * @param off: The offset from the start of the image, in pixels.
+ * @param dim: The copy dimensions, in pixels.
+ * @param layer: The destination layer.
+ * @param level: The destination level.
  * @param data: The source data.
- * @param size: The number of bytes to copy.
  * @return: On success, returns zero. Otherwise, 'NULL' is returned and the
  *  global error is set to indicate the cause.
  */
-int yf_image_copy(YF_image img, YF_slice layers, const void *data, size_t size);
+int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
+    unsigned level, const void *data);
 
 /**
  * Gets values of an image.

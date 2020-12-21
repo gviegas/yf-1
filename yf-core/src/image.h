@@ -41,9 +41,9 @@ typedef struct {
 } YF_iview;
 
 /* Wraps an image handle.
-   The caller is responsible for the explicity destruction of the image handle
-   and its backing memory. A 'YF_image' created this way must be deinitialized
-   before the image handle is destroyed. */
+   The caller is responsible for destroying the image handle and for
+   deallocating its backing memory. A 'YF_image' created this way must
+   be deinitialized before the image handle is destroyed. */
 YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
     VkImageType type, YF_dim3 dim, unsigned layers, unsigned levels,
     VkSampleCountFlagBits samples, VkImageLayout layout);

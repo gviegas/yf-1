@@ -207,56 +207,60 @@ YF_image yf_image_init(
   return img;
 }
 
-int yf_image_copy(
-  YF_image img,
-  YF_slice layers,
-  const void *data,
-  size_t size)
+int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
+    unsigned level, const void *data)
 {
   assert(img != NULL);
   assert(data != NULL);
-  assert(size > 0);
+  assert(dim.width > 0 && dim.height > 0 && dim.depth > 0);
 
-  if (layers.i + layers.n > img->layers) {
+  if (layer > img->layers || level > img->levels ||
+      off.x + dim.width > img->dim.width ||
+      off.y + dim.height > img->dim.height ||
+      off.z + dim.depth > img->dim.depth)
+  {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
   }
 
-  YF_buffer stg_buf = yf_buffer_init(img->ctx, size);
+  size_t sz;
+  YF_PIXFMT_SIZEOF(img->pixfmt, sz);
+  sz *= dim.width * dim.height * dim.depth;
+
+  YF_buffer stg_buf = yf_buffer_init(img->ctx, sz);
   if (stg_buf == NULL)
     return -1;
+  memcpy(stg_buf->data, data, sz);
+
   const YF_cmdpres *pres;
   pres = yf_cmdpool_getprio(img->ctx, YF_CMDBUF_GRAPH, dealloc_stgbuf, stg_buf);
   if (pres == NULL) {
     pres = yf_cmdpool_getprio(img->ctx, YF_CMDBUF_COMP, dealloc_stgbuf,
         stg_buf);
-    if (pres == NULL)
+    if (pres == NULL) {
+      yf_buffer_deinit(stg_buf);
       return -1;
+    }
   }
-  memcpy(stg_buf->data, data, size);
+
   if (img->layout != VK_IMAGE_LAYOUT_GENERAL)
     yf_image_transition(img, pres->pool_res);
 
   VkBufferImageCopy region = {
     .bufferOffset = 0,
     .bufferRowLength = 0,
-    /* TODO: Provide a way to select the mip level. */
     .imageSubresource = {
       .aspectMask = img->aspect,
-      .mipLevel = 0,
-      .baseArrayLayer = layers.i,
-      .layerCount = layers.n
+      .mipLevel = level,
+      .baseArrayLayer = layer,
+      .layerCount = 1
     },
-    .imageOffset = {0, 0, 0},
-    .imageExtent = {img->dim.width, img->dim.height, img->dim.depth}
+    .imageOffset = {off.x, off.y, off.z},
+    .imageExtent = {dim.width, dim.height, dim.depth}
   };
-  vkCmdCopyBufferToImage(
-    pres->pool_res,
-    stg_buf->buffer,
-    img->image,
-    VK_IMAGE_LAYOUT_GENERAL,
-    1,
-    &region);
+
+  vkCmdCopyBufferToImage(pres->pool_res, stg_buf->buffer, img->image,
+      VK_IMAGE_LAYOUT_GENERAL, 1, &region);
 
   return 0;
 }
