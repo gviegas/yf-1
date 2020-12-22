@@ -392,7 +392,8 @@ static int set_layers(YF_context ctx) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;
     }
-    strncpy(ctx->layers[i], props[i].layerName, len);
+    strncpy(ctx->layers[i], props[i].layerName, len-1);
+    ctx->layers[i][len-1] = '\0';
   }
 
   ctx->layer_n = n;
@@ -439,7 +440,8 @@ static int set_inst_exts(YF_context ctx) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;
     }
-    strncpy(ctx->inst_exts[i], props[i].extensionName, len);
+    strncpy(ctx->inst_exts[i], props[i].extensionName, len-1);
+    ctx->inst_exts[i][len-1] = '\0';
   }
 
   ctx->inst_ext_n = n;
@@ -485,7 +487,8 @@ static int set_dev_exts(YF_context ctx) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;
     }
-    strncpy(ctx->dev_exts[i], props[i].extensionName, len);
+    strncpy(ctx->dev_exts[i], props[i].extensionName, len-1);
+    ctx->dev_exts[i][len-1] = '\0';
   }
 
   ctx->dev_ext_n = n;
