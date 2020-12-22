@@ -88,13 +88,8 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf) {
     yf_cstate_deinit(cst);
     return NULL;
   }
-  res = vkCreateComputePipelines(
-    ctx->device,
-    ctx->pl_cache,
-    1,
-    &pl_info,
-    NULL,
-    &cst->pipeline);
+  res = vkCreateComputePipelines(ctx->device, ctx->pl_cache, 1, &pl_info,
+      NULL, &cst->pipeline);
   if (res != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     yf_cstate_deinit(cst);
@@ -115,10 +110,9 @@ YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index) {
 }
 
 void yf_cstate_deinit(YF_cstate cst) {
-  if (cst == NULL)
-    return;
-
-  vkDestroyPipelineLayout(cst->ctx->device, cst->layout, NULL);
-  vkDestroyPipeline(cst->ctx->device, cst->pipeline, NULL);
-  free(cst);
+  if (cst != NULL) {
+    vkDestroyPipelineLayout(cst->ctx->device, cst->layout, NULL);
+    vkDestroyPipeline(cst->ctx->device, cst->pipeline, NULL);
+    free(cst);
+  }
 }

@@ -53,17 +53,17 @@ typedef struct YF_context_o {
 # define YF_CTX_PRINT(ctx) do { \
    printf("\n-- Context (debug) --"); \
    printf("\ng/c queue i: %d/%d", ctx->graph_queue_i, ctx->comp_queue_i); \
-   printf("\ninst version: %u.%u", \
-    VK_VERSION_MAJOR(ctx->inst_version), VK_VERSION_MINOR(ctx->inst_version)); \
+   printf("\ninst version: %u.%u", VK_VERSION_MAJOR(ctx->inst_version), \
+      VK_VERSION_MINOR(ctx->inst_version)); \
    printf("\nlayer n: %u", ctx->layer_n); \
    for (unsigned i = 0; i < ctx->layer_n; ++i) \
-    printf("\n\t%s", ctx->layers[i]); \
+     printf("\n\t%s", ctx->layers[i]); \
    printf("\ninst ext n: %u", ctx->inst_ext_n); \
    for (unsigned i = 0; i < ctx->inst_ext_n; ++i) \
-    printf("\n\t%s", ctx->inst_exts[i]); \
+     printf("\n\t%s", ctx->inst_exts[i]); \
    printf("\ndev ext n: %u", ctx->dev_ext_n); \
    for (unsigned i = 0; i < ctx->dev_ext_n; ++i) \
-    printf("\n\t%s", ctx->dev_exts[i]); \
+     printf("\n\t%s", ctx->dev_exts[i]); \
    printf("\n--\n"); } while (0)
 #endif
 

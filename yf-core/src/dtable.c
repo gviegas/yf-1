@@ -36,10 +36,8 @@ static size_t hash_kv(const void *x);
 /* Compares a 'L_kv' to another. */
 static int cmp_kv(const void *a, const void *b);
 
-YF_dtable yf_dtable_init(
-  YF_context ctx,
-  const YF_dentry *entries,
-  unsigned entry_n)
+YF_dtable yf_dtable_init(YF_context ctx, const YF_dentry *entries,
+    unsigned entry_n)
 {
   assert(ctx != NULL);
   assert(entries != NULL);
@@ -231,14 +229,9 @@ void yf_dtable_dealloc(YF_dtable dtb) {
   dtb->set_n = 0;
 }
 
-int yf_dtable_copybuf(
-  YF_dtable dtb,
-  unsigned alloc_i,
-  unsigned binding,
-  YF_slice elements,
-  const YF_buffer *bufs,
-  const size_t *offsets,
-  const size_t *sizes)
+int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
+    YF_slice elements, const YF_buffer *bufs, const size_t *offsets,
+    const size_t *sizes)
 {
   assert(dtb != NULL);
   assert(elements.n > 0);
@@ -311,13 +304,8 @@ int yf_dtable_copybuf(
   return 0;
 }
 
-int yf_dtable_copyimg(
-  YF_dtable dtb,
-  unsigned alloc_i,
-  unsigned binding,
-  YF_slice elements,
-  const YF_image *imgs,
-  const unsigned *layers)
+int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
+    YF_slice elements, const YF_image *imgs, const unsigned *layers)
 {
   assert(dtb != NULL);
   assert(elements.n > 0);
@@ -525,11 +513,8 @@ static int init_layout(YF_dtable dtb) {
     .bindingCount = dtb->entry_n,
     .pBindings = bindings
   };
-  VkResult res = vkCreateDescriptorSetLayout(
-    dtb->ctx->device,
-    &info,
-    NULL,
-    &dtb->layout);
+  VkResult res = vkCreateDescriptorSetLayout(dtb->ctx->device, &info, NULL,
+      &dtb->layout);
   if (res != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     free(bindings);

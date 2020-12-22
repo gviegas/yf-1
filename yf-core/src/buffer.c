@@ -70,11 +70,8 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size) {
   return buf;
 }
 
-int yf_buffer_copy(
-  YF_buffer buf,
-  size_t offset,
-  const void *data,
-  size_t size)
+int yf_buffer_copy(YF_buffer buf, size_t offset, const void *data,
+    size_t size)
 {
   assert(buf != NULL);
   assert(data != NULL);

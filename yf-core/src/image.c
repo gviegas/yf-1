@@ -37,13 +37,8 @@ static size_t hash_iview(const void *x);
 /* Compares a 'YF_iview' to another. */
 static int cmp_iview(const void *a, const void *b);
 
-YF_image yf_image_init(
-  YF_context ctx,
-  int pixfmt,
-  YF_dim3 dim,
-  unsigned layers,
-  unsigned levels,
-  unsigned samples)
+YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
+    unsigned layers, unsigned levels, unsigned samples)
 {
   assert(ctx != NULL);
   assert(dim.width > 0 && dim.height > 0 && dim.depth > 0);
@@ -265,13 +260,8 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
   return 0;
 }
 
-void yf_image_getval(
-  YF_image img,
-  int *pixfmt,
-  YF_dim3 *dim,
-  unsigned *layers,
-  unsigned *levels,
-  unsigned *samples)
+void yf_image_getval(YF_image img, int *pixfmt, YF_dim3 *dim,
+    unsigned *layers, unsigned *levels, unsigned *samples)
 {
   assert(img != NULL);
 
@@ -311,16 +301,9 @@ void yf_image_deinit(YF_image img) {
   free(img);
 }
 
-YF_image yf_image_wrap(
-  YF_context ctx,
-  VkImage image,
-  VkFormat format,
-  VkImageType type,
-  YF_dim3 dim,
-  unsigned layers,
-  unsigned levels,
-  VkSampleCountFlagBits samples,
-  VkImageLayout layout)
+YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
+    VkImageType type, YF_dim3 dim, unsigned layers, unsigned levels,
+    VkSampleCountFlagBits samples, VkImageLayout layout)
 {
   assert(ctx != NULL);
   assert(image != NULL);
@@ -389,11 +372,8 @@ YF_image yf_image_wrap(
   return img;
 }
 
-int yf_image_getiview(
-  YF_image img,
-  YF_slice layers,
-  YF_slice levels,
-  YF_iview *iview)
+int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
+    YF_iview *iview)
 {
   assert(img != NULL);
   assert(layers.n > 0 && layers.i + layers.n <= img->layers);
@@ -472,13 +452,14 @@ void yf_image_ungetiview(YF_image img, YF_iview *iview) {
   }
 }
 
+/* TODO: Provide more parameters for this function. */
 void yf_image_transition(YF_image img, VkCommandBuffer cbuffer) {
   assert(img != NULL);
   assert(cbuffer != NULL);
 
   img->layout = VK_IMAGE_LAYOUT_GENERAL;
 
-  VkImageMemoryBarrier img_barrier = {
+  VkImageMemoryBarrier barrier = {
     .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
     .pNext = NULL,
     .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
@@ -497,17 +478,8 @@ void yf_image_transition(YF_image img, VkCommandBuffer cbuffer) {
     }
   };
 
-  vkCmdPipelineBarrier(
-    cbuffer,
-    VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-    0,
-    0,
-    NULL,
-    0,
-    NULL,
-    1,
-    &img_barrier);
+  vkCmdPipelineBarrier(cbuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, NULL, 0, NULL, 1, &barrier);
 }
 
 static void dealloc_stgbuf(int res, void *arg) {

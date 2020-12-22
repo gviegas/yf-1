@@ -110,7 +110,7 @@ static int decode_vport(const YF_cmd *cmd);
 static int decode_sciss(const YF_cmd *cmd);
 
 /* Decodes a 'set dtable' command. */
-static int decode_dtb(int cmdb, const YF_cmd *cmd);
+static int decode_dtb(int cmdbuf, const YF_cmd *cmd);
 
 /* Decodes a 'set vertex buffer' command. */
 static int decode_vbuf(const YF_cmd *cmd);
@@ -134,13 +134,13 @@ static int decode_draw(const YF_cmd *cmd);
 static int decode_disp(const YF_cmd *cmd);
 
 /* Decodes a 'copy buffer' command. */
-static int decode_cpybuf(int cmdb, const YF_cmd *cmd);
+static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd);
 
 /* Decodes a 'copy image' command. */
-static int decode_cpyimg(int cmdb, const YF_cmd *cmd);
+static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd);
 
 /* Decodes a 'synchronize' command. */
-static int decode_sync(int cmdb);
+static int decode_sync(int cmdbuf);
 
 int yf_cmdbuf_decode(YF_cmdbuf cmdb) {
   assert(cmdb != NULL);
@@ -213,10 +213,8 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
   l_gdec->clrcol.vals = calloc(col_max, sizeof *l_gdec->clrcol.vals);
   l_gdec->clrcol.used = calloc(col_max, sizeof *l_gdec->clrcol.used);
 
-  if (l_gdec->dtb.allocs == NULL ||
-    l_gdec->dtb.used == NULL ||
-    l_gdec->clrcol.vals == NULL ||
-    l_gdec->clrcol.used == NULL)
+  if (l_gdec->dtb.allocs == NULL || l_gdec->dtb.used == NULL ||
+      l_gdec->clrcol.vals == NULL || l_gdec->clrcol.used == NULL)
   {
     yf_seterr(YF_ERR_NOMEM, __func__);
     free(l_gdec->dtb.allocs);
@@ -285,6 +283,8 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
   if (l_gdec->pass != NULL)
     vkCmdEndRenderPass(pres->pool_res);
 
+  /* XXX: Clear commands are deferred until a draw is issued. When a clear
+     request comes last, it is handled here. */
   if (r == 0 && l_gdec->clr_pending) {
     if (l_gdec->tgt == NULL) {
       yf_seterr(YF_ERR_INVCMD, __func__);
@@ -297,6 +297,7 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
         .baseArrayLayer = 0,
         .layerCount = l_gdec->tgt->layers
       };
+
       if (l_gdec->clrcol.pending) {
         VkClearColorValue col;
         for (unsigned i = 0, n = 0; ; ++i) {
@@ -307,18 +308,14 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
             col.float32[2] = l_gdec->clrcol.vals[i].b;
             col.float32[3] = l_gdec->clrcol.vals[i].a;
             range.baseArrayLayer = l_gdec->tgt->lays_base[i];
-            vkCmdClearColorImage(
-              pres->pool_res,
-              l_gdec->tgt->imgs[i]->image,
-              VK_IMAGE_LAYOUT_GENERAL,
-              &col,
-              1,
-              &range);
+            vkCmdClearColorImage(pres->pool_res, l_gdec->tgt->imgs[i]->image,
+                VK_IMAGE_LAYOUT_GENERAL, &col, 1, &range);
             if (++n == l_gdec->clrcol.n)
               break;
           }
         }
       }
+
       if (l_gdec->clrdep.pending || l_gdec->clrsten.pending) {
         assert(l_gdec->tgt->pass->depth_n != 0);
         unsigned index = l_gdec->tgt->iview_n-1;
@@ -334,13 +331,9 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
           range.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
           ds.stencil = l_gdec->clrsten.val;
         }
-        vkCmdClearDepthStencilImage(
-          pres->pool_res,
-          l_gdec->tgt->imgs[index]->image,
-          VK_IMAGE_LAYOUT_GENERAL,
-          &ds,
-          1,
-          &range);
+        vkCmdClearDepthStencilImage(pres->pool_res,
+            l_gdec->tgt->imgs[index]->image, VK_IMAGE_LAYOUT_GENERAL,
+            &ds, 1, &range);
       }
     }
   }
@@ -417,15 +410,15 @@ static int decode_gst(const YF_cmd *cmd) {
   if (cmd->gst.gst != l_gdec->gst) {
     l_gdec->gdec |= YF_GDEC_GST;
     l_gdec->gst = cmd->gst.gst;
+
     /* TODO: Check if passes are compatible instead. */
     if (l_gdec->pass != NULL && l_gdec->pass != l_gdec->gst->pass) {
       vkCmdEndRenderPass(l_gdec->pres->pool_res);
       l_gdec->pass = NULL;
     }
-    vkCmdBindPipeline(
-      l_gdec->pres->pool_res,
-      VK_PIPELINE_BIND_POINT_GRAPHICS,
-      l_gdec->gst->pipeline);
+
+    vkCmdBindPipeline(l_gdec->pres->pool_res, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        l_gdec->gst->pipeline);
   }
   return 0;
 }
@@ -434,10 +427,9 @@ static int decode_cst(const YF_cmd *cmd) {
   if (cmd->cst.cst != l_cdec->cst) {
     l_cdec->cdec |= YF_CDEC_CST;
     l_cdec->cst = cmd->cst.cst;
-    vkCmdBindPipeline(
-      l_cdec->pres->pool_res,
-      VK_PIPELINE_BIND_POINT_COMPUTE,
-      l_cdec->cst->pipeline);
+
+    vkCmdBindPipeline(l_cdec->pres->pool_res, VK_PIPELINE_BIND_POINT_COMPUTE,
+        l_cdec->cst->pipeline);
   }
   return 0;
 }
@@ -446,6 +438,7 @@ static int decode_tgt(const YF_cmd *cmd) {
   if (cmd->tgt.tgt != l_gdec->tgt) {
     l_gdec->gdec |= YF_GDEC_TGT;
     l_gdec->tgt = cmd->tgt.tgt;
+
     if (l_gdec->pass != NULL) {
       vkCmdEndRenderPass(l_gdec->pres->pool_res);
       l_gdec->pass = NULL;
@@ -457,23 +450,25 @@ static int decode_tgt(const YF_cmd *cmd) {
 static int decode_vport(const YF_cmd *cmd) {
   const YF_limits *lim = yf_getlimits(l_gdec->ctx);
   if (cmd->vport.index >= lim->viewport.max ||
-    cmd->vport.vport.width <= 0.0f ||
-    cmd->vport.vport.width > lim->viewport.dim_max.width ||
-    cmd->vport.vport.height <= 0.0f ||
-    cmd->vport.vport.height > lim->viewport.dim_max.height ||
-    cmd->vport.vport.x < lim->viewport.bounds_min ||
-    cmd->vport.vport.x+cmd->vport.vport.width > lim->viewport.bounds_max ||
-    cmd->vport.vport.y < lim->viewport.bounds_min ||
-    cmd->vport.vport.y+cmd->vport.vport.height > lim->viewport.bounds_max ||
-    cmd->vport.vport.min_depth < 0.0f ||
-    cmd->vport.vport.min_depth > 1.0f ||
-    cmd->vport.vport.max_depth < 0.0f ||
-    cmd->vport.vport.max_depth > 1.0f)
+      cmd->vport.vport.width <= 0.0f ||
+      cmd->vport.vport.width > lim->viewport.dim_max.width ||
+      cmd->vport.vport.height <= 0.0f ||
+      cmd->vport.vport.height > lim->viewport.dim_max.height ||
+      cmd->vport.vport.x < lim->viewport.bounds_min ||
+      cmd->vport.vport.x+cmd->vport.vport.width > lim->viewport.bounds_max ||
+      cmd->vport.vport.y < lim->viewport.bounds_min ||
+      cmd->vport.vport.y+cmd->vport.vport.height > lim->viewport.bounds_max ||
+      cmd->vport.vport.min_depth < 0.0f ||
+      cmd->vport.vport.min_depth > 1.0f ||
+      cmd->vport.vport.max_depth < 0.0f ||
+      cmd->vport.vport.max_depth > 1.0f)
   {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
   }
+
   l_gdec->gdec |= YF_GDEC_VPORT;
+
   VkViewport viewport = {
     .x = cmd->vport.vport.x,
     .y = cmd->vport.vport.y,
@@ -482,16 +477,19 @@ static int decode_vport(const YF_cmd *cmd) {
     .minDepth = cmd->vport.vport.min_depth,
     .maxDepth = cmd->vport.vport.max_depth
   };
+
   vkCmdSetViewport(l_gdec->pres->pool_res, cmd->vport.index, 1, &viewport);
   return 0;
 }
 
 static int decode_sciss(const YF_cmd *cmd) {
   l_gdec->gdec |= YF_GDEC_SCISS;
+
   VkRect2D scissor = {
     .offset = {cmd->sciss.rect.origin.x, cmd->sciss.rect.origin.y},
     .extent = {cmd->sciss.rect.size.width, cmd->sciss.rect.size.height}
   };
+
   vkCmdSetScissor(l_gdec->pres->pool_res, cmd->sciss.index, 1, &scissor);
   return 0;
 }
@@ -510,6 +508,7 @@ static int decode_dtb(int cmdbuf, const YF_cmd *cmd) {
         l_gdec->dtb.n++;
       }
       break;
+
     case YF_CMDBUF_COMP:
       if (cmd->dtb.index >= yf_getlimits(l_cdec->ctx)->state.dtable_max) {
         yf_seterr(YF_ERR_INVARG, __func__);
@@ -522,6 +521,7 @@ static int decode_dtb(int cmdbuf, const YF_cmd *cmd) {
         l_cdec->dtb.n++;
       }
       break;
+
     default:
       assert(0);
   }
@@ -534,12 +534,10 @@ static int decode_vbuf(const YF_cmd *cmd) {
     return -1;
   }
   l_gdec->gdec |= YF_GDEC_VBUF;
-  vkCmdBindVertexBuffers(
-    l_gdec->pres->pool_res,
-    cmd->vbuf.index,
-    1,
-    &cmd->vbuf.buf->buffer,
-    &cmd->vbuf.offset);
+
+  vkCmdBindVertexBuffers(l_gdec->pres->pool_res, cmd->vbuf.index, 1,
+      &cmd->vbuf.buf->buffer, &cmd->vbuf.offset);
+
   return 0;
 }
 
@@ -557,11 +555,10 @@ static int decode_ibuf(const YF_cmd *cmd) {
       return -1;
   }
   l_gdec->gdec |= YF_GDEC_IBUF;
-  vkCmdBindIndexBuffer(
-    l_gdec->pres->pool_res,
-    cmd->ibuf.buf->buffer,
-    cmd->ibuf.offset,
-    idx_type);
+
+  vkCmdBindIndexBuffer(l_gdec->pres->pool_res, cmd->ibuf.buf->buffer,
+      cmd->ibuf.offset, idx_type);
+
   return 0;
 }
 
@@ -572,6 +569,7 @@ static int decode_clrcol(const YF_cmd *cmd) {
   }
   l_gdec->clr_pending = l_gdec->clrcol.pending = 1;
   l_gdec->clrcol.vals[cmd->clrcol.index] = cmd->clrcol.value;
+
   if (!l_gdec->clrcol.used[cmd->clrcol.index]) {
     l_gdec->clrcol.used[cmd->clrcol.index] = 1;
     l_gdec->clrcol.n++;
@@ -601,10 +599,12 @@ static int decode_draw(const YF_cmd *cmd) {
     return -1;
   }
 
+  /* render pass */
   if (l_gdec->pass != l_gdec->gst->pass) {
     if (l_gdec->pass != NULL)
       vkCmdEndRenderPass(l_gdec->pres->pool_res);
     l_gdec->pass = l_gdec->gst->pass;
+
     VkRenderPassBeginInfo info = {
       .sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
       .pNext = NULL,
@@ -617,37 +617,35 @@ static int decode_draw(const YF_cmd *cmd) {
       .clearValueCount = 0,
       .pClearValues = NULL
     };
-    vkCmdBeginRenderPass(
-      l_gdec->pres->pool_res,
-      &info,
-      VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBeginRenderPass(l_gdec->pres->pool_res, &info,
+        VK_SUBPASS_CONTENTS_INLINE);
   }
 
+  /* dtables */
   if (l_gdec->dtb.pending) {
     for (unsigned i = 0, n = 0; ; ++i) {
       if (!l_gdec->dtb.used[i])
         continue;
+
       if (i >= l_gdec->gst->dtb_n ||
-        l_gdec->dtb.allocs[i] >= l_gdec->gst->dtbs[i]->set_n)
+          l_gdec->dtb.allocs[i] >= l_gdec->gst->dtbs[i]->set_n)
       {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
       }
-      vkCmdBindDescriptorSets(
-        l_gdec->pres->pool_res,
-        VK_PIPELINE_BIND_POINT_GRAPHICS,
-        l_gdec->gst->layout,
-        i,
-        1,
-        &l_gdec->gst->dtbs[i]->sets[l_gdec->dtb.allocs[i]],
-        0,
-        NULL);
+
+      vkCmdBindDescriptorSets(l_gdec->pres->pool_res,
+          VK_PIPELINE_BIND_POINT_GRAPHICS, l_gdec->gst->layout, i,
+          1, &l_gdec->gst->dtbs[i]->sets[l_gdec->dtb.allocs[i]], 0, NULL);
+
       if (++n == l_gdec->dtb.n)
         break;
     }
     l_gdec->dtb.pending = 0;
   }
 
+  /* clear requests */
   if (l_gdec->clr_pending) {
     VkClearRect clr_rect = {
       .rect = {{0, 0}, {l_gdec->tgt->dim.width, l_gdec->tgt->dim.height}},
@@ -656,12 +654,14 @@ static int decode_draw(const YF_cmd *cmd) {
     };
     VkClearAttachment *clr_atts = NULL;
     unsigned clr_i = 0;
+
     if (l_gdec->clrcol.pending) {
       clr_atts = malloc(sizeof *clr_atts * (l_gdec->clrcol.n+1));
       if (clr_atts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
       }
+
       for (unsigned i = 0; ; ++i) {
         if (l_gdec->clrcol.used[i]) {
           clr_atts[clr_i].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -676,8 +676,10 @@ static int decode_draw(const YF_cmd *cmd) {
             break;
         }
       }
+
       l_gdec->clrcol.n = 0;
       l_gdec->clrcol.pending = 0;
+
     } else {
       clr_atts = malloc(sizeof *clr_atts);
       if (clr_atts == NULL) {
@@ -685,6 +687,7 @@ static int decode_draw(const YF_cmd *cmd) {
         return -1;
       }
     }
+
     clr_atts[clr_i].aspectMask = 0;
     if (l_gdec->clrdep.pending) {
       clr_atts[clr_i].aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -697,26 +700,21 @@ static int decode_draw(const YF_cmd *cmd) {
       clr_atts[clr_i].clearValue.depthStencil.stencil = l_gdec->clrsten.val;
       l_gdec->clrsten.pending = 0;
     }
-    vkCmdClearAttachments(
-      l_gdec->pres->pool_res,
-      clr_i + (clr_atts[clr_i].aspectMask != 0),
-      clr_atts,
-      1,
-      &clr_rect);
+
+    vkCmdClearAttachments(l_gdec->pres->pool_res,
+        clr_i + (clr_atts[clr_i].aspectMask != 0), clr_atts, 1, &clr_rect);
+
     free(clr_atts);
     l_gdec->clr_pending = 0;
   }
 
+  /* draw */
   int r;
   if (cmd->draw.indexed) {
     if ((l_gdec->gdec & YF_GDEC_DRAWI) == YF_GDEC_DRAWI) {
-      vkCmdDrawIndexed(
-        l_gdec->pres->pool_res,
-        cmd->draw.vert_n,
-        cmd->draw.inst_n,
-        cmd->draw.index_base,
-        cmd->draw.vert_id,
-        cmd->draw.inst_id);
+      vkCmdDrawIndexed(l_gdec->pres->pool_res, cmd->draw.vert_n,
+          cmd->draw.inst_n, cmd->draw.index_base, cmd->draw.vert_id,
+          cmd->draw.inst_id);
       r = 0;
     } else {
       yf_seterr(YF_ERR_INVCMD, __func__);
@@ -724,12 +722,8 @@ static int decode_draw(const YF_cmd *cmd) {
     }
   } else {
     if ((l_gdec->gdec & YF_GDEC_DRAW) == YF_GDEC_DRAW) {
-      vkCmdDraw(
-        l_gdec->pres->pool_res,
-        cmd->draw.vert_n,
-        cmd->draw.inst_n,
-        cmd->draw.vert_id,
-        cmd->draw.inst_id);
+      vkCmdDraw(l_gdec->pres->pool_res, cmd->draw.vert_n, cmd->draw.inst_n,
+          cmd->draw.vert_id, cmd->draw.inst_id);
       r = 0;
     } else {
       yf_seterr(YF_ERR_INVCMD, __func__);
@@ -744,42 +738,39 @@ static int decode_disp(const YF_cmd *cmd) {
   assert(cmd->disp.dim.height > 0);
   assert(cmd->disp.dim.depth > 0);
 
+  /* dtables */
   if (l_cdec->dtb.pending) {
     if (l_cdec->cst == NULL) {
       yf_seterr(YF_ERR_INVCMD, __func__);
       return -1;
     }
+
     for (unsigned i = 0, n = 0; ; ++i) {
       if (!l_cdec->dtb.used[i])
         continue;
+
       if (i >= l_cdec->cst->dtb_n ||
-        l_cdec->dtb.allocs[i] >= l_cdec->cst->dtbs[i]->set_n)
+          l_cdec->dtb.allocs[i] >= l_cdec->cst->dtbs[i]->set_n)
       {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
       }
-      vkCmdBindDescriptorSets(
-        l_cdec->pres->pool_res,
-        VK_PIPELINE_BIND_POINT_COMPUTE,
-        l_cdec->cst->layout,
-        i,
-        1,
-        &l_cdec->cst->dtbs[i]->sets[l_cdec->dtb.allocs[i]],
-        0,
-        NULL);
+
+      vkCmdBindDescriptorSets(l_cdec->pres->pool_res,
+          VK_PIPELINE_BIND_POINT_COMPUTE, l_cdec->cst->layout, i,
+          1, &l_cdec->cst->dtbs[i]->sets[l_cdec->dtb.allocs[i]], 0, NULL);
+
       if (++n == l_cdec->dtb.n)
         break;
     }
     l_cdec->dtb.pending = 0;
   }
 
+  /* dispatch */
   int r;
   if ((l_cdec->cdec & YF_CDEC_DISP) == YF_CDEC_DISP) {
-    vkCmdDispatch(
-      l_cdec->pres->pool_res,
-      cmd->disp.dim.width,
-      cmd->disp.dim.height,
-      cmd->disp.dim.depth);
+    vkCmdDispatch(l_cdec->pres->pool_res, cmd->disp.dim.width,
+        cmd->disp.dim.height, cmd->disp.dim.depth);
     r = 0;
   } else {
     yf_seterr(YF_ERR_INVCMD, __func__);
@@ -808,17 +799,16 @@ static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd) {
     default:
       assert(0);
   }
+
   VkBufferCopy region = {
     .srcOffset = cmd->cpybuf.src_offs,
     .dstOffset = cmd->cpybuf.dst_offs,
     .size = cmd->cpybuf.size
   };
-  vkCmdCopyBuffer(
-    pres->pool_res,
-    cmd->cpybuf.src->buffer,
-    cmd->cpybuf.dst->buffer,
-    1,
-    &region);
+
+  vkCmdCopyBuffer(pres->pool_res, cmd->cpybuf.src->buffer,
+      cmd->cpybuf.dst->buffer, 1, &region);
+
   return 0;
 }
 
@@ -844,10 +834,12 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd) {
     default:
       assert(0);
   }
+
   if (cmd->cpyimg.dst->layout != VK_IMAGE_LAYOUT_GENERAL)
     yf_image_transition(cmd->cpyimg.dst, pres->pool_res);
   if (cmd->cpyimg.src->layout != VK_IMAGE_LAYOUT_GENERAL)
     yf_image_transition(cmd->cpyimg.src, pres->pool_res);
+
   /* TODO: Provide a way to select the mip level. */
   VkImageCopy region = {
     .srcSubresource = {
@@ -870,14 +862,12 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd) {
       YF_MIN(cmd->cpyimg.dst->dim.depth, cmd->cpyimg.src->dim.depth)
     }
   };
-  vkCmdCopyImage(
-    pres->pool_res,
-    cmd->cpyimg.src->image,
-    VK_IMAGE_LAYOUT_GENERAL,
-    cmd->cpyimg.dst->image,
-    VK_IMAGE_LAYOUT_GENERAL,
-    1,
-    &region);
+
+  vkCmdCopyImage(pres->pool_res,
+      cmd->cpyimg.src->image, VK_IMAGE_LAYOUT_GENERAL,
+      cmd->cpyimg.dst->image, VK_IMAGE_LAYOUT_GENERAL,
+      1, &region);
+
   return 0;
 }
 
@@ -898,22 +888,17 @@ static int decode_sync(int cmdbuf) {
     default:
       assert(0);
   }
+
   VkMemoryBarrier mem_bar = {
     .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
     .pNext = NULL,
     .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
     .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT
   };
-  vkCmdPipelineBarrier(
-    pres->pool_res,
-    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-    VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-    VK_DEPENDENCY_BY_REGION_BIT,
-    1,
-    &mem_bar,
-    0,
-    NULL,
-    0,
-    NULL);
+
+  vkCmdPipelineBarrier(pres->pool_res, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_DEPENDENCY_BY_REGION_BIT,
+      1, &mem_bar, 0, NULL, 0, NULL);
+
   return 0;
 }
