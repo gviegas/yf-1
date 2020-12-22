@@ -16,12 +16,9 @@
 
 #define YF_TGTN 4
 
-YF_pass yf_pass_init(
-  YF_context ctx,
-  const YF_colordsc *colors,
-  unsigned color_n,
-  const YF_colordsc *resolves,
-  const YF_depthdsc *depth_stencil)
+YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
+    unsigned color_n, const YF_colordsc *resolves,
+    const YF_depthdsc *depth_stencil)
 {
   assert(ctx != NULL);
 
@@ -140,12 +137,9 @@ YF_pass yf_pass_init(
     depth_ref->layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
   }
   for (unsigned i = 0; i < dsc_n; ++i) {
-    if (dscs[i].format == VK_FORMAT_UNDEFINED ||
-      dscs[i].samples == INT_MAX ||
-      dscs[i].loadOp == INT_MAX ||
-      dscs[i].storeOp == INT_MAX ||
-      dscs[i].stencilLoadOp == INT_MAX ||
-      dscs[i].stencilStoreOp == INT_MAX)
+    if (dscs[i].format == VK_FORMAT_UNDEFINED || dscs[i].samples == INT_MAX ||
+        dscs[i].loadOp == INT_MAX || dscs[i].storeOp == INT_MAX ||
+        dscs[i].stencilLoadOp == INT_MAX || dscs[i].stencilStoreOp == INT_MAX)
     {
       yf_seterr(YF_ERR_INVARG, __func__);
       yf_pass_deinit(pass);
@@ -194,21 +188,16 @@ YF_pass yf_pass_init(
   return pass;
 }
 
-YF_target yf_pass_maketarget(
-  YF_pass pass,
-  YF_dim2 dim,
-  unsigned layers,
-  const YF_attach *colors,
-  unsigned color_n,
-  const YF_attach *resolves,
-  const YF_attach *depth_stencil)
+YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
+    const YF_attach *colors, unsigned color_n, const YF_attach *resolves,
+    const YF_attach *depth_stencil)
 {
   assert(pass != NULL);
 
   const YF_limits *lim = yf_getlimits(pass->ctx);
   if (layers > lim->pass.layer_max ||
-    dim.width > lim->pass.dim_max.width ||
-    dim.height > lim->pass.dim_max.height)
+      dim.width > lim->pass.dim_max.width ||
+      dim.height > lim->pass.dim_max.height)
   {
     yf_seterr(YF_ERR_LIMIT, __func__);
     return NULL;
@@ -216,10 +205,8 @@ YF_target yf_pass_maketarget(
 
   const unsigned resolve_n = resolves == NULL ? 0 : color_n;
   const unsigned depth_n = depth_stencil == NULL ? 0 : 1;
-  if (layers < 1 ||
-    color_n != pass->color_n ||
-    resolve_n != pass->resolve_n ||
-    depth_n != pass->depth_n)
+  if (layers < 1 || color_n != pass->color_n ||
+      resolve_n != pass->resolve_n || depth_n != pass->depth_n)
   {
     yf_seterr(YF_ERR_INVARG, __func__);
     return NULL;
@@ -350,11 +337,8 @@ YF_target yf_pass_maketarget(
     .height = dim.height,
     .layers = layers
   };
-  VkResult res = vkCreateFramebuffer(
-    pass->ctx->device,
-    &info,
-    NULL,
-    &tgt->framebuf);
+  VkResult res = vkCreateFramebuffer(pass->ctx->device, &info, NULL,
+      &tgt->framebuf);
   free(info_views);
   if (res != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
@@ -409,12 +393,11 @@ int yf_pass_unmktarget(YF_pass pass, YF_target tgt) {
 }
 
 void yf_pass_deinit(YF_pass pass) {
-  if (pass == NULL)
-    return;
-
-  vkDestroyRenderPass(pass->ctx->device, pass->ren_pass, NULL);
-  for (unsigned i = 0; i < pass->tgt_cap; ++i)
-    yf_pass_unmktarget(pass, pass->tgts[i]);
-  free(pass->tgts);
-  free(pass);
+  if (pass != NULL) {
+    vkDestroyRenderPass(pass->ctx->device, pass->ren_pass, NULL);
+    for (unsigned i = 0; i < pass->tgt_cap; ++i)
+      yf_pass_unmktarget(pass, pass->tgts[i]);
+    free(pass->tgts);
+    free(pass);
+  }
 }
