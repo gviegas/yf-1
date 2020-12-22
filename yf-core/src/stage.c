@@ -16,7 +16,6 @@
 #include "context.h"
 
 #define YF_MODWRD 4
-#define YF_MODBLK (YF_MODWRD * 256)
 
 /* Type defining stage variables stored in a context. */
 typedef struct {
@@ -65,27 +64,28 @@ int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod) {
     return -1;
   }
 
-  unsigned char *buf = NULL;
-  size_t n = 0;
-  do {
-    void *tmp = realloc(buf, n + YF_MODBLK);
-    if (tmp == NULL) {
-      yf_seterr(YF_ERR_NOMEM, __func__);
-      free(buf);
-      fclose(f);
-      return -1;
-    }
-    buf = tmp;
-    n += fread(buf+n, 1, YF_MODBLK, f);
-  } while (!feof(f));
-
-  fclose(f);
-
-  if (n == 0 || n % YF_MODWRD != 0) {
+  long n = 0;
+  if (fseek(f, 0, SEEK_END) != 0 || (n = ftell(f)) <= 0 || n % YF_MODWRD != 0) {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    free(buf);
+    fclose(f);
     return -1;
   }
+  rewind(f);
+
+  unsigned char *buf = malloc(n);
+  if (buf == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    fclose(f);
+    return -1;
+  }
+
+  if (fread(buf, 1, n, f) != (size_t)n) {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    free(buf);
+    fclose(f);
+    return -1;
+  }
+  fclose(f);
 
   L_kv *kv = malloc(sizeof(L_kv));
   if (kv == NULL) {
