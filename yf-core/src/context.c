@@ -5,12 +5,17 @@
  * Copyright © 2020 Gustavo C. Viegas.
  */
 
-/* TODO: Disallow creation of multiple contexts. */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+#ifndef __STDC_NO_ATOMICS__
+# include <stdatomic.h>
+#else
+/* TODO */
+# error "Missing C11 atomics"
+#endif
 
 #include <yf/com/yf-error.h>
 
@@ -41,6 +46,11 @@
 #define YF_CMDPCAP 16
 #define YF_CMDECAP YF_CMDPCAP
 
+/* Flag to disallow creation of multiple contexts.
+   Multiple contexts are not allowed currently because many VK symbols,
+   which are loaded as globals, refer to a specific instance handle. */
+static atomic_flag l_flag = ATOMIC_FLAG_INIT;
+
 /* Initializes instance handle and instance-related properties. */
 static int init_instance(YF_context ctx);
 
@@ -62,12 +72,20 @@ static int set_inst_exts(YF_context ctx);
 static int set_dev_exts(YF_context ctx);
 
 YF_context yf_context_init(void) {
-  if (yf_loadvk() != 0)
+  if (atomic_flag_test_and_set(&l_flag)) {
+    yf_seterr(YF_ERR_EXIST, __func__);
     return NULL;
+  }
+
+  if (yf_loadvk() != 0) {
+    yf_context_deinit(NULL);
+    return NULL;
+  }
 
   YF_context ctx = calloc(1, sizeof(YF_context_o));
   if (ctx == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
+    yf_context_deinit(NULL);
     return NULL;
   }
   if (init_instance(ctx) != 0) {
@@ -95,6 +113,8 @@ YF_context yf_context_init(void) {
 }
 
 void yf_context_deinit(YF_context ctx) {
+  atomic_flag_clear(&l_flag);
+
   if (ctx == NULL)
     return;
 
