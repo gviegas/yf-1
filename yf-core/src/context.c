@@ -403,95 +403,156 @@ static int set_layers(YF_context ctx) {
 #endif
 
 static int set_inst_exts(YF_context ctx) {
-  unsigned n;
-  VkResult res;
+  const char *req_exts[] = {
+    VK_KHR_SURFACE_EXTENSION_NAME,
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+    VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+    VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+    VK_KHR_XCB_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+    VK_EXT_METAL_SURFACE_EXTENSION_NAME,
+#endif
+  };
+  const size_t req_n = sizeof req_exts / sizeof req_exts[0];
 
-  res = vkEnumerateInstanceExtensionProperties(NULL, &n, NULL);
+  /* TODO: Optional extensions. */
+  const size_t opt_n = 0;
+
+  VkResult res;
+  unsigned prop_n;
+
+  res = vkEnumerateInstanceExtensionProperties(NULL, &prop_n, NULL);
   if (res != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     return -1;
   }
-  if (n == 0)
-    return 0;
+  if (prop_n < req_n) {
+    yf_seterr(YF_ERR_UNSUP, __func__);
+    return -1;
+  }
 
-  VkExtensionProperties *props = malloc(sizeof(VkExtensionProperties) * n);
+  VkExtensionProperties *props = malloc(sizeof(VkExtensionProperties) * prop_n);
   if (props == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  res = vkEnumerateInstanceExtensionProperties(NULL, &n, props);
+  res = vkEnumerateInstanceExtensionProperties(NULL, &prop_n, props);
   if (res != VK_SUCCESS) {
-    free(props);
     yf_seterr(YF_ERR_DEVGEN, __func__);
+    free(props);
     return -1;
   }
 
-  ctx->inst_exts = calloc(n, sizeof(char *));
+  ctx->inst_exts = calloc(req_n + opt_n, sizeof(char *));
   if (ctx->inst_exts == NULL) {
-    free(props);
     yf_seterr(YF_ERR_NOMEM, __func__);
+    free(props);
     return -1;
   }
-  const size_t len = sizeof props[0].extensionName;
-  for (unsigned i = 0; i < n; ++i) {
-    ctx->inst_exts[i] = malloc(len);
-    if (ctx->inst_exts[i] == NULL) {
+  ctx->inst_ext_n = 0;
+
+  /* required extensions */
+  for (size_t i = 0; i < req_n; ++i) {
+    for (size_t j = 0; j < prop_n; ++j) {
+      if (strcmp(req_exts[i], props[j].extensionName) == 0) {
+        ctx->inst_exts[i] = malloc(strlen(req_exts[i]+1));
+        if (ctx->inst_exts[i] == NULL) {
+          yf_seterr(YF_ERR_NOMEM, __func__);
+          free(props);
+          return -1;
+        }
+        strcpy(ctx->inst_exts[i], req_exts[i]);
+        ++ctx->inst_ext_n;
+        break;
+      }
+    }
+    if (ctx->inst_ext_n == i) {
+      /* not found */
+      yf_seterr(YF_ERR_UNSUP, __func__);
       free(props);
-      yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;
     }
-    strncpy(ctx->inst_exts[i], props[i].extensionName, len-1);
-    ctx->inst_exts[i][len-1] = '\0';
   }
 
-  ctx->inst_ext_n = n;
+  /* TODO: Check optional extensions & realloc if any not found. */
+
   free(props);
   return 0;
 }
 
 static int set_dev_exts(YF_context ctx) {
-  unsigned n;
-  VkResult res;
+  const char *req_exts[] = {
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME
+  };
+  const size_t req_n = sizeof req_exts / sizeof req_exts[0];
 
-  res = vkEnumerateDeviceExtensionProperties(ctx->phy_dev, NULL, &n, NULL);
+  /* TODO: Optional extensions. */
+  const size_t opt_n = 0;
+
+  VkResult res;
+  unsigned prop_n;
+
+  res = vkEnumerateDeviceExtensionProperties(ctx->phy_dev, NULL, &prop_n, NULL);
   if (res != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     return -1;
   }
-  if (n == 0)
-    return 0;
+  if (prop_n < req_n) {
+    yf_seterr(YF_ERR_UNSUP, __func__);
+    return -1;
+  }
 
-  VkExtensionProperties *props = malloc(sizeof(VkExtensionProperties) * n);
+  VkExtensionProperties *props = malloc(sizeof(VkExtensionProperties) * prop_n);
   if (props == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  res = vkEnumerateDeviceExtensionProperties(ctx->phy_dev, NULL, &n, props);
+  res = vkEnumerateDeviceExtensionProperties(ctx->phy_dev, NULL, &prop_n,
+      props);
   if (res != VK_SUCCESS) {
-    free(props);
     yf_seterr(YF_ERR_DEVGEN, __func__);
+    free(props);
     return -1;
   }
 
-  ctx->dev_exts = calloc(n, sizeof(char *));
+  ctx->dev_exts = calloc(req_n + opt_n, sizeof(char *));
   if (ctx->dev_exts == NULL) {
-    free(props);
     yf_seterr(YF_ERR_NOMEM, __func__);
+    free(props);
     return -1;
   }
-  const size_t len = sizeof props[0].extensionName;
-  for (unsigned i = 0; i < n; ++i) {
-    ctx->dev_exts[i] = malloc(len);
-    if (ctx->dev_exts[i] == NULL) {
+  ctx->dev_ext_n = 0;
+
+  /* required extensions */
+  for (size_t i = 0; i < req_n; ++i) {
+    for (size_t j = 0; j < prop_n; ++j) {
+      if (strcmp(req_exts[i], props[j].extensionName) == 0) {
+        ctx->dev_exts[i] = malloc(strlen(req_exts[i]+1));
+        if (ctx->dev_exts[i] == NULL) {
+          yf_seterr(YF_ERR_NOMEM, __func__);
+          free(props);
+          return -1;
+        }
+        strcpy(ctx->dev_exts[i], req_exts[i]);
+        ++ctx->dev_ext_n;
+        break;
+      }
+    }
+    if (ctx->dev_ext_n == i) {
+      /* not found */
+      yf_seterr(YF_ERR_UNSUP, __func__);
       free(props);
-      yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;
     }
-    strncpy(ctx->dev_exts[i], props[i].extensionName, len-1);
-    ctx->dev_exts[i][len-1] = '\0';
   }
 
-  ctx->dev_ext_n = n;
+  /* TODO: Check optional extensions & realloc if any not found. */
+
   free(props);
   return 0;
 }
