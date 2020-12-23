@@ -355,52 +355,78 @@ static int init_cache(YF_context ctx) {
 
 #if defined(YF_DEBUG) && !defined(YF_NO_VALIDATION)
 static int set_layers(YF_context ctx) {
-  unsigned n;
-  VkResult res;
+  const char *opt_lays[4];
+  size_t opt_n = 0;
+#if defined(__linux__)
+  opt_lays[opt_n++] = "VK_LAYER_MESA_overlay";
+  opt_lays[opt_n++] = "VK_LAYER_MESA_device_select";
+#endif
+  /* TODO: Other platforms. */
 
-  res = vkEnumerateInstanceLayerProperties(&n, NULL);
+  if (opt_n == 0)
+    return 0;
+
+  VkResult res;
+  unsigned prop_n;
+
+  res = vkEnumerateInstanceLayerProperties(&prop_n, NULL);
   if (res != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     return -1;
   }
-  if (n == 0)
+  if (prop_n == 0)
     return 0;
 
-  VkLayerProperties *props = malloc(sizeof(VkLayerProperties) * n);
+  VkLayerProperties *props = malloc(sizeof(VkLayerProperties) * prop_n);
   if (props == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  res = vkEnumerateInstanceLayerProperties(&n, props);
+  res = vkEnumerateInstanceLayerProperties(&prop_n, props);
   if (res != VK_SUCCESS) {
-    free(props);
     yf_seterr(YF_ERR_DEVGEN, __func__);
-    return -1;
-  }
-
-  ctx->layers = calloc(n, sizeof(char *));
-  if (ctx->layers == NULL) {
     free(props);
-    yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  const size_t len = sizeof props[0].layerName;
-  for (unsigned i = 0; i < n; ++i) {
-    ctx->layers[i] = malloc(len);
-    if (ctx->layers[i] == NULL) {
-      free(props);
-      yf_seterr(YF_ERR_NOMEM, __func__);
-      return -1;
+
+  ctx->layers = calloc(opt_n, sizeof(char *));
+  if (ctx->layers == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    free(props);
+    return -1;
+  }
+  ctx->layer_n = 0;
+
+  /* optional layers */
+  for (size_t i = 0; i < opt_n; ++i) {
+    for (size_t j = 0; j < prop_n; ++j) {
+      if (strcmp(opt_lays[i], props[j].layerName) == 0) {
+        ctx->layers[ctx->layer_n] = malloc(strlen(opt_lays[i]+1));
+        if (ctx->layers[ctx->layer_n] == NULL) {
+          yf_seterr(YF_ERR_NOMEM, __func__);
+          free(props);
+          return -1;
+        }
+        strcpy(ctx->layers[ctx->layer_n], opt_lays[i]);
+        ++ctx->layer_n;
+        break;
+      }
     }
-    strncpy(ctx->layers[i], props[i].layerName, len-1);
-    ctx->layers[i][len-1] = '\0';
   }
 
-  ctx->layer_n = n;
+  if (ctx->layer_n == 0) {
+    free(ctx->layers);
+    ctx->layers = NULL;
+  } else if (ctx->layer_n < opt_n) {
+    void *tmp = realloc(ctx->layers, ctx->layer_n * sizeof(char *));
+    if (tmp != NULL)
+      ctx->layers = tmp;
+  }
+
   free(props);
   return 0;
 }
-#endif
+#endif /* defined(YF_DEBUG) && !defined(YF_NO_VALIDATION) */
 
 static int set_inst_exts(YF_context ctx) {
   const char *req_exts[] = {
