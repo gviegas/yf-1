@@ -107,7 +107,7 @@ void yf_cmdbuf_setcstate(YF_cmdbuf cmdb, YF_cstate cst);
 void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt);
 
 /**
- * Sets the viewport identified by 'index'.
+ * Sets a viewport.
  *
  * @param cmdb: The command buffer.
  * @param index: The viewport index.
@@ -117,7 +117,7 @@ void yf_cmdbuf_setvport(YF_cmdbuf cmdb, unsigned index,
     const YF_viewport *vport);
 
 /**
- * Sets the scissor of the viewport identified by 'index'.
+ * Sets the scissor of a viewport.
  *
  * @param cmdb: The command buffer.
  * @param index: The viewport index.
