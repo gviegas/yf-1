@@ -32,6 +32,7 @@ typedef struct YF_context_o {
   unsigned inst_version;
   VkPhysicalDeviceProperties dev_prop;
   VkPhysicalDeviceMemoryProperties mem_prop;
+  VkPhysicalDeviceFeatures features;
 
   VkPipelineCache pl_cache;
 

@@ -71,6 +71,9 @@ static int set_inst_exts(YF_context ctx);
 /* Sets device extensions. */
 static int set_dev_exts(YF_context ctx);
 
+/* Sets features. */
+static int set_features(YF_context ctx);
+
 YF_context yf_context_init(void) {
   if (atomic_flag_test_and_set(&l_flag)) {
     yf_seterr(YF_ERR_EXIST, __func__);
@@ -224,7 +227,7 @@ static int init_device(YF_context ctx) {
   }
   free(phy_devs);
 
-  if (set_dev_exts(ctx) != 0)
+  if (set_dev_exts(ctx) != 0 || set_features(ctx) != 0)
     return -1;
 
   vkGetPhysicalDeviceQueueFamilyProperties(ctx->phy_dev, &n, NULL);
@@ -284,10 +287,6 @@ static int init_device(YF_context ctx) {
       queue_infos[0].queueFamilyIndex = ctx->comp_queue_i;
   }
 
-  /* TODO: Enable features of interest only. */
-  VkPhysicalDeviceFeatures feat;
-  vkGetPhysicalDeviceFeatures(ctx->phy_dev, &feat);
-
   VkDeviceCreateInfo dev_info = {
     .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
     .pNext = NULL,
@@ -298,7 +297,7 @@ static int init_device(YF_context ctx) {
     .ppEnabledLayerNames = NULL,
     .enabledExtensionCount = ctx->dev_ext_n,
     .ppEnabledExtensionNames = (const char * const *)ctx->dev_exts,
-    .pEnabledFeatures = &feat
+    .pEnabledFeatures = &ctx->features
   };
   res = vkCreateDevice(ctx->phy_dev, &dev_info, NULL, &ctx->device);
   if (res != VK_SUCCESS) {
@@ -580,5 +579,57 @@ static int set_dev_exts(YF_context ctx) {
   /* TODO: Check optional extensions & realloc if any not found. */
 
   free(props);
+  return 0;
+}
+
+static int set_features(YF_context ctx) {
+  VkPhysicalDeviceFeatures feat;
+  vkGetPhysicalDeviceFeatures(ctx->phy_dev, &feat);
+
+  /* TODO: Code should be updated to check these settings and ensure that
+     only available features are being used. */
+
+  ctx->features.fullDrawIndexUint32 = feat.fullDrawIndexUint32;
+  ctx->features.imageCubeArray = feat.imageCubeArray;
+  ctx->features.independentBlend = feat.independentBlend;
+  ctx->features.geometryShader = feat.geometryShader;
+  ctx->features.tessellationShader = feat.tessellationShader;
+  ctx->features.sampleRateShading = feat.sampleRateShading;
+  ctx->features.dualSrcBlend = feat.dualSrcBlend;
+  ctx->features.depthClamp = feat.depthClamp;
+  ctx->features.depthBiasClamp = feat.depthBiasClamp;
+  ctx->features.fillModeNonSolid = feat.fillModeNonSolid;
+  ctx->features.wideLines = feat.wideLines;
+  ctx->features.largePoints = feat.largePoints;
+  ctx->features.alphaToOne = feat.alphaToOne;
+  ctx->features.multiViewport = feat.multiViewport;
+  ctx->features.samplerAnisotropy = feat.samplerAnisotropy;
+  ctx->features.fragmentStoresAndAtomics = feat.fragmentStoresAndAtomics;
+  ctx->features.shaderImageGatherExtended = feat.shaderImageGatherExtended;
+  ctx->features.shaderUniformBufferArrayDynamicIndexing =
+    feat.shaderUniformBufferArrayDynamicIndexing;
+  ctx->features.shaderSampledImageArrayDynamicIndexing =
+    feat.shaderSampledImageArrayDynamicIndexing =
+  ctx->features.shaderStorageBufferArrayDynamicIndexing =
+    feat.shaderStorageBufferArrayDynamicIndexing =
+  ctx->features.shaderStorageImageArrayDynamicIndexing =
+    feat.shaderStorageImageArrayDynamicIndexing =
+  ctx->features.shaderClipDistance = feat.shaderClipDistance;
+  ctx->features.shaderCullDistance = feat.shaderCullDistance;
+
+  /* required features */
+  /* TODO: Refine. */
+  if (ctx->features.geometryShader == VK_FALSE ||
+      ctx->features.tessellationShader == VK_FALSE ||
+      ctx->features.fillModeNonSolid == VK_FALSE ||
+      ctx->features.wideLines == VK_FALSE ||
+      ctx->features.largePoints == VK_FALSE)
+  {
+    yf_seterr(YF_ERR_UNSUP, __func__);
+    return -1;
+  }
+
+  /* TODO: Query newer features. */
+
   return 0;
 }
