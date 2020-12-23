@@ -15,6 +15,7 @@
 #include "context.h"
 #include "image.h"
 #include "cmdpool.h"
+#include "cmdexec.h"
 #include "cmdbuf.h"
 
 #undef YF_MIN
@@ -174,10 +175,14 @@ int yf_wsi_present(YF_wsi wsi, unsigned index) {
     .pResults = NULL
   };
 
+  int exec = yf_cmdexec_execprio(wsi->ctx);
   VkResult res = vkQueuePresentKHR(wsi->ctx->pres_queue, &info);
 
   wsi->imgs[index]->layout = barrier.newLayout;
   wsi->imgs_acq[index] = 0;
+
+  if (exec != 0)
+    return -1;
 
   switch (res) {
     case VK_SUCCESS:
