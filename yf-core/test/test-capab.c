@@ -6,16 +6,147 @@
  */
 
 #include <stdio.h>
+#include <assert.h>
 
 #include "context.h"
 
 /* Context instance. */
 static YF_context l_ctx = NULL;
 
+/* Prints extension-related info. */
+static void print_extensions(void) {
+  puts("\n=Instance exts=\n");
+  for (;;) {
+    VkExtensionProperties exts[100];
+    unsigned ext_n = sizeof exts / sizeof exts[0];
+    VkResult res = vkEnumerateInstanceExtensionProperties(NULL, &ext_n, exts);
+    assert(res == VK_SUCCESS || res == VK_INCOMPLETE);
+    for (size_t i = 0; i < ext_n; ++i)
+      printf("%s\n", exts[i].extensionName);
+    if (res == VK_SUCCESS)
+      break;
+  }
+
+  puts("\n=Device exts=\n");
+  for (;;) {
+    VkExtensionProperties exts[100];
+    unsigned ext_n = sizeof exts / sizeof exts[0];
+    VkResult res = vkEnumerateDeviceExtensionProperties(l_ctx->phy_dev, NULL,
+        &ext_n, exts);
+    assert(res == VK_SUCCESS || res == VK_INCOMPLETE);
+    for (size_t i = 0; i < ext_n; ++i)
+      printf("%s\n", exts[i].extensionName);
+    if (res == VK_SUCCESS)
+      break;
+  }
+
+  puts("\n=Layers=\n");
+  for (;;) {
+    VkLayerProperties lays[100];
+    unsigned lay_n = sizeof lays / sizeof lays[0];
+    VkResult res;
+    res = vkEnumerateInstanceLayerProperties(&lay_n, lays);
+    assert(res == VK_SUCCESS || res == VK_INCOMPLETE);
+    for (size_t i = 0; i < lay_n; ++i) {
+      printf("%s\n? %s\n", lays[i].layerName, lays[i].description);
+      for (;;) {
+        VkExtensionProperties exts[100];
+        unsigned ext_n = sizeof exts / sizeof exts[0];
+        VkResult res = vkEnumerateInstanceExtensionProperties(
+            lays[i].layerName, &ext_n, exts);
+        assert(res == VK_SUCCESS || res == VK_INCOMPLETE);
+        for (size_t i = 0; i < ext_n; ++i)
+          printf("\t%s\n", exts[i].extensionName);
+        if (res == VK_SUCCESS)
+          break;
+      }
+      puts("");
+    }
+    if (res == VK_SUCCESS)
+      break;
+  }
+}
+
+/* Prints device features. */
+static void print_features(void) {
+  VkPhysicalDeviceFeatures feat;
+  vkGetPhysicalDeviceFeatures(l_ctx->phy_dev, &feat);
+  const char *av[2] = {"NO", "YES"};
+
+  puts("\n=Features=\n");
+  printf("robustBufferAccess: %s\n", av[feat.robustBufferAccess]);
+  printf("fullDrawIndexUint32: %s\n", av[feat.fullDrawIndexUint32]);
+  printf("imageCubeArray: %s\n", av[feat.imageCubeArray]);
+  printf("independentBlend: %s\n", av[feat.independentBlend]);
+  printf("geometryShader: %s\n", av[feat.geometryShader]);
+  printf("tessellationShader: %s\n", av[feat.tessellationShader]);
+  printf("sampleRateShading: %s\n", av[feat.sampleRateShading]);
+  printf("dualSrcBlend: %s\n", av[feat.dualSrcBlend]);
+  printf("logicOp: %s\n", av[feat.logicOp]);
+  printf("multiDrawIndirect: %s\n", av[feat.multiDrawIndirect]);
+  printf("drawIndirectFirstInstance: %s\n", av[feat.drawIndirectFirstInstance]);
+  printf("depthClamp: %s\n", av[feat.depthClamp]);
+  printf("depthBiasClamp: %s\n", av[feat.depthBiasClamp]);
+  printf("fillModeNonSolid: %s\n", av[feat.fillModeNonSolid]);
+  printf("depthBounds: %s\n", av[feat.depthBounds]);
+  printf("wideLines: %s\n", av[feat.wideLines]);
+  printf("largePoints: %s\n", av[feat.largePoints]);
+  printf("alphaToOne: %s\n", av[feat.alphaToOne]);
+  printf("multiViewport: %s\n", av[feat.multiViewport]);
+  printf("samplerAnisotropy: %s\n", av[feat.samplerAnisotropy]);
+  printf("textureCompressionETC2: %s\n", av[feat.textureCompressionETC2]);
+  printf("textureCompressionASTC_LDR: %s\n",
+    av[feat.textureCompressionASTC_LDR]);
+  printf("textureCompressionBC: %s\n", av[feat.textureCompressionBC]);
+  printf("occlusionQueryPrecise: %s\n", av[feat.occlusionQueryPrecise]);
+  printf("pipelineStatisticsQuery: %s\n", av[feat.pipelineStatisticsQuery]);
+  printf("vertexPipelineStoresAndAtomics: %s\n",
+    av[feat.vertexPipelineStoresAndAtomics]);
+  printf("fragmentStoresAndAtomics: %s\n", av[feat.fragmentStoresAndAtomics]);
+  printf("shaderTessellationAndGeometryPointSize: %s\n",
+    av[feat.shaderTessellationAndGeometryPointSize]);
+  printf("shaderImageGatherExtended: %s\n", av[feat.shaderImageGatherExtended]);
+  printf("shaderStorageImageExtendedFormats: %s\n",
+    av[feat.shaderStorageImageExtendedFormats]);
+  printf("shaderStorageImageMultisample: %s\n",
+    av[feat.shaderStorageImageMultisample]);
+  printf("shaderStorageImageReadWithoutFormat: %s\n",
+    av[feat.shaderStorageImageReadWithoutFormat]);
+  printf("shaderStorageImageWriteWithoutFormat: %s\n",
+    av[feat.shaderStorageImageWriteWithoutFormat]);
+  printf("shaderUniformBufferArrayDynamicIndexing: %s\n",
+    av[feat.shaderUniformBufferArrayDynamicIndexing]);
+  printf("shaderSampledImageArrayDynamicIndexing: %s\n",
+    av[feat.shaderSampledImageArrayDynamicIndexing]);
+  printf("shaderStorageBufferArrayDynamicIndexing: %s\n",
+    av[feat.shaderStorageBufferArrayDynamicIndexing]);
+  printf("shaderStorageImageArrayDynamicIndexing: %s\n",
+    av[feat.shaderStorageImageArrayDynamicIndexing]);
+  printf("shaderClipDistance: %s\n", av[feat.shaderClipDistance]);
+  printf("shaderCullDistance: %s\n", av[feat.shaderCullDistance]);
+  printf("shaderFloat64: %s\n", av[feat.shaderFloat64]);
+  printf("shaderInt64: %s\n", av[feat.shaderInt64]);
+  printf("shaderInt16: %s\n", av[feat.shaderInt16]);
+  printf("shaderResourceResidency: %s\n", av[feat.shaderResourceResidency]);
+  printf("shaderResourceMinLod: %s\n", av[feat.shaderResourceMinLod]);
+  printf("sparseBinding: %s\n", av[feat.sparseBinding]);
+  printf("sparseResidencyBuffer: %s\n", av[feat.sparseResidencyBuffer]);
+  printf("sparseResidencyImage2D: %s\n", av[feat.sparseResidencyImage2D]);
+  printf("sparseResidencyImage3D: %s\n", av[feat.sparseResidencyImage3D]);
+  printf("sparseResidency2Samples: %s\n", av[feat.sparseResidency2Samples]);
+  printf("sparseResidency4Samples: %s\n", av[feat.sparseResidency4Samples]);
+  printf("sparseResidency8Samples: %s\n", av[feat.sparseResidency8Samples]);
+  printf("sparseResidency16Samples: %s\n", av[feat.sparseResidency16Samples]);
+  printf("sparseResidencyAliased: %s\n", av[feat.sparseResidencyAliased]);
+  printf("variableMultisampleRate: %s\n", av[feat.variableMultisampleRate]);
+  printf("inheritedQueries: %s\n", av[feat.inheritedQueries]);
+}
+
 /* Prints device limits. */
-static int print_limits() {
+static void print_limits() {
   VkPhysicalDeviceLimits *lim = &l_ctx->dev_prop.limits;
-  puts("=limits=");
+
+  puts("\n=limits=\n");
   printf("maxImageDimension1D: %u\n", lim->maxImageDimension1D);
   printf("maxImageDimension2D: %u\n", lim->maxImageDimension2D);
   printf("maxImageDimension3D: %u\n", lim->maxImageDimension3D);
@@ -175,95 +306,18 @@ static int print_limits() {
   printf("optimalBufferCopyRowPitchAlignment: %lu\n",
     lim->optimalBufferCopyRowPitchAlignment);
   printf("nonCoherentAtomSize: %lu\n", lim->nonCoherentAtomSize);
-  puts("----");
-  return 0;
-}
-
-/* Prints available features. */
-static int print_features(void) {
-  VkPhysicalDeviceFeatures feat;
-  vkGetPhysicalDeviceFeatures(l_ctx->phy_dev, &feat);
-  const char *av[2] = {"NO", "YES"};
-  puts("=Features=");
-  printf("robustBufferAccess: %s\n", av[feat.robustBufferAccess]);
-  printf("fullDrawIndexUint32: %s\n", av[feat.fullDrawIndexUint32]);
-  printf("imageCubeArray: %s\n", av[feat.imageCubeArray]);
-  printf("independentBlend: %s\n", av[feat.independentBlend]);
-  printf("geometryShader: %s\n", av[feat.geometryShader]);
-  printf("tessellationShader: %s\n", av[feat.tessellationShader]);
-  printf("sampleRateShading: %s\n", av[feat.sampleRateShading]);
-  printf("dualSrcBlend: %s\n", av[feat.dualSrcBlend]);
-  printf("logicOp: %s\n", av[feat.logicOp]);
-  printf("multiDrawIndirect: %s\n", av[feat.multiDrawIndirect]);
-  printf("drawIndirectFirstInstance: %s\n", av[feat.drawIndirectFirstInstance]);
-  printf("depthClamp: %s\n", av[feat.depthClamp]);
-  printf("depthBiasClamp: %s\n", av[feat.depthBiasClamp]);
-  printf("fillModeNonSolid: %s\n", av[feat.fillModeNonSolid]);
-  printf("depthBounds: %s\n", av[feat.depthBounds]);
-  printf("wideLines: %s\n", av[feat.wideLines]);
-  printf("largePoints: %s\n", av[feat.largePoints]);
-  printf("alphaToOne: %s\n", av[feat.alphaToOne]);
-  printf("multiViewport: %s\n", av[feat.multiViewport]);
-  printf("samplerAnisotropy: %s\n", av[feat.samplerAnisotropy]);
-  printf("textureCompressionETC2: %s\n", av[feat.textureCompressionETC2]);
-  printf("textureCompressionASTC_LDR: %s\n",
-    av[feat.textureCompressionASTC_LDR]);
-  printf("textureCompressionBC: %s\n", av[feat.textureCompressionBC]);
-  printf("occlusionQueryPrecise: %s\n", av[feat.occlusionQueryPrecise]);
-  printf("pipelineStatisticsQuery: %s\n", av[feat.pipelineStatisticsQuery]);
-  printf("vertexPipelineStoresAndAtomics: %s\n",
-    av[feat.vertexPipelineStoresAndAtomics]);
-  printf("fragmentStoresAndAtomics: %s\n", av[feat.fragmentStoresAndAtomics]);
-  printf("shaderTessellationAndGeometryPointSize: %s\n",
-    av[feat.shaderTessellationAndGeometryPointSize]);
-  printf("shaderImageGatherExtended: %s\n", av[feat.shaderImageGatherExtended]);
-  printf("shaderStorageImageExtendedFormats: %s\n",
-    av[feat.shaderStorageImageExtendedFormats]);
-  printf("shaderStorageImageMultisample: %s\n",
-    av[feat.shaderStorageImageMultisample]);
-  printf("shaderStorageImageReadWithoutFormat: %s\n",
-    av[feat.shaderStorageImageReadWithoutFormat]);
-  printf("shaderStorageImageWriteWithoutFormat: %s\n",
-    av[feat.shaderStorageImageWriteWithoutFormat]);
-  printf("shaderUniformBufferArrayDynamicIndexing: %s\n",
-    av[feat.shaderUniformBufferArrayDynamicIndexing]);
-  printf("shaderSampledImageArrayDynamicIndexing: %s\n",
-    av[feat.shaderSampledImageArrayDynamicIndexing]);
-  printf("shaderStorageBufferArrayDynamicIndexing: %s\n",
-    av[feat.shaderStorageBufferArrayDynamicIndexing]);
-  printf("shaderStorageImageArrayDynamicIndexing: %s\n",
-    av[feat.shaderStorageImageArrayDynamicIndexing]);
-  printf("shaderClipDistance: %s\n", av[feat.shaderClipDistance]);
-  printf("shaderCullDistance: %s\n", av[feat.shaderCullDistance]);
-  printf("shaderFloat64: %s\n", av[feat.shaderFloat64]);
-  printf("shaderInt64: %s\n", av[feat.shaderInt64]);
-  printf("shaderInt16: %s\n", av[feat.shaderInt16]);
-  printf("shaderResourceResidency: %s\n", av[feat.shaderResourceResidency]);
-  printf("shaderResourceMinLod: %s\n", av[feat.shaderResourceMinLod]);
-  printf("sparseBinding: %s\n", av[feat.sparseBinding]);
-  printf("sparseResidencyBuffer: %s\n", av[feat.sparseResidencyBuffer]);
-  printf("sparseResidencyImage2D: %s\n", av[feat.sparseResidencyImage2D]);
-  printf("sparseResidencyImage3D: %s\n", av[feat.sparseResidencyImage3D]);
-  printf("sparseResidency2Samples: %s\n", av[feat.sparseResidency2Samples]);
-  printf("sparseResidency4Samples: %s\n", av[feat.sparseResidency4Samples]);
-  printf("sparseResidency8Samples: %s\n", av[feat.sparseResidency8Samples]);
-  printf("sparseResidency16Samples: %s\n", av[feat.sparseResidency16Samples]);
-  printf("sparseResidencyAliased: %s\n", av[feat.sparseResidencyAliased]);
-  printf("variableMultisampleRate: %s\n", av[feat.variableMultisampleRate]);
-  printf("inheritedQueries: %s\n", av[feat.inheritedQueries]);
-  puts("----");
-  return 0;
 }
 
 /* Called by the main test. */
 int yf_test_capab(void) {
-  int r = -1;
   l_ctx = yf_context_init();
-  if (l_ctx != NULL)  {
-    YF_CTX_PRINT(l_ctx);
-    if ((r = print_limits()) != 0) { }
-    else if ((r = print_features()) != 0) { }
-    yf_context_deinit(l_ctx);
-  }
-  return r;
+  if (l_ctx == NULL)
+    return -1;
+
+  print_extensions();
+  print_features();
+  print_limits();
+
+  yf_context_deinit(l_ctx);
+  return 0;
 }
