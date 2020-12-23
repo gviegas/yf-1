@@ -198,73 +198,86 @@ static int init_instance(YF_context ctx) {
 }
 
 static int init_device(YF_context ctx) {
-  unsigned n;
-  VkResult res;
+  assert(ctx->instance != NULL);
+  assert(ctx->phy_dev == NULL);
+  assert(ctx->device == NULL);
 
-  res = vkEnumeratePhysicalDevices(ctx->instance, &n, NULL);
-  if (res != VK_SUCCESS || n == 0) {
+  VkResult res;
+  unsigned phy_n;
+
+  res = vkEnumeratePhysicalDevices(ctx->instance, &phy_n, NULL);
+  if (res != VK_SUCCESS || phy_n == 0) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     return -1;
   }
-  VkPhysicalDevice *phy_devs = malloc(sizeof(VkPhysicalDevice) * n);
+  VkPhysicalDevice *phy_devs = malloc(sizeof(VkPhysicalDevice) * phy_n);
   if (phy_devs == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  res = vkEnumeratePhysicalDevices(ctx->instance, &n, phy_devs);
+  res = vkEnumeratePhysicalDevices(ctx->instance, &phy_n, phy_devs);
   if (res != VK_SUCCESS) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
+    yf_seterr(YF_ERR_DEVGEN, __func__);
     return -1;
   }
 
+  /* TODO: Consider sorting devices. */
   VkPhysicalDeviceProperties prop;
-  for (unsigned i = 0; i < n; ++i) {
+  for (size_t i = 0; i < phy_n; ++i) {
     vkGetPhysicalDeviceProperties(phy_devs[i], &prop);
-    if (prop.apiVersion > ctx->dev_prop.apiVersion) {
-      ctx->phy_dev = phy_devs[i];
+    ctx->phy_dev = phy_devs[i];
+
+    unsigned qf_n;
+    vkGetPhysicalDeviceQueueFamilyProperties(ctx->phy_dev, &qf_n, NULL);
+    VkQueueFamilyProperties *qf_props;
+    qf_props = malloc(sizeof(VkQueueFamilyProperties) * qf_n);
+    if (qf_props == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+    vkGetPhysicalDeviceQueueFamilyProperties(ctx->phy_dev, &qf_n, qf_props);
+
+    ctx->graph_queue_i = ctx->comp_queue_i = ctx->pres_queue_i = -1;
+    for (unsigned i = 0; i < qf_n; ++i) {
+      int found[3] = {0, 0, 0};
+
+      if (qf_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+        ctx->graph_queue_i = i;
+        found[0] = 1;
+      }
+      if (qf_props[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+        ctx->comp_queue_i = i;
+        found[1] = 1;
+      }
+      if (yf_canpresent(ctx->phy_dev, i)) {
+        ctx->pres_queue_i = i;
+        found[2] = 1;
+      }
+
+      if (found[0] && found[1] && found[2])
+        break;
+    }
+    free(qf_props);
+
+    if (ctx->graph_queue_i != -1 && ctx->comp_queue_i != -1 &&
+        ctx->pres_queue_i != -1)
+    {
       ctx->dev_prop = prop;
-    }
-  }
-  free(phy_devs);
-
-  if (set_dev_exts(ctx) != 0 || set_features(ctx) != 0)
-    return -1;
-
-  vkGetPhysicalDeviceQueueFamilyProperties(ctx->phy_dev, &n, NULL);
-  VkQueueFamilyProperties *qf_props;
-  qf_props = malloc(sizeof(VkQueueFamilyProperties) * n);
-  if (qf_props == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    return -1;
-  }
-  vkGetPhysicalDeviceQueueFamilyProperties(ctx->phy_dev, &n, qf_props);
-
-  ctx->graph_queue_i = ctx->comp_queue_i = -1;
-  for (unsigned i = 0; i < n; ++i) {
-    int found[2] = {0, 0};
-    if (qf_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-      ctx->graph_queue_i = i;
-      found[0] = 1;
-    }
-    if (qf_props[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
-      ctx->comp_queue_i = i;
-      found[1] = 1;
-    }
-    if (found[0] && found[1])
       break;
+    }
   }
-  free(qf_props);
+
   if (ctx->graph_queue_i == -1 && ctx->comp_queue_i == -1) {
-    /* TODO: Try again with a different device (if available). */
     yf_seterr(YF_ERR_DEVGEN, __func__);
     return -1;
   }
 
   const int have_graph = ctx->graph_queue_i != -1;
   const int have_comp = ctx->comp_queue_i != -1;
-  const int same_queue = ctx->graph_queue_i == ctx->comp_queue_i;
+  const int have_pres = ctx->pres_queue_i != -1;
+
   const float priority[1] = {0.0f};
-  VkDeviceQueueCreateInfo queue_infos[2] = {0};
+  VkDeviceQueueCreateInfo queue_infos[3];
   queue_infos[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
   queue_infos[0].pNext = NULL;
   queue_infos[0].flags = 0;
@@ -273,19 +286,32 @@ static int init_device(YF_context ctx) {
   queue_infos[0].pQueuePriorities = priority;
   unsigned queue_info_n = 1;
 
-  if (have_graph && have_comp) {
+  if (have_graph) {
     queue_infos[0].queueFamilyIndex = ctx->graph_queue_i;
-    if (!same_queue) {
-      memcpy(queue_infos + 1, queue_infos, sizeof queue_infos[0]);
-      queue_infos[1].queueFamilyIndex = ctx->comp_queue_i;
-      queue_info_n = 2;
+    if (have_comp) {
+      if (ctx->graph_queue_i != ctx->comp_queue_i) {
+        queue_infos[queue_info_n] = queue_infos[0];
+        queue_infos[queue_info_n].queueFamilyIndex = ctx->comp_queue_i;
+        ++queue_info_n;
+      }
+    }
+    if (have_pres) {
+      if (ctx->graph_queue_i != ctx->pres_queue_i &&
+          ctx->pres_queue_i != ctx->comp_queue_i)
+      {
+        queue_infos[queue_info_n] = queue_infos[0];
+        queue_infos[queue_info_n].queueFamilyIndex = ctx->pres_queue_i;
+        ++queue_info_n;
+      }
     }
   } else {
-    if (have_graph)
-      queue_infos[0].queueFamilyIndex = ctx->graph_queue_i;
-    else
-      queue_infos[0].queueFamilyIndex = ctx->comp_queue_i;
+    /* ignore pres. queue */
+    ctx->pres_queue_i = -1;
+    queue_infos[0].queueFamilyIndex = ctx->comp_queue_i;
   }
+
+  if (set_dev_exts(ctx) != 0 || set_features(ctx) != 0)
+    return -1;
 
   VkDeviceCreateInfo dev_info = {
     .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
@@ -308,28 +334,12 @@ static int init_device(YF_context ctx) {
   if (yf_setdprocvk(ctx->device) != 0)
     return -1;
 
-  if (same_queue) {
+  if (have_graph)
     vkGetDeviceQueue(ctx->device, ctx->graph_queue_i, 0, &ctx->graph_queue);
-    ctx->comp_queue = ctx->graph_queue;
-  } else {
-    if (have_graph)
-      vkGetDeviceQueue(ctx->device, ctx->graph_queue_i, 0, &ctx->graph_queue);
-    if (have_comp)
-      vkGetDeviceQueue(ctx->device, ctx->comp_queue_i, 0, &ctx->comp_queue);
-  }
-
-  /* TODO: Improve the previous queries for a better chance at finding
-     a presentation-capable queue, which may be a different one altogether. */
-  ctx->pres_queue_i = -1;
-  if (have_graph) {
-    if (yf_canpresent(ctx->phy_dev, ctx->graph_queue_i)) {
-      ctx->pres_queue = ctx->graph_queue;
-      ctx->pres_queue_i = ctx->graph_queue_i;
-    } else if (have_comp && yf_canpresent(ctx->phy_dev, ctx->comp_queue_i)) {
-      ctx->pres_queue = ctx->comp_queue;
-      ctx->pres_queue_i = ctx->comp_queue_i;
-    }
-  }
+  if (have_comp)
+    vkGetDeviceQueue(ctx->device, ctx->comp_queue_i, 0, &ctx->comp_queue);
+  if (have_pres)
+    vkGetDeviceQueue(ctx->device, ctx->pres_queue_i, 0, &ctx->pres_queue);
 
   vkGetPhysicalDeviceMemoryProperties(ctx->phy_dev, &ctx->mem_prop);
   return 0;
