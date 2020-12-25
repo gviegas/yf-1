@@ -160,7 +160,7 @@ static void init(void) {
     YF_PRIMITIVE_TRIANGLE,
     YF_POLYMODE_FILL,
     YF_CULLMODE_NONE,
-    YF_FRONTFACE_CCW
+    YF_WINDING_CCW
   };
 
   YF_gstate gst = yf_gstate_init(ctx, &conf);

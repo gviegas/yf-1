@@ -53,7 +53,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf) {
   YF_PRIMITIVE_FROM(conf->primitive, topol);
   YF_POLYMODE_FROM(conf->polymode, polym);
   YF_CULLMODE_FROM(conf->cullmode, cullm);
-  YF_FRONTFACE_FROM(conf->frontface, fface);
+  YF_WINDING_FROM(conf->winding, fface);
 
   if (topol == INT_MAX || polym == INT_MAX ||
       cullm == INT_MAX || fface == INT_MAX)

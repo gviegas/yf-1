@@ -167,12 +167,12 @@ void *yf_list_next(YF_list list, YF_iter *it) {
   return r;
 }
 
-void yf_list_each(YF_list list, int (*fn)(void *val, void *arg), void *arg) {
+void yf_list_each(YF_list list, int (*callb)(void *val, void *arg), void *arg) {
   assert(list != NULL);
-  assert(fn != NULL);
+  assert(callb != NULL);
   L_entry *e = list->first;
   while (e != NULL) {
-    if (fn((void *)e->val, arg) != 0)
+    if (callb((void *)e->val, arg) != 0)
       break;
     e = e->next;
   }

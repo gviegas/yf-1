@@ -125,11 +125,11 @@ void *yf_hashset_next(YF_hashset set, YF_iter *it);
  * The hashset must not be altered until 'yf_hashset_each' completes.
  *
  * @param set: The hashset.
- * @param fn: The function to execute for each value.
- * @param data: The generic data to pass on 'fn' calls. Can be 'NULL'.
+ * @param callb: The callback to execute for each value.
+ * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
  */
-void yf_hashset_each(YF_hashset set, int (*fn)(void *val, void *data),
-    void *data);
+void yf_hashset_each(YF_hashset set, int (*callb)(void *val, void *arg),
+    void *arg);
 
 /**
  * Gets the number of elements stored in a hashset.

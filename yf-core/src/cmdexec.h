@@ -15,7 +15,7 @@ int yf_cmdexec_create(YF_context ctx, unsigned capacity);
 
 /* Enqueues a command pool resource for execution. */
 int yf_cmdexec_enqueue(YF_context ctx, const YF_cmdpres *pres,
-    void (*callb)(int res, void *data), void *data);
+    void (*callb)(int res, void *arg), void *arg);
 
 /* Executes all commands currently in the queue. */
 int yf_cmdexec_exec(YF_context ctx);

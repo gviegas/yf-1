@@ -53,7 +53,7 @@ typedef struct {
 /* Type storing a callback from priority resource acquisition. */
 typedef struct {
   void (*callb)(int, void *);
-  void *data;
+  void *arg;
 } L_callb;
 
 /* Initializes the pool entries. */
@@ -197,7 +197,7 @@ void yf_cmdpool_reset(YF_context ctx, YF_cmdpres *pres) {
 }
 
 const YF_cmdpres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
-    void (*callb)(int res, void *data), void *data)
+    void (*callb)(int res, void *arg), void *arg)
 {
   assert(ctx != NULL);
   assert(ctx->cmdp.priv != NULL);
@@ -252,8 +252,8 @@ const YF_cmdpres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
       yf_seterr(YF_ERR_NOMEM, __func__);
       return NULL;
     }
-    e->callb= callb;
-    e->data = data;
+    e->callb = callb;
+    e->arg = arg;
     if (yf_list_insert(priv->callbs, e) != 0)
       return NULL;
   }
@@ -296,7 +296,7 @@ void yf_cmdpool_notifyprio(YF_context ctx, int result) {
     callb = yf_list_next(priv->callbs, &it);
     if (YF_IT_ISNIL(it))
       break;
-    callb->callb(result, callb->data);
+    callb->callb(result, callb->arg);
     free(callb);
   } while (1);
   yf_list_clear(priv->callbs);
