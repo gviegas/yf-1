@@ -231,11 +231,11 @@ void *yf_hashset_next(YF_hashset set, YF_iter *it) {
 
 void yf_hashset_each(
   YF_hashset set,
-  int (*fn)(void *val, void *arg),
+  int (*callb)(void *val, void *arg),
   void *arg)
 {
   assert(set != NULL);
-  assert(fn != NULL);
+  assert(callb != NULL);
   if (set->value_n == 0)
     return;
   YF_iter it;
@@ -247,7 +247,7 @@ void yf_hashset_each(
       val = yf_list_next(set->buckets[i], &it);
       if (YF_IT_ISNIL(it))
         break;
-      if (fn(val, arg) != 0 || ++n == set->value_n)
+      if (callb(val, arg) != 0 || ++n == set->value_n)
         return;
     } while (1);
   }

@@ -125,10 +125,10 @@ void *yf_list_next(YF_list list, YF_iter *it);
  * The list must not be altered until 'yf_list_each' completes.
  *
  * @param list: The list.
- * @param fn: The function to execute for each value.
- * @param data: The generic data to pass on 'fn' calls. Can be 'NULL'.
+ * @param callb: The callback to execute for each value.
+ * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
  */
-void yf_list_each(YF_list list, int (*fn)(void *val, void *data), void *data);
+void yf_list_each(YF_list list, int (*callb)(void *val, void *arg), void *arg);
 
 /**
  * Gets the number of elements stored in a linked list.

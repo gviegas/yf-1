@@ -719,9 +719,9 @@ static int poll_evt(unsigned evt_mask) {
         }
 
         YF_evtfn fn;
-        void *data;
-        yf_getevtfn(YF_EVT_KEYKB, &fn, &data);
-        fn.key_kb(key, state, mod_mask, data);
+        void *arg;
+        yf_getevtfn(YF_EVT_KEYKB, &fn, &arg);
+        fn.key_kb(key, state, mod_mask, arg);
       } break;
 
       case XCB_BUTTON_PRESS:
@@ -758,9 +758,9 @@ static int poll_evt(unsigned evt_mask) {
         int y = btn_evt->event_y;
 
         YF_evtfn fn;
-        void *data;
-        yf_getevtfn(YF_EVT_BUTTONPT, &fn, &data);
-        fn.button_pt(btn, state, x, y, data);
+        void *arg;
+        yf_getevtfn(YF_EVT_BUTTONPT, &fn, &arg);
+        fn.button_pt(btn, state, x, y, arg);
       } break;
 
       case XCB_MOTION_NOTIFY: {
@@ -772,9 +772,9 @@ static int poll_evt(unsigned evt_mask) {
         int y = mot_evt->event_y;
 
         YF_evtfn fn;
-        void *data;
-        yf_getevtfn(YF_EVT_MOTIONPT, &fn, &data);
-        fn.motion_pt(x, y, data);
+        void *arg;
+        yf_getevtfn(YF_EVT_MOTIONPT, &fn, &arg);
+        fn.motion_pt(x, y, arg);
       } break;
 
       case XCB_ENTER_NOTIFY: {
@@ -791,9 +791,9 @@ static int poll_evt(unsigned evt_mask) {
         int y = entr_evt->event_y;
 
         YF_evtfn fn;
-        void *data;
-        yf_getevtfn(YF_EVT_ENTERPT, &fn, &data);
-        fn.enter_pt(win->wrapper, x, y, data);
+        void *arg;
+        yf_getevtfn(YF_EVT_ENTERPT, &fn, &arg);
+        fn.enter_pt(win->wrapper, x, y, arg);
       } break;
 
       case XCB_LEAVE_NOTIFY: {
@@ -807,9 +807,9 @@ static int poll_evt(unsigned evt_mask) {
           break;
 
         YF_evtfn fn;
-        void *data;
-        yf_getevtfn(YF_EVT_LEAVEPT, &fn, &data);
-        fn.leave_pt(win->wrapper, data);
+        void *arg;
+        yf_getevtfn(YF_EVT_LEAVEPT, &fn, &arg);
+        fn.leave_pt(win->wrapper, arg);
       } break;
 
       case XCB_FOCUS_IN: {
@@ -823,9 +823,9 @@ static int poll_evt(unsigned evt_mask) {
           break;
 
         YF_evtfn fn;
-        void *data;
-        yf_getevtfn(YF_EVT_ENTERKB, &fn, &data);
-        fn.enter_kb(win->wrapper, data);
+        void *arg;
+        yf_getevtfn(YF_EVT_ENTERKB, &fn, &arg);
+        fn.enter_kb(win->wrapper, arg);
       } break;
 
       case XCB_FOCUS_OUT: {
@@ -839,9 +839,9 @@ static int poll_evt(unsigned evt_mask) {
           break;
 
         YF_evtfn fn;
-        void *data;
-        yf_getevtfn(YF_EVT_LEAVEKB, &fn, &data);
-        fn.leave_kb(win->wrapper, data);
+        void *arg;
+        yf_getevtfn(YF_EVT_LEAVEKB, &fn, &arg);
+        fn.leave_kb(win->wrapper, arg);
       } break;
 
       case XCB_EXPOSE: {
@@ -865,9 +865,9 @@ static int poll_evt(unsigned evt_mask) {
         win->height = conf_evt->height;
 
         YF_evtfn fn;
-        void *data;
-        yf_getevtfn(YF_EVT_RESIZEWD, &fn, &data);
-        fn.resize_wd(win->wrapper, win->width, win->height, data);
+        void *arg;
+        yf_getevtfn(YF_EVT_RESIZEWD, &fn, &arg);
+        fn.resize_wd(win->wrapper, win->width, win->height, arg);
       } break;
 
       case XCB_CLIENT_MESSAGE: {
@@ -886,9 +886,9 @@ static int poll_evt(unsigned evt_mask) {
           break;
 
         YF_evtfn fn;
-        void *data;
-        yf_getevtfn(YF_EVT_CLOSEWD, &fn, &data);
-        fn.close_wd(win->wrapper, data);
+        void *arg;
+        yf_getevtfn(YF_EVT_CLOSEWD, &fn, &arg);
+        fn.close_wd(win->wrapper, arg);
       } break;
 
       default:

@@ -45,10 +45,10 @@ typedef struct YF_gstate_o *YF_gstate;
 #define YF_CULLMODE_ANY   3
 
 /**
- * Front face values.
+ * Winding values.
  */
-#define YF_FRONTFACE_CW  0
-#define YF_FRONTFACE_CCW 1
+#define YF_WINDING_CW  0
+#define YF_WINDING_CCW 1
 
 /**
  * Type defining a graphics state configuration.
@@ -64,7 +64,7 @@ typedef struct {
   int primitive;
   int polymode;
   int cullmode;
-  int frontface;
+  int winding;
 } YF_gconf;
 
 /**

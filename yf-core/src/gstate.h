@@ -48,10 +48,10 @@ typedef struct YF_gstate_o {
   else if (cm == YF_CULLMODE_ANY) to = VK_CULL_MODE_FRONT_AND_BACK; \
   else to = INT_MAX; } while (0)
 
-/* Converts from a 'YF_FRONTFACE' value. */
-#define YF_FRONTFACE_FROM(ff, to) do { \
-  if (ff == YF_FRONTFACE_CW) to = VK_FRONT_FACE_CLOCKWISE; \
-  else if (ff == YF_FRONTFACE_CCW) to = VK_FRONT_FACE_COUNTER_CLOCKWISE; \
+/* Converts from a 'YF_WINDING' value. */
+#define YF_WINDING_FROM(wd, to) do { \
+  if (wd == YF_WINDING_CW) to = VK_FRONT_FACE_CLOCKWISE; \
+  else if (wd == YF_WINDING_CCW) to = VK_FRONT_FACE_COUNTER_CLOCKWISE; \
   else to = INT_MAX; } while (0)
 
 #endif /* YF_GSTATE_H */

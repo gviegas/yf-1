@@ -57,13 +57,13 @@ void yf_node_prune(YF_node node);
  * to visit or when the callback returns a non-zero value.
  *
  * @param node: The node.
- * @param fn: The function to execute.
- * @param data: The generic data to pass on 'fn' calls. Can be 'NULL'.
+ * @param callb: The callback to execute for each descendant.
+ * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_node_traverse(YF_node node, int (*fn)(YF_node descendant, void *data),
-    void *data);
+int yf_node_traverse(YF_node node, int (*callb)(YF_node descendant, void *arg),
+    void *arg);
 
 /**
  * Checks whether or not a given node descends from another.

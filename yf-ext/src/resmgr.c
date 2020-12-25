@@ -318,7 +318,7 @@ static int init_mdl(L_entry *entry, unsigned elements) {
     YF_PRIMITIVE_TRIANGLE,
     YF_POLYMODE_FILL,
     YF_CULLMODE_BACK,
-    YF_FRONTFACE_CCW
+    YF_WINDING_CCW
   };
   entry->gst = yf_gstate_init(ctx, &conf);
   if (entry->gst == NULL) {
