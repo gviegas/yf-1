@@ -10,9 +10,9 @@
 
 /**
  * Sampler types.
- *
- * TODO
  */
-#define YF_SAMPLER_BASIC 1
+#define YF_SAMPLER_BASIC     0
+#define YF_SAMPLER_LINEAR    1
+#define YF_SAMPLER_TRILINEAR 2
 
 #endif /* YF_YF_SAMPLER_H */
