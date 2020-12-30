@@ -316,7 +316,8 @@ static int exec_queue(YF_context ctx, L_cmde *cmde) {
   assert(ctx != NULL);
   assert(cmde != NULL);
 
-  /* TODO: Check missing wait semaphore on submission. */
+  /* TODO: Use signal/wait semaphores between priority and non-priority
+     command buffers instead of multiple submissions. */
 
   int r = 0;
   L_qvars *qvs[2] = {cmde->q1, cmde->q2};
@@ -406,6 +407,7 @@ static void destroy_priv(YF_context ctx) {
   L_priv *priv = ctx->cmde.priv;
   deinit_queue(ctx, priv->cmde);
   deinit_queue(ctx, priv->prio);
+  yf_list_deinit(priv->fences);
   free(priv);
   ctx->cmde.priv = NULL;
 }

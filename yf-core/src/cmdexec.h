@@ -8,6 +8,8 @@
 #ifndef YF_CMDEXEC_H
 #define YF_CMDEXEC_H
 
+#include "yf-context.h"
+#include "vk.h"
 #include "cmdpool.h"
 
 /* Creates a new command execution queue. */
