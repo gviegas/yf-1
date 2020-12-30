@@ -135,9 +135,9 @@ int yf_wsi_present(YF_wsi wsi, unsigned index) {
     return -1;
   }
 
-  const YF_cmdpres *pres;
-  pres = yf_cmdpool_getprio(wsi->ctx, YF_CMDBUF_GRAPH, NULL, NULL);
-  if (pres == NULL)
+  const YF_cmdres *cmdr;
+  cmdr = yf_cmdpool_getprio(wsi->ctx, YF_CMDBUF_GRAPH, NULL, NULL);
+  if (cmdr == NULL)
     /* TODO: May need to release the image somehow. */
     return -1;
 
@@ -161,7 +161,7 @@ int yf_wsi_present(YF_wsi wsi, unsigned index) {
     }
   };
 
-  vkCmdPipelineBarrier(pres->pool_res, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+  vkCmdPipelineBarrier(cmdr->pool_res, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
       VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, NULL, 0, NULL, 1, &barrier);
 
   VkPresentInfoKHR info = {

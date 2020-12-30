@@ -45,7 +45,7 @@ typedef struct {
 /* Type defining command pool variables stored in a context. */
 typedef struct {
   L_cmdp *cmdp;
-  YF_cmdpres prio[2];
+  YF_cmdres prio[2];
   unsigned prio_n;
   YF_list callbs;
 } L_priv;
@@ -105,9 +105,9 @@ int yf_cmdpool_create(YF_context ctx, unsigned capacity) {
   return 0;
 }
 
-int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdpres *pres) {
+int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdres *cmdr) {
   assert(ctx != NULL);
-  assert(pres != NULL);
+  assert(cmdr != NULL);
   assert(ctx->cmdp.priv != NULL);
 
   L_cmdp *cmdp = ((L_priv *)ctx->cmdp.priv)->cmdp;
@@ -137,9 +137,9 @@ int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdpres *pres) {
   for (unsigned i = 0; i < cmdp->cap; ++i) {
     e = &cmdp->entries[cmdp->last_i];
     if (!e->in_use && e->queue_i == queue_i) {
-      pres->queue_i = queue_i;
-      pres->res_id = cmdp->last_i;
-      pres->pool_res = e->buffer;
+      cmdr->queue_i = queue_i;
+      cmdr->res_id = cmdp->last_i;
+      cmdr->pool_res = e->buffer;
       e->in_use = 1;
       ++cmdp->curr_n;
       break;
@@ -155,22 +155,22 @@ int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdpres *pres) {
   return 0;
 }
 
-void yf_cmdpool_yield(YF_context ctx, YF_cmdpres *pres) {
+void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr) {
   assert(ctx != NULL);
-  assert(pres != NULL);
+  assert(cmdr != NULL);
   assert(ctx->cmdp.priv != NULL);
 
-  if (pres->res_id < 0)
+  if (cmdr->res_id < 0)
     return;
 
   L_priv *priv = ctx->cmdp.priv;
-  assert(priv->cmdp->entries[pres->res_id].in_use);
+  assert(priv->cmdp->entries[cmdr->res_id].in_use);
 
-  priv->cmdp->entries[pres->res_id].in_use = 0;
-  priv->cmdp->last_i = pres->res_id;
+  priv->cmdp->entries[cmdr->res_id].in_use = 0;
+  priv->cmdp->last_i = cmdr->res_id;
   --priv->cmdp->curr_n;
   for (unsigned i = 0; i < priv->prio_n; ++i) {
-    if (priv->prio[i].res_id == pres->res_id) {
+    if (priv->prio[i].res_id == cmdr->res_id) {
       priv->prio[i].pool_res = NULL;
       priv->prio[i].res_id = -1;
       priv->prio[i].queue_i = -1;
@@ -180,23 +180,23 @@ void yf_cmdpool_yield(YF_context ctx, YF_cmdpres *pres) {
   }
 }
 
-void yf_cmdpool_reset(YF_context ctx, YF_cmdpres *pres) {
+void yf_cmdpool_reset(YF_context ctx, YF_cmdres *cmdr) {
   assert(ctx != NULL);
-  assert(pres != NULL);
+  assert(cmdr != NULL);
   assert(ctx->cmdp.priv != NULL);
 
-  if (pres->res_id < 0)
+  if (cmdr->res_id < 0)
     return;
 
   L_priv *priv = ctx->cmdp.priv;
   /* XXX: This assumes that every resource has an exclusive pool. */
-  vkResetCommandPool(ctx->device, priv->cmdp->entries[pres->res_id].pool,
+  vkResetCommandPool(ctx->device, priv->cmdp->entries[cmdr->res_id].pool,
       VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
 
-  yf_cmdpool_yield(ctx, pres);
+  yf_cmdpool_yield(ctx, cmdr);
 }
 
-const YF_cmdpres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
+const YF_cmdres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
     void (*callb)(int res, void *arg), void *arg)
 {
   assert(ctx != NULL);
@@ -220,17 +220,17 @@ const YF_cmdpres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
     return NULL;
   }
 
-  YF_cmdpres *pres = NULL;
+  YF_cmdres *cmdr= NULL;
   for (unsigned i = 0; i < priv->prio_n; ++i) {
     if (priv->prio[i].queue_i == queue_i) {
-      pres = priv->prio+i;
+      cmdr = priv->prio+i;
       break;
     }
   }
 
-  if (pres == NULL) {
-    pres = priv->prio+priv->prio_n;
-    if (yf_cmdpool_obtain(ctx, cmdbuf, pres) != 0)
+  if (cmdr == NULL) {
+    cmdr = priv->prio+priv->prio_n;
+    if (yf_cmdpool_obtain(ctx, cmdbuf, cmdr) != 0)
       return NULL;
     ++priv->prio_n;
     VkCommandBufferBeginInfo info = {
@@ -239,9 +239,9 @@ const YF_cmdpres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
       .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
       .pInheritanceInfo = NULL
     };
-    if (vkBeginCommandBuffer(pres->pool_res, &info) != VK_SUCCESS) {
+    if (vkBeginCommandBuffer(cmdr->pool_res, &info) != VK_SUCCESS) {
       yf_seterr(YF_ERR_DEVGEN, __func__);
-      yf_cmdpool_yield(ctx, pres);
+      yf_cmdpool_yield(ctx, cmdr);
       return NULL;
     }
   }
@@ -258,24 +258,24 @@ const YF_cmdpres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
       return NULL;
   }
 
-  return pres;
+  return cmdr;
 }
 
-void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdpres **pres_list,
-    unsigned *pres_n)
+void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdres **cmdr_list,
+    unsigned *cmdr_n)
 {
   assert(ctx != NULL);
-  assert(pres_list != NULL);
-  assert(pres_n != NULL);
+  assert(cmdr_list != NULL);
+  assert(cmdr_n != NULL);
   assert(ctx->cmdp.priv != NULL);
 
   L_priv *priv = ctx->cmdp.priv;
   if (priv->prio_n == 0) {
-    *pres_list = NULL;
-    *pres_n = 0;
+    *cmdr_list = NULL;
+    *cmdr_n = 0;
   } else {
-    *pres_list = priv->prio;
-    *pres_n = priv->prio_n;
+    *cmdr_list = priv->prio;
+    *cmdr_n = priv->prio_n;
   }
 }
 

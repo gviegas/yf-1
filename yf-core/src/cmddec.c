@@ -31,7 +31,7 @@
 /* Type defining graphics decoding state. */
 typedef struct {
   YF_context ctx;
-  const YF_cmdpres *pres;
+  const YF_cmdres *cmdr;
 #define YF_GDEC_GST   0x01
 #define YF_GDEC_TGT   0x02
 #define YF_GDEC_VPORT 0x04
@@ -71,7 +71,7 @@ typedef struct {
 /* Type defining compute decoding state. */
 typedef struct {
   YF_context ctx;
-  const YF_cmdpres *pres;
+  const YF_cmdres *cmdr;
 #define YF_CDEC_CST  0x01
 #define YF_CDEC_DISP 0x01 /* dispatch only requires cstate */
   int cdec;
@@ -89,10 +89,10 @@ static _Thread_local L_gdec *l_gdec = NULL;
 static _Thread_local L_cdec *l_cdec = NULL;
 
 /* Decodes a graphics command buffer. */
-static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres);
+static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr);
 
 /* Decodes a compute command buffer. */
-static int decode_comp(YF_cmdbuf cmdb, const YF_cmdpres *pres);
+static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr);
 
 /* Decodes a 'set gstate' command. */
 static int decode_gst(const YF_cmd *cmd);
@@ -148,8 +148,8 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb) {
     /* nothing to decode */
     return 0;
 
-  YF_cmdpres pres;
-  if (yf_cmdpool_obtain(cmdb->ctx, cmdb->cmdbuf, &pres) != 0)
+  YF_cmdres cmdr;
+  if (yf_cmdpool_obtain(cmdb->ctx, cmdb->cmdbuf, &cmdr) != 0)
     return -1;
   VkCommandBufferBeginInfo info = {
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
@@ -157,9 +157,9 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb) {
     .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
     .pInheritanceInfo = NULL
   };
-  if (vkBeginCommandBuffer(pres.pool_res, &info) != VK_SUCCESS) {
+  if (vkBeginCommandBuffer(cmdr.pool_res, &info) != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
-    yf_cmdpool_yield(cmdb->ctx, &pres);
+    yf_cmdpool_yield(cmdb->ctx, &cmdr);
     return -1;
   }
 
@@ -171,7 +171,7 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb) {
         r = -1;
         break;
       }
-      r = decode_graph(cmdb, &pres);
+      r = decode_graph(cmdb, &cmdr);
       break;
     case YF_CMDBUF_COMP:
       if (l_cdec != NULL) {
@@ -179,31 +179,31 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb) {
         r = -1;
         break;
       }
-      r = decode_comp(cmdb, &pres);
+      r = decode_comp(cmdb, &cmdr);
       break;
     default:
       assert(0);
   }
 
-  if (vkEndCommandBuffer(pres.pool_res) != VK_SUCCESS && r == 0) {
+  if (vkEndCommandBuffer(cmdr.pool_res) != VK_SUCCESS && r == 0) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     r = -1;
   }
   if (r == 0)
-    r = yf_cmdexec_enqueue(cmdb->ctx, &pres, NULL, NULL);
+    r = yf_cmdexec_enqueue(cmdb->ctx, &cmdr, NULL, NULL);
   if (r != 0)
-    yf_cmdpool_yield(cmdb->ctx, &pres);
+    yf_cmdpool_yield(cmdb->ctx, &cmdr);
   return r;
 }
 
-static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
+static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr) {
   l_gdec = calloc(1, sizeof *l_gdec);
   if (l_gdec == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
   l_gdec->ctx = cmdb->ctx;
-  l_gdec->pres = pres;
+  l_gdec->cmdr = cmdr;
 
   const unsigned dtb_max = yf_getlimits(cmdb->ctx)->state.dtable_max;
   l_gdec->dtb.allocs = calloc(dtb_max, sizeof *l_gdec->dtb.allocs);
@@ -281,7 +281,7 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
   }
 
   if (l_gdec->pass != NULL)
-    vkCmdEndRenderPass(pres->pool_res);
+    vkCmdEndRenderPass(cmdr->pool_res);
 
   /* XXX: Clear commands are deferred until a draw is issued. When a clear
      request comes last, it is handled here. */
@@ -308,7 +308,7 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
             col.float32[2] = l_gdec->clrcol.vals[i].b;
             col.float32[3] = l_gdec->clrcol.vals[i].a;
             range.baseArrayLayer = l_gdec->tgt->lays_base[i];
-            vkCmdClearColorImage(pres->pool_res, l_gdec->tgt->imgs[i]->image,
+            vkCmdClearColorImage(cmdr->pool_res, l_gdec->tgt->imgs[i]->image,
                 VK_IMAGE_LAYOUT_GENERAL, &col, 1, &range);
             if (++n == l_gdec->clrcol.n)
               break;
@@ -331,7 +331,7 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
           range.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
           ds.stencil = l_gdec->clrsten.val;
         }
-        vkCmdClearDepthStencilImage(pres->pool_res,
+        vkCmdClearDepthStencilImage(cmdr->pool_res,
             l_gdec->tgt->imgs[index]->image, VK_IMAGE_LAYOUT_GENERAL,
             &ds, 1, &range);
       }
@@ -347,14 +347,14 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
   return r;
 }
 
-static int decode_comp(YF_cmdbuf cmdb, const YF_cmdpres *pres) {
+static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr) {
   l_cdec = calloc(1, sizeof *l_cdec);
   if (l_cdec == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
   l_cdec->ctx = cmdb->ctx;
-  l_cdec->pres = pres;
+  l_cdec->cmdr = cmdr;
 
   const unsigned dtb_max = yf_getlimits(cmdb->ctx)->state.dtable_max;
   l_cdec->dtb.allocs = calloc(dtb_max, sizeof *l_cdec->dtb.allocs);
@@ -413,11 +413,11 @@ static int decode_gst(const YF_cmd *cmd) {
 
     /* TODO: Check if passes are compatible instead. */
     if (l_gdec->pass != NULL && l_gdec->pass != l_gdec->gst->pass) {
-      vkCmdEndRenderPass(l_gdec->pres->pool_res);
+      vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
       l_gdec->pass = NULL;
     }
 
-    vkCmdBindPipeline(l_gdec->pres->pool_res, VK_PIPELINE_BIND_POINT_GRAPHICS,
+    vkCmdBindPipeline(l_gdec->cmdr->pool_res, VK_PIPELINE_BIND_POINT_GRAPHICS,
         l_gdec->gst->pipeline);
   }
   return 0;
@@ -428,7 +428,7 @@ static int decode_cst(const YF_cmd *cmd) {
     l_cdec->cdec |= YF_CDEC_CST;
     l_cdec->cst = cmd->cst.cst;
 
-    vkCmdBindPipeline(l_cdec->pres->pool_res, VK_PIPELINE_BIND_POINT_COMPUTE,
+    vkCmdBindPipeline(l_cdec->cmdr->pool_res, VK_PIPELINE_BIND_POINT_COMPUTE,
         l_cdec->cst->pipeline);
   }
   return 0;
@@ -440,7 +440,7 @@ static int decode_tgt(const YF_cmd *cmd) {
     l_gdec->tgt = cmd->tgt.tgt;
 
     if (l_gdec->pass != NULL) {
-      vkCmdEndRenderPass(l_gdec->pres->pool_res);
+      vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
       l_gdec->pass = NULL;
     }
   }
@@ -478,7 +478,7 @@ static int decode_vport(const YF_cmd *cmd) {
     .maxDepth = cmd->vport.vport.max_depth
   };
 
-  vkCmdSetViewport(l_gdec->pres->pool_res, cmd->vport.index, 1, &viewport);
+  vkCmdSetViewport(l_gdec->cmdr->pool_res, cmd->vport.index, 1, &viewport);
   return 0;
 }
 
@@ -490,7 +490,7 @@ static int decode_sciss(const YF_cmd *cmd) {
     .extent = {cmd->sciss.rect.size.width, cmd->sciss.rect.size.height}
   };
 
-  vkCmdSetScissor(l_gdec->pres->pool_res, cmd->sciss.index, 1, &scissor);
+  vkCmdSetScissor(l_gdec->cmdr->pool_res, cmd->sciss.index, 1, &scissor);
   return 0;
 }
 
@@ -535,7 +535,7 @@ static int decode_vbuf(const YF_cmd *cmd) {
   }
   l_gdec->gdec |= YF_GDEC_VBUF;
 
-  vkCmdBindVertexBuffers(l_gdec->pres->pool_res, cmd->vbuf.index, 1,
+  vkCmdBindVertexBuffers(l_gdec->cmdr->pool_res, cmd->vbuf.index, 1,
       &cmd->vbuf.buf->buffer, &cmd->vbuf.offset);
 
   return 0;
@@ -556,7 +556,7 @@ static int decode_ibuf(const YF_cmd *cmd) {
   }
   l_gdec->gdec |= YF_GDEC_IBUF;
 
-  vkCmdBindIndexBuffer(l_gdec->pres->pool_res, cmd->ibuf.buf->buffer,
+  vkCmdBindIndexBuffer(l_gdec->cmdr->pool_res, cmd->ibuf.buf->buffer,
       cmd->ibuf.offset, idx_type);
 
   return 0;
@@ -602,7 +602,7 @@ static int decode_draw(const YF_cmd *cmd) {
   /* render pass */
   if (l_gdec->pass != l_gdec->gst->pass) {
     if (l_gdec->pass != NULL)
-      vkCmdEndRenderPass(l_gdec->pres->pool_res);
+      vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
     l_gdec->pass = l_gdec->gst->pass;
 
     VkRenderPassBeginInfo info = {
@@ -618,7 +618,7 @@ static int decode_draw(const YF_cmd *cmd) {
       .pClearValues = NULL
     };
 
-    vkCmdBeginRenderPass(l_gdec->pres->pool_res, &info,
+    vkCmdBeginRenderPass(l_gdec->cmdr->pool_res, &info,
         VK_SUBPASS_CONTENTS_INLINE);
   }
 
@@ -635,7 +635,7 @@ static int decode_draw(const YF_cmd *cmd) {
         return -1;
       }
 
-      vkCmdBindDescriptorSets(l_gdec->pres->pool_res,
+      vkCmdBindDescriptorSets(l_gdec->cmdr->pool_res,
           VK_PIPELINE_BIND_POINT_GRAPHICS, l_gdec->gst->layout, i,
           1, &l_gdec->gst->dtbs[i]->sets[l_gdec->dtb.allocs[i]], 0, NULL);
 
@@ -701,7 +701,7 @@ static int decode_draw(const YF_cmd *cmd) {
       l_gdec->clrsten.pending = 0;
     }
 
-    vkCmdClearAttachments(l_gdec->pres->pool_res,
+    vkCmdClearAttachments(l_gdec->cmdr->pool_res,
         clr_i + (clr_atts[clr_i].aspectMask != 0), clr_atts, 1, &clr_rect);
 
     free(clr_atts);
@@ -712,7 +712,7 @@ static int decode_draw(const YF_cmd *cmd) {
   int r;
   if (cmd->draw.indexed) {
     if ((l_gdec->gdec & YF_GDEC_DRAWI) == YF_GDEC_DRAWI) {
-      vkCmdDrawIndexed(l_gdec->pres->pool_res, cmd->draw.vert_n,
+      vkCmdDrawIndexed(l_gdec->cmdr->pool_res, cmd->draw.vert_n,
           cmd->draw.inst_n, cmd->draw.index_base, cmd->draw.vert_id,
           cmd->draw.inst_id);
       r = 0;
@@ -722,7 +722,7 @@ static int decode_draw(const YF_cmd *cmd) {
     }
   } else {
     if ((l_gdec->gdec & YF_GDEC_DRAW) == YF_GDEC_DRAW) {
-      vkCmdDraw(l_gdec->pres->pool_res, cmd->draw.vert_n, cmd->draw.inst_n,
+      vkCmdDraw(l_gdec->cmdr->pool_res, cmd->draw.vert_n, cmd->draw.inst_n,
           cmd->draw.vert_id, cmd->draw.inst_id);
       r = 0;
     } else {
@@ -756,7 +756,7 @@ static int decode_disp(const YF_cmd *cmd) {
         return -1;
       }
 
-      vkCmdBindDescriptorSets(l_cdec->pres->pool_res,
+      vkCmdBindDescriptorSets(l_cdec->cmdr->pool_res,
           VK_PIPELINE_BIND_POINT_COMPUTE, l_cdec->cst->layout, i,
           1, &l_cdec->cst->dtbs[i]->sets[l_cdec->dtb.allocs[i]], 0, NULL);
 
@@ -769,7 +769,7 @@ static int decode_disp(const YF_cmd *cmd) {
   /* dispatch */
   int r;
   if ((l_cdec->cdec & YF_CDEC_DISP) == YF_CDEC_DISP) {
-    vkCmdDispatch(l_cdec->pres->pool_res, cmd->disp.dim.width,
+    vkCmdDispatch(l_cdec->cmdr->pool_res, cmd->disp.dim.width,
         cmd->disp.dim.height, cmd->disp.dim.depth);
     r = 0;
   } else {
@@ -784,17 +784,17 @@ static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd) {
   assert(cmd->cpybuf.src->size >= cmd->cpybuf.src_offs + cmd->cpybuf.size);
   assert(cmd->cpybuf.size > 0);
 
-  const YF_cmdpres *pres;
+  const YF_cmdres *cmdr;
   switch (cmdbuf) {
     case YF_CMDBUF_GRAPH:
       if (l_gdec->pass != NULL) {
-        vkCmdEndRenderPass(l_gdec->pres->pool_res);
+        vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
         l_gdec->pass = NULL;
       }
-      pres = l_gdec->pres;
+      cmdr = l_gdec->cmdr;
       break;
     case YF_CMDBUF_COMP:
-      pres = l_cdec->pres;
+      cmdr = l_cdec->cmdr;
       break;
     default:
       assert(0);
@@ -806,7 +806,7 @@ static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd) {
     .size = cmd->cpybuf.size
   };
 
-  vkCmdCopyBuffer(pres->pool_res, cmd->cpybuf.src->buffer,
+  vkCmdCopyBuffer(cmdr->pool_res, cmd->cpybuf.src->buffer,
       cmd->cpybuf.dst->buffer, 1, &region);
 
   return 0;
@@ -819,26 +819,26 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd) {
     cmd->cpyimg.src_layer + cmd->cpyimg.layer_n);
   assert(cmd->cpyimg.layer_n > 0);
 
-  const YF_cmdpres *pres;
+  const YF_cmdres *cmdr;
   switch (cmdbuf) {
     case YF_CMDBUF_GRAPH:
       if (l_gdec->pass != NULL) {
-        vkCmdEndRenderPass(l_gdec->pres->pool_res);
+        vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
         l_gdec->pass = NULL;
       }
-      pres = l_gdec->pres;
+      cmdr = l_gdec->cmdr;
       break;
     case YF_CMDBUF_COMP:
-      pres = l_cdec->pres;
+      cmdr = l_cdec->cmdr;
       break;
     default:
       assert(0);
   }
 
   if (cmd->cpyimg.dst->layout != VK_IMAGE_LAYOUT_GENERAL)
-    yf_image_transition(cmd->cpyimg.dst, pres->pool_res);
+    yf_image_transition(cmd->cpyimg.dst, cmdr->pool_res);
   if (cmd->cpyimg.src->layout != VK_IMAGE_LAYOUT_GENERAL)
-    yf_image_transition(cmd->cpyimg.src, pres->pool_res);
+    yf_image_transition(cmd->cpyimg.src, cmdr->pool_res);
 
   /* TODO: Provide a way to select the mip level. */
   VkImageCopy region = {
@@ -863,7 +863,7 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd) {
     }
   };
 
-  vkCmdCopyImage(pres->pool_res,
+  vkCmdCopyImage(cmdr->pool_res,
       cmd->cpyimg.src->image, VK_IMAGE_LAYOUT_GENERAL,
       cmd->cpyimg.dst->image, VK_IMAGE_LAYOUT_GENERAL,
       1, &region);
@@ -873,17 +873,17 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd) {
 
 static int decode_sync(int cmdbuf) {
   /* TODO: Provide sync. parameters to avoid such dramatic solution. */
-  const YF_cmdpres *pres;
+  const YF_cmdres *cmdr;
   switch (cmdbuf) {
     case YF_CMDBUF_GRAPH:
       if (l_gdec->pass != NULL) {
-        vkCmdEndRenderPass(l_gdec->pres->pool_res);
+        vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
         l_gdec->pass = NULL;
       }
-      pres = l_gdec->pres;
+      cmdr = l_gdec->cmdr;
       break;
     case YF_CMDBUF_COMP:
-      pres = l_cdec->pres;
+      cmdr = l_cdec->cmdr;
       break;
     default:
       assert(0);
@@ -896,7 +896,7 @@ static int decode_sync(int cmdbuf) {
     .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT
   };
 
-  vkCmdPipelineBarrier(pres->pool_res, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+  vkCmdPipelineBarrier(cmdr->pool_res, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
       VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_DEPENDENCY_BY_REGION_BIT,
       1, &mem_bar, 0, NULL, 0, NULL);
 
