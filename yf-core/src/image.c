@@ -227,19 +227,19 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
     return -1;
   memcpy(stg_buf->data, data, sz);
 
-  const YF_cmdpres *pres;
-  pres = yf_cmdpool_getprio(img->ctx, YF_CMDBUF_GRAPH, dealloc_stgbuf, stg_buf);
-  if (pres == NULL) {
-    pres = yf_cmdpool_getprio(img->ctx, YF_CMDBUF_COMP, dealloc_stgbuf,
+  const YF_cmdres *cmdr;
+  cmdr = yf_cmdpool_getprio(img->ctx, YF_CMDBUF_GRAPH, dealloc_stgbuf, stg_buf);
+  if (cmdr == NULL) {
+    cmdr = yf_cmdpool_getprio(img->ctx, YF_CMDBUF_COMP, dealloc_stgbuf,
         stg_buf);
-    if (pres == NULL) {
+    if (cmdr == NULL) {
       yf_buffer_deinit(stg_buf);
       return -1;
     }
   }
 
   if (img->layout != VK_IMAGE_LAYOUT_GENERAL)
-    yf_image_transition(img, pres->pool_res);
+    yf_image_transition(img, cmdr->pool_res);
 
   VkBufferImageCopy region = {
     .bufferOffset = 0,
@@ -254,7 +254,7 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
     .imageExtent = {dim.width, dim.height, dim.depth}
   };
 
-  vkCmdCopyBufferToImage(pres->pool_res, stg_buf->buffer, img->image,
+  vkCmdCopyBufferToImage(cmdr->pool_res, stg_buf->buffer, img->image,
       VK_IMAGE_LAYOUT_GENERAL, 1, &region);
 
   return 0;
