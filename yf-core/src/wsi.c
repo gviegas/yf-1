@@ -80,6 +80,7 @@ int yf_wsi_next(YF_wsi wsi, int nonblocking) {
   assert(wsi != NULL);
 
   const uint64_t timeout = nonblocking ? 0 : UINT64_MAX;
+/*
   VkSemaphore sem;
   unsigned sem_i = 0;
   for (;; ++sem_i) {
@@ -91,15 +92,34 @@ int yf_wsi_next(YF_wsi wsi, int nonblocking) {
   unsigned img_i;
   VkResult res = vkAcquireNextImageKHR(wsi->ctx->device, wsi->swapchain,
       timeout, sem, VK_NULL_HANDLE, &img_i);
+*/
+  VkFence fence;
+  unsigned fence_i = 0;
+  for (;; ++fence_i) {
+    if (!wsi->imgs_acq[fence_i]) {
+      fence = wsi->imgs_fence[fence_i];
+      break;
+    }
+  }
+  unsigned img_i;
+  VkResult res = vkAcquireNextImageKHR(wsi->ctx->device, wsi->swapchain,
+      timeout, VK_NULL_HANDLE, fence, &img_i);
 
   switch (res) {
     case VK_SUCCESS:
+/*
       if (sem_i != img_i) {
         VkSemaphore tmp = wsi->imgs_sem[sem_i];
         wsi->imgs_sem[sem_i] = wsi->imgs_sem[img_i];
         wsi->imgs_sem[img_i] = tmp;
       }
-      /* TODO: Set semaphore for waiting on next submission. */
+*/
+      if (fence_i != img_i) {
+        VkFence tmp = wsi->imgs_fence[fence_i];
+        wsi->imgs_fence[fence_i] = wsi->imgs_fence[img_i];
+        wsi->imgs_fence[img_i] = tmp;
+      }
+      yf_cmdexec_waitfor(wsi->ctx, wsi->imgs_fence[img_i]);
       wsi->imgs_acq[img_i] = 1;
       break;
 
@@ -214,11 +234,13 @@ void yf_wsi_deinit(YF_wsi wsi) {
     vkDestroySurfaceKHR(wsi->ctx->instance, wsi->surface, NULL);
     for (size_t i = 0; i < wsi->img_n; ++i) {
       yf_image_deinit(wsi->imgs[i]);
-      vkDestroySemaphore(wsi->ctx->device, wsi->imgs_sem[i], NULL);
+      /*vkDestroySemaphore(wsi->ctx->device, wsi->imgs_sem[i], NULL);*/
+      vkDestroyFence(wsi->ctx->device, wsi->imgs_fence[i], NULL);
     }
     free(wsi->imgs);
     free(wsi->imgs_acq);
-    free(wsi->imgs_sem);
+    /*free(wsi->imgs_sem);*/
+    free(wsi->imgs_fence);
     free(wsi);
   }
 }
@@ -523,27 +545,33 @@ static int create_swapchain(YF_wsi wsi) {
     for (size_t i = 0; i < wsi->img_n; ++i) {
       yf_image_deinit(wsi->imgs[i]);
       wsi->imgs[i] = NULL;
+/*
       vkDestroySemaphore(wsi->ctx->device, wsi->imgs_sem[i], NULL);
       wsi->imgs_sem[i] = VK_NULL_HANDLE;
+*/
+      vkDestroyFence(wsi->ctx->device, wsi->imgs_fence[i], NULL);
+      wsi->imgs_fence[i] = VK_NULL_HANDLE;
     }
   }
 
   void *tmp_img = realloc(wsi->imgs, img_n * sizeof *wsi->imgs);
   void *tmp_acq = realloc(wsi->imgs_acq, img_n * sizeof *wsi->imgs_acq);
-  void *tmp_sem = realloc(wsi->imgs_sem, img_n * sizeof *wsi->imgs_sem);
+  /*void *tmp_sem = realloc(wsi->imgs_sem, img_n * sizeof *wsi->imgs_sem);*/
+  void *tmp_fence = realloc(wsi->imgs_fence, img_n * sizeof *wsi->imgs_fence);
 
-  if (tmp_img == NULL || tmp_acq == NULL || tmp_sem == NULL) {
+  if (tmp_img == NULL || tmp_acq == NULL || tmp_fence == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     free(tmp_img);
     free(tmp_acq);
-    free(tmp_sem);
+    free(tmp_fence);
     free(imgs);
     return -1;
   }
 
   wsi->imgs = tmp_img;
   wsi->imgs_acq = tmp_acq;
-  wsi->imgs_sem = tmp_sem;
+  /*wsi->imgs_sem = tmp_sem;*/
+  wsi->imgs_fence = tmp_fence;
   wsi->img_n = img_n;
 
   YF_dim3 dim = {
@@ -557,7 +585,8 @@ static int create_swapchain(YF_wsi wsi) {
         VK_IMAGE_LAYOUT_UNDEFINED);
     if (wsi->imgs[i] == NULL) {
       memset(wsi->imgs+i, 0, (img_n - i) * sizeof *wsi->imgs);
-      memset(wsi->imgs_sem, VK_NULL_HANDLE, img_n * sizeof *wsi->imgs_sem);
+      /*memset(wsi->imgs_sem, VK_NULL_HANDLE, img_n * sizeof *wsi->imgs_sem);*/
+      memset(wsi->imgs_fence, VK_NULL_HANDLE, img_n * sizeof *wsi->imgs_fence);
       free(imgs);
       return -1;
     }
@@ -565,6 +594,7 @@ static int create_swapchain(YF_wsi wsi) {
 
   free(imgs);
 
+/*
   VkSemaphoreCreateInfo sem_info = {
     .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
     .pNext = NULL,
@@ -575,6 +605,20 @@ static int create_swapchain(YF_wsi wsi) {
     if (res != VK_SUCCESS) {
       size_t sz = (img_n - 1) * sizeof *wsi->imgs_sem;
       memset(wsi->imgs_sem+i, VK_NULL_HANDLE, sz);
+      return -1;
+    }
+  }
+*/
+  VkFenceCreateInfo fence_info = {
+    .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+    .pNext = NULL,
+    .flags = 0
+  };
+  for (size_t i = 0; i < img_n; ++i) {
+    res = vkCreateFence(wsi->ctx->device, &fence_info, NULL, wsi->imgs_fence+i);
+    if (res != VK_SUCCESS) {
+      size_t sz = (img_n - 1) * sizeof *wsi->imgs_fence;
+      memset(wsi->imgs_fence+i, VK_NULL_HANDLE, sz);
       return -1;
     }
   }
