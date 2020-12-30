@@ -8,6 +8,8 @@
 #ifndef YF_CMDEXEC_H
 #define YF_CMDEXEC_H
 
+#include "yf-context.h"
+#include "vk.h"
 #include "cmdpool.h"
 
 /* Creates a new command execution queue. */
@@ -28,5 +30,10 @@ void yf_cmdexec_reset(YF_context ctx);
 
 /* Discards pending priority commands and yield resources. */
 void yf_cmdexec_resetprio(YF_context ctx);
+
+/* Sets a fence upon which to wait in the next submission.
+   XXX: Fences are used instead of semaphores because multiple queues
+   are supported. This may change eventually. */
+void yf_cmdexec_waitfor(YF_context ctx, VkFence fence);
 
 #endif /* YF_CMDEXEC_H */

@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-list.h>
 #include <yf/com/yf-error.h>
 
 #include "cmdexec.h"
@@ -58,6 +59,7 @@ typedef struct {
 typedef struct {
   L_cmde *cmde;
   L_cmde *prio;
+  YF_list fences;
 } L_priv;
 
 /* Initializes a pre-allocated queue. */
@@ -92,8 +94,12 @@ int yf_cmdexec_create(YF_context ctx, unsigned capacity) {
   }
   priv->cmde = calloc(1, sizeof(L_cmde));
   priv->prio = calloc(1, sizeof(L_cmde));
-  if (priv->cmde == NULL || priv->prio == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
+  priv->fences = yf_list_init(NULL);
+  if (priv->cmde == NULL || priv->prio == NULL || priv->fences == NULL) {
+    if (priv->fences != NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      yf_list_deinit(priv->fences);
+    }
     free(priv->cmde);
     free(priv->prio);
     free(priv);
@@ -143,15 +149,29 @@ int yf_cmdexec_execprio(YF_context ctx) {
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
+  L_priv *priv = ctx->cmde.priv;
+  int r = 0;
+
+  const size_t fence_n = yf_list_getlen(priv->fences);
+  if (fence_n > 0) {
+    VkFence fences[fence_n];
+    VkResult res;
+    for (unsigned i = 0; i < fence_n; ++i)
+      fences[i] = yf_list_removeat(priv->fences, NULL);
+    do
+      res = vkWaitForFences(ctx->device, fence_n, fences, VK_TRUE, YF_CMDEWAIT);
+    while (res == VK_TIMEOUT);
+    if (res != VK_SUCCESS)
+      r = -1;
+  }
+
   const YF_cmdres *cmdr_list;
   unsigned cmdr_n;
   yf_cmdpool_checkprio(ctx, &cmdr_list, &cmdr_n);
 
   if (cmdr_n == 0)
-    return 0;
+    return r;
 
-  L_priv *priv = ctx->cmde.priv;
-  int r = 0;
   for (unsigned i = 0; i < cmdr_n; ++i) {
     if (vkEndCommandBuffer(cmdr_list[i].pool_res) != VK_SUCCESS) {
       yf_seterr(YF_ERR_DEVGEN, __func__);
@@ -183,7 +203,16 @@ void yf_cmdexec_reset(YF_context ctx) {
 void yf_cmdexec_resetprio(YF_context ctx) {
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
+
   reset_queue(ctx, ((L_priv *)ctx->cmde.priv)->prio);
+}
+
+void yf_cmdexec_waitfor(YF_context ctx, VkFence fence) {
+  assert(ctx != NULL);
+  assert(ctx->cmde.priv != NULL);
+
+  YF_list fences = ((L_priv *)ctx->cmde.priv)->fences;
+  yf_list_insert(fences, fence);
 }
 
 static int init_queue(YF_context ctx, L_cmde *cmde) {
@@ -287,7 +316,8 @@ static int exec_queue(YF_context ctx, L_cmde *cmde) {
   assert(ctx != NULL);
   assert(cmde != NULL);
 
-  /* TODO: Check missing wait semaphore on submission. */
+  /* TODO: Use signal/wait semaphores between priority and non-priority
+     command buffers instead of multiple submissions. */
 
   int r = 0;
   L_qvars *qvs[2] = {cmde->q1, cmde->q2};
@@ -377,6 +407,7 @@ static void destroy_priv(YF_context ctx) {
   L_priv *priv = ctx->cmde.priv;
   deinit_queue(ctx, priv->cmde);
   deinit_queue(ctx, priv->prio);
+  yf_list_deinit(priv->fences);
   free(priv);
   ctx->cmde.priv = NULL;
 }
