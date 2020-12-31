@@ -23,7 +23,7 @@
 
 #ifdef YF_DEBUG_MORE
 # define YF_BMPFH_PRINT(fh_p, pathname) do { \
-   printf("\n-- Filetype-BMP (debug) --"); \
+   printf("\n-- BMP (debug) --"); \
    printf("\npathname: %s", pathname); \
    printf("\nfh - type: 0x%02x (%c%c)", \
     (fh_p)->type, (fh_p)->type, (fh_p)->type >> 8); \
@@ -34,7 +34,7 @@
    printf("\n--\n"); } while (0)
 
 # define YF_BMPIH_PRINT(ih_p, pathname) do { \
-   printf("\n-- Filetype-BMP (debug) --"); \
+   printf("\n-- BMP (debug) --"); \
    printf("\npathname: %s", pathname); \
    printf("\nih - size: %u", (ih_p)->size); \
    printf("\nih - width: %d", (ih_p)->width); \
@@ -50,7 +50,7 @@
    printf("\n--\n"); } while (0)
 
 # define YF_BMPV4H_PRINT(v4h_p, pathname) do { \
-   printf("\n-- Filetype-BMP (debug) --"); \
+   printf("\n-- BMP (debug) --"); \
    printf("\npathname: %s", pathname); \
    printf("\nv4h - size: %u", (v4h_p)->size); \
    printf("\nv4h - width: %d", (v4h_p)->width); \
@@ -80,7 +80,7 @@
    printf("\n--\n"); } while (0)
 
 # define YF_BMPV5H_PRINT(v5h_p, pathname) do { \
-   printf("\n-- Filetype-BMP (debug) --"); \
+   printf("\n-- BMP (debug) --"); \
    printf("\npathname: %s", pathname); \
    printf("\nv5h - size: %u", (v5h_p)->size); \
    printf("\nv5h - width: %d", (v5h_p)->width); \
