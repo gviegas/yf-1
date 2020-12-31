@@ -109,7 +109,7 @@ YF_mat4 *yf_terrain_getmvp(YF_terrain terr) {
 static int init_grid(YF_terrain terr) {
   assert(terr != NULL);
 
-  /* XXX: The current impl. does not support custom tiling. */
+  /* TODO: Support for custom tiling. */
 
   const unsigned wid = terr->width;
   const unsigned dep = terr->depth;
