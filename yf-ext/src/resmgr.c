@@ -41,7 +41,7 @@
 #define YF_ALLOCN_MDL   64
 #define YF_ALLOCN_MDL4  16
 #define YF_ALLOCN_MDL16 16
-#define YF_ALLOCN_MDL64  4
+#define YF_ALLOCN_MDL64 4
 
 /* Type defining an entry in the resource list. */
 typedef struct {
@@ -137,7 +137,7 @@ int yf_resmgr_setallocn(int resrq, unsigned n) {
 
   if (l_entries[resrq].gst != NULL) {
     YF_dtable dtb = yf_gstate_getdtb(l_entries[resrq].gst, YF_RESIDX_INST);
-    /* this does the right thing when n is zero */
+    /* this does the right thing when 'n' is zero */
     if (yf_dtable_alloc(dtb, n) != 0) {
       l_entries[resrq].n = 0;
       return -1;
@@ -281,10 +281,9 @@ static int init_mdl(L_entry *entry, unsigned elements) {
   ent_sz = sizeof inst_ents / sizeof inst_ents[0];
   YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents, ent_sz);
 
-  if (glob_dtb == NULL ||
-    inst_dtb == NULL ||
-    yf_dtable_alloc(glob_dtb, 1) != 0 ||
-    yf_dtable_alloc(inst_dtb, entry->n) != 0)
+  if (glob_dtb == NULL || inst_dtb == NULL ||
+      yf_dtable_alloc(glob_dtb, 1) != 0 ||
+      yf_dtable_alloc(inst_dtb, entry->n) != 0)
   {
     yf_dtable_deinit(glob_dtb);
     yf_dtable_deinit(inst_dtb);
@@ -328,7 +327,6 @@ static int init_mdl(L_entry *entry, unsigned elements) {
       yf_dtable_deinit(dtbs[i]);
     return -1;
   }
-
   return 0;
 }
 

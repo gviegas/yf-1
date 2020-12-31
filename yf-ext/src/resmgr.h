@@ -40,7 +40,9 @@ void yf_resmgr_dealloc(int resrq);
 /* Deallocates all resources. */
 void yf_resmgr_clear(void);
 
-/* -- Conventions -- */
+/*
+ * Conventions
+ */
 
 /* Index numbers used for dtable resources. */
 /* TODO */
