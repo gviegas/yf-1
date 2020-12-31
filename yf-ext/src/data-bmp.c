@@ -1,6 +1,6 @@
 /*
  * YF
- * filetype-bmp.c
+ * data-bmp.c
  *
  * Copyright © 2020 Gustavo C. Viegas.
  */
@@ -13,7 +13,7 @@
 #include <yf/com/yf-error.h>
 #include <yf/core/yf-image.h>
 
-#include "filetype-bmp.h"
+#include "data-bmp.h"
 
 /* TODO: Handle endianness. */
 
@@ -215,7 +215,7 @@ static_assert(offsetof(L_bmpv5h, reserved) == YF_BMPV5H_SZ-4, "!offsetof");
   while (res > lshf && (mask & (1 << (res-1))) == 0) --res; \
   res -= lshf; } while (0)
 
-int yf_filetype_bmp_load(const char *pathname, YF_texdt *data) {
+int yf_loadbmp(const char *pathname, YF_texdt *data) {
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
@@ -229,7 +229,7 @@ int yf_filetype_bmp_load(const char *pathname, YF_texdt *data) {
   }
   L_bmpfh fh;
   if (fread(&fh.type, 1, YF_BMPFH_SZ, file) < YF_BMPFH_SZ ||
-    fh.type != YF_BMP_TYPE)
+      fh.type != YF_BMP_TYPE)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
     fclose(file);
@@ -253,6 +253,7 @@ int yf_filetype_bmp_load(const char *pathname, YF_texdt *data) {
   unsigned mask_rgba[4];
   unsigned lshf_rgba[4];
   unsigned bitn_rgba[4];
+
   switch (hdr_sz) {
     case YF_BMPIH_SZ: {
       L_bmpih ih;
@@ -277,7 +278,7 @@ int yf_filetype_bmp_load(const char *pathname, YF_texdt *data) {
           break;
         case YF_BMP_COMPR_BITFLD:
           if (rd_n == fh.data_offs ||
-            fread(mask_rgba, sizeof *mask_rgba, 3, file) < 3)
+              fread(mask_rgba, sizeof *mask_rgba, 3, file) < 3)
           {
             yf_seterr(YF_ERR_INVFILE, __func__);
             fclose(file);
@@ -370,6 +371,7 @@ int yf_filetype_bmp_load(const char *pathname, YF_texdt *data) {
       fclose(file);
       return -1;
   }
+
   if (w <= 0 || h == 0) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     fclose(file);
@@ -388,19 +390,20 @@ int yf_filetype_bmp_load(const char *pathname, YF_texdt *data) {
     fclose(file);
     return -1;
   }
-  unsigned char *scln = NULL;
   int from, to, inc;
   if (h > -1) {
-    /* pixel data is stored bottom to top, left to right */
+    /* pixel data is stored bottom-up */
     from = 0;
     to = h;
     inc = 1;
   } else {
-    /* pixel data is stored top to bottom, left to right */
+    /* pixel data is stored top-down */
     from = -h-1;
     to = -1;
     inc = -1;
   }
+  unsigned char *scln = NULL;
+
   switch (bpp) {
     case 16: {
       if (compr == YF_BMP_COMPR_RGB) {

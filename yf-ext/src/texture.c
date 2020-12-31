@@ -16,7 +16,7 @@
 #include "texture.h"
 #include "coreobj.h"
 #include "filetype.h"
-#include "filetype-bmp.h"
+#include "data-bmp.h"
 
 #ifdef YF_DEBUG
 # include <stdio.h>
@@ -101,7 +101,7 @@ YF_texture yf_texture_init(int filetype, const char *pathname) {
       /* TODO */
       assert(0);
     case YF_FILETYPE_BMP:
-      if (yf_filetype_bmp_load(pathname, &data) != 0) {
+      if (yf_loadbmp(pathname, &data) != 0) {
         yf_texture_deinit(tex);
         return NULL;
       }
