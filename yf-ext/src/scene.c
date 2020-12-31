@@ -88,8 +88,8 @@ typedef struct {
 /* Type representing key & value for use in the model sets. */
 typedef struct {
   struct {
-  YF_mesh mesh;
-  YF_texture tex;
+    YF_mesh mesh;
+    YF_texture tex;
   } key;
   union {
     YF_model mdl;
@@ -118,16 +118,8 @@ static int render_mdl_inst(YF_scene scn);
 static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst);
 
 /* Copies uniform instance data to buffer and updates dtable contents. */
-static int copy_uinst(
-  YF_scene scn,
-  int resrq,
-  void *objs,
-  unsigned obj_n,
-  YF_gstate gst,
-  unsigned inst_alloc);
-
-/* Resizes the buffer instance. */
-static size_t resize_buf(size_t new_len);
+static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
+    YF_gstate gst, unsigned inst_alloc);
 
 /* Yields all previously obtained resources. */
 static void yield_res(void);
@@ -335,23 +327,23 @@ static int init_vars(void) {
     /* proceed if all allocations succeed */
     if (!failed)
       break;
-    /* give up if fails to allocate the minimum */
+    /* give up if cannot allocate the minimum */
     if (inst_sum <= inst_min)
       return -1;
     /* try again with reduced number of instances */
     inst_sum = 0;
     for (unsigned i = 0; i < YF_RESRQ_N; ++i) {
       if (insts[i] > 0) {
-        insts[i] = YF_MAX(1, insts[i] / 2);
+        insts[i] = YF_MAX(1, insts[i] >> 1);
         inst_sum += insts[i];
       }
     }
   } while (1);
 
   if ((l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz)) == NULL ||
-    (l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
-    (l_vars.mdls = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
-    (l_vars.mdls_inst = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL)
+      (l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
+      (l_vars.mdls = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
+      (l_vars.mdls_inst = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL)
   {
     yf_resmgr_clear();
     yf_buffer_deinit(l_vars.buf);
@@ -361,7 +353,6 @@ static int init_vars(void) {
     memset(&l_vars, 0, sizeof l_vars);
     return -1;
   }
-
   return 0;
 }
 
@@ -399,7 +390,7 @@ static int traverse_scn(YF_node node, void *arg) {
       } else if ((val = yf_hashset_search(l_vars.mdls_inst, &key)) != NULL) {
         /* another model for instanced drawing */
         if (val->mdl_n == val->mdl_cap) {
-          YF_model *mdls = realloc(val->mdls, val->mdl_cap * 2 * sizeof mdl);
+          YF_model *mdls = realloc(val->mdls, (val->mdl_cap * sizeof mdl) << 1);
           if (mdls == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             *(int *)arg = -1;
@@ -501,18 +492,14 @@ static int render_mdl(YF_scene scn) {
 
     /* TODO: Copy uniform global data once. */
     if (copy_uglob(scn, YF_RESRQ_MDL, gst) != 0 ||
-      copy_uinst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
+        copy_uinst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
     {
       return -1;
     }
 
     if ((tex = yf_model_gettex(val->mdl)) != NULL)
-      yf_texture_copyres(
-        tex,
-        yf_gstate_getdtb(gst, YF_RESIDX_INST),
-        inst_alloc,
-        YF_RESBIND_ISTEX,
-        0);
+      yf_texture_copyres(tex, yf_gstate_getdtb(gst, YF_RESIDX_INST), inst_alloc,
+          YF_RESBIND_ISTEX, 0);
     else
       /* TODO: Handle models lacking texture. */
       assert(0);
@@ -605,19 +592,15 @@ static int render_mdl_inst(YF_scene scn) {
 
       /* TODO: Copy uniform global data only once for each state. */
       if (copy_uglob(scn, resrq[rq_i], gst) != 0 ||
-        copy_uinst(scn, resrq[rq_i], val->mdls+rem, n, gst, inst_alloc) != 0)
+          copy_uinst(scn, resrq[rq_i], val->mdls+rem, n, gst, inst_alloc) != 0)
       {
         yf_list_deinit(vals_done);
         return -1;
       }
 
       if ((tex = yf_model_gettex(val->mdls[rem])) != NULL)
-        yf_texture_copyres(
-          tex,
-          yf_gstate_getdtb(gst, YF_RESIDX_INST),
-          inst_alloc,
-          YF_RESBIND_ISTEX,
-          0);
+        yf_texture_copyres(tex, yf_gstate_getdtb(gst, YF_RESIDX_INST),
+            inst_alloc, YF_RESBIND_ISTEX, 0);
       else
         /* TODO: Handle models lacking texture. */
         assert(0);
@@ -629,7 +612,7 @@ static int render_mdl_inst(YF_scene scn) {
         yf_mesh_draw(mesh, l_vars.cb, n, 0);
       else
         /* TODO: Handle models lacking mesh. */
-      assert(0);
+        assert(0);
 
       if (rem == 0) {
         /* cannot invalidate the set iterator */
@@ -667,33 +650,22 @@ static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst) {
       offs = l_vars.buf_offs;
       sz = YF_UGLOBSZ_MDL;
       /* view matrix */
-      if (yf_buffer_copy(
-        l_vars.buf,
-        l_vars.buf_offs,
-        *yf_camera_getview(scn->cam),
-        sizeof(YF_mat4)) != 0)
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_offs,
+            *yf_camera_getview(scn->cam), sizeof(YF_mat4)) != 0)
       {
         return -1;
       }
       l_vars.buf_offs += sizeof(YF_mat4);
       /* projection matrix */
-      if (yf_buffer_copy(
-        l_vars.buf,
-        l_vars.buf_offs,
-        *yf_camera_getproj(scn->cam),
-        sizeof(YF_mat4)) != 0)
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_offs,
+            *yf_camera_getproj(scn->cam), sizeof(YF_mat4)) != 0)
       {
         return -1;
       }
       l_vars.buf_offs += sizeof(YF_mat4);
-      if (yf_dtable_copybuf(
-        dtb,
-        0,
-        YF_RESBIND_UGLOB,
-        elems,
-        &l_vars.buf,
-        &offs,
-        &sz) != 0)
+      /* copy */
+      if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_UGLOB, elems,
+            &l_vars.buf, &offs, &sz) != 0)
       {
         return -1;
       }
@@ -706,13 +678,8 @@ static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst) {
   return 0;
 }
 
-static int copy_uinst(
-  YF_scene scn,
-  int resrq,
-  void *objs,
-  unsigned obj_n,
-  YF_gstate gst,
-  unsigned inst_alloc)
+static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
+    YF_gstate gst, unsigned inst_alloc)
 {
   YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
   const YF_slice elems = {0, 1};
@@ -727,39 +694,26 @@ static int copy_uinst(
       sz = obj_n * YF_UINSTSZ_MDL;
       for (unsigned i = 0; i < obj_n; ++i) {
         YF_model mdl = ((YF_model *)objs)[i];
-        yf_mat4_mul(
-          *yf_model_getmvp(mdl),
-          *yf_camera_getxform(scn->cam),
-          *yf_model_getxform(mdl));
+        yf_mat4_mul(*yf_model_getmvp(mdl), *yf_camera_getxform(scn->cam),
+            *yf_model_getxform(mdl));
         /* model matrix */
-        if (yf_buffer_copy(
-          l_vars.buf,
-          l_vars.buf_offs,
-          *yf_model_getxform(mdl),
-          sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_offs,
+              *yf_model_getxform(mdl), sizeof(YF_mat4)) != 0)
         {
           return -1;
         }
         l_vars.buf_offs += sizeof(YF_mat4);
         /* model-view-projection matrix */
-        if (yf_buffer_copy(
-          l_vars.buf,
-          l_vars.buf_offs,
-          *yf_model_getmvp(mdl),
-          sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_offs,
+              *yf_model_getmvp(mdl), sizeof(YF_mat4)) != 0)
         {
           return -1;
         }
         l_vars.buf_offs += sizeof(YF_mat4);
       }
-      if (yf_dtable_copybuf(
-        dtb,
-        inst_alloc,
-        YF_RESBIND_UINST,
-        elems,
-        &l_vars.buf,
-        &offs,
-        &sz) != 0)
+      /* copy */
+      if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_UINST, elems,
+            &l_vars.buf, &offs, &sz) != 0)
       {
         return -1;
       }
@@ -770,48 +724,6 @@ static int copy_uinst(
   }
 
   return 0;
-}
-
-/* XXX: With buffer now allocated upfront, resize should not be necessary. */
-static size_t resize_buf(size_t new_len) {
-  size_t sz = new_len < SIZE_MAX ? YF_BUFLEN : new_len;
-  while (sz < new_len)
-    sz *= 2;
-  size_t buf_len;
-  yf_buffer_getval(l_vars.buf, &buf_len);
-
-  if (sz != buf_len) {
-    YF_buffer new_buf;
-    if ((new_buf = yf_buffer_init(l_vars.ctx, sz)) == NULL) {
-      if ((new_buf = yf_buffer_init(l_vars.ctx, new_len)) == NULL)
-        return buf_len;
-      else
-        sz = new_len;
-    }
-    YF_cmdbuf cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH);
-    if (cb == NULL &&
-      (cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_COMP)) == NULL)
-    {
-      yf_buffer_deinit(new_buf);
-      return buf_len;
-    }
-    yf_cmdbuf_copybuf(
-      cb,
-      new_buf,
-      0,
-      l_vars.buf,
-      0,
-      YF_MIN(sz, buf_len));
-    if (yf_cmdbuf_end(cb) != 0 || yf_cmdbuf_exec(l_vars.ctx) != 0) {
-      yf_buffer_deinit(new_buf);
-      return buf_len;
-    }
-    /* TODO: Handle ongoing work that references the old buffer. */
-    yf_buffer_deinit(l_vars.buf);
-    l_vars.buf = new_buf;
-  }
-
-  return sz;
 }
 
 static void yield_res(void) {
@@ -849,7 +761,7 @@ static int cmp_mdl(const void *a, const void *b) {
   return !((kv1->key.mesh == kv2->key.mesh) && (kv1->key.tex == kv2->key.tex));
 }
 
-static int dealloc_mdl(void *val, void *arg) {
+static int dealloc_mdl(void *val, YF_UNUSED void *arg) {
   L_kv_mdl *kv = val;
   if (kv->mdl_n > 1)
     free(kv->mdls);
