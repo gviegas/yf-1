@@ -363,7 +363,7 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data) {
 static size_t resize_buf(size_t new_len) {
   size_t sz = new_len < SIZE_MAX ? YF_BUFLEN : new_len;
   while (sz < new_len)
-    sz *= 2;
+    sz <<= 1;
 
   size_t buf_len;
   yf_buffer_getval(l_buf, &buf_len);
@@ -408,7 +408,7 @@ static size_t resize_blks(size_t new_cap) {
 
   size_t n = new_cap * sizeof(L_memblk) < SIZE_MAX ? YF_BLKCAP : new_cap;
   while (n < new_cap)
-    n *= 2;
+    n <<= 1;
 
   if (n != l_blk_cap) {
     L_memblk *tmp = realloc(l_blks, n * sizeof(L_memblk));

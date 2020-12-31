@@ -758,7 +758,7 @@ static size_t hash_mdl(const void *x) {
 static int cmp_mdl(const void *a, const void *b) {
   const L_kv_mdl *kv1 = a;
   const L_kv_mdl *kv2 = b;
-  return !((kv1->key.mesh == kv2->key.mesh) && (kv1->key.tex == kv2->key.tex));
+  return !(kv1->key.mesh == kv2->key.mesh && kv1->key.tex == kv2->key.tex);
 }
 
 static int dealloc_mdl(void *val, YF_UNUSED void *arg) {
