@@ -18,7 +18,7 @@
 #include "vertex.h"
 #include "coreobj.h"
 #include "filetype.h"
-#include "filetype-obj.h"
+#include "data-obj.h"
 
 #ifdef YF_DEBUG
 # include <stdio.h>
@@ -94,7 +94,7 @@ YF_mesh yf_mesh_init(int filetype, const char *pathname) {
       /* TODO */
       assert(0);
     case YF_FILETYPE_OBJ:
-      if (yf_filetype_obj_load(pathname, &data) != 0)
+      if (yf_loadobj(pathname, &data) != 0)
         return NULL;
       break;
     default:
