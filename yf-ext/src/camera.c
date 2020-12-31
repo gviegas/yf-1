@@ -72,7 +72,6 @@ YF_camera yf_camera_init(const YF_vec3 origin, const YF_vec3 target,
     yf_seterr(YF_ERR_NOMEM, __func__);
     return NULL;
   }
-
   yf_vec3_copy(cam->pos, origin);
   yf_vec3_sub(cam->dir, target, origin);
   yf_vec3_normi(cam->dir);
@@ -82,25 +81,20 @@ YF_camera yf_camera_init(const YF_vec3 origin, const YF_vec3 target,
 #else
   cam->turn_x = acosf(yf_vec3_dot(cam->dir, l_wld_u));
 #endif
-
   if (cam->turn_x < YF_TURNXMIN || cam->turn_x > YF_TURNXMAX) {
     yf_seterr(YF_ERR_INVARG, __func__);
     free(cam);
     return NULL;
   }
-
   cam->zoom = YF_FOVMAX;
   cam->aspect = aspect;
 
   update_view(cam);
   update_proj(cam);
-
   yf_mat4_mul(cam->view_proj, cam->proj, cam->view);
-
   cam->view_upd = 1;
   cam->proj_upd = 1;
   cam->vp_upd = 1;
-
   return cam;
 }
 
@@ -113,7 +107,6 @@ void yf_camera_place(YF_camera cam, const YF_vec3 pos) {
 
 void yf_camera_point(YF_camera cam, const YF_vec3 pos) {
   assert(cam != NULL);
-
 #ifdef YF_DEBUG
   assert(!yf_vec3_iseq(pos, cam->pos));
 #else
@@ -144,7 +137,6 @@ void yf_camera_point(YF_camera cam, const YF_vec3 pos) {
     yf_vec3_norm(cam->dir, front);
     cam->turn_x += ang;
   }
-
   cam->view_upd = 0;
 }
 

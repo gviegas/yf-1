@@ -122,6 +122,7 @@ void yf_mesh_deinit(YF_mesh mesh) {
       break;
     }
   }
+
   if (l_blk_n == 0) {
     /* no blocks */
     l_blks[0].offset = offs;
@@ -363,6 +364,7 @@ static size_t resize_buf(size_t new_len) {
   size_t sz = new_len < SIZE_MAX ? YF_BUFLEN : new_len;
   while (sz < new_len)
     sz *= 2;
+
   size_t buf_len;
   yf_buffer_getval(l_buf, &buf_len);
 
@@ -374,6 +376,7 @@ static size_t resize_buf(size_t new_len) {
       else
         sz = new_len;
     }
+
     YF_cmdbuf cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_GRAPH);
     if (cb == NULL && (cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_COMP)) == NULL) {
       yf_buffer_deinit(new_buf);
@@ -385,6 +388,7 @@ static size_t resize_buf(size_t new_len) {
       yf_buffer_deinit(new_buf);
       return buf_len;
     }
+
     if (yf_cmdbuf_exec(l_ctx) != 0) {
       yf_cmdbuf_reset(l_ctx);
       yf_buffer_deinit(new_buf);
@@ -393,7 +397,6 @@ static size_t resize_buf(size_t new_len) {
     yf_buffer_deinit(l_buf);
     l_buf = new_buf;
   }
-
   return sz;
 }
 
@@ -402,9 +405,11 @@ static size_t resize_blks(size_t new_cap) {
     yf_seterr(YF_ERR_OFLOW, __func__);
     return l_blk_cap;
   }
+
   size_t n = new_cap * sizeof(L_memblk) < SIZE_MAX ? YF_BLKCAP : new_cap;
   while (n < new_cap)
     n *= 2;
+
   if (n != l_blk_cap) {
     L_memblk *tmp = realloc(l_blks, n * sizeof(L_memblk));
     if (tmp == NULL) {

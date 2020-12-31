@@ -393,11 +393,8 @@ void yf_mat4_xlate(YF_mat4 m, YF_float tx, YF_float ty, YF_float tz) {
   m[14] = tz;
 }
 
-void yf_mat4_lookat(
-  YF_mat4 m,
-  const YF_vec3 eye,
-  const YF_vec3 center,
-  const YF_vec3 up)
+void yf_mat4_lookat(YF_mat4 m, const YF_vec3 eye, const YF_vec3 center,
+    const YF_vec3 up)
 {
   YF_vec3 f, s, u;
   yf_vec3_sub(f, center, eye);
@@ -423,12 +420,8 @@ void yf_mat4_lookat(
   m[15] = 1.0;
 }
 
-void yf_mat4_persp(
-  YF_mat4 m,
-  YF_float yfov,
-  YF_float aspect,
-  YF_float znear,
-  YF_float zfar)
+void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
+    YF_float znear, YF_float zfar)
 {
 #ifdef YF_USE_FLOAT64
   const YF_float one = 1.0;
@@ -445,14 +438,8 @@ void yf_mat4_persp(
   m[14] = -((one+one) * zfar * znear) / (zfar - znear);
 }
 
-void yf_mat4_ortho(
-  YF_mat4 m,
-  YF_float left,
-  YF_float right,
-  YF_float top,
-  YF_float bottom,
-  YF_float znear,
-  YF_float zfar)
+void yf_mat4_ortho(YF_mat4 m, YF_float left, YF_float right,
+    YF_float top, YF_float bottom, YF_float znear, YF_float zfar)
 {
 #ifdef YF_USE_FLOAT64
   const YF_float one = 1.0;
