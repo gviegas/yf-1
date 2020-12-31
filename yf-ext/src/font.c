@@ -11,7 +11,6 @@
 #include <yf/com/yf-error.h>
 
 #include "font.h"
-#include "filetype.h"
 
 struct YF_font_o {
   /* TODO */

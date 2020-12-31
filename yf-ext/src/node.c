@@ -105,10 +105,8 @@ void yf_node_prune(YF_node node) {
   while ((aux = aux->parent) != NULL);
 }
 
-int yf_node_traverse(
-  YF_node node,
-  int (*fn)(YF_node descendant, void *arg),
-  void *arg)
+int yf_node_traverse(YF_node node, int (*fn)(YF_node descendant, void *arg),
+    void *arg)
 {
   assert(node != NULL);
   assert(fn != NULL);
@@ -182,7 +180,7 @@ void yf_node_deinit(YF_node node) {
 
 void yf_node_setobj(YF_node node, int nodeobj, void *obj) {
   assert(node != NULL);
-  /* TODO: Assert that `nodeobj` is valid. */
+  /* TODO: Ensure that 'nodeobj' is valid. */
   node->nodeobj = nodeobj;
   node->obj = obj;
 }

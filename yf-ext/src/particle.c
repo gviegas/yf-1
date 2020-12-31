@@ -158,32 +158,24 @@ void yf_particle_simulate(YF_particle part, double tm) {
         pt->col[1] = YF_LERP(sys->color.min[1], sys->color.max[1], YF_NRND);
         pt->col[2] = YF_LERP(sys->color.min[2], sys->color.max[2], YF_NRND);
         pt->col[3] = 0.0;
+
         st->tm = 0.0;
-        st->dur = YF_LERP(
-          sys->lifetime.duration_min,
-          sys->lifetime.duration_max,
-          YF_NRND);
-        st->spawn = YF_LERP(
-          sys->lifetime.spawn_min,
-          sys->lifetime.spawn_max,
-          YF_NRND);
-        st->death = YF_LERP(
-          sys->lifetime.death_min,
-          sys->lifetime.death_max,
-          YF_NRND);
         st->alpha = YF_LERP(sys->color.min[3], sys->color.max[3], YF_NRND);
-        st->vel[0] = YF_LERP(
-          sys->velocity.min[0],
-          sys->velocity.max[0],
-          YF_NRND);
-        st->vel[1] = YF_LERP(
-          sys->velocity.min[1],
-          sys->velocity.max[1],
-          YF_NRND);
-        st->vel[2] = YF_LERP(
-          sys->velocity.min[2],
-          sys->velocity.max[2],
-          YF_NRND);
+
+        st->dur = YF_LERP(sys->lifetime.duration_min,
+            sys->lifetime.duration_max, YF_NRND);
+        st->spawn = YF_LERP(sys->lifetime.spawn_min,
+            sys->lifetime.spawn_max, YF_NRND);
+        st->death = YF_LERP(sys->lifetime.death_min,
+            sys->lifetime.death_max, YF_NRND);
+
+        st->vel[0] = YF_LERP(sys->velocity.min[0], sys->velocity.max[0],
+            YF_NRND);
+        st->vel[1] = YF_LERP(sys->velocity.min[1], sys->velocity.max[1],
+            YF_NRND);
+        st->vel[2] = YF_LERP(sys->velocity.min[2], sys->velocity.max[2],
+            YF_NRND);
+
         st->pstate = YF_PSTATE_SPAWNING;
         break;
 

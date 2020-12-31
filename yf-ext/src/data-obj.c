@@ -1,6 +1,6 @@
 /*
  * YF
- * filetype-obj.c
+ * data-obj.c
  *
  * Copyright © 2020 Gustavo C. Viegas.
  */
@@ -13,7 +13,7 @@
 #include <yf/com/yf-hashset.h>
 #include <yf/com/yf-error.h>
 
-#include "filetype-obj.h"
+#include "data-obj.h"
 #include "vertex.h"
 
 #undef YF_INITCAP
@@ -39,7 +39,7 @@ static int cmp_kv(const void *a, const void *b);
 /* Deallocates a `L_kv`. */
 static int dealloc_kv(void *val, void *arg);
 
-int yf_filetype_obj_load(const char *pathname, YF_meshdt *data) {
+int yf_loadobj(const char *pathname, YF_meshdt *data) {
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
@@ -131,10 +131,8 @@ int yf_filetype_obj_load(const char *pathname, YF_meshdt *data) {
       /* face or ignored */
       int n;
       int fmt;
-      n = sscanf(
-        line,
-        fmt_f1,
-        f, f+1, f+2, f+3, f+4, f+5, f+6, f+7, f+8, f+9, f+10, f+11);
+      n = sscanf(line, fmt_f1, f, f+1, f+2, f+3, f+4, f+5, f+6, f+7, f+8, f+9,
+          f+10, f+11);
       if (n == 9 || n == 12) {
         fmt = 1;
       } else {
@@ -147,11 +145,10 @@ int yf_filetype_obj_load(const char *pathname, YF_meshdt *data) {
             fmt = 3;
           } else {
             n = sscanf(line, fmt_f4, f, f+1, f+2, f+3);
-            if (n == 3 || n == 4) {
+            if (n == 3 || n == 4)
               fmt = 4;
-            } else {
+            else
               continue;
-            }
           }
         }
       }
@@ -382,16 +379,16 @@ int yf_filetype_obj_load(const char *pathname, YF_meshdt *data) {
 
 static size_t hash_kv(const void *x) {
   const unsigned *k = x;
-  return (k[0] ^ k[1] ^ k[2] ^ 4271934599);
+  return k[0] ^ k[1] ^ k[2] ^ 4271934599;
 }
 
 static int cmp_kv(const void *a, const void *b) {
   const unsigned *k1 = a;
   const unsigned *k2 = b;
-  return !((k1[0] == k2[0]) && (k1[1] == k2[1]) && (k1[2] == k2[2]));
+  return !(k1[0] == k2[0] && k1[1] == k2[1] && k1[2] == k2[2]);
 }
 
-static int dealloc_kv(void *val, void *arg) {
+static int dealloc_kv(void *val, YF_UNUSED void *arg) {
   free(val);
   return 0;
 }

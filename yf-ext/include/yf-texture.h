@@ -18,6 +18,14 @@ YF_DECLS_BEGIN
 typedef struct YF_texture_o *YF_texture;
 
 /**
+ * Texture file types.
+ */
+#define YF_FILETYPE_UNKNOWN  0
+#define YF_FILETYPE_INTERNAL 1
+#define YF_FILETYPE_PNG      48
+#define YF_FILETYPE_BMP      49
+
+/**
  * Initializes a new texture.
  *
  * @param filetype: The 'YF_FILETYPE' value indicating the format of the
