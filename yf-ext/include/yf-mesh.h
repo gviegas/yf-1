@@ -18,6 +18,14 @@ YF_DECLS_BEGIN
 typedef struct YF_mesh_o *YF_mesh;
 
 /**
+ * Mesh file types.
+ */
+#define YF_FILETYPE_UNKNOWN  0
+#define YF_FILETYPE_INTERNAL 1
+#define YF_FILETYPE_COLLADA  24
+#define YF_FILETYPE_OBJ      25
+
+/**
  * Initializes a new mesh.
  *
  * @param filetype: The 'YF_FILETYPE' value indicating the format of the mesh

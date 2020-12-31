@@ -15,7 +15,6 @@
 
 #include "texture.h"
 #include "coreobj.h"
-#include "filetype.h"
 #include "data-bmp.h"
 
 #ifdef YF_DEBUG

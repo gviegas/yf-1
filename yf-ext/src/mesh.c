@@ -17,7 +17,6 @@
 #include "mesh.h"
 #include "vertex.h"
 #include "coreobj.h"
-#include "filetype.h"
 #include "data-obj.h"
 
 #ifdef YF_DEBUG
