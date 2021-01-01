@@ -26,15 +26,23 @@ static int test_error(void) {
   YF_TEST_SUBT;
 
   int err;
+  const size_t n = 72;
+  char info[n];
 
-  printf("\nerr code/info: %d/%s\n", yf_geterr(), yf_geterrinfo());
+  if (yf_geterrinfo(info, n) != info)
+    return -1;
+
+  printf("\nerr code/info: %d/%s\n", yf_geterr(), info);
 
   yf_seterr(YF_ERR_NOTFND, "test");
   err = yf_geterr();
   if (err != YF_ERR_NOTFND)
     return -1;
 
-  printf("err code/info: %d/%s\n", yf_geterr(), yf_geterrinfo());
+  if (yf_geterrinfo(info, n) != info)
+    return -1;
+
+  printf("err code/info: %d/%s\n", yf_geterr(), info);
 
   yf_seterr(YF_ERR_LIMIT, NULL);
   if (err == yf_geterr())
@@ -42,14 +50,20 @@ static int test_error(void) {
   if (yf_geterr() != YF_ERR_LIMIT)
     return -1;
 
-  printf("err code/info: %d/%s\n", yf_geterr(), yf_geterrinfo());
+  if (yf_geterrinfo(info, n) != info)
+    return -1;
+
+  printf("err code/info: %d/%s\n", yf_geterr(), info);
 
   yf_seterr(YF_ERR_OTHER, "TEST");
   err = yf_geterr();
   if (err != YF_ERR_OTHER)
     return -1;
 
-  printf("err code/info: %d/%s\n", yf_geterr(), yf_geterrinfo());
+  if (yf_geterrinfo(info, n) != info)
+    return -1;
+
+  printf("err code/info: %d/%s\n", yf_geterr(), info);
 
   puts("");
   return 0;

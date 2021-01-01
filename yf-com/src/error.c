@@ -16,12 +16,13 @@
 static _Thread_local int l_err = YF_ERR_UNKNOWN;
 static _Thread_local char l_info[YF_STR_MAXLEN] = {'\0'};
 
-void yf_seterr(int err, const char *info) {
+void yf_seterr(int err, YF_UNUSED const char *info) {
   l_err = err;
 #ifdef YF_DEBUG
-  l_info[0] = '\0';
-  if (info != NULL && strnlen(info, YF_STR_MAXLEN) < YF_STR_MAXLEN)
-    strcpy(l_info, info);
+  if (info != NULL)
+    strncpy(l_info, info, YF_STR_MAXLEN-1)[YF_STR_MAXLEN-1] = '\0';
+  else
+    l_info[0] = '\0';
   yf_printerr();
 #endif
 }
@@ -30,9 +31,10 @@ int yf_geterr(void) {
   return l_err;
 }
 
-char *yf_geterrinfo(void) {
-  l_info[YF_STR_MAXLEN-1] = '\0';
-  return l_info;
+char *yf_geterrinfo(char *dst, size_t n) {
+  if (strlen(l_info) < n)
+    return strcpy(dst, l_info);
+  return NULL;
 }
 
 void yf_printerr(void) {
@@ -96,10 +98,8 @@ void yf_printerr(void) {
   }
 
   fprintf(stderr, "\n[YF] ERROR:\n! %s (%d)\n", s, l_err);
-  if (l_info[0] != '\0') {
-    l_info[YF_STR_MAXLEN-1] = '\0';
+  if (l_info[0] != '\0')
     fprintf(stderr, "! %s\n\n", l_info);
-  } else {
+  else
     fprintf(stderr, "\n");
-  }
 }
