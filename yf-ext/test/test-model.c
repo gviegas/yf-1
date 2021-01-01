@@ -10,6 +10,9 @@
 #include <time.h>
 #include <assert.h>
 
+#include <yf/wsys/yf-event.h>
+#include <yf/wsys/yf-keyboard.h>
+
 #include "yf-ext.h"
 
 #define YF_WINW 960
@@ -33,6 +36,12 @@ struct L_vars {
   YF_model mdl[YF_MDLN];
   YF_mesh mesh[YF_MDLN];
   YF_texture tex[YF_MDLN];
+
+  struct {
+    int quit;
+    int swap;
+    float speed;
+  } input;
 };
 static struct L_vars l_vars = {0};
 
@@ -112,21 +121,44 @@ static const YF_mat4 l_xforms[] = {
   }
 };
 
+/* Handle key events. */
+static void on_key(int key, int state,
+    YF_UNUSED unsigned mod_mask, YF_UNUSED void *arg)
+{
+  if (state == YF_KEYSTATE_RELEASED)
+    return;
+
+  switch (key) {
+    case YF_KEY_SPACE:
+      l_vars.input.swap = 1;
+      break;
+    case YF_KEY_1:
+      l_vars.input.speed -= 0.25f;
+      break;
+    case YF_KEY_2:
+      l_vars.input.speed += 0.25f;
+      break;
+    default:
+      l_vars.input.quit = 1;
+  }
+}
+
 /* Updates content. */
 static void update(double elapsed_time) {
   static double tm = 0.0;
   tm += elapsed_time;
   printf("update (%.6f)\n", elapsed_time);
 
-  /* Stop view's rendering loop when done */
-  if (tm >= 15.0)
+  /* Stop view's rendering loop when requested */
+  if (l_vars.input.quit)
     yf_view_stop(l_vars.view);
 
-  /* Swap scenes after a while */
+  /* Swap scenes after a while or when requested */
   static unsigned scn_i = 0;
   static double chg_tm = 0.0;
   chg_tm += elapsed_time;
-  if (chg_tm >= 3.5) {
+  if (l_vars.input.swap || chg_tm >= 10.0) {
+    l_vars.input.swap = 0;
     chg_tm = 0.0;
     scn_i = (scn_i+1) % YF_SCNN;
     yf_view_setscene(l_vars.view, l_vars.scn[scn_i]);
@@ -134,9 +166,10 @@ static void update(double elapsed_time) {
 
   /* Rotate models */
   static YF_float ang = 0.0;
-  ang += 0.01;
+  ang += 0.01 * l_vars.input.speed;
   YF_mat4 rot;
-  yf_mat4_rot(rot, ang, (YF_vec3){0.7071, -0.7071, 0.0});
+  YF_vec3 axis = {0.7071, -0.7071, 0.0};
+  yf_mat4_rot(rot, ang, axis);
   for (unsigned i = 0; i < YF_MDLN; ++i)
     yf_mat4_mul(*yf_model_getxform(l_vars.mdl[i]), l_xforms[i], rot);
 }
@@ -146,6 +179,12 @@ int yf_test_model(void) {
   srand(time(NULL));
   const int instanced = rand() & 1;
   printf("## %s rendering ##\n\n", instanced ? "Instanced" : "Non-instanced");
+
+  YF_evtfn evtfn = {.key_kb = on_key};
+  yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
+  l_vars.input.quit = 0;
+  l_vars.input.swap = 0;
+  l_vars.input.speed = 1.0f;
 
   /* Create view */
   l_vars.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
