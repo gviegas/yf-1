@@ -9,15 +9,10 @@
 #include <string.h>
 #include <assert.h>
 
-#include "test.h"
-
-#include "yf-platform.h"
-#include "yf-window.h"
-#include "yf-event.h"
-#include "yf-keyboard.h"
-#include "yf-pointer.h"
-
 #include <yf/com/yf-clock.h>
+
+#include "test.h"
+#include "yf-wsys.h"
 
 #define YF_TEST_ALL "all"
 #define YF_TEST_SUBL "................................"
