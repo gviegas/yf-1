@@ -20,7 +20,7 @@
 #define YF_INITCAP 1024
 
 #if !defined(_POSIX_C_SOURCE) || (_POSIX_C_SOURCE < 200809L)
-/* TODO: Provide an implementation of `getline`. */
+/* TODO: Provide an implementation of 'getline'. */
 # error "Invalid platform"
 #endif
 
@@ -65,14 +65,18 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
   const char *fmt_v = "v %f %f %f";
   const char *fmt_vt = "vt %f %f";
   const char *fmt_vn = "vn %f %f %f";
-  const char *fmt_f1 = "f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d";
-  const char *fmt_f2 = "f %d/%d %d/%d %d/%d %d/%d";
-  const char *fmt_f3 = "f %d//%d %d//%d %d//%d %d//%d";
-  const char *fmt_f4 = "f %d %d %d %d";
+  const char *fmt_f_ptn = "f %d/%d/%d %d/%d/%d %d/%d/%d %d/%d/%d";
+  const char *fmt_f_pt = "f %d/%d %d/%d %d/%d %d/%d";
+  const char *fmt_f_pn = "f %d//%d %d//%d %d//%d %d//%d";
+  const char *fmt_f_p = "f %d %d %d %d";
   float v[3];
   float vt[2];
   float vn[3];
   int f[12];
+#define YF_FACEFMT_PTN 1
+#define YF_FACEFMT_PT  2
+#define YF_FACEFMT_PN  3
+#define YF_FACEFMT_P   4
 
   YF_hashset map = yf_hashset_init(hash_kv, cmp_kv);
   if (map == NULL)
@@ -87,11 +91,12 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
   char *line = NULL;
   size_t line_sz = 0;
   int r = -1;
+
   while (getline(&line, &line_sz, file) != -1) {
     if (sscanf(line, fmt_v, v, v+1, v+2) == 3) {
       /* position */
       if (pos_n == pos_cap) {
-        pos_cap = pos_n == 0 ? YF_INITCAP : pos_cap*2;
+        pos_cap = pos_n == 0 ? YF_INITCAP : pos_cap<<1;
         YF_vec3 *tmp = realloc(poss, pos_cap * sizeof *poss);
         if (tmp == NULL) {
           yf_seterr(YF_ERR_NOMEM, __func__);
@@ -101,6 +106,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
       }
       memcpy(poss+pos_n, v, sizeof v);
       ++pos_n;
+
     } else if (sscanf(line, fmt_vt, vt, vt+1) == 2) {
       /* tex. coord. */
       if (tex_n == tex_cap) {
@@ -114,10 +120,11 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
       }
       memcpy(texs+tex_n, vt, sizeof vt);
       ++tex_n;
+
     } else if (sscanf(line, fmt_vn, vn, vn+1, vn+2) == 3) {
       /* normal */
       if (norm_n == norm_cap) {
-        norm_cap = norm_n == 0 ? YF_INITCAP : norm_cap*2;
+        norm_cap = norm_n == 0 ? YF_INITCAP : norm_cap<<1;
         YF_vec3 *tmp = realloc(norms, norm_cap * sizeof *norms);
         if (tmp == NULL) {
           yf_seterr(YF_ERR_NOMEM, __func__);
@@ -127,34 +134,37 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
       }
       memcpy(norms+norm_n, vn, sizeof vn);
       ++norm_n;
+
     } else {
       /* face or ignored */
       int n;
       int fmt;
-      n = sscanf(line, fmt_f1, f, f+1, f+2, f+3, f+4, f+5, f+6, f+7, f+8, f+9,
-          f+10, f+11);
+      n = sscanf(line, fmt_f_ptn, f, f+1, f+2, f+3, f+4, f+5, f+6, f+7,
+          f+8, f+9, f+10, f+11);
       if (n == 9 || n == 12) {
-        fmt = 1;
+        fmt = YF_FACEFMT_PTN;
       } else {
-        n = sscanf(line, fmt_f2, f, f+1, f+2, f+3, f+4, f+5, f+6, f+7);
+        n = sscanf(line, fmt_f_pt, f, f+1, f+2, f+3, f+4, f+5, f+6, f+7);
         if (n == 6 || n == 8) {
-          fmt = 2;
+          fmt = YF_FACEFMT_PT;
         } else {
-          n = sscanf(line, fmt_f3, f, f+1, f+2, f+3, f+4, f+5, f+6, f+7);
+          n = sscanf(line, fmt_f_pn, f, f+1, f+2, f+3, f+4, f+5, f+6, f+7);
           if (n == 6 || n == 8) {
-            fmt = 3;
+            fmt = YF_FACEFMT_PN;
           } else {
-            n = sscanf(line, fmt_f4, f, f+1, f+2, f+3);
+            n = sscanf(line, fmt_f_p, f, f+1, f+2, f+3);
             if (n == 3 || n == 4)
-              fmt = 4;
+              fmt = YF_FACEFMT_P;
             else
+              /* something else */
               continue;
           }
         }
       }
+
       /* quads will need two triangles and thus, six indices */
       if (idx_n + 6 > idx_cap) {
-        idx_cap = idx_n == 0 ? YF_INITCAP : idx_cap*2;
+        idx_cap = idx_n == 0 ? YF_INITCAP : idx_cap<<1;
         unsigned *tmp = realloc(inds, idx_cap * sizeof *inds);
         if (tmp == NULL) {
           yf_seterr(YF_ERR_NOMEM, __func__);
@@ -162,11 +172,13 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
         }
         inds = tmp;
       }
+
       L_kv kv = {0};
       L_kv *stored_val;
       unsigned face[4];
+
       switch (fmt) {
-        case 1:
+        case YF_FACEFMT_PTN:
           /* pos/texc/norm triangle or quad */
           for (int i = 0; i < n/3; ++i) {
             kv.key[0] = f[3*i] - 1;
@@ -176,7 +188,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
               face[i] = stored_val->value;
             } else {
               if (vtx_n == vtx_cap) {
-                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap*2;
+                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
                 YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
                 if (tmp == NULL) {
                   yf_seterr(YF_ERR_NOMEM, __func__);
@@ -207,16 +219,17 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
             inds[idx_n++] = face[3];
           }
           break;
-        case 2:
+
+        case YF_FACEFMT_PT:
           /* pos/texc triangle or quad */
-          for (int i = 0; i < n/2; ++i) {
+          for (int i = 0; i < (n>>1); ++i) {
             kv.key[0] = f[2*i] - 1;
             kv.key[1] = f[2*i+1] - 1;
             if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
               face[i] = stored_val->value;
             } else {
               if (vtx_n == vtx_cap) {
-                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap*2;
+                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
                 YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
                 if (tmp == NULL) {
                   yf_seterr(YF_ERR_NOMEM, __func__);
@@ -247,16 +260,17 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
             inds[idx_n++] = face[3];
           }
           break;
-        case 3:
+
+        case YF_FACEFMT_PN:
           /* pos/norm triangle or quad */
-          for (int i = 0; i < n/2; ++i) {
+          for (int i = 0; i < (n>>1); ++i) {
             kv.key[0] = f[2*i] - 1;
             kv.key[2] = f[2*i+1] - 1;
             if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
               face[i] = stored_val->value;
             } else {
               if (vtx_n == vtx_cap) {
-                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap*2;
+                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
                 YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
                 if (tmp == NULL) {
                   yf_seterr(YF_ERR_NOMEM, __func__);
@@ -287,7 +301,8 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
             inds[idx_n++] = face[3];
           }
           break;
-        case 4:
+
+        case YF_FACEFMT_P:
           /* position only triangle or quad */
           for (int i = 0; i < n; ++i) {
             kv.key[0] = f[i] - 1;
@@ -295,7 +310,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
               face[i] = stored_val->value;
             } else {
               if (vtx_n == vtx_cap) {
-                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap*2;
+                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
                 YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
                 if (tmp == NULL) {
                   yf_seterr(YF_ERR_NOMEM, __func__);
@@ -330,6 +345,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
     }
   }
 
+  /* vertex data */
   if (vtx_n < vtx_cap) {
     YF_vmdl *tmp = realloc(verts, vtx_n * sizeof *verts);
     if (tmp != NULL)
@@ -339,6 +355,8 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
   data->v.data = verts;
   data->v.n = vtx_n;
   verts = NULL;
+
+  /* index data */
   if (vtx_n > 65536) {
     if (idx_n < idx_cap) {
       unsigned *tmp = realloc(inds, idx_n * sizeof *inds);
