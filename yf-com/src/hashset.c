@@ -30,7 +30,7 @@
 #define YF_MAXLOADF 0.75
 
 #undef YF_HASH
-#define YF_HASH(a, x, b, w, res) (res = (a*x+b) >> (YF_WBITS-w))
+#define YF_HASH(res, a, x, b, w) (res = (a*x+b) >> (YF_WBITS-w))
 
 #undef YF_LCG
 #define YF_LCG(state, xn) do { \
@@ -65,6 +65,7 @@ YF_hashset yf_hashset_init(YF_hashfn hash, YF_cmpfn cmp) {
   }
   set->hash = hash != NULL ? hash : yf_hash;
   set->cmp = cmp != NULL ? cmp : yf_cmp;
+
   set->buckets = calloc(1 << YF_WMINBITS, sizeof *set->buckets);
   if (set->buckets == NULL) {
     free(set);
@@ -78,6 +79,7 @@ YF_hashset yf_hashset_init(YF_hashfn hash, YF_cmpfn cmp) {
       return NULL;
     }
   }
+
   set->value_n = 0;
   make_seed(&set->lcg_state);
   make_factors(&set->lcg_state, &set->a, &set->b);
@@ -86,13 +88,14 @@ YF_hashset yf_hashset_init(YF_hashfn hash, YF_cmpfn cmp) {
 
 int yf_hashset_insert(YF_hashset set, const void *val) {
   assert(set != NULL);
-  size_t x = set->hash(val);
-  size_t k;
-  YF_HASH(set->a, x, set->b, set->bucket_w, k);
+
+  size_t k, x = set->hash(val);
+  YF_HASH(k, set->a, x, set->b, set->bucket_w);
   if (yf_list_contains(set->buckets[k], val)) {
     yf_seterr(YF_ERR_EXIST, __func__);
     return -1;
   }
+
   int r = yf_list_insert(set->buckets[k], val);
   if (r == 0) {
     ++set->value_n;
@@ -106,9 +109,10 @@ int yf_hashset_insert(YF_hashset set, const void *val) {
 
 int yf_hashset_remove(YF_hashset set, const void *val) {
   assert(set != NULL);
-  size_t x = set->hash(val);
-  size_t k;
-  YF_HASH(set->a, x, set->b, set->bucket_w, k);
+
+  size_t k, x = set->hash(val);
+  YF_HASH(k, set->a, x, set->b, set->bucket_w);
+
   int r = yf_list_remove(set->buckets[k], val);
   if (r == 0) {
     --set->value_n;
@@ -122,17 +126,18 @@ int yf_hashset_remove(YF_hashset set, const void *val) {
 
 int yf_hashset_contains(YF_hashset set, const void *val) {
   assert(set != NULL);
-  size_t x = set->hash(val);
-  size_t k;
-  YF_HASH(set->a, x, set->b, set->bucket_w, k);
+
+  size_t k, x = set->hash(val);
+  YF_HASH(k, set->a, x, set->b, set->bucket_w);
   return yf_list_contains(set->buckets[k], val);
 }
 
 void *yf_hashset_search(YF_hashset set, const void *val) {
   assert(set != NULL);
-  size_t x = set->hash(val);
-  size_t k;
-  YF_HASH(set->a, x, set->b, set->bucket_w, k);
+
+  size_t k, x = set->hash(val);
+  YF_HASH(k, set->a, x, set->b, set->bucket_w);
+
   void *r = NULL;
   YF_iter it = YF_NILIT;
   do {
@@ -140,11 +145,13 @@ void *yf_hashset_search(YF_hashset set, const void *val) {
     if (YF_IT_ISNIL(it) || set->cmp(val, r) == 0)
       break;
   } while (1);
+
   return r;
 }
 
 void *yf_hashset_extract(YF_hashset set, YF_iter *it) {
   assert(set != NULL);
+
   void *r = NULL;
   YF_iter llit;
   if (it == NULL || YF_IT_ISNIL(*it)) {
@@ -155,30 +162,27 @@ void *yf_hashset_extract(YF_hashset set, YF_iter *it) {
         if (YF_IT_ISNIL(llit))
           continue;
         yf_list_remove(set->buckets[i], r);
-        assert(!yf_list_contains(set->buckets[i], r));
         --set->value_n;
         if (set->bucket_w > YF_WMINBITS &&
-          (double)set->value_n / (double)(1 << set->bucket_w) < YF_MINLOADF)
+            (double)set->value_n / (double)(1 << set->bucket_w) < YF_MINLOADF)
         {
           rehash(set, 1);
         }
         break;
       }
-      assert(!YF_IT_ISNIL(llit));
     }
   } else {
     const size_t i = it->data[0];
     r = (void *)it->data[1];
-    assert(yf_list_contains(set->buckets[i], r));
     yf_list_remove(set->buckets[i], r);
-    assert(!yf_list_contains(set->buckets[i], r));
     --set->value_n;
     if (set->bucket_w > YF_WMINBITS &&
-      (double)set->value_n / (double)(1 << set->bucket_w) < YF_MINLOADF)
+        (double)set->value_n / (double)(1 << set->bucket_w) < YF_MINLOADF)
     {
       rehash(set, 1);
     }
   }
+
   if (it != NULL)
     *it = YF_NILIT;
   return r;
@@ -186,6 +190,7 @@ void *yf_hashset_extract(YF_hashset set, YF_iter *it) {
 
 void *yf_hashset_next(YF_hashset set, YF_iter *it) {
   assert(set != NULL);
+
   void *r = NULL;
   YF_iter llit;
   if (it == NULL || YF_IT_ISNIL(*it)) {
@@ -201,12 +206,10 @@ void *yf_hashset_next(YF_hashset set, YF_iter *it) {
         }
         break;
       }
-      assert(!YF_IT_ISNIL(llit));
     } else if (it != NULL) {
       *it = YF_NILIT;
     }
   } else {
-    assert(set->value_n != 0);
     void *val;
     int found_curr = 0;
     for (size_t i = it->data[0]; i < ((size_t)1 << set->bucket_w); ++i) {
@@ -229,15 +232,14 @@ void *yf_hashset_next(YF_hashset set, YF_iter *it) {
   return r;
 }
 
-void yf_hashset_each(
-  YF_hashset set,
-  int (*callb)(void *val, void *arg),
-  void *arg)
+void yf_hashset_each(YF_hashset set, int (*callb)(void *val, void *arg),
+    void *arg)
 {
   assert(set != NULL);
   assert(callb != NULL);
   if (set->value_n == 0)
     return;
+
   YF_iter it;
   void *val;
   size_t n = 0;
@@ -262,17 +264,20 @@ void yf_hashset_clear(YF_hashset set) {
   assert(set != NULL);
   if (set->value_n == 0)
     return;
+
   const size_t n = (size_t)1 << YF_WMINBITS;
   const size_t m = (size_t)1 << set->bucket_w;
   for (size_t i = 0; i < n; ++i)
     yf_list_clear(set->buckets[i]);
   for (size_t i = n; i < m; ++i)
     yf_list_deinit(set->buckets[i]);
+
   YF_list *tmp = realloc(set->buckets, n * sizeof *set->buckets);
   if (tmp != NULL)
     set->buckets = tmp;
   else
     memset(set->buckets+n, 0, (m-n) * sizeof *set->buckets);
+
   set->bucket_w = YF_WMINBITS;
   set->value_n = 0;
   make_factors(&set->lcg_state, &set->a, &set->b);
@@ -319,6 +324,7 @@ static int rehash(YF_hashset set, int down) {
   const unsigned w = down ? set->bucket_w-1 : set->bucket_w+1;
   size_t a, b;
   make_factors(&set->lcg_state, &a, &b);
+
   YF_list *tmp = calloc((size_t)1 << w, sizeof(YF_list));
   if (tmp == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -332,6 +338,7 @@ static int rehash(YF_hashset set, int down) {
       return -1;
     }
   }
+
   YF_iter it;
   void *val;
   size_t x, k;
@@ -344,7 +351,7 @@ static int rehash(YF_hashset set, int down) {
       if (YF_IT_ISNIL(it))
         break;
       x = set->hash(val);
-      YF_HASH(a, x, b, w, k);
+      YF_HASH(k, a, x, b, w);
       if (yf_list_insert(tmp[k], val) != 0) {
         for (size_t j = 0; j < ((size_t)1 << w); ++j)
           yf_list_deinit(tmp[j]);
@@ -353,9 +360,11 @@ static int rehash(YF_hashset set, int down) {
       }
     } while (1);
   }
+
   for (size_t i = 0; i < ((size_t)1 << set->bucket_w); ++i)
     yf_list_deinit(set->buckets[i]);
   free(set->buckets);
+
   set->buckets = tmp;
   set->bucket_w = w;
   set->a = a;

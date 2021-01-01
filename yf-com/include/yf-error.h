@@ -30,11 +30,12 @@ int yf_geterr(void);
 /**
  * Gets the last error info.
  *
- * TODO: Make constant.
- *
- * @return: The last info string that was set.
+ * @param dst: The destination for the info string.
+ * @param n: The length of the destination buffer.
+ * @return: If the length of the info string exceeds 'n', returns 'NULL'.
+ *  Otherwise, returns 'dst'.
  */
-char *yf_geterrinfo(void);
+char *yf_geterrinfo(char *dst, size_t n);
 
 /**
  * Prints the last error.

@@ -41,6 +41,7 @@ YF_list yf_list_init(YF_cmpfn cmp) {
 
 int yf_list_insert(YF_list list, const void *val) {
   assert(list != NULL);
+
   L_entry *e = malloc(sizeof(L_entry));
   if (e == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -58,6 +59,7 @@ int yf_list_insert(YF_list list, const void *val) {
 
 int yf_list_insertat(YF_list list, YF_iter *it, const void *val) {
   assert(list != NULL);
+
   if (it == NULL || YF_IT_ISNIL(*it)) {
     if (yf_list_insert(list, val) != 0)
       return -1;
@@ -84,6 +86,7 @@ int yf_list_insertat(YF_list list, YF_iter *it, const void *val) {
 
 int yf_list_remove(YF_list list, const void *val) {
   assert(list != NULL);
+
   L_entry *e = list->first;
   while (e != NULL) {
     if (list->cmp(val, e->val) == 0) {
@@ -99,17 +102,20 @@ int yf_list_remove(YF_list list, const void *val) {
     }
     e = e->next;
   }
+
   yf_seterr(YF_ERR_NOTFND, __func__);
   return -1;
 }
 
 void *yf_list_removeat(YF_list list, YF_iter *it) {
   assert(list != NULL);
+
   if (list->first == NULL) {
     if (it != NULL)
       *it = YF_NILIT;
     return NULL;
   }
+
   L_entry *e = NULL;
   if (it == NULL || YF_IT_ISNIL(*it))
     e = list->first;
@@ -126,6 +132,7 @@ void *yf_list_removeat(YF_list list, YF_iter *it) {
   } else if (it != NULL) {
     *it = YF_NILIT;
   }
+
   void *r = (void *)e->val;
   free(e);
   --list->n;
@@ -134,6 +141,7 @@ void *yf_list_removeat(YF_list list, YF_iter *it) {
 
 int yf_list_contains(YF_list list, const void *val) {
   assert(list != NULL);
+
   L_entry *e = list->first;
   while (e != NULL) {
     if (list->cmp(e->val, val) == 0)
@@ -145,6 +153,7 @@ int yf_list_contains(YF_list list, const void *val) {
 
 void *yf_list_next(YF_list list, YF_iter *it) {
   assert(list != NULL);
+
   void *r = NULL;
   if (it == NULL) {
     if (list->first != NULL)
@@ -170,6 +179,7 @@ void *yf_list_next(YF_list list, YF_iter *it) {
 void yf_list_each(YF_list list, int (*callb)(void *val, void *arg), void *arg) {
   assert(list != NULL);
   assert(callb != NULL);
+
   L_entry *e = list->first;
   while (e != NULL) {
     if (callb((void *)e->val, arg) != 0)
@@ -187,6 +197,7 @@ void yf_list_clear(YF_list list) {
   assert(list != NULL);
   if (list->n == 0)
     return;
+
   L_entry *e = list->first;
   do {
     if (e->next == NULL) {
