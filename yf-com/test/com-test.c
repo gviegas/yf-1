@@ -10,10 +10,7 @@
 #include <assert.h>
 
 #include "test.h"
-#include "error.h"
-#include "clock.h"
-#include "list.h"
-#include "hashset.h"
+#include "yf-com.h"
 
 #define YF_TEST_ALL "all"
 #define YF_TEST_SUBLN "..............................."
