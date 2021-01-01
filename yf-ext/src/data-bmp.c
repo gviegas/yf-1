@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <assert.h>
 
 #include <yf/com/yf-error.h>
@@ -116,85 +117,85 @@
 
 /* Type representing the BMP file header. */
 typedef struct {
-  char _[2];
-  unsigned short type;
-  unsigned size;
-  unsigned short reserved1;
-  unsigned short reserved2;
-  unsigned data_offs;
+  uint8_t _[2];
+  uint16_t type;
+  uint32_t size;
+  uint16_t reserved1;
+  uint16_t reserved2;
+  uint32_t data_offs;
 } L_bmpfh;
 #define YF_BMPFH_SZ  14
 static_assert(offsetof(L_bmpfh, data_offs) == YF_BMPFH_SZ-4+2, "!offsetof");
 
 /* Type representing the BMP info header. */
 typedef struct {
-  unsigned size;
-  int width;
-  int height;
-  unsigned short planes;
-  unsigned short bpp;
-  unsigned compression;
-  unsigned img_sz;
-  int ppm_x;
-  int ppm_y;
-  unsigned ci_n;
-  unsigned ci_important;
+  uint32_t size;
+  int32_t width;
+  int32_t height;
+  uint16_t planes;
+  uint16_t bpp;
+  uint32_t compression;
+  uint32_t img_sz;
+  int32_t ppm_x;
+  int32_t ppm_y;
+  uint32_t ci_n;
+  uint32_t ci_important;
 } L_bmpih;
 #define YF_BMPIH_SZ  40
 static_assert(offsetof(L_bmpih, ci_important) == YF_BMPIH_SZ-4, "!offsetof");
 
 /* Type representing the BMP version 4 header. */
 typedef struct {
-  unsigned size;
-  int width;
-  int height;
-  unsigned short planes;
-  unsigned short bpp;
-  unsigned compression;
-  unsigned img_sz;
-  int ppm_x;
-  int ppm_y;
-  unsigned ci_n;
-  unsigned ci_important;
-  unsigned mask_r;
-  unsigned mask_g;
-  unsigned mask_b;
-  unsigned mask_a;
-  unsigned cs_type;
-  unsigned end_pts[9];
-  unsigned gamma_r;
-  unsigned gamma_g;
-  unsigned gamma_b;
+  uint32_t size;
+  int32_t width;
+  int32_t height;
+  uint16_t planes;
+  uint16_t bpp;
+  uint32_t compression;
+  uint32_t img_sz;
+  int32_t ppm_x;
+  int32_t ppm_y;
+  uint32_t ci_n;
+  uint32_t ci_important;
+  uint32_t mask_r;
+  uint32_t mask_g;
+  uint32_t mask_b;
+  uint32_t mask_a;
+  uint32_t cs_type;
+  uint32_t end_pts[9];
+  uint32_t gamma_r;
+  uint32_t gamma_g;
+  uint32_t gamma_b;
 } L_bmpv4h;
 #define YF_BMPV4H_SZ 108
 static_assert(offsetof(L_bmpv4h, gamma_b) == YF_BMPV4H_SZ-4, "!offsetof");
 
 /* Type representing the BMP version 5 header. */
 typedef struct {
-  unsigned size;
-  int width;
-  int height;
-  unsigned short planes;
-  unsigned short bpp;
-  unsigned compression;
-  unsigned img_sz;
-  int ppm_x;
-  int ppm_y;
-  unsigned ci_n;
-  unsigned ci_important;
-  unsigned mask_r;
-  unsigned mask_g;
-  unsigned mask_b;
-  unsigned mask_a;
-  unsigned cs_type;
-  unsigned end_pts[9];
-  unsigned gamma_r;
-  unsigned gamma_g;
-  unsigned gamma_b;
-  unsigned intent;
-  unsigned prof_dt;
-  unsigned prof_sz;
-  unsigned reserved;
+  uint32_t size;
+  int32_t width;
+  int32_t height;
+  uint16_t planes;
+  uint16_t bpp;
+  uint32_t compression;
+  uint32_t img_sz;
+  int32_t ppm_x;
+  int32_t ppm_y;
+  uint32_t ci_n;
+  uint32_t ci_important;
+  uint32_t mask_r;
+  uint32_t mask_g;
+  uint32_t mask_b;
+  uint32_t mask_a;
+  uint32_t cs_type;
+  uint32_t end_pts[9];
+  uint32_t gamma_r;
+  uint32_t gamma_g;
+  uint32_t gamma_b;
+  uint32_t intent;
+  uint32_t prof_dt;
+  uint32_t prof_sz;
+  uint32_t reserved;
 } L_bmpv5h;
 #define YF_BMPV5H_SZ 124
 static_assert(offsetof(L_bmpv5h, reserved) == YF_BMPV5H_SZ-4, "!offsetof");
@@ -238,27 +239,27 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
 #ifdef YF_DEBUG_MORE
   YF_BMPFH_PRINT(&fh, pathname);
 #endif
-  unsigned hdr_sz;
+  uint32_t hdr_sz;
   if (fread(&hdr_sz, sizeof hdr_sz, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     fclose(file);
     return -1;
   }
 
-  unsigned rd_n = YF_BMPFH_SZ + sizeof hdr_sz;
-  int w;
-  int h;
-  unsigned short bpp;
-  unsigned compr;
-  unsigned mask_rgba[4];
-  unsigned lshf_rgba[4];
-  unsigned bitn_rgba[4];
+  uint32_t rd_n = YF_BMPFH_SZ + sizeof hdr_sz;
+  int32_t w;
+  int32_t h;
+  uint16_t bpp;
+  uint32_t compr;
+  uint32_t mask_rgba[4];
+  uint32_t lshf_rgba[4];
+  uint32_t bitn_rgba[4];
 
   switch (hdr_sz) {
     case YF_BMPIH_SZ: {
       L_bmpih ih;
       ih.size = hdr_sz;
-      unsigned n = YF_BMPIH_SZ - sizeof hdr_sz;
+      uint32_t n = YF_BMPIH_SZ - sizeof hdr_sz;
       if (fread(&ih.width, 1, n, file) < n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         fclose(file);
@@ -299,7 +300,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
     case YF_BMPV4H_SZ: {
       L_bmpv4h v4h;
       v4h.size = hdr_sz;
-      unsigned n = YF_BMPV4H_SZ - sizeof hdr_sz;
+      uint32_t n = YF_BMPV4H_SZ - sizeof hdr_sz;
       if (fread(&v4h.width, 1, n, file) < n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         fclose(file);
@@ -334,7 +335,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
     case YF_BMPV5H_SZ: {
       L_bmpv5h v5h;
       v5h.size = hdr_sz;
-      unsigned n = YF_BMPV5H_SZ - sizeof hdr_sz;
+      uint32_t n = YF_BMPV5H_SZ - sizeof hdr_sz;
       if (fread(&v5h.width, 1, n, file) < n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         fclose(file);
@@ -390,7 +391,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
     fclose(file);
     return -1;
   }
-  int from, to, inc;
+  int32_t from, to, inc;
   if (h > -1) {
     /* pixel data is stored bottom-up */
     from = 0;
@@ -426,16 +427,16 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
         return -1;
       }
       /* each channel will be scaled to the 8-bit range */
-      unsigned diff_rgba[3] = {
+      uint32_t diff_rgba[3] = {
         YF_MIN(8, 8-bitn_rgba[0]),
         YF_MIN(8, 8-bitn_rgba[1]),
         YF_MIN(8, 8-bitn_rgba[2])
       };
-      unsigned scale;
-      unsigned comp;
-      unsigned short pix16;
+      uint32_t scale;
+      uint32_t comp;
+      uint16_t pix16;
       size_t dt_i;
-      for (int i = from; i != to; i += inc) {
+      for (int32_t i = from; i != to; i += inc) {
         if (fread(scln, 1, scln_sz, file) < scln_sz) {
           yf_seterr(YF_ERR_INVFILE, __func__);
           fclose(file);
@@ -443,8 +444,8 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
           free(scln);
           return -1;
         }
-        for (int j = 0; j < w; ++j) {
-          pix16 = ((unsigned short *)scln)[j];
+        for (int32_t j = 0; j < w; ++j) {
+          pix16 = ((uint16_t *)scln)[j];
           for (size_t k = 0; k < channels; ++k) {
             dt_i = channels*w*i + channels*j + k;
             comp = (pix16 & mask_rgba[k]) >> lshf_rgba[k];
@@ -471,7 +472,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
         return -1;
       }
       size_t dt_i;
-      for (int i = from; i != to; i += inc) {
+      for (int32_t i = from; i != to; i += inc) {
         if (fread(scln, 1, scln_sz, file) < scln_sz) {
           yf_seterr(YF_ERR_INVFILE, __func__);
           fclose(file);
@@ -479,7 +480,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
           free(scln);
           return -1;
         }
-        for (int j = 0; j < w; ++j) {
+        for (int32_t j = 0; j < w; ++j) {
           dt_i = channels*w*i + channels*j;
           dt[dt_i++] = scln[3*j+2];
           dt[dt_i++] = scln[3*j+1];
@@ -505,9 +506,9 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
         free(dt);
         return -1;
       }
-      unsigned pix32;
+      uint32_t pix32;
       size_t dt_i;
-      for (int i = from; i != to; i += inc) {
+      for (int32_t i = from; i != to; i += inc) {
         if (fread(scln, 1, scln_sz, file) < scln_sz) {
           yf_seterr(YF_ERR_INVFILE, __func__);
           fclose(file);
@@ -515,8 +516,8 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
           free(scln);
           return -1;
         }
-        for (int j = 0; j < w; ++j) {
-          pix32 = ((unsigned *)scln)[j];
+        for (int32_t j = 0; j < w; ++j) {
+          pix32 = ((uint32_t *)scln)[j];
           for (size_t k = 0; k < channels; ++k) {
             dt_i = channels*w*i + channels*j + k;
             dt[dt_i] = (pix32 & mask_rgba[k]) >> lshf_rgba[k];
