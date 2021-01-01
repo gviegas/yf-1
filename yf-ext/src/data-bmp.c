@@ -16,7 +16,15 @@
 
 #include "data-bmp.h"
 
-/* TODO: Handle endianness. */
+#ifdef _DEFAULT_SOURCE
+# include <endian.h>
+# if __BYTE_ORDER == __BIG_ENDIAN
+#  define YF_BIGENDIAN
+# endif
+#else
+/* TODO */
+# error "Invalid platform"
+#endif
 
 #ifndef YF_MIN
 # define YF_MIN(a, b) (a < b ? a : b)
@@ -122,10 +130,10 @@ typedef struct {
   uint32_t size;
   uint16_t reserved1;
   uint16_t reserved2;
-  uint32_t data_offs;
+  uint32_t data_off;
 } L_bmpfh;
 #define YF_BMPFH_SZ  14
-static_assert(offsetof(L_bmpfh, data_offs) == YF_BMPFH_SZ-4+2, "!offsetof");
+static_assert(offsetof(L_bmpfh, data_off) == YF_BMPFH_SZ-4+2, "!offsetof");
 
 /* Type representing the BMP info header. */
 typedef struct {
@@ -236,6 +244,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
     fclose(file);
     return -1;
   }
+  uint32_t data_off = le32toh(fh.data_off);
 #ifdef YF_DEBUG_MORE
   YF_BMPFH_PRINT(&fh, pathname);
 #endif
@@ -245,6 +254,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
     fclose(file);
     return -1;
   }
+  hdr_sz = le32toh(hdr_sz);
 
   uint32_t rd_n = YF_BMPFH_SZ + sizeof hdr_sz;
   int32_t w;
@@ -258,7 +268,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
   switch (hdr_sz) {
     case YF_BMPIH_SZ: {
       L_bmpih ih;
-      ih.size = hdr_sz;
+      ih.size = htole32(hdr_sz);
       uint32_t n = YF_BMPIH_SZ - sizeof hdr_sz;
       if (fread(&ih.width, 1, n, file) < n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -266,25 +276,28 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
         return -1;
       }
       rd_n += n;
-      w = ih.width;
-      h = ih.height;
-      bpp = ih.bpp;
-      compr = ih.compression;
+      w = le32toh(ih.width);
+      h = le32toh(ih.height);
+      bpp = le16toh(ih.bpp);
+      compr = le32toh(ih.compression);
       /* the info header supports non-alpha colors only */
       mask_rgba[3] = 0;
       lshf_rgba[3] = bpp;
       bitn_rgba[3] = 0;
-      switch (ih.compression) {
+      switch (compr) {
         case YF_BMP_COMPR_RGB:
           break;
         case YF_BMP_COMPR_BITFLD:
-          if (rd_n == fh.data_offs ||
+          if (rd_n == data_off ||
               fread(mask_rgba, sizeof *mask_rgba, 3, file) < 3)
           {
             yf_seterr(YF_ERR_INVFILE, __func__);
             fclose(file);
             return -1;
           }
+          mask_rgba[0] = le32toh(mask_rgba[0]);
+          mask_rgba[1] = le32toh(mask_rgba[1]);
+          mask_rgba[2] = le32toh(mask_rgba[2]);
           rd_n += 3 * sizeof *mask_rgba;
           break;
         default:
@@ -299,7 +312,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
 
     case YF_BMPV4H_SZ: {
       L_bmpv4h v4h;
-      v4h.size = hdr_sz;
+      v4h.size = htole32(hdr_sz);
       uint32_t n = YF_BMPV4H_SZ - sizeof hdr_sz;
       if (fread(&v4h.width, 1, n, file) < n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -307,20 +320,20 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
         return -1;
       }
       rd_n += n;
-      w = v4h.width;
-      h = v4h.height;
-      bpp = v4h.bpp;
-      compr = v4h.compression;
-      mask_rgba[3] = (bpp == 16 || bpp == 32) ? v4h.mask_a : 0;
+      w = le32toh(v4h.width);
+      h = le32toh(v4h.height);
+      bpp = le16toh(v4h.bpp);
+      compr = le32toh(v4h.compression);
+      mask_rgba[3] = (bpp == 16 || bpp == 32) ? le32toh(v4h.mask_a) : 0;
       YF_SETLSHF(lshf_rgba[3], mask_rgba[3], bpp);
       YF_SETBITN(bitn_rgba[3], mask_rgba[3], bpp, lshf_rgba[3]);
-      switch (v4h.compression) {
+      switch (compr) {
         case YF_BMP_COMPR_RGB:
           break;
         case YF_BMP_COMPR_BITFLD:
-          mask_rgba[0] = v4h.mask_r;
-          mask_rgba[1] = v4h.mask_g;
-          mask_rgba[2] = v4h.mask_b;
+          mask_rgba[0] = le32toh(v4h.mask_r);
+          mask_rgba[1] = le32toh(v4h.mask_g);
+          mask_rgba[2] = le32toh(v4h.mask_b);
           break;
         default:
           yf_seterr(YF_ERR_INVFILE, __func__);
@@ -334,7 +347,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
 
     case YF_BMPV5H_SZ: {
       L_bmpv5h v5h;
-      v5h.size = hdr_sz;
+      v5h.size = htole32(hdr_sz);
       uint32_t n = YF_BMPV5H_SZ - sizeof hdr_sz;
       if (fread(&v5h.width, 1, n, file) < n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -342,20 +355,20 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
         return -1;
       }
       rd_n += n;
-      w = v5h.width;
-      h = v5h.height;
-      bpp = v5h.bpp;
-      compr = v5h.compression;
-      mask_rgba[3] = (bpp == 16 || bpp == 32) ? v5h.mask_a : 0;
+      w = le32toh(v5h.width);
+      h = le32toh(v5h.height);
+      bpp = le16toh(v5h.bpp);
+      compr = le32toh(v5h.compression);
+      mask_rgba[3] = (bpp == 16 || bpp == 32) ? le32toh(v5h.mask_a) : 0;
       YF_SETLSHF(lshf_rgba[3], mask_rgba[3], bpp);
       YF_SETBITN(bitn_rgba[3], mask_rgba[3], bpp, lshf_rgba[3]);
-      switch (v5h.compression) {
+      switch (compr) {
         case YF_BMP_COMPR_RGB:
           break;
         case YF_BMP_COMPR_BITFLD:
-          mask_rgba[0] = v5h.mask_r;
-          mask_rgba[1] = v5h.mask_g;
-          mask_rgba[2] = v5h.mask_b;
+          mask_rgba[0] = le32toh(v5h.mask_r);
+          mask_rgba[1] = le32toh(v5h.mask_g);
+          mask_rgba[2] = le32toh(v5h.mask_b);
           break;
         default:
           yf_seterr(YF_ERR_INVFILE, __func__);
@@ -378,7 +391,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
     fclose(file);
     return -1;
   }
-  if (rd_n != fh.data_offs && fseek(file, fh.data_offs, SEEK_SET) != 0) {
+  if (rd_n != data_off && fseek(file, data_off, SEEK_SET) != 0) {
     yf_seterr(YF_ERR_OTHER, __func__);
     fclose(file);
     return -1;
@@ -418,8 +431,8 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
       YF_SETBITN(bitn_rgba[0], mask_rgba[0], bpp, lshf_rgba[0]);
       YF_SETBITN(bitn_rgba[1], mask_rgba[1], bpp, lshf_rgba[1]);
       YF_SETBITN(bitn_rgba[2], mask_rgba[2], bpp, lshf_rgba[2]);
-      size_t padding = (w % 2) * 2;
-      size_t scln_sz = 2 * w + padding;
+      size_t padding = (w & 1) << 1;
+      size_t scln_sz = (w << 1) + padding;
       if ((scln = malloc(scln_sz)) == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         fclose(file);
@@ -446,6 +459,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
         }
         for (int32_t j = 0; j < w; ++j) {
           pix16 = ((uint16_t *)scln)[j];
+          pix16 = le16toh(pix16);
           for (size_t k = 0; k < channels; ++k) {
             dt_i = channels*w*i + channels*j + k;
             comp = (pix16 & mask_rgba[k]) >> lshf_rgba[k];
@@ -482,9 +496,15 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
         }
         for (int32_t j = 0; j < w; ++j) {
           dt_i = channels*w*i + channels*j;
+#ifdef YF_BIGENDIAN
+          dt[dt_i++] = scln[3*j];
+          dt[dt_i++] = scln[3*j+1];
+          dt[dt_i++] = scln[3*j+2];
+#else
           dt[dt_i++] = scln[3*j+2];
           dt[dt_i++] = scln[3*j+1];
           dt[dt_i++] = scln[3*j];
+#endif /* YF_BIGENDIAN */
         }
       }
     } break;
@@ -499,7 +519,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
       YF_SETLSHF(lshf_rgba[1], mask_rgba[1], bpp);
       YF_SETLSHF(lshf_rgba[2], mask_rgba[2], bpp);
       /* no padding needed */
-      size_t scln_sz = 4 * w;
+      size_t scln_sz = w << 2;
       if ((scln = malloc(scln_sz)) == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         fclose(file);
@@ -518,6 +538,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
         }
         for (int32_t j = 0; j < w; ++j) {
           pix32 = ((uint32_t *)scln)[j];
+          pix32 = le32toh(pix32);
           for (size_t k = 0; k < channels; ++k) {
             dt_i = channels*w*i + channels*j + k;
             dt[dt_i] = (pix32 & mask_rgba[k]) >> lshf_rgba[k];
