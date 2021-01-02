@@ -2,7 +2,7 @@
  * YF
  * camera.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -33,10 +33,14 @@
    printf("\n--\n"); } while (0)
 #endif
 
-#define YF_FOVMIN (YF_float)0.07957747154594767280
-#define YF_FOVMAX (YF_float)M_PI_4
-#define YF_TURNXMIN (YF_float)0.0001
-#define YF_TURNXMAX (YF_float)3.14149265358979323846
+#undef YF_CLAMP
+#define YF_CLAMP(v, min, max) (v) < (min) ? (min) : ((v) > (max) ? (max) : (v))
+
+#define YF_FOV_MIN (YF_float)0.07957747154594767280
+#define YF_FOV_MAX (YF_float)M_PI_4
+
+#define YF_TURNX_MIN (YF_float)0.0001
+#define YF_TURNX_MAX (YF_float)3.14149265358979323846 /* pi - 0.0001 */
 
 struct YF_camera_o {
   YF_vec3 pos;
@@ -47,12 +51,14 @@ struct YF_camera_o {
   YF_mat4 view;
   YF_mat4 proj;
   YF_mat4 view_proj;
-  int view_upd;
-  int proj_upd;
-  int vp_upd;
+#define YF_PEND_NONE 0
+#define YF_PEND_V    0x01 /* 'view' not up to date */
+#define YF_PEND_P    0x02 /* 'proj' not up to date */
+#define YF_PEND_VP   0x04 /* 'view_proj' not up to date */
+  unsigned pend_mask;
 };
 
-/* World's `up` vector. */
+/* World's 'up' vector. */
 static const YF_vec3 l_wld_u = {0.0, -1.0, 0.0};
 
 /* Updates the camera's view matrix. */
@@ -60,6 +66,9 @@ static void update_view(YF_camera cam);
 
 /* Updates the camera's projection matrix. */
 static void update_proj(YF_camera cam);
+
+/* Update the camera's view-projection matrix. */
+static void update_vp(YF_camera cam);
 
 YF_camera yf_camera_init(const YF_vec3 origin, const YF_vec3 target,
     YF_float aspect)
@@ -81,20 +90,17 @@ YF_camera yf_camera_init(const YF_vec3 origin, const YF_vec3 target,
 #else
   cam->turn_x = acosf(yf_vec3_dot(cam->dir, l_wld_u));
 #endif
-  if (cam->turn_x < YF_TURNXMIN || cam->turn_x > YF_TURNXMAX) {
+  if (cam->turn_x < YF_TURNX_MIN || cam->turn_x > YF_TURNX_MAX) {
     yf_seterr(YF_ERR_INVARG, __func__);
     free(cam);
     return NULL;
   }
-  cam->zoom = YF_FOVMAX;
+  cam->zoom = YF_FOV_MAX;
   cam->aspect = aspect;
 
   update_view(cam);
   update_proj(cam);
-  yf_mat4_mul(cam->view_proj, cam->proj, cam->view);
-  cam->view_upd = 1;
-  cam->proj_upd = 1;
-  cam->vp_upd = 1;
+  update_vp(cam);
   return cam;
 }
 
@@ -102,7 +108,7 @@ void yf_camera_place(YF_camera cam, const YF_vec3 pos) {
   assert(cam != NULL);
 
   yf_vec3_copy(cam->pos, pos);
-  cam->view_upd = 0;
+  cam->pend_mask |= YF_PEND_V;
 }
 
 void yf_camera_point(YF_camera cam, const YF_vec3 pos) {
@@ -124,11 +130,11 @@ void yf_camera_point(YF_camera cam, const YF_vec3 pos) {
   ang = acosf(yf_vec3_dot(dir, l_wld_u));
 #endif
 
-  if (ang >= YF_TURNXMIN && ang <= YF_TURNXMAX) {
+  if (ang >= YF_TURNX_MIN && ang <= YF_TURNX_MAX) {
     yf_vec3_copy(cam->dir, dir);
     cam->turn_x = ang;
   } else {
-    ang = (ang < YF_TURNXMIN ? YF_TURNXMIN : YF_TURNXMAX) - cam->turn_x;
+    ang = (ang < YF_TURNX_MIN ? YF_TURNX_MIN : YF_TURNX_MAX) - cam->turn_x;
     YF_vec3 side, front;
     YF_mat3 rot;
     yf_vec3_cross(side, l_wld_u, cam->dir);
@@ -137,7 +143,7 @@ void yf_camera_point(YF_camera cam, const YF_vec3 pos) {
     yf_vec3_norm(cam->dir, front);
     cam->turn_x += ang;
   }
-  cam->view_upd = 0;
+  cam->pend_mask |= YF_PEND_V;
 }
 
 void yf_camera_movef(YF_camera cam, YF_float d) {
@@ -146,7 +152,8 @@ void yf_camera_movef(YF_camera cam, YF_float d) {
   YF_vec3 offs;
   yf_vec3_muls(offs, cam->dir, d);
   yf_vec3_addi(cam->pos, offs);
-  cam->view_upd = 0;
+
+  cam->pend_mask |= YF_PEND_V;
 }
 
 void yf_camera_moveb(YF_camera cam, YF_float d) {
@@ -159,7 +166,8 @@ void yf_camera_moveu(YF_camera cam, YF_float d) {
   YF_vec3 offs;
   yf_vec3_muls(offs, l_wld_u, d);
   yf_vec3_addi(cam->pos, offs);
-  cam->view_upd = 0;
+
+  cam->pend_mask |= YF_PEND_V;
 }
 
 void yf_camera_moved(YF_camera cam, YF_float d) {
@@ -173,7 +181,8 @@ void yf_camera_movel(YF_camera cam, YF_float d) {
   yf_vec3_cross(side, cam->dir, l_wld_u);
   yf_vec3_muls(offs, side, d);
   yf_vec3_subi(cam->pos, offs);
-  cam->view_upd = 0;
+
+  cam->pend_mask |= YF_PEND_V;
 }
 
 void yf_camera_mover(YF_camera cam, YF_float d) {
@@ -184,10 +193,10 @@ void yf_camera_turnu(YF_camera cam, YF_float d) {
   assert(cam != NULL);
 
   YF_float ang;
-  if (cam->turn_x - d < YF_TURNXMIN)
-    ang = YF_TURNXMIN - cam->turn_x;
-  else if (cam->turn_x - d > YF_TURNXMAX)
-    ang = YF_TURNXMAX - cam->turn_x;
+  if (cam->turn_x - d < YF_TURNX_MIN)
+    ang = YF_TURNX_MIN - cam->turn_x;
+  else if (cam->turn_x - d > YF_TURNX_MAX)
+    ang = YF_TURNX_MAX - cam->turn_x;
   else
     ang = -d;
 
@@ -198,7 +207,8 @@ void yf_camera_turnu(YF_camera cam, YF_float d) {
   yf_mat3_mulv(front, rot, cam->dir);
   yf_vec3_norm(cam->dir, front);
   cam->turn_x += ang;
-  cam->view_upd = 0;
+
+  cam->pend_mask |= YF_PEND_V;
 }
 
 void yf_camera_turnd(YF_camera cam, YF_float d) {
@@ -213,7 +223,8 @@ void yf_camera_turnl(YF_camera cam, YF_float d) {
   yf_mat3_rot(rot, d, l_wld_u);
   yf_mat3_mulv(front, rot, cam->dir);
   yf_vec3_norm(cam->dir, front);
-  cam->view_upd = 0;
+
+  cam->pend_mask |= YF_PEND_V;
 }
 
 void yf_camera_turnr(YF_camera cam, YF_float d) {
@@ -224,27 +235,25 @@ void yf_camera_zoomi(YF_camera cam, YF_float d) {
   assert(cam != NULL);
 
   cam->zoom -= d;
-  cam->proj_upd = 0;
+  cam->pend_mask |= YF_PEND_P;
 }
 
 void yf_camera_zoomo(YF_camera cam, YF_float d) {
   assert(cam != NULL);
 
   cam->zoom += d;
-  cam->proj_upd = 0;
+  cam->pend_mask |= YF_PEND_P;
 }
 
 const YF_mat4 *yf_camera_getxform(YF_camera cam) {
   assert(cam != NULL);
 
-  if (!cam->view_upd)
+  if (cam->pend_mask & YF_PEND_V)
     update_view(cam);
-  if (!cam->proj_upd)
+  if (cam->pend_mask & YF_PEND_P)
     update_proj(cam);
-  if (!cam->vp_upd) {
-    yf_mat4_mul(cam->view_proj, cam->proj, cam->view);
-    cam->vp_upd = 1;
-  }
+  if (cam->pend_mask & YF_PEND_VP)
+    update_vp(cam);
 
 #ifdef YF_DEBUG
   YF_CAM_PRINT(cam);
@@ -256,7 +265,7 @@ const YF_mat4 *yf_camera_getxform(YF_camera cam) {
 const YF_mat4 *yf_camera_getview(YF_camera cam) {
   assert(cam != NULL);
 
-  if (!cam->view_upd)
+  if (cam->pend_mask & YF_PEND_V)
     update_view(cam);
   return (const YF_mat4 *)&cam->view;
 }
@@ -264,7 +273,7 @@ const YF_mat4 *yf_camera_getview(YF_camera cam) {
 const YF_mat4 *yf_camera_getproj(YF_camera cam) {
   assert(cam != NULL);
 
-  if (!cam->proj_upd)
+  if (cam->pend_mask & YF_PEND_P)
     update_proj(cam);
   return (const YF_mat4 *)&cam->proj;
 }
@@ -274,7 +283,7 @@ void yf_camera_adjust(YF_camera cam, YF_float aspect) {
   assert(aspect > 0.0);
 
   cam->aspect = aspect;
-  cam->proj_upd = 0;
+  cam->pend_mask |= YF_PEND_P;
 }
 
 void yf_camera_deinit(YF_camera cam) {
@@ -286,16 +295,20 @@ static void update_view(YF_camera cam) {
   YF_vec3 center;
   yf_vec3_add(center, cam->pos, cam->dir);
   yf_mat4_lookat(cam->view, cam->pos, center, l_wld_u);
-  cam->view_upd = 1;
-  cam->vp_upd = 0;
+
+  cam->pend_mask &= ~YF_PEND_V;
+  cam->pend_mask |= YF_PEND_VP;
 }
 
 static void update_proj(YF_camera cam) {
-  if (cam->zoom < YF_FOVMIN)
-    cam->zoom = YF_FOVMIN;
-  else if (cam->zoom > YF_FOVMAX)
-    cam->zoom = YF_FOVMAX;
+  cam->zoom = YF_CLAMP(cam->zoom, YF_FOV_MIN, YF_FOV_MAX);
   yf_mat4_persp(cam->proj, cam->zoom, cam->aspect, 0.1, 100.0);
-  cam->proj_upd = 1;
-  cam->vp_upd = 0;
+
+  cam->pend_mask &= ~YF_PEND_P;
+  cam->pend_mask |= YF_PEND_VP;
+}
+
+static void update_vp(YF_camera cam) {
+  yf_mat4_mul(cam->view_proj, cam->proj, cam->view);
+  cam->pend_mask &= ~YF_PEND_VP;
 }
