@@ -2,7 +2,7 @@
  * YF
  * view.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -15,8 +15,8 @@
 #include <yf/wsys/yf-event.h>
 
 #include "view.h"
-#include "scene.h"
 #include "coreobj.h"
+#include "scene.h"
 
 struct YF_view_o {
   YF_context ctx;

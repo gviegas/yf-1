@@ -2,7 +2,7 @@
  * YF
  * terrain.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -165,28 +165,28 @@ static int init_grid(YF_terrain terr) {
   }
 
   float x0, z0;
-  float pos_offs;
+  float pos_off;
   if (wid > dep) {
     x0 = -1.0f;
     z0 = (float)dep / (float)wid;
-    pos_offs = 2.0f / (float)wid;
+    pos_off = 2.0f / (float)wid;
   } else {
     x0 = -(float)wid / (float)dep;
     z0 = 1.0f;
-    pos_offs = 2.0f / (float)dep;
+    pos_off = 2.0f / (float)dep;
   }
   /* NxN textures are expected even for non-square grids */
-  float tc_offs = pos_offs / 2.0f;
+  float tc_off = pos_off / 2.0f;
 
   float x, z, u, v;
   unsigned k;
   YF_vterr *vdt = data.v.data;
   for (unsigned i = 0; i <= wid; ++i) {
-    x = x0 + pos_offs * (float)i;
-    u = tc_offs * (float)i;
+    x = x0 + pos_off * (float)i;
+    u = tc_off * (float)i;
     for (unsigned j = 0; j <= dep; ++j) {
-      z = z0 - pos_offs * (float)j;
-      v = tc_offs * (float)(dep-j);
+      z = z0 - pos_off * (float)j;
+      v = tc_off * (float)(dep-j);
       k = (dep+1) * i + j;
       vdt[k].pos[0] = x;
       vdt[k].pos[1] = 0.0f;

@@ -2,7 +2,7 @@
  * YF
  * data-obj.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -30,13 +30,13 @@ typedef struct {
   unsigned value;
 } L_kv;
 
-/* Hashes a `L_kv`. */
+/* Hashes a 'L_kv'. */
 static size_t hash_kv(const void *x);
 
-/* Compares a `L_kv` to another. */
+/* Compares a 'L_kv' to another. */
 static int cmp_kv(const void *a, const void *b);
 
-/* Deallocates a `L_kv`. */
+/* Deallocates a 'L_kv'. */
 static int dealloc_kv(void *val, void *arg);
 
 int yf_loadobj(const char *pathname, YF_meshdt *data) {

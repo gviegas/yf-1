@@ -5,10 +5,10 @@
  * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 
 #include <yf/com/yf-error.h>
@@ -36,7 +36,7 @@
    printf("\nfh - size: %u", (fh_p)->size); \
    printf("\nfh - reserved1: %u", (fh_p)->reserved1); \
    printf("\nfh - reserved2: %u", (fh_p)->reserved2); \
-   printf("\nfh - data_offs: %u", (fh_p)->data_offs); \
+   printf("\nfh - data_off: %u", (fh_p)->data_off); \
    printf("\n--\n"); } while (0)
 
 # define YF_BMPIH_PRINT(ih_p, pathname) do { \
