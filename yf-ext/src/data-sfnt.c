@@ -270,7 +270,7 @@
  */
 
 #define YF_SFNT_MAKETAG(c1, c2, c3, c4) \
-  htobe32(c1 | (c2 << 8) | (c3 << 16) | (c4 << 24))
+  ((c1 << 24) | (c2 << 16) | (c3 << 8) | c4)
 
 /*
  * Common
@@ -741,28 +741,29 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   uint32_t post_len = 0;
 
   for (uint16_t i = 0; i < tab_n; ++i) {
-    if (sfnt->dir->dires[i].tag == cmap_tag) {
+    const uint32_t tag = be32toh(sfnt->dir->dires[i].tag);
+    if (tag == cmap_tag) {
       cmap_off = be32toh(sfnt->dir->dires[i].off);
       cmap_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == head_tag) {
+    } else if (tag == head_tag) {
       head_off = be32toh(sfnt->dir->dires[i].off);
       head_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == hhea_tag) {
+    } else if (tag == hhea_tag) {
       hhea_off = be32toh(sfnt->dir->dires[i].off);
       hhea_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == hmtx_tag) {
+    } else if (tag == hmtx_tag) {
       hmtx_off = be32toh(sfnt->dir->dires[i].off);
       hmtx_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == maxp_tag) {
+    } else if (tag == maxp_tag) {
       maxp_off = be32toh(sfnt->dir->dires[i].off);
       maxp_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == name_tag) {
+    } else if (tag == name_tag) {
       name_off = be32toh(sfnt->dir->dires[i].off);
       name_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == os2_tag) {
+    } else if (tag == os2_tag) {
       os2_off = be32toh(sfnt->dir->dires[i].off);
       os2_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == post_tag) {
+    } else if (tag == post_tag) {
       post_off = be32toh(sfnt->dir->dires[i].off);
       post_len = be32toh(sfnt->dir->dires[i].len);
     }
@@ -1104,18 +1105,18 @@ static int verify_file(FILE *file) {
     }
 
     if (fread(buf, 4, dw_n, file) < dw_n) {
-      yf_seterr(YF_ERR_NOMEM, __func__);
+      yf_seterr(YF_ERR_INVFILE, __func__);
       free(buf);
       return -1;
     }
 
     chsum = 0;
     for (uint32_t j = 0; j < dw_n; ++j)
-      chsum += buf[j];
+      chsum += be32toh(buf[j]);
     free(buf);
 
     if (chsum != be32toh(dires[i].chsum) &&
-        be32toh(dires[i].tag != YF_SFNT_HEADTAG))
+        be32toh(dires[i].tag) != YF_SFNT_HEADTAG)
     {
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
@@ -1151,22 +1152,23 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
   uint32_t prep_len = 0;
 
   for (uint16_t i = 0; i < tab_n; ++i) {
-    if (sfnt->dir->dires[i].tag == cvt_tag) {
+    const uint32_t tag = be32toh(sfnt->dir->dires[i].tag);
+    if (tag == cvt_tag) {
       cvt_off = be32toh(sfnt->dir->dires[i].off);
       cvt_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == fpgm_tag) {
+    } else if (tag == fpgm_tag) {
       fpgm_off = be32toh(sfnt->dir->dires[i].off);
       fpgm_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == gasp_tag) {
+    } else if (tag == gasp_tag) {
       gasp_off = be32toh(sfnt->dir->dires[i].off);
       gasp_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == glyf_tag) {
+    } else if (tag == glyf_tag) {
       glyf_off = be32toh(sfnt->dir->dires[i].off);
       glyf_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == loca_tag) {
+    } else if (tag == loca_tag) {
       loca_off = be32toh(sfnt->dir->dires[i].off);
       loca_len = be32toh(sfnt->dir->dires[i].len);
-    } else if (sfnt->dir->dires[i].tag == prep_tag) {
+    } else if (tag == prep_tag) {
       prep_off = be32toh(sfnt->dir->dires[i].off);
       prep_len = be32toh(sfnt->dir->dires[i].len);
     }
@@ -1323,7 +1325,7 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
 #ifdef YF_DEBUG
   uint32_t cmap_off = 0;
   for (uint16_t i = 0; i < tab_n; ++i) {
-    if (sfnt->dir->dires[i].tag == YF_SFNT_CMAPTAG) {
+    if (be32toh(sfnt->dir->dires[i].tag) == YF_SFNT_CMAPTAG) {
       cmap_off = be32toh(sfnt->dir->dires[i].off);
       break;
     }
