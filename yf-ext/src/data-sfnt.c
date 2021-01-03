@@ -2,7 +2,7 @@
  * YF
  * data-sfnt.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stddef.h>
@@ -22,38 +22,6 @@
 # error "Invalid platform"
 #endif
 
-/* TODO */
-
-#define YF_SFNT_MAKETAG(c1, c2, c3, c4) \
-  (be32toh((c1 << 24) | (c2 << 16) | (c3 << 8) | c4))
-
-/*
- * Common
- */
-
-/* Font directory. */
-#define YF_SFNT_TTF be32toh(0x00010000)
-typedef struct {
-  uint32_t version;
-  uint16_t tab_n;
-  uint16_t search_rng;
-  uint16_t entry_sel;
-  uint16_t rng_shf;
-} L_diro;
-#define YF_SFNT_DIROSZ 12
-static_assert(offsetof(L_diro, rng_shf) == YF_SFNT_DIROSZ-2, "!offsetof");
-typedef struct {
-  uint32_t tag;
-  uint32_t chsum;
-  uint32_t offs;
-  uint32_t len;
-} L_dire;
-#define YF_SFNT_DIRESZ 16
-static_assert(sizeof(L_dire) == YF_SFNT_DIRESZ, "!sizeof");
-typedef struct {
-  L_diro diro;
-  L_dire *dires;
-} L_dir;
 #ifdef YF_DEBUG
 # define YF_SFNT_DIRO_PRINT(do_p) do { \
    printf("\n-- SFNT (debug) --"); \
@@ -63,74 +31,29 @@ typedef struct {
    printf("\ndiro - entry_sel: %hu", be16toh((do_p)->entry_sel)); \
    printf("\ndiro - rng_shf: %hu", be16toh((do_p)->rng_shf)); \
    printf("\n--\n"); } while (0)
+
 # define YF_SFNT_DIRE_PRINT(de_p) do { \
    printf("\n-- SFNT (debug) --"); \
    printf("\ndire - tag: %c%c%c%c", \
     (de_p)->tag, (de_p)->tag >> 8, (de_p)->tag >> 16, (de_p)->tag >> 24); \
    printf("\ndire - chsum: %u", be32toh((de_p)->chsum)); \
-   printf("\ndire - offs: %u", be32toh((de_p)->offs)); \
+   printf("\ndire - off: %u", be32toh((de_p)->off)); \
    printf("\ndire - len: %u", be32toh((de_p)->len)); \
    printf("\n--\n"); } while (0)
-#endif
 
-/* Character to glyph mapping. */
-#define YF_SFNT_CMAPTAG YF_SFNT_MAKETAG('c', 'm', 'a', 'p')
-typedef struct {
-  uint16_t version;
-  uint16_t tab_n;
-} L_cmaph;
-#define YF_SFNT_CMAPHSZ 4
-static_assert(offsetof(L_cmaph, tab_n) == YF_SFNT_CMAPHSZ-2, "!offsetof");
-typedef struct {
-  uint16_t platform;
-  uint16_t encoding;
-  uint32_t offs;
-} L_cmape;
-#define YF_SFNT_CMAPESZ 8
-static_assert(sizeof(L_cmape) == YF_SFNT_CMAPESZ, "!sizeof");
-typedef struct {
-  L_cmaph cmaph;
-  L_cmape *cmapes;
-} L_cmap;
-#ifdef YF_DEBUG
 # define YF_SFNT_CMAPH_PRINT(ch_p) do { \
    printf("\n-- SFNT (debug) --"); \
    printf("\ncmaph - version: %hu", (ch_p)->version); \
    printf("\ncmaph - tab_n: %hu", be16toh((ch_p)->tab_n)); \
    printf("\n--\n"); } while (0)
+
 # define YF_SFNT_CMAPE_PRINT(ce_p) do { \
    printf("\n-- SFNT (debug) --"); \
    printf("\ncmape - platform: %hu", be16toh((ce_p)->platform)); \
    printf("\ncmape - encoding: %hu", be16toh((ce_p)->encoding)); \
-   printf("\ncmape - offset: %u", be32toh((ce_p)->offs)); \
+   printf("\ncmape - off: %u", be32toh((ce_p)->off)); \
    printf("\n--\n"); } while (0)
-#endif
 
-/* Font header. */
-#define YF_SFNT_HEADTAG YF_SFNT_MAKETAG('h', 'e', 'a', 'd')
-typedef struct {
-  uint16_t major;
-  uint16_t minor;
-  uint32_t revision;
-  uint32_t chsum_adj;
-  uint32_t magic;
-  uint16_t flags;
-  uint16_t upem;
-  int32_t created[2]; /* i64 */
-  int32_t modified[2]; /* i64 */
-  int16_t x_min;
-  int16_t y_min;
-  int16_t x_max;
-  int16_t y_max;
-  uint16_t style;
-  uint16_t low_rec_ppem;
-  int16_t dir_hint;
-  int16_t loca_fmt;
-  int16_t glyph_fmt;
-} L_head;
-#define YF_SFNT_HEADSZ 54
-static_assert(offsetof(L_head, glyph_fmt) == YF_SFNT_HEADSZ-2, "!offsetof");
-#ifdef YF_DEBUG
 # define YF_SFNT_HEAD_PRINT(hd_p) do { \
    printf("\n-- SFNT (debug) --"); \
    printf("\nhead - major: %hu", be16toh((hd_p)->major)); \
@@ -154,30 +77,7 @@ static_assert(offsetof(L_head, glyph_fmt) == YF_SFNT_HEADSZ-2, "!offsetof");
    printf("\nhead - loca_fmt: %hd", be16toh((hd_p)->loca_fmt)); \
    printf("\nhead - glyph_fmt: %hd", be16toh((hd_p)->glyph_fmt)); \
    printf("\n--\n"); } while (0)
-#endif
 
-/* Horizontal layout header. */
-#define YF_SFNT_HHEATAG YF_SFNT_MAKETAG('h', 'h', 'e', 'a')
-typedef struct {
-  uint16_t major;
-  uint16_t minor;
-  int16_t ascender;
-  int16_t descender;
-  int16_t line_gap;
-  uint16_t adv_wdt_max;
-  int16_t lbear_min;
-  int16_t rbear_min;
-  int16_t x_extent_max;
-  int16_t caret_slp_rise;
-  int16_t caret_slp_run;
-  int16_t caret_offs;
-  int16_t reserved[4];
-  int16_t metric_fmt;
-  uint16_t hmetric_n;
-} L_hhea;
-#define YF_SFNT_HHEASZ 36
-static_assert(offsetof(L_hhea, hmetric_n) == YF_SFNT_HHEASZ-2, "!offsetof");
-#ifdef YF_DEBUG
 # define YF_SFNT_HHEA_PRINT(hh_p) do { \
    printf("\n-- SFNT (debug) --"); \
    printf("\nhhea - major: %hu", be16toh((hh_p)->major)); \
@@ -191,54 +91,17 @@ static_assert(offsetof(L_hhea, hmetric_n) == YF_SFNT_HHEASZ-2, "!offsetof");
    printf("\nhhea - x_extent_max: %hd", be16toh((hh_p)->x_extent_max)); \
    printf("\nhhea - caret_slp_rise: %hd", be16toh((hh_p)->caret_slp_rise)); \
    printf("\nhhea - caret_slp_run: %hd", be16toh((hh_p)->caret_slp_run)); \
-   printf("\nhhea - caret_offs: %hd", be16toh((hh_p)->caret_offs)); \
+   printf("\nhhea - caret_off: %hd", be16toh((hh_p)->caret_off)); \
    printf("\nhhea - metric_fmt: %hd", be16toh((hh_p)->metric_fmt)); \
    printf("\nhhea - hmetric_n: %hu", be16toh((hh_p)->hmetric_n)); \
    printf("\n--\n"); } while (0)
-#endif
 
-/* Horizontal layout metrics. */
-#define YF_SFNT_HMTXTAG YF_SFNT_MAKETAG('h', 'm', 't', 'x')
-typedef struct {
-  uint16_t adv_wdt;
-  int16_t lbear;
-} L_hmtxe;
-#define YF_SFNT_HMTXESZ 4
-static_assert(sizeof(L_hmtxe) == YF_SFNT_HMTXESZ, "!sizeof");
-typedef struct {
-  L_hmtxe *hmtxes;
-  int16_t *lbears;
-} L_hmtx;
-#ifdef YF_DEBUG
 # define YF_SFNT_HMTXE_PRINT(hm_p) do { \
    printf("\n-- SFNT (debug) --"); \
    printf("\nhmtxe - adv_wdt: %hu", be16toh((hm_p)->adv_wdt)); \
    printf("\nhmtxe - lbear: %hd", be16toh((hm_p)->lbear)); \
    printf("\n--\n"); } while (0)
-#endif
 
-/* Maximum profile. */
-#define YF_SFNT_MAXPTAG YF_SFNT_MAKETAG('m', 'a', 'x', 'p')
-typedef struct {
-  uint32_t version;
-  uint16_t glyph_n;
-  uint16_t pt_max;
-  uint16_t contr_max;
-  uint16_t comp_pt_max;
-  uint16_t comp_contr_max;
-  uint16_t zone_max;
-  uint16_t z0_pt_max;
-  uint16_t storage_max;
-  uint16_t fdef_max;
-  uint16_t idef_max;
-  uint16_t stack_elem_max;
-  uint16_t hint_sz_max;
-  uint16_t comp_elem_max;
-  uint16_t comp_dep_max;
-} L_maxp;
-#define YF_SFNT_MAXPSZ 32
-static_assert(offsetof(L_maxp, comp_dep_max) == YF_SFNT_MAXPSZ-2, "!offsetof");
-#ifdef YF_DEBUG
 # define YF_SFNT_MAXP_PRINT(mp_p) do { \
    printf("\n-- SFNT (debug) --"); \
    printf("\nmaxp - version: 0x%.8x", be32toh((mp_p)->version)); \
@@ -257,47 +120,14 @@ static_assert(offsetof(L_maxp, comp_dep_max) == YF_SFNT_MAXPSZ-2, "!offsetof");
    printf("\nmaxp - comp_elem_max: %hu", be16toh((mp_p)->comp_elem_max)); \
    printf("\nmaxp - comp_dep_max: %hu", be16toh((mp_p)->comp_dep_max)); \
    printf("\n--\n"); } while (0)
-#endif
 
-/* Naming. */
-#define YF_SFNT_NAMETAG YF_SFNT_MAKETAG('n', 'a', 'm', 'e')
-typedef struct {
-  uint16_t format;
-  uint16_t count;
-  uint16_t str_offs;
-} L_nameh;
-#define YF_SFNT_NAMEHSZ 6
-static_assert(offsetof(L_nameh, str_offs) == YF_SFNT_NAMEHSZ-2, "!offsetof");
-typedef struct {
-  uint16_t platform;
-  uint16_t encoding;
-  uint16_t language;
-  uint16_t name;
-  uint16_t len;
-  uint16_t offs;
-} L_namee;
-#define YF_SFNT_NAMEESZ 12
-static_assert(sizeof(L_namee) == YF_SFNT_NAMEESZ, "!sizeof");
-typedef struct {
-  uint16_t len;
-  uint16_t offs;
-} L_namel;
-#define YF_SFNT_NAMELSZ 4
-static_assert(sizeof(L_namel) == YF_SFNT_NAMELSZ, "!sizeof");
-typedef struct {
-  L_nameh nameh;
-  L_namee *namees;
-  /* naming table format 1 */
-  uint16_t lang_n;
-  L_namel *namels;
-} L_name;
-#ifdef YF_DEBUG
 # define YF_SFNT_NAMEH_PRINT(nh_p) do { \
    printf("\n-- SFNT (debug) --"); \
    printf("\nnameh - format: %hu", be16toh((nh_p)->format)); \
    printf("\nnameh - count: %hu", be16toh((nh_p)->count)); \
-   printf("\nnameh - str_offs: %hu", be16toh((nh_p)->str_offs)); \
+   printf("\nnameh - str_off: %hu", be16toh((nh_p)->str_off)); \
    printf("\n--\n"); } while (0)
+
 # define YF_SFNT_NAMEE_PRINT(ne_p) do { \
    printf("\n-- SFNT (debug) --"); \
    printf("\nnamee - platform: %hu", be16toh((ne_p)->platform)); \
@@ -305,62 +135,9 @@ typedef struct {
    printf("\nnamee - language: %hu", be16toh((ne_p)->language)); \
    printf("\nnamee - name: %hu", be16toh((ne_p)->name)); \
    printf("\nnamee - len: %hu", be16toh((ne_p)->len)); \
-   printf("\nnamee - offs: %hu", be16toh((ne_p)->offs)); \
+   printf("\nnamee - off: %hu", be16toh((ne_p)->off)); \
    printf("\n--\n"); } while (0)
-#endif
 
-/* OS/2 & Windows metrics. */
-#define YF_SFNT_OS2TAG YF_SFNT_MAKETAG('O', 'S', '/', '2')
-typedef struct {
-  /* v0 */
-  uint16_t version;
-  int16_t x_avg_char_wdt;
-  uint16_t wgt_class;
-  uint16_t wdt_class;
-  uint16_t type;
-  int16_t y_subsc_x_sz;
-  int16_t y_subsc_y_sz;
-  int16_t y_subsc_x_offs;
-  int16_t y_subsc_y_offs;
-  int16_t y_supersc_x_sz;
-  int16_t y_supersc_y_sz;
-  int16_t y_supersc_x_offs;
-  int16_t y_supersc_y_offs;
-  int16_t y_strikeout_sz;
-  int16_t y_strikeout_pos;
-  int16_t family_class;
-  uint8_t panose[10];
-  uint16_t unicode_rng1[2]; /* u32 */
-  uint16_t unicode_rng2[2]; /* u32 */
-  uint16_t unicode_rng3[2]; /* u32 */
-  uint16_t unicode_rng4[2]; /* u32 */
-  uint8_t ach_vend[4];
-  uint16_t sel;
-  uint16_t first_char_i;
-  uint16_t last_char_i;
-  int16_t typo_ascender;
-  int16_t typo_descender;
-  int16_t typo_line_gap;
-  uint16_t win_ascent;
-  uint16_t win_descent;
-  /* v1 */
-  uint16_t code_page_rng1[2]; /* u32 */
-  uint16_t code_page_rng2[2]; /* u32 */
-  /* v2, v3 & v4 */
-  int16_t x_hgt;
-  int16_t cap_hgt;
-  uint16_t deft_char;
-  uint16_t break_char;
-  uint16_t max_ctx;
-  /* v5 */
-  uint16_t lo_optical_pt_sz;
-  uint16_t up_optical_pt_sz;
-} L_os2;
-#define YF_SFNT_OS2V0  78
-#define YF_SFNT_OS2SZ 100
-static_assert(offsetof(L_os2, up_optical_pt_sz) == YF_SFNT_OS2SZ-2,
-    "!offsetof");
-#ifdef YF_DEBUG
 # define YF_SFNT_OS2_PRINT(o2_p) do { \
    printf("\n-- SFNT (debug) --"); \
    printf("\nos2 - version: %hu", be16toh((o2_p)->version)); \
@@ -370,12 +147,12 @@ static_assert(offsetof(L_os2, up_optical_pt_sz) == YF_SFNT_OS2SZ-2,
    printf("\nos2 - type: 0x%.4hx", be16toh((o2_p)->type)); \
    printf("\nos2 - y_subsc_x_sz: %hd", be16toh((o2_p)->y_subsc_x_sz)); \
    printf("\nos2 - y_subsc_y_sz: %hd", be16toh((o2_p)->y_subsc_y_sz)); \
-   printf("\nos2 - y_subsc_x_offs: %hd", be16toh((o2_p)->y_subsc_x_offs)); \
-   printf("\nos2 - y_subsc_y_offs: %hd", be16toh((o2_p)->y_subsc_y_offs)); \
+   printf("\nos2 - y_subsc_x_off: %hd", be16toh((o2_p)->y_subsc_x_off)); \
+   printf("\nos2 - y_subsc_y_off: %hd", be16toh((o2_p)->y_subsc_y_off)); \
    printf("\nos2 - y_supersc_x_sz: %hd", be16toh((o2_p)->y_supersc_x_sz)); \
    printf("\nos2 - y_supersc_y_sz: %hd", be16toh((o2_p)->y_supersc_y_sz)); \
-   printf("\nos2 - y_supersc_x_offs: %hd", be16toh((o2_p)->y_supersc_x_offs)); \
-   printf("\nos2 - y_supersc_y_offs: %hd", be16toh((o2_p)->y_supersc_y_offs)); \
+   printf("\nos2 - y_supersc_x_off: %hd", be16toh((o2_p)->y_supersc_x_off)); \
+   printf("\nos2 - y_supersc_y_off: %hd", be16toh((o2_p)->y_supersc_y_off)); \
    printf("\nos2 - y_strikeout_sz: %hd", be16toh((o2_p)->y_strikeout_sz)); \
    printf("\nos2 - y_strikeout_pos: %hd", be16toh((o2_p)->y_strikeout_pos)); \
    printf("\nos2 - family_class: %hd", be16toh((o2_p)->family_class)); \
@@ -417,7 +194,304 @@ static_assert(offsetof(L_os2, up_optical_pt_sz) == YF_SFNT_OS2SZ-2,
    printf("\nos2 - lo_optical_pt_sz: %hu", be16toh((o2_p)->lo_optical_pt_sz)); \
    printf("\nos2 - up_optical_pt_sz: %hu", be16toh((o2_p)->up_optical_pt_sz)); \
    printf("\n--\n"); } while (0)
-#endif
+
+# define YF_SFNT_POSTH_PRINT(ps_p) do { \
+   printf("\n-- SFNT (debug) --"); \
+   printf("\nposth - version: 0x%.8x", be32toh((ps_p)->version)); \
+   printf("\nposth - italic_ang: %u", be32toh((ps_p)->italic_ang)); \
+   printf("\nposth - undln_pos: %hd", be16toh((ps_p)->undln_pos)); \
+   printf("\nposth - undln_thick: %hd", be16toh((ps_p)->undln_thick)); \
+   printf("\nposth - fixed_pitch: %u", be32toh((ps_p)->fixed_pitch)); \
+   printf("\nposth - mem42_min: %u", be32toh((ps_p)->mem42_min)); \
+   printf("\nposth - mem42_max: %u", be32toh((ps_p)->mem42_max)); \
+   printf("\nposth - mem1_min: %u", be32toh((ps_p)->mem1_min)); \
+   printf("\nposth - mem1_max: %u", be32toh((ps_p)->mem1_max)); \
+   printf("\n--\n"); } while (0)
+
+# define YF_SFNT_CVT_PRINT(cv_p, len) do { \
+   printf("\n-- SFNT (debug) --"); \
+   printf("\ncvt len is %u", len); \
+   printf("\ncvt @%p", (void *)(cv_p)->ctrl_vals); \
+   printf("\n--\n"); } while (0)
+
+# define YF_SFNT_FPGM_PRINT(fp_p, len) do { \
+   printf("\n-- SFNT (debug) --"); \
+   printf("\nfpgm len is %u", len); \
+   printf("\nfpgm @%p", (void *)(fp_p)->instrs); \
+   printf("\n--\n"); } while (0)
+
+# define YF_SFNT_GASPH_PRINT(gh_p) do { \
+   printf("\n-- SFNT (debug) --"); \
+   printf("\ngasph - version: 0x%.4hx", be16toh((gh_p)->version)); \
+   printf("\ngasph - rng_n: %hu", be16toh((gh_p)->rng_n)); \
+   printf("\n--\n"); } while (0)
+
+# define YF_SFNT_GASPE_PRINT(ge_p) do { \
+   printf("\n-- SFNT (debug) --"); \
+   printf("\ngaspe - rng_ppem_max: %hu", be16toh((ge_p)->rng_ppem_max)); \
+   printf("\ngaspe - rng_behav: %hu", be16toh((ge_p)->rng_behav)); \
+   printf("\n--\n"); } while (0)
+
+# define YF_SFNT_GLYFD_PRINT(gd_p) do { \
+   printf("\n-- SFNT (debug) --"); \
+   printf("\nglyfd - contour_n: %hd", be16toh((gd_p)->contour_n)); \
+   printf("\nglyfd - x_min: %hd", be16toh((gd_p)->x_min)); \
+   printf("\nglyfd - y_min: %hd", be16toh((gd_p)->y_min)); \
+   printf("\nglyfd - x_max: %hd", be16toh((gd_p)->x_max)); \
+   printf("\nglyfd - y_max: %hd", be16toh((gd_p)->y_max)); \
+   printf("\n--\n"); } while (0)
+
+# define YF_SFNT_GLYF_PRINT(gf_p, len) do { \
+   printf("\n-- SFNT (debug) --"); \
+   printf("\nglyf len is %u", len); \
+   printf("\nglyf @%p", (void *)(gf_p)->glyphs); \
+   printf("\n--\n"); } while (0)
+
+# define YF_SFNT_LOCA_PRINT(lc_p, len, strd) do { \
+   printf("\n-- SFNT (debug) --"); \
+   printf("\nloca len is %u", len); \
+   printf("\nloca @%p", (void *)lc_p); \
+   for (uint16_t i = 0; i < len / strd; ++i) { \
+    if (i % 16 == 0) printf("\n[%d-%d]:", i, i+15); \
+    if (strd == 2) printf(" %hu", be16toh((lc_p)->off16[i])); \
+    else printf(" %u", be32toh((lc_p)->off32[i])); \
+   } \
+   printf("\n--\n"); } while (0)
+
+# define YF_SFNT_PREP_PRINT(pr_p, len) do { \
+   printf("\n-- SFNT (debug) --"); \
+   printf("\nprep len is %u", len); \
+   printf("\nprep @%p", (void *)(pr_p)->program); \
+   printf("\n--\n"); } while (0)
+#endif /* YF_DEBUG */
+
+/* TODO */
+
+#define YF_SFNT_MAKETAG(c1, c2, c3, c4) \
+  (be32toh((c1 << 24) | (c2 << 16) | (c3 << 8) | c4))
+
+/*
+ * Common
+ */
+
+/* Font directory. */
+#define YF_SFNT_TTF be32toh(0x00010000)
+typedef struct {
+  uint32_t version;
+  uint16_t tab_n;
+  uint16_t search_rng;
+  uint16_t entry_sel;
+  uint16_t rng_shf;
+} L_diro;
+#define YF_SFNT_DIROSZ 12
+static_assert(offsetof(L_diro, rng_shf) == YF_SFNT_DIROSZ-2, "!offsetof");
+
+typedef struct {
+  uint32_t tag;
+  uint32_t chsum;
+  uint32_t off;
+  uint32_t len;
+} L_dire;
+#define YF_SFNT_DIRESZ 16
+static_assert(sizeof(L_dire) == YF_SFNT_DIRESZ, "!sizeof");
+
+typedef struct {
+  L_diro diro;
+  L_dire *dires;
+} L_dir;
+
+/* Character to glyph mapping. */
+#define YF_SFNT_CMAPTAG YF_SFNT_MAKETAG('c', 'm', 'a', 'p')
+typedef struct {
+  uint16_t version;
+  uint16_t tab_n;
+} L_cmaph;
+#define YF_SFNT_CMAPHSZ 4
+static_assert(offsetof(L_cmaph, tab_n) == YF_SFNT_CMAPHSZ-2, "!offsetof");
+
+typedef struct {
+  uint16_t platform;
+  uint16_t encoding;
+  uint32_t off;
+} L_cmape;
+#define YF_SFNT_CMAPESZ 8
+static_assert(sizeof(L_cmape) == YF_SFNT_CMAPESZ, "!sizeof");
+
+typedef struct {
+  L_cmaph cmaph;
+  L_cmape *cmapes;
+} L_cmap;
+
+/* Font header. */
+#define YF_SFNT_HEADTAG YF_SFNT_MAKETAG('h', 'e', 'a', 'd')
+typedef struct {
+  uint16_t major;
+  uint16_t minor;
+  uint32_t revision;
+  uint32_t chsum_adj;
+  uint32_t magic;
+  uint16_t flags;
+  uint16_t upem;
+  int32_t created[2]; /* i64 */
+  int32_t modified[2]; /* i64 */
+  int16_t x_min;
+  int16_t y_min;
+  int16_t x_max;
+  int16_t y_max;
+  uint16_t style;
+  uint16_t low_rec_ppem;
+  int16_t dir_hint;
+  int16_t loca_fmt;
+  int16_t glyph_fmt;
+} L_head;
+#define YF_SFNT_HEADSZ 54
+static_assert(offsetof(L_head, glyph_fmt) == YF_SFNT_HEADSZ-2, "!offsetof");
+
+/* Horizontal layout header. */
+#define YF_SFNT_HHEATAG YF_SFNT_MAKETAG('h', 'h', 'e', 'a')
+typedef struct {
+  uint16_t major;
+  uint16_t minor;
+  int16_t ascender;
+  int16_t descender;
+  int16_t line_gap;
+  uint16_t adv_wdt_max;
+  int16_t lbear_min;
+  int16_t rbear_min;
+  int16_t x_extent_max;
+  int16_t caret_slp_rise;
+  int16_t caret_slp_run;
+  int16_t caret_off;
+  int16_t reserved[4];
+  int16_t metric_fmt;
+  uint16_t hmetric_n;
+} L_hhea;
+#define YF_SFNT_HHEASZ 36
+static_assert(offsetof(L_hhea, hmetric_n) == YF_SFNT_HHEASZ-2, "!offsetof");
+
+/* Horizontal layout metrics. */
+#define YF_SFNT_HMTXTAG YF_SFNT_MAKETAG('h', 'm', 't', 'x')
+typedef struct {
+  uint16_t adv_wdt;
+  int16_t lbear;
+} L_hmtxe;
+#define YF_SFNT_HMTXESZ 4
+static_assert(sizeof(L_hmtxe) == YF_SFNT_HMTXESZ, "!sizeof");
+
+typedef struct {
+  L_hmtxe *hmtxes;
+  int16_t *lbears;
+} L_hmtx;
+
+/* Maximum profile. */
+#define YF_SFNT_MAXPTAG YF_SFNT_MAKETAG('m', 'a', 'x', 'p')
+typedef struct {
+  uint32_t version;
+  uint16_t glyph_n;
+  uint16_t pt_max;
+  uint16_t contr_max;
+  uint16_t comp_pt_max;
+  uint16_t comp_contr_max;
+  uint16_t zone_max;
+  uint16_t z0_pt_max;
+  uint16_t storage_max;
+  uint16_t fdef_max;
+  uint16_t idef_max;
+  uint16_t stack_elem_max;
+  uint16_t hint_sz_max;
+  uint16_t comp_elem_max;
+  uint16_t comp_dep_max;
+} L_maxp;
+#define YF_SFNT_MAXPSZ 32
+static_assert(offsetof(L_maxp, comp_dep_max) == YF_SFNT_MAXPSZ-2, "!offsetof");
+
+/* Naming. */
+#define YF_SFNT_NAMETAG YF_SFNT_MAKETAG('n', 'a', 'm', 'e')
+typedef struct {
+  uint16_t format;
+  uint16_t count;
+  uint16_t str_off;
+} L_nameh;
+#define YF_SFNT_NAMEHSZ 6
+static_assert(offsetof(L_nameh, str_off) == YF_SFNT_NAMEHSZ-2, "!offsetof");
+
+typedef struct {
+  uint16_t platform;
+  uint16_t encoding;
+  uint16_t language;
+  uint16_t name;
+  uint16_t len;
+  uint16_t off;
+} L_namee;
+#define YF_SFNT_NAMEESZ 12
+static_assert(sizeof(L_namee) == YF_SFNT_NAMEESZ, "!sizeof");
+
+typedef struct {
+  uint16_t len;
+  uint16_t off;
+} L_namel;
+#define YF_SFNT_NAMELSZ 4
+static_assert(sizeof(L_namel) == YF_SFNT_NAMELSZ, "!sizeof");
+
+typedef struct {
+  L_nameh nameh;
+  L_namee *namees;
+  /* naming table format 1 */
+  uint16_t lang_n;
+  L_namel *namels;
+} L_name;
+
+/* OS/2 & Windows metrics. */
+#define YF_SFNT_OS2TAG YF_SFNT_MAKETAG('O', 'S', '/', '2')
+typedef struct {
+  /* v0 */
+  uint16_t version;
+  int16_t x_avg_char_wdt;
+  uint16_t wgt_class;
+  uint16_t wdt_class;
+  uint16_t type;
+  int16_t y_subsc_x_sz;
+  int16_t y_subsc_y_sz;
+  int16_t y_subsc_x_off;
+  int16_t y_subsc_y_off;
+  int16_t y_supersc_x_sz;
+  int16_t y_supersc_y_sz;
+  int16_t y_supersc_x_off;
+  int16_t y_supersc_y_off;
+  int16_t y_strikeout_sz;
+  int16_t y_strikeout_pos;
+  int16_t family_class;
+  uint8_t panose[10];
+  uint16_t unicode_rng1[2]; /* u32 */
+  uint16_t unicode_rng2[2]; /* u32 */
+  uint16_t unicode_rng3[2]; /* u32 */
+  uint16_t unicode_rng4[2]; /* u32 */
+  uint8_t ach_vend[4];
+  uint16_t sel;
+  uint16_t first_char_i;
+  uint16_t last_char_i;
+  int16_t typo_ascender;
+  int16_t typo_descender;
+  int16_t typo_line_gap;
+  uint16_t win_ascent;
+  uint16_t win_descent;
+  /* v1 */
+  uint16_t code_page_rng1[2]; /* u32 */
+  uint16_t code_page_rng2[2]; /* u32 */
+  /* v2, v3 & v4 */
+  int16_t x_hgt;
+  int16_t cap_hgt;
+  uint16_t deft_char;
+  uint16_t break_char;
+  uint16_t max_ctx;
+  /* v5 */
+  uint16_t lo_optical_pt_sz;
+  uint16_t up_optical_pt_sz;
+} L_os2;
+#define YF_SFNT_OS2V0  78
+#define YF_SFNT_OS2SZ 100
+static_assert(offsetof(L_os2, up_optical_pt_sz) == YF_SFNT_OS2SZ-2,
+    "!offsetof");
 
 /* PostScript info. */
 #define YF_SFNT_POSTTAG YF_SFNT_MAKETAG('p', 'o', 's', 't')
@@ -434,24 +508,11 @@ typedef struct {
 } L_posth;
 #define YF_SFNT_POSTHSZ 32
 static_assert(offsetof(L_posth, mem1_max) == YF_SFNT_POSTHSZ-4, "!offsetof");
+
 typedef struct {
   L_posth posth;
   /* XXX: Glyph names won't see any use. */
 } L_post;
-#ifdef YF_DEBUG
-# define YF_SFNT_POSTH_PRINT(ps_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nposth - version: 0x%.8x", be32toh((ps_p)->version)); \
-   printf("\nposth - italic_ang: %u", be32toh((ps_p)->italic_ang)); \
-   printf("\nposth - undln_pos: %hd", be16toh((ps_p)->undln_pos)); \
-   printf("\nposth - undln_thick: %hd", be16toh((ps_p)->undln_thick)); \
-   printf("\nposth - fixed_pitch: %u", be32toh((ps_p)->fixed_pitch)); \
-   printf("\nposth - mem42_min: %u", be32toh((ps_p)->mem42_min)); \
-   printf("\nposth - mem42_max: %u", be32toh((ps_p)->mem42_max)); \
-   printf("\nposth - mem1_min: %u", be32toh((ps_p)->mem1_min)); \
-   printf("\nposth - mem1_max: %u", be32toh((ps_p)->mem1_max)); \
-   printf("\n--\n"); } while (0)
-#endif
 
 /*
  * TrueType
@@ -462,26 +523,12 @@ typedef struct {
 typedef struct {
   int16_t *ctrl_vals;
 } L_cvt;
-#ifdef YF_DEBUG
-# define YF_SFNT_CVT_PRINT(cv_p, len) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\ncvt len is %u", len); \
-   printf("\ncvt @%p", (void *)(cv_p)->ctrl_vals); \
-   printf("\n--\n"); } while (0)
-#endif
 
 /* Font program (executed once). */
 #define YF_SFNT_FPGMTAG YF_SFNT_MAKETAG('f', 'p', 'g', 'm')
 typedef struct {
   uint8_t *instrs;
 } L_fpgm;
-#ifdef YF_DEBUG
-# define YF_SFNT_FPGM_PRINT(fp_p, len) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nfpgm len is %u", len); \
-   printf("\nfpgm @%p", (void *)(fp_p)->instrs); \
-   printf("\n--\n"); } while (0)
-#endif
 
 /* Grayscale device rendering. */
 #define YF_SFNT_GASPTAG YF_SFNT_MAKETAG('g', 'a', 's', 'p')
@@ -491,28 +538,18 @@ typedef struct {
 } L_gasph;
 #define YF_SFNT_GASPHSZ 4
 static_assert(offsetof(L_gasph, rng_n) == YF_SFNT_GASPHSZ-2, "!offsetof");
+
 typedef struct {
   uint16_t rng_ppem_max;
   uint16_t rng_behav;
 } L_gaspe;
 #define YF_SFNT_GASPESZ 4
 static_assert(sizeof(L_gaspe) == YF_SFNT_GASPESZ, "!sizeof");
+
 typedef struct {
   L_gasph gasph;
   L_gaspe *gaspes;
 } L_gasp;
-#ifdef YF_DEBUG
-# define YF_SFNT_GASPH_PRINT(gh_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\ngasph - version: 0x%.4hx", be16toh((gh_p)->version)); \
-   printf("\ngasph - rng_n: %hu", be16toh((gh_p)->rng_n)); \
-   printf("\n--\n"); } while (0)
-# define YF_SFNT_GASPE_PRINT(ge_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\ngaspe - rng_ppem_max: %hu", be16toh((ge_p)->rng_ppem_max)); \
-   printf("\ngaspe - rng_behav: %hu", be16toh((ge_p)->rng_behav)); \
-   printf("\n--\n"); } while (0)
-#endif
 
 /* Glyph data. */
 #define YF_SFNT_GLYFTAG YF_SFNT_MAKETAG('g', 'l', 'y', 'f')
@@ -526,58 +563,25 @@ typedef struct {
 } L_glyfd;
 #define YF_SFNT_GLYFSZ 10
 static_assert(offsetof(L_glyfd, data) == YF_SFNT_GLYFSZ, "!offsetof");
+
 typedef struct {
   uint8_t *glyphs;
 } L_glyf;
-#ifdef YF_DEBUG
-# define YF_SFNT_GLYFD_PRINT(gd_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nglyfd - contour_n: %hd", be16toh((gd_p)->contour_n)); \
-   printf("\nglyfd - x_min: %hd", be16toh((gd_p)->x_min)); \
-   printf("\nglyfd - y_min: %hd", be16toh((gd_p)->y_min)); \
-   printf("\nglyfd - x_max: %hd", be16toh((gd_p)->x_max)); \
-   printf("\nglyfd - y_max: %hd", be16toh((gd_p)->y_max)); \
-   printf("\n--\n"); } while (0)
-# define YF_SFNT_GLYF_PRINT(gf_p, len) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nglyf len is %u", len); \
-   printf("\nglyf @%p", (void *)(gf_p)->glyphs); \
-   printf("\n--\n"); } while (0)
-#endif
 
 /* Glyph location offsets. */
 #define YF_SFNT_LOCATAG YF_SFNT_MAKETAG('l', 'o', 'c', 'a')
 typedef struct {
   union {
-    uint16_t *offs16;
-    uint32_t *offs32;
+    uint16_t *off16;
+    uint32_t *off32;
   };
 } L_loca;
-#ifdef YF_DEBUG
-# define YF_SFNT_LOCA_PRINT(lc_p, len, strd) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nloca len is %u", len); \
-   printf("\nloca @%p", (void *)lc_p); \
-   for (uint16_t i = 0; i < len / strd; ++i) { \
-    if (i % 16 == 0) printf("\n[%d-%d]:", i, i+15); \
-    if (strd == 2) printf(" %hu", be16toh((lc_p)->offs16[i])); \
-    else printf(" %u", be32toh((lc_p)->offs32[i])); \
-   } \
-   printf("\n--\n"); } while (0)
-#endif
 
 /* Control value program (executed on font changes). */
 #define YF_SFNT_PREPTAG YF_SFNT_MAKETAG('p', 'r', 'e', 'p')
 typedef struct {
   uint8_t *program;
 } L_prep;
-#ifdef YF_DEBUG
-# define YF_SFNT_PREP_PRINT(pr_p, len) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nprep len is %u", len); \
-   printf("\nprep @%p", (void *)(pr_p)->program); \
-   printf("\n--\n"); } while (0)
-#endif
 
 /* SFNT tables. */
 typedef struct {
@@ -633,19 +637,12 @@ static int load_ttf(L_sfnt *sfnt, FILE *file);
 static void deinit_font(L_sfnt *sfnt);
 
 /* Sets mapping of character codes to glyph indices. */
-static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t offs,
+static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
     L_fontmap *fmap);
 
 /* Fills font strings. */
-static int fill_str(const L_name *name, FILE *file, uint32_t str_offs,
+static int fill_str(const L_name *name, FILE *file, uint32_t str_off,
     L_fontstr *fstr);
-
-
-////////////////
-static L_sfnt l_sfnt = {0};
-static L_fontmap l_fm = {0};
-////////////////
-
 
 int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   if (pathname == NULL) {
@@ -708,62 +705,62 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   }
 
   const uint32_t cmap_tag = YF_SFNT_CMAPTAG;
-  uint32_t cmap_offs = 0;
+  uint32_t cmap_off = 0;
   uint32_t cmap_len = 0;
   const uint32_t head_tag = YF_SFNT_HEADTAG;
-  uint32_t head_offs = 0;
+  uint32_t head_off = 0;
   uint32_t head_len = 0;
   const uint32_t hhea_tag = YF_SFNT_HHEATAG;
-  uint32_t hhea_offs = 0;
+  uint32_t hhea_off = 0;
   uint32_t hhea_len = 0;
   const uint32_t hmtx_tag = YF_SFNT_HMTXTAG;
-  uint32_t hmtx_offs = 0;
+  uint32_t hmtx_off = 0;
   uint32_t hmtx_len = 0;
   const uint32_t maxp_tag = YF_SFNT_MAXPTAG;
-  uint32_t maxp_offs = 0;
+  uint32_t maxp_off = 0;
   uint32_t maxp_len = 0;
   const uint32_t name_tag = YF_SFNT_NAMETAG;
-  uint32_t name_offs = 0;
+  uint32_t name_off = 0;
   uint32_t name_len = 0;
   const uint32_t os2_tag = YF_SFNT_OS2TAG;
-  uint32_t os2_offs = 0;
+  uint32_t os2_off = 0;
   uint32_t os2_len = 0;
   const uint32_t post_tag = YF_SFNT_POSTTAG;
-  uint32_t post_offs = 0;
+  uint32_t post_off = 0;
   uint32_t post_len = 0;
 
   for (uint16_t i = 0; i < tab_n; ++i) {
     if (sfnt->dir->dires[i].tag == cmap_tag) {
-      cmap_offs = be32toh(sfnt->dir->dires[i].offs);
+      cmap_off = be32toh(sfnt->dir->dires[i].off);
       cmap_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == head_tag) {
-      head_offs = be32toh(sfnt->dir->dires[i].offs);
+      head_off = be32toh(sfnt->dir->dires[i].off);
       head_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == hhea_tag) {
-      hhea_offs = be32toh(sfnt->dir->dires[i].offs);
+      hhea_off = be32toh(sfnt->dir->dires[i].off);
       hhea_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == hmtx_tag) {
-      hmtx_offs = be32toh(sfnt->dir->dires[i].offs);
+      hmtx_off = be32toh(sfnt->dir->dires[i].off);
       hmtx_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == maxp_tag) {
-      maxp_offs = be32toh(sfnt->dir->dires[i].offs);
+      maxp_off = be32toh(sfnt->dir->dires[i].off);
       maxp_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == name_tag) {
-      name_offs = be32toh(sfnt->dir->dires[i].offs);
+      name_off = be32toh(sfnt->dir->dires[i].off);
       name_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == os2_tag) {
-      os2_offs = be32toh(sfnt->dir->dires[i].offs);
+      os2_off = be32toh(sfnt->dir->dires[i].off);
       os2_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == post_tag) {
-      post_offs = be32toh(sfnt->dir->dires[i].offs);
+      post_off = be32toh(sfnt->dir->dires[i].off);
       post_len = be32toh(sfnt->dir->dires[i].len);
     }
 #ifdef YF_DEBUG
     YF_SFNT_DIRE_PRINT(sfnt->dir->dires+i);
 #endif
   }
-  if (cmap_offs == 0 || head_offs == 0 || hhea_offs == 0 || hmtx_offs == 0 ||
-      maxp_offs == 0 || name_offs == 0 || os2_offs == 0 || post_offs == 0 ||
+  if (cmap_off == 0 || head_off == 0 || hhea_off == 0 || hmtx_off == 0 ||
+      maxp_off == 0 || name_off == 0 || os2_off == 0 || post_off == 0 ||
       cmap_len < YF_SFNT_CMAPHSZ || head_len != YF_SFNT_HEADSZ ||
       hhea_len != YF_SFNT_HHEASZ || hmtx_len < YF_SFNT_HMTXESZ ||
       maxp_len != YF_SFNT_MAXPSZ || name_len < YF_SFNT_NAMEHSZ ||
@@ -783,7 +780,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     fclose(file);
     return -1;
   }
-  if (fseek(file, head_offs, SEEK_SET) != 0 ||
+  if (fseek(file, head_off, SEEK_SET) != 0 ||
       fread(sfnt->head, head_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
@@ -803,7 +800,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     fclose(file);
     return -1;
   }
-  if (fseek(file, hhea_offs, SEEK_SET) != 0 ||
+  if (fseek(file, hhea_off, SEEK_SET) != 0 ||
       fread(sfnt->hhea, hhea_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
@@ -824,7 +821,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     fclose(file);
     return -1;
   }
-  if (fseek(file, maxp_offs, SEEK_SET) != 0 ||
+  if (fseek(file, maxp_off, SEEK_SET) != 0 ||
       fread(sfnt->maxp, maxp_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
@@ -854,7 +851,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     fclose(file);
     return -1;
   }
-  if (fseek(file, hmtx_offs, SEEK_SET) != 0 ||
+  if (fseek(file, hmtx_off, SEEK_SET) != 0 ||
       fread(sfnt->hmtx->hmtxes, sizeof(L_hmtxe), hmetric_n, file) < hmetric_n)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
@@ -896,7 +893,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     fclose(file);
     return -1;
   }
-  if (fseek(file, os2_offs, SEEK_SET) != 0 ||
+  if (fseek(file, os2_off, SEEK_SET) != 0 ||
       fread(sfnt->os2, os2_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
@@ -916,7 +913,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     fclose(file);
     return -1;
   }
-  if (fseek(file, post_offs, SEEK_SET) != 0 ||
+  if (fseek(file, post_off, SEEK_SET) != 0 ||
       fread(&sfnt->post->posth, YF_SFNT_POSTHSZ, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
@@ -936,7 +933,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     fclose(file);
     return -1;
   }
-  if (fseek(file, cmap_offs, SEEK_SET) != 0 ||
+  if (fseek(file, cmap_off, SEEK_SET) != 0 ||
       fread(&sfnt->cmap->cmaph, YF_SFNT_CMAPHSZ, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
@@ -967,17 +964,17 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   for (uint16_t i = 0; i < cmap_n; ++i) {
     YF_SFNT_CMAPE_PRINT(sfnt->cmap->cmapes+i);
     uint16_t fmt;
-    uint32_t offs = cmap_offs+be32toh(sfnt->cmap->cmapes[i].offs);
-    if (fseek(file, offs, SEEK_SET) != 0 ||
+    uint32_t off = cmap_off+be32toh(sfnt->cmap->cmapes[i].off);
+    if (fseek(file, off, SEEK_SET) != 0 ||
         fread(&fmt, sizeof fmt, 1, file) < 1)
-    { assert(0); }
+      assert(0);
     printf("\tcmap format: %hu\n", be16toh(fmt));
   }
 #endif
 
   /* TODO */
   L_fontmap fmap = {0};
-  if (set_mapping(sfnt->cmap, file, cmap_offs, &fmap) != 0)
+  if (set_mapping(sfnt->cmap, file, cmap_off, &fmap) != 0)
     /* TODO */
     assert(0);
 
@@ -989,7 +986,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     fclose(file);
     return -1;
   }
-  if (fseek(file, name_offs, SEEK_SET) != 0 ||
+  if (fseek(file, name_off, SEEK_SET) != 0 ||
       fread(&sfnt->name->nameh, YF_SFNT_NAMEHSZ, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
@@ -1045,11 +1042,12 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
 
   /* TODO */
   L_fontstr fstr = {0};
-  const uint32_t str_offs = name_offs + be16toh(sfnt->name->nameh.str_offs);
-  if (fill_str(sfnt->name, file, str_offs, &fstr) != 0)
+  const uint32_t str_off = name_off + be16toh(sfnt->name->nameh.str_off);
+  if (fill_str(sfnt->name, file, str_off, &fstr) != 0)
     /* TODO */
     assert(0);
 
+  /* TODO: Check if this is a ttf file before this call. */
   if (load_ttf(sfnt, file) != 0) {
     deinit_font(sfnt);
     fclose(file);
@@ -1057,13 +1055,6 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   }
 
   /* TODO... */
-
-
-  ////////////////
-  memcpy(&l_sfnt, sfnt, sizeof l_sfnt);
-  memcpy(&l_fm, &fmap, sizeof l_fm);
-  ////////////////
-
 
   fclose(file);
   return 0;
@@ -1076,52 +1067,52 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
   const uint16_t tab_n = be16toh(sfnt->dir->diro.tab_n);
 
   const uint32_t cvt_tag = YF_SFNT_CVTTAG;
-  uint32_t cvt_offs = 0;
+  uint32_t cvt_off = 0;
   uint32_t cvt_len = 0;
   const uint32_t fpgm_tag = YF_SFNT_FPGMTAG;
-  uint32_t fpgm_offs = 0;
+  uint32_t fpgm_off = 0;
   uint32_t fpgm_len = 0;
   const uint32_t gasp_tag = YF_SFNT_GASPTAG;
-  uint32_t gasp_offs = 0;
+  uint32_t gasp_off = 0;
   uint32_t gasp_len = 0;
   const uint32_t glyf_tag = YF_SFNT_GLYFTAG;
-  uint32_t glyf_offs = 0;
+  uint32_t glyf_off = 0;
   uint32_t glyf_len = 0;
   const uint32_t loca_tag = YF_SFNT_LOCATAG;
-  uint32_t loca_offs = 0;
+  uint32_t loca_off = 0;
   uint32_t loca_len = 0;
   const uint32_t prep_tag = YF_SFNT_PREPTAG;
-  uint32_t prep_offs = 0;
+  uint32_t prep_off = 0;
   uint32_t prep_len = 0;
 
   for (uint16_t i = 0; i < tab_n; ++i) {
     if (sfnt->dir->dires[i].tag == cvt_tag) {
-      cvt_offs = be32toh(sfnt->dir->dires[i].offs);
+      cvt_off = be32toh(sfnt->dir->dires[i].off);
       cvt_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == fpgm_tag) {
-      fpgm_offs = be32toh(sfnt->dir->dires[i].offs);
+      fpgm_off = be32toh(sfnt->dir->dires[i].off);
       fpgm_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == gasp_tag) {
-      gasp_offs = be32toh(sfnt->dir->dires[i].offs);
+      gasp_off = be32toh(sfnt->dir->dires[i].off);
       gasp_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == glyf_tag) {
-      glyf_offs = be32toh(sfnt->dir->dires[i].offs);
+      glyf_off = be32toh(sfnt->dir->dires[i].off);
       glyf_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == loca_tag) {
-      loca_offs = be32toh(sfnt->dir->dires[i].offs);
+      loca_off = be32toh(sfnt->dir->dires[i].off);
       loca_len = be32toh(sfnt->dir->dires[i].len);
     } else if (sfnt->dir->dires[i].tag == prep_tag) {
-      prep_offs = be32toh(sfnt->dir->dires[i].offs);
+      prep_off = be32toh(sfnt->dir->dires[i].off);
       prep_len = be32toh(sfnt->dir->dires[i].len);
     }
   }
-  if (glyf_offs == 0 || loca_offs == 0) {
+  if (glyf_off == 0 || loca_off == 0) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
 
   /* cvt table (optional) */
-  if (cvt_offs != 0) {
+  if (cvt_off != 0) {
     sfnt->ttf.cvt = calloc(1, sizeof(L_cvt));
     if (sfnt->ttf.cvt == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
@@ -1132,7 +1123,7 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;
     }
-    if (fseek(file, cvt_offs, SEEK_SET) != 0 ||
+    if (fseek(file, cvt_off, SEEK_SET) != 0 ||
         fread(sfnt->ttf.cvt->ctrl_vals, cvt_len, 1, file) < 1)
     {
       yf_seterr(YF_ERR_INVFILE, __func__);
@@ -1144,7 +1135,7 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
   }
 
   /* fpgm table (optional) */
-  if (fpgm_offs != 0) {
+  if (fpgm_off != 0) {
     sfnt->ttf.fpgm = calloc(1, sizeof(L_fpgm));
     if (sfnt->ttf.fpgm == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
@@ -1155,7 +1146,7 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;
     }
-    if (fseek(file, fpgm_offs, SEEK_SET) != 0 ||
+    if (fseek(file, fpgm_off, SEEK_SET) != 0 ||
         fread(sfnt->ttf.fpgm->instrs, fpgm_len, 1, file) < 1)
     {
       yf_seterr(YF_ERR_INVFILE, __func__);
@@ -1167,7 +1158,7 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
   }
 
   /* prep table (optional) */
-  if (prep_offs != 0) {
+  if (prep_off != 0) {
     sfnt->ttf.prep = calloc(1, sizeof(L_prep));
     if (sfnt->ttf.prep == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
@@ -1178,7 +1169,7 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;
     }
-    if (fseek(file, prep_offs, SEEK_SET) != 0 ||
+    if (fseek(file, prep_off, SEEK_SET) != 0 ||
         fread(sfnt->ttf.prep->program, prep_len, 1, file) < 1)
     {
       yf_seterr(YF_ERR_INVFILE, __func__);
@@ -1190,13 +1181,13 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
   }
 
   /* gasp table (optional) */
-  if (gasp_offs != 0 && gasp_len >= YF_SFNT_GASPHSZ) {
+  if (gasp_off != 0 && gasp_len >= YF_SFNT_GASPHSZ) {
     sfnt->ttf.gasp = calloc(1, sizeof(L_gasp));
     if (sfnt->ttf.gasp == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;
     }
-    if (fseek(file, gasp_offs, SEEK_SET) != 0 ||
+    if (fseek(file, gasp_off, SEEK_SET) != 0 ||
         fread(&sfnt->ttf.gasp->gasph, YF_SFNT_GASPHSZ, 1, file) < 1)
     {
       yf_seterr(YF_ERR_INVFILE, __func__);
@@ -1232,7 +1223,7 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  if (fseek(file, loca_offs, SEEK_SET) != 0 ||
+  if (fseek(file, loca_off, SEEK_SET) != 0 ||
       fread(loca_data, loca_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
@@ -1240,9 +1231,9 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
     return -1;
   }
   if (sfnt->head->loca_fmt == 0)
-    sfnt->ttf.loca->offs16 = loca_data;
+    sfnt->ttf.loca->off16 = loca_data;
   else
-    sfnt->ttf.loca->offs32 = loca_data;
+    sfnt->ttf.loca->off32 = loca_data;
 #ifdef YF_DEBUG
   YF_SFNT_LOCA_PRINT(sfnt->ttf.loca, loca_len, (sfnt->head->loca_fmt ? 4 : 2));
 #endif
@@ -1258,23 +1249,23 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  if (fseek(file, glyf_offs, SEEK_SET) != 0 ||
-      fread(sfnt->ttf.glyf->glyphs, glyf_offs, 1, file) < 1)
+  if (fseek(file, glyf_off, SEEK_SET) != 0 ||
+      fread(sfnt->ttf.glyf->glyphs, glyf_off, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
 #ifdef YF_DEBUG
-  uint32_t cmap_offs = 0;
+  uint32_t cmap_off = 0;
   for (uint16_t i = 0; i < tab_n; ++i) {
     if (sfnt->dir->dires[i].tag == YF_SFNT_CMAPTAG) {
-      cmap_offs = be32toh(sfnt->dir->dires[i].offs);
+      cmap_off = be32toh(sfnt->dir->dires[i].off);
       break;
     }
   }
-  assert(cmap_offs != 0);
+  assert(cmap_off != 0);
   L_fontmap fmap;
-  if (set_mapping(sfnt->cmap, file, cmap_offs, &fmap) != 0)
+  if (set_mapping(sfnt->cmap, file, cmap_off, &fmap) != 0)
     assert(0);
   YF_SFNT_GLYF_PRINT(sfnt->ttf.glyf, glyf_len);
   for (uint16_t i = 0; i < fmap.entry_n; ++i) {
@@ -1284,13 +1275,13 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
     uint16_t id = fmap.glyph_ids[i];
     L_glyfd *gd;
     if (sfnt->head->loca_fmt == 0) {
-      uint32_t offs = 2 * be16toh(sfnt->ttf.loca->offs16[id]);
-      assert((offs % _Alignof(L_glyfd)) == 0);
-      gd = (L_glyfd *)(sfnt->ttf.glyf->glyphs+offs);
+      uint32_t off = 2 * be16toh(sfnt->ttf.loca->off16[id]);
+      assert((off % _Alignof(L_glyfd)) == 0);
+      gd = (L_glyfd *)(sfnt->ttf.glyf->glyphs+off);
     } else {
-      uint32_t offs = be32toh(sfnt->ttf.loca->offs32[id]);
-      assert((offs % _Alignof(L_glyfd)) == 0);
-      gd = (L_glyfd *)(sfnt->ttf.glyf->glyphs+offs);
+      uint32_t off = be32toh(sfnt->ttf.loca->off32[id]);
+      assert((off % _Alignof(L_glyfd)) == 0);
+      gd = (L_glyfd *)(sfnt->ttf.glyf->glyphs+off);
     }
     printf("\n[glyf #%hu (%c)]", id, code);
     YF_SFNT_GLYFD_PRINT(gd);
@@ -1344,7 +1335,7 @@ static void deinit_font(L_sfnt *sfnt) {
     free(sfnt->ttf.glyf);
   }
   if (sfnt->ttf.loca != NULL) {
-    free(sfnt->ttf.loca->offs16);
+    free(sfnt->ttf.loca->off16);
     free(sfnt->ttf.loca);
   }
   if (sfnt->ttf.prep != NULL) {
@@ -1354,7 +1345,7 @@ static void deinit_font(L_sfnt *sfnt) {
   free(sfnt);
 }
 
-static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t offs,
+static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
     L_fontmap *fmap)
 {
   assert(cmap != NULL);
@@ -1368,7 +1359,7 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t offs,
   const uint16_t encod_n = be16toh(cmap->cmaph.tab_n);
   uint16_t encod_i = UINT16_MAX;
 
-  uint32_t sub_offs = 0;
+  uint32_t sub_off = 0;
   struct { uint16_t fmt, len, lang; } sub_hdr;
   static_assert(sizeof sub_hdr == 6, "!sizeof");
 
@@ -1376,10 +1367,10 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t offs,
     for (uint16_t j = 0; j < encod_n; ++j) {
       if (cmap->cmapes[j].platform != platf[i] ||
           cmap->cmapes[j].encoding != encod[i])
-      { continue; }
+        continue;
 
-      sub_offs = offs + be32toh(cmap->cmapes[j].offs);
-      if (fseek(file, sub_offs, SEEK_SET) != 0 ||
+      sub_off = off + be32toh(cmap->cmapes[j].off);
+      if (fseek(file, sub_off, SEEK_SET) != 0 ||
           fread(&sub_hdr, sizeof sub_hdr, 1, file) < 1)
       {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -1466,7 +1457,7 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t offs,
   return 0;
 }
 
-static int fill_str(const L_name *name, FILE *file, uint32_t str_offs,
+static int fill_str(const L_name *name, FILE *file, uint32_t str_off,
     L_fontstr *fstr)
 {
   assert(name != NULL);
@@ -1496,18 +1487,18 @@ static int fill_str(const L_name *name, FILE *file, uint32_t str_offs,
     return -1;
   }
 
-  uint16_t nm, len, offs;
+  uint16_t nm, len, off;
   char **str_p;
 
   for (; name_i < name_n; ++name_i) {
     if (name->namees[name_i].platform != platf ||
         name->namees[name_i].encoding != encod ||
         name->namees[name_i].language != lang)
-    { break; }
+      break;
 
     nm = be16toh(name->namees[name_i].name);
     len = be16toh(name->namees[name_i].len);
-    offs = be16toh(name->namees[name_i].offs);
+    off = be16toh(name->namees[name_i].off);
 
     switch (nm) {
       case 0:
@@ -1562,7 +1553,7 @@ static int fill_str(const L_name *name, FILE *file, uint32_t str_offs,
       return -1;
     }
     (*str_p)[len] = '\0';
-    if (fseek(file, str_offs+offs, SEEK_SET) != 0 ||
+    if (fseek(file, str_off+off, SEEK_SET) != 0 ||
         fread(*str_p, len, 1, file) < 1)
     {
       yf_seterr(YF_ERR_INVFILE, __func__);
@@ -1590,191 +1581,3 @@ static int fill_str(const L_name *name, FILE *file, uint32_t str_offs,
 #endif
   return 0;
 }
-
-
-////////////////
-typedef struct { float x, y; } YF_coord2;
-
-YF_coord2 *trace_glyph(char c, uint16_t *coord_n) {
-  assert(c >= l_fm.first_code && c-l_fm.first_code < l_fm.entry_n);
-
-  YF_coord2 *coords = NULL;
-
-  printf("\n-- trace_glyph() [%c] --", c);
-  const uint16_t gid = l_fm.glyph_ids[c-l_fm.first_code];
-  printf("\n> gid is %hu", gid);
-
-  uint32_t goffs, gsz;
-  if (l_sfnt.head->loca_fmt == 0) {
-    goffs = be16toh(l_sfnt.ttf.loca->offs16[gid]) * 2;
-    gsz = be16toh(l_sfnt.ttf.loca->offs16[gid+1]) * 2 - goffs;
-  } else {
-    goffs = be32toh(l_sfnt.ttf.loca->offs32[gid]);
-    gsz = be32toh(l_sfnt.ttf.loca->offs32[gid+1]) - goffs;
-  }
-  printf("\n> goffs is %u", goffs);
-  printf("\n> gsz is %u", gsz);
-
-  assert((goffs % _Alignof(L_glyfd)) == 0);
-  L_glyfd *gd = (L_glyfd *)(l_sfnt.ttf.glyf->glyphs+goffs);
-  puts("");
-  YF_SFNT_GLYFD_PRINT(gd);
-
-  const int16_t contr_n = be16toh(gd->contour_n);
-  if (contr_n == 0) {
-    printf("\n> simple glyph (no contour)");
-
-  } else if (contr_n > 0) {
-    printf("\n> simple glyph (%hd contour(s))", contr_n);
-
-    uint16_t endpt_i[contr_n];
-    for (uint16_t i = 0; i < contr_n; ++i) {
-      endpt_i[i] = be16toh(((uint16_t *)gd->data)[i]);
-      printf("\n> endpt_i #%d is %hu", i, endpt_i[i]);
-    }
-
-    const uint16_t instr_len = be16toh(((uint16_t *)gd->data)[contr_n]);
-    const uint32_t flag_offs = sizeof endpt_i + sizeof instr_len + instr_len;
-    printf("\n> instr_len is %hu", instr_len);
-    printf("\n> flag_offs is %u", flag_offs);
-
-    uint8_t flag = 0;
-    uint8_t repeat_n = 0;
-    uint16_t flag_i = 0;
-    uint16_t x_i = 0;
-    uint16_t y_i = 0;
-    uint16_t pt_i = 0;
-    uint32_t x_len = 0;
-    uint32_t y_len = 0;
-
-    struct {
-      uint8_t flag;
-      uint16_t x_i, y_i;
-    } pts[endpt_i[contr_n-1]];
-
-    do {
-      flag = gd->data[flag_offs+flag_i++];
-      printf("\nflag=0x%hhx", flag);
-
-      if (flag & 8) {
-        /* next byte specifies number of times to repeat this flag set */
-        repeat_n = gd->data[flag_offs+flag_i++];
-        printf("\n> repeat_n set to %hhu", repeat_n);
-      }
-
-      do {
-        pts[pt_i].flag = flag;
-        pts[pt_i].x_i = x_i;
-        pts[pt_i].y_i = y_i;
-
-        if (flag & 2) {
-          /* x-coord is 1 byte long */
-          ++x_i;
-          ++x_len;
-        } else if (!(flag & 16)) {
-          /* x-coord is 2 bytes long and is not the same as prev x */
-          ++x_i;
-          x_len += 2;
-        }
-
-        if (flag & 4) {
-          /* y-coord is 1 byte long */
-          ++y_i;
-          ++y_len;
-        } else if (!(flag & 32)) {
-          /* y-coord is 2 bytes long and is not the same as prev y */
-          ++y_i;
-          y_len += 2;
-        }
-
-        ++pt_i;
-        if (repeat_n == 0)
-          break;
-        --repeat_n;
-      } while (1);
-    } while (pt_i <= endpt_i[contr_n-1]);
-
-    printf("\n> flag_i is %hu", flag_i);
-    printf("\n> x_i is %hu", x_i);
-    printf("\n> y_i is %hu", y_i);
-    printf("\n> pt_i is %hu", pt_i);
-    printf("\n> x_len is %hu", x_len);
-    printf("\n> y_len is %hu", y_len);
-    for (uint16_t i = 0; i < pt_i; ++i)
-      printf("\n> pt #%hd: \tflag=0x%.2hhx \tx_i=%.3hu \ty_i=%.3hu",
-        i, pts[i].flag, pts[i].x_i, pts[i].y_i);
-
-    coords = malloc(pt_i * sizeof *coords);
-    assert(coords != NULL);
-    uint8_t *x_p = gd->data+flag_offs+flag_i;
-    uint8_t *y_p = x_p+x_len;
-    YF_coord2 coord = {0};
-
-    for (uint16_t i = 0; i < pt_i; ++i) {
-      if (pts[i].flag & 1)
-        /* pt is on the curve; off the curve otherwise */
-        { }
-
-      if (pts[i].flag & 2) {
-        /* x-coord is 1 byte long */
-        if (pts[i].flag & 16)
-          /* is positive */
-          coords[i].x = coord.x + *x_p;
-        else
-          /* is negative */
-          coords[i].x = coord.x + -1.0 * *x_p;
-        ++x_p;
-      } else {
-        /* x-coord is 2 bytes long */
-        if (pts[i].flag & 16) {
-          /* is same as prev x */
-          coords[i].x = coords[i-1].x;
-        } else {
-          /* is not the same as prev x */
-          int16_t x = be16toh((int16_t)(*(x_p+1)) << 8 | (int16_t)(*x_p));
-          coords[i].x = coord.x + x;
-          x_p += 2;
-        }
-      }
-
-      if (pts[i].flag & 4) {
-        /* y-coord is 1 byte long */
-        if (pts[i].flag & 32)
-          /* is positive */
-          coords[i].y = coord.y + *y_p;
-        else
-          /* is negative */
-          coords[i].y = coord.y + -1.0 * *y_p;
-        ++y_p;
-      } else {
-        /* y-coord is 2 bytes long */
-        if (pts[i].flag & 32) {
-          /* is same as prev y */
-          coords[i].y = coords[i-1].y;
-        } else {
-          /* is not the same as prev y */
-          int16_t y = be16toh((int16_t)(*(y_p+1)) << 8 | (int16_t)(*y_p));
-          coords[i].y = coord.y + y;
-          y_p += 2;
-        }
-      }
-
-      coord.x = coords[i].x;
-      coord.y = coords[i].y;
-    }
-
-    *coord_n = pt_i;
-
-  } else {
-    printf("\n> compound glyph (%hd contour(s))", contr_n);
-  }
-
-  for (uint16_t i = 0; i < *coord_n; ++i)
-    printf("\n> coord #%hu: \tx=%.4f \ty=%.4f", i, coords[i].x, coords[i].y);
-
-  printf("\n--\n");
-
-  return coords;
-}
-
-////////////////
