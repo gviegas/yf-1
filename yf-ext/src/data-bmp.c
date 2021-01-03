@@ -2,7 +2,7 @@
  * YF
  * data-bmp.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -18,9 +18,6 @@
 
 #ifdef _DEFAULT_SOURCE
 # include <endian.h>
-# if __BYTE_ORDER == __BIG_ENDIAN
-#  define YF_BIGENDIAN
-# endif
 #else
 /* TODO */
 # error "Invalid platform"
@@ -238,7 +235,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
   }
   L_bmpfh fh;
   if (fread(&fh.type, 1, YF_BMPFH_SZ, file) < YF_BMPFH_SZ ||
-      fh.type != YF_BMP_TYPE)
+      le16toh(fh.type) != YF_BMP_TYPE)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
     fclose(file);
@@ -485,6 +482,11 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
         free(dt);
         return -1;
       }
+      size_t k[3] = {2, 1, 0};
+      if (le32toh(0xff) != 0xff) {
+        k[0] = 0;
+        k[2] = 2;
+      }
       size_t dt_i;
       for (int32_t i = from; i != to; i += inc) {
         if (fread(scln, 1, scln_sz, file) < scln_sz) {
@@ -496,15 +498,9 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
         }
         for (int32_t j = 0; j < w; ++j) {
           dt_i = channels*w*i + channels*j;
-#ifdef YF_BIGENDIAN
-          dt[dt_i++] = scln[3*j];
-          dt[dt_i++] = scln[3*j+1];
-          dt[dt_i++] = scln[3*j+2];
-#else
-          dt[dt_i++] = scln[3*j+2];
-          dt[dt_i++] = scln[3*j+1];
-          dt[dt_i++] = scln[3*j];
-#endif /* YF_BIGENDIAN */
+          dt[dt_i++] = scln[3*j+k[0]];
+          dt[dt_i++] = scln[3*j+k[1]];
+          dt[dt_i++] = scln[3*j+k[2]];
         }
       }
     } break;
@@ -553,6 +549,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
       free(dt);
       return -1;
   }
+
   fclose(file);
   free(scln);
 
@@ -560,5 +557,6 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
   data->pixfmt = channels == 4 ? YF_PIXFMT_RGBA8SRGB: YF_PIXFMT_RGB8SRGB;
   data->dim.width = w;
   data->dim.height = h < 0 ? -h : h;
+
   return 0;
 }
