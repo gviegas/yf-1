@@ -265,10 +265,12 @@
    printf("\n--\n"); } while (0)
 #endif /* YF_DEBUG */
 
-/* TODO */
+/*
+ * XXX: Ongoing devel.
+ */
 
 #define YF_SFNT_MAKETAG(c1, c2, c3, c4) \
-  (be32toh((c1 << 24) | (c2 << 16) | (c3 << 8) | c4))
+  htobe32(c1 | (c2 << 8) | (c3 << 16) | (c4 << 24))
 
 /*
  * Common
@@ -630,6 +632,9 @@ typedef struct {
   char *sample_text;
 } L_fontstr;
 
+/* Verifies if file is valid. */
+static int verify_file(FILE *file);
+
 /* Loads a font containing TrueType outline. */
 static int load_ttf(L_sfnt *sfnt, FILE *file);
 
@@ -661,6 +666,12 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     free(sfnt);
     return -1;
   }
+  if (verify_file(file) != 0) {
+    fclose(file);
+    free(sfnt);
+    return -1;
+  }
+  rewind(file);
 
   /* font directory */
   sfnt->dir = calloc(1, sizeof(L_dir));
@@ -1057,6 +1068,60 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   /* TODO... */
 
   fclose(file);
+  return 0;
+}
+
+static int verify_file(FILE *file) {
+  assert(!feof(file));
+
+  rewind(file);
+  L_diro diro;
+  if (fread(&diro, YF_SFNT_DIROSZ, 1, file) < 1) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  const uint16_t tab_n = be16toh(diro.tab_n);
+  L_dire dires[tab_n];
+  if (fread(dires, YF_SFNT_DIRESZ, tab_n, file) < tab_n) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  uint32_t chsum, off, dw_n, *buf = NULL;
+  for (uint16_t i = 0; i < tab_n; ++i) {
+    off = be32toh(dires[i].off);
+    if (fseek(file, off, SEEK_SET) != 0) {
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      return -1;
+    }
+
+    dw_n = (be32toh(dires[i].len) + 3) >> 2;
+    buf = malloc(dw_n << 2);
+    if (buf == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+
+    if (fread(buf, 4, dw_n, file) < dw_n) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      free(buf);
+      return -1;
+    }
+
+    chsum = 0;
+    for (uint32_t j = 0; j < dw_n; ++j)
+      chsum += buf[j];
+    free(buf);
+
+    if (chsum != be32toh(dires[i].chsum) &&
+        be32toh(dires[i].tag != YF_SFNT_HEADTAG))
+    {
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      return -1;
+    }
+  }
+
   return 0;
 }
 
