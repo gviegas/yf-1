@@ -2,11 +2,10 @@
  * YF
  * scene.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
-#include <stdint.h>
 #include <assert.h>
 
 #include <yf/com/yf-list.h>
@@ -72,7 +71,7 @@ struct YF_scene_o {
 typedef struct {
   YF_context ctx;
   YF_buffer buf;
-  unsigned buf_offs;
+  unsigned buf_off;
   YF_list res_obtd;
   YF_cmdbuf cb;
   YF_hashset mdls;
@@ -200,7 +199,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
   int mdl_pend = yf_hashset_getlen(l_vars.mdls) != 0;
   int mdli_pend = yf_hashset_getlen(l_vars.mdls_inst) != 0;
 
-  l_vars.buf_offs = 0;
+  l_vars.buf_off = 0;
   if ((l_vars.cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH)) == NULL) {
     clear_hset();
     return -1;
@@ -640,32 +639,32 @@ static int render_mdl_inst(YF_scene scn) {
 static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst) {
   YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_GLOB);
   const YF_slice elems = {0, 1};
-  size_t offs, sz;
+  size_t off, sz;
 
   switch (resrq) {
     case YF_RESRQ_MDL:
     case YF_RESRQ_MDL4:
     case YF_RESRQ_MDL16:
     case YF_RESRQ_MDL64:
-      offs = l_vars.buf_offs;
+      off = l_vars.buf_off;
       sz = YF_UGLOBSZ_MDL;
       /* view matrix */
-      if (yf_buffer_copy(l_vars.buf, l_vars.buf_offs,
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
             *yf_camera_getview(scn->cam), sizeof(YF_mat4)) != 0)
       {
         return -1;
       }
-      l_vars.buf_offs += sizeof(YF_mat4);
+      l_vars.buf_off += sizeof(YF_mat4);
       /* projection matrix */
-      if (yf_buffer_copy(l_vars.buf, l_vars.buf_offs,
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
             *yf_camera_getproj(scn->cam), sizeof(YF_mat4)) != 0)
       {
         return -1;
       }
-      l_vars.buf_offs += sizeof(YF_mat4);
+      l_vars.buf_off += sizeof(YF_mat4);
       /* copy */
       if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_UGLOB, elems,
-            &l_vars.buf, &offs, &sz) != 0)
+            &l_vars.buf, &off, &sz) != 0)
       {
         return -1;
       }
@@ -683,37 +682,37 @@ static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
 {
   YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
   const YF_slice elems = {0, 1};
-  size_t offs, sz;
+  size_t off, sz;
 
   switch (resrq) {
     case YF_RESRQ_MDL:
     case YF_RESRQ_MDL4:
     case YF_RESRQ_MDL16:
     case YF_RESRQ_MDL64:
-      offs = l_vars.buf_offs;
+      off = l_vars.buf_off;
       sz = obj_n * YF_UINSTSZ_MDL;
       for (unsigned i = 0; i < obj_n; ++i) {
         YF_model mdl = ((YF_model *)objs)[i];
         yf_mat4_mul(*yf_model_getmvp(mdl), *yf_camera_getxform(scn->cam),
             *yf_model_getxform(mdl));
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_offs,
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
               *yf_model_getxform(mdl), sizeof(YF_mat4)) != 0)
         {
           return -1;
         }
-        l_vars.buf_offs += sizeof(YF_mat4);
+        l_vars.buf_off += sizeof(YF_mat4);
         /* model-view-projection matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_offs,
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
               *yf_model_getmvp(mdl), sizeof(YF_mat4)) != 0)
         {
           return -1;
         }
-        l_vars.buf_offs += sizeof(YF_mat4);
+        l_vars.buf_off += sizeof(YF_mat4);
       }
       /* copy */
       if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_UINST, elems,
-            &l_vars.buf, &offs, &sz) != 0)
+            &l_vars.buf, &off, &sz) != 0)
       {
         return -1;
       }

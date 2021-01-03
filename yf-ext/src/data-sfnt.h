@@ -9,6 +9,7 @@
 #define YF_DATA_SFNT_H
 
 /* Loads font resource from a SFNT file. */
+/* TODO */
 int yf_loadsfnt(const char *pathname/* 'fontdt'... */);
 
 #endif /* YF_DATA_SFNT_H */

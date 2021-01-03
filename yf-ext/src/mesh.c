@@ -2,12 +2,12 @@
  * YF
  * mesh.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <stdint.h>
 #include <limits.h>
 #include <assert.h>
 
@@ -15,8 +15,8 @@
 #include <yf/core/yf-buffer.h>
 
 #include "mesh.h"
-#include "vertex.h"
 #include "coreobj.h"
+#include "vertex.h"
 #include "data-obj.h"
 
 #ifdef YF_DEBUG
@@ -113,11 +113,11 @@ void yf_mesh_deinit(YF_mesh mesh) {
   const size_t vtx_sz = mesh->v.n * mesh->v.stride;
   const size_t idx_sz = mesh->i.n * mesh->i.stride;
   const size_t sz = vtx_sz + idx_sz;
-  const size_t offs = mesh->v.offset;
+  const size_t off = mesh->v.offset;
   size_t blk_i = l_blk_n;
 
   for (size_t i = 0; i < l_blk_n; ++i) {
-    if (l_blks[i].offset > offs) {
+    if (l_blks[i].offset > off) {
       blk_i = i;
       break;
     }
@@ -125,34 +125,34 @@ void yf_mesh_deinit(YF_mesh mesh) {
 
   if (l_blk_n == 0) {
     /* no blocks */
-    l_blks[0].offset = offs;
+    l_blks[0].offset = off;
     l_blks[0].size = sz;
     ++l_blk_n;
   } else if (blk_i == l_blk_n) {
     /* no next blocks */
     L_memblk *prev = l_blks+blk_i-1;
-    if (prev->offset + prev->size == offs) {
+    if (prev->offset + prev->size == off) {
       prev->size += sz;
     } else {
       if (l_blk_n == l_blk_cap && resize_blks(blk_i+1) < blk_i+1)
         /* TODO */
         assert(0);
-      l_blks[blk_i].offset = offs;
+      l_blks[blk_i].offset = off;
       l_blks[blk_i].size = sz;
       ++l_blk_n;
     }
   } else if (blk_i == 0) {
     /* no previous blocks */
     L_memblk *next = l_blks;
-    if (offs + sz == next->offset) {
-      next->offset = offs;
+    if (off + sz == next->offset) {
+      next->offset = off;
       next->size += sz;
     } else {
       if (l_blk_n == l_blk_cap && resize_blks(l_blk_n+1) < l_blk_n+1)
         /* TODO */
         assert(0);
       memmove(next+1, next, l_blk_n * sizeof *l_blks);
-      l_blks[0].offset = offs;
+      l_blks[0].offset = off;
       l_blks[0].size = sz;
       ++l_blk_n;
     }
@@ -162,15 +162,15 @@ void yf_mesh_deinit(YF_mesh mesh) {
     L_memblk *next = l_blks+blk_i;
     int prev_merged = 0;
     int next_merged = 0;
-    if (prev->offset + prev->size == offs) {
+    if (prev->offset + prev->size == off) {
       prev->size += sz;
       prev_merged = 1;
     }
-    if (offs + sz == next->offset) {
+    if (off + sz == next->offset) {
       if (prev_merged) {
         prev->size += next->size;
       } else {
-        next->offset = offs;
+        next->offset = off;
         next->size += sz;
       }
       next_merged = 1;
@@ -180,7 +180,7 @@ void yf_mesh_deinit(YF_mesh mesh) {
         /* TODO */
         assert(0);
       memmove(next+1, next, (l_blk_n - blk_i) * sizeof *l_blks);
-      l_blks[blk_i].offset = offs;
+      l_blks[blk_i].offset = off;
       l_blks[blk_i].size = sz;
       ++l_blk_n;
     } else if (prev_merged && next_merged) {
@@ -253,9 +253,9 @@ int yf_mesh_setvtx(YF_mesh mesh, YF_slice range, const void *data) {
     return -1;
   }
 
-  size_t offs = mesh->v.offset + mesh->v.stride * range.i;
+  size_t off = mesh->v.offset + mesh->v.stride * range.i;
   size_t sz = mesh->v.stride * range.n;
-  return yf_buffer_copy(l_buf, offs, data, sz);
+  return yf_buffer_copy(l_buf, off, data, sz);
 }
 
 void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n, int inst_id) {
@@ -333,16 +333,16 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data) {
     }
   }
 
-  const size_t offs = l_blks[blk_i].offset;
-  if (yf_buffer_copy(l_buf, offs, data->v.data, vtx_sz) != 0)
+  const size_t off = l_blks[blk_i].offset;
+  if (yf_buffer_copy(l_buf, off, data->v.data, vtx_sz) != 0)
     return -1;
   if (idx_sz > 0) {
-    if (yf_buffer_copy(l_buf, offs + vtx_sz, data->i.data, idx_sz) != 0)
+    if (yf_buffer_copy(l_buf, off + vtx_sz, data->i.data, idx_sz) != 0)
       return -1;
   }
-  mesh->v.offset = offs;
+  mesh->v.offset = off;
   mesh->v.n = data->v.n;
-  mesh->i.offset = offs + vtx_sz;
+  mesh->i.offset = off + vtx_sz;
   mesh->i.stride = data->i.stride;
   mesh->i.n = data->i.n;
 

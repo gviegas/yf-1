@@ -149,9 +149,9 @@ void yf_camera_point(YF_camera cam, const YF_vec3 pos) {
 void yf_camera_movef(YF_camera cam, YF_float d) {
   assert(cam != NULL);
 
-  YF_vec3 offs;
-  yf_vec3_muls(offs, cam->dir, d);
-  yf_vec3_addi(cam->pos, offs);
+  YF_vec3 off;
+  yf_vec3_muls(off, cam->dir, d);
+  yf_vec3_addi(cam->pos, off);
 
   cam->pend_mask |= YF_PEND_V;
 }
@@ -163,9 +163,9 @@ void yf_camera_moveb(YF_camera cam, YF_float d) {
 void yf_camera_moveu(YF_camera cam, YF_float d) {
   assert(cam != NULL);
 
-  YF_vec3 offs;
-  yf_vec3_muls(offs, l_wld_u, d);
-  yf_vec3_addi(cam->pos, offs);
+  YF_vec3 off;
+  yf_vec3_muls(off, l_wld_u, d);
+  yf_vec3_addi(cam->pos, off);
 
   cam->pend_mask |= YF_PEND_V;
 }
@@ -177,10 +177,10 @@ void yf_camera_moved(YF_camera cam, YF_float d) {
 void yf_camera_movel(YF_camera cam, YF_float d) {
   assert(cam != NULL);
 
-  YF_vec3 side, offs;
+  YF_vec3 side, off;
   yf_vec3_cross(side, cam->dir, l_wld_u);
-  yf_vec3_muls(offs, side, d);
-  yf_vec3_subi(cam->pos, offs);
+  yf_vec3_muls(off, side, d);
+  yf_vec3_subi(cam->pos, off);
 
   cam->pend_mask |= YF_PEND_V;
 }
