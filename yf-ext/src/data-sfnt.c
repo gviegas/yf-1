@@ -1128,8 +1128,37 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   const uint32_t str_off = name_off + be16toh(sfnt.name->nameh.str_off);
   fill_str(sfnt.name, file, str_off, &font->str);
 
-  // TODO...
+  if (sfnt.ttf.glyf != NULL && sfnt.ttf.loca != NULL) {
+    if (sfnt.head->loca_fmt == 0) {
+      /* 16-bit offsets: pre-multiply, byte-swap and copy to dw buffer */
+      font->ttf.loca = malloc(font->glyph_n * sizeof(uint32_t));
+      if (font->ttf.loca == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        deinit_font(font);
+        deinit_tables(&sfnt);
+        fclose(file);
+        return -1;
+      }
+      for (uint32_t i = 0; i <= font->glyph_n; ++i)
+        font->ttf.loca[i] = be16toh(sfnt.ttf.loca->off16[i]) << 1;
+    } else {
+      /* 32-bit offsets: take ownership and byte-swap */
+      font->ttf.loca = sfnt.ttf.loca->off32;
+      sfnt.ttf.loca->off32 = NULL;
+      for (uint32_t i = 0; i <= font->glyph_n; ++i)
+        font->ttf.loca[i] = be32toh(font->ttf.loca[i]);
+    }
+    /* take ownership of raw glyph data */
+    font->ttf.glyf = sfnt.ttf.glyf->glyphs;
+    sfnt.ttf.glyf->glyphs = NULL;
+  } else {
+    /* TODO */
+    assert(0);
+  }
 
+  /* TODO: Pass on the font data. */
+
+  deinit_tables(&sfnt);
   fclose(file);
   return 0;
 }
