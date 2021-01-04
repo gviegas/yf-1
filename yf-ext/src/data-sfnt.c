@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-hashset.h>
 #include <yf/com/yf-error.h>
 
 #include "data-sfnt.h"
@@ -608,10 +609,19 @@ typedef struct {
 
 /* Font mapping. */
 typedef struct {
-  /* TODO */
-  uint16_t first_code;
-  uint16_t entry_n;
-  uint16_t *glyph_ids;
+#define YF_SFNT_MAP_SPAR 0
+#define YF_SFNT_MAP_TRIM 1
+  int map;
+  union {
+    struct {
+      YF_hashset glyph_ids;
+    } sparse;
+    struct {
+      uint16_t first_code;
+      uint16_t entry_n;
+      uint16_t *glyph_ids;
+    } trimmed;
+  };
 } L_fontmap;
 
 /* Font strings. */
@@ -648,6 +658,9 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
 /* Fills font strings. */
 static int fill_str(const L_name *name, FILE *file, uint32_t str_off,
     L_fontstr *fstr);
+
+/* Compares glyph IDs of a 'L_fontmap' sparse format. */
+static int cmp_fmap(const void *a, const void *b);
 
 int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   if (pathname == NULL) {
@@ -1335,23 +1348,40 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
   if (set_mapping(sfnt->cmap, file, cmap_off, &fmap) != 0)
     assert(0);
   YF_SFNT_GLYF_PRINT(sfnt->ttf.glyf, glyf_len);
-  for (uint16_t i = 0; i < fmap.entry_n; ++i) {
-    uint16_t code = fmap.first_code+i;
-    if (code < 32) continue;
-    else if (code > 127) break;
-    uint16_t id = fmap.glyph_ids[i];
-    L_glyfd *gd;
-    if (sfnt->head->loca_fmt == 0) {
-      uint32_t off = 2 * be16toh(sfnt->ttf.loca->off16[id]);
+  if (fmap.map == YF_SFNT_MAP_TRIM) {
+    printf("\n[glyf - trimmed format (#%hu)]", fmap.trimmed.entry_n);
+    for (uint16_t i = 0; i < fmap.trimmed.entry_n; ++i) {
+      uint16_t code = fmap.trimmed.first_code+i;
+      if (code < 32) continue;
+      else if (code > 127) break;
+      uint16_t id = fmap.trimmed.glyph_ids[i];
+      uint32_t off;
+      if (sfnt->head->loca_fmt == 0)
+        off = be16toh(sfnt->ttf.loca->off16[id]) << 1;
+      else
+        off = be32toh(sfnt->ttf.loca->off32[id]);
       assert((off % _Alignof(L_glyfd)) == 0);
-      gd = (L_glyfd *)(sfnt->ttf.glyf->glyphs+off);
-    } else {
-      uint32_t off = be32toh(sfnt->ttf.loca->off32[id]);
-      assert((off % _Alignof(L_glyfd)) == 0);
-      gd = (L_glyfd *)(sfnt->ttf.glyf->glyphs+off);
+      L_glyfd *gd = (L_glyfd *)(sfnt->ttf.glyf->glyphs+off);
+      printf("\n[glyf #%hu (%c)]", id, code);
+      YF_SFNT_GLYFD_PRINT(gd);
     }
-    printf("\n[glyf #%hu (%c)]", id, code);
-    YF_SFNT_GLYFD_PRINT(gd);
+  } else {
+    YF_hashset hset = fmap.sparse.glyph_ids;
+    printf("\n[glyf - sparse format (#%lu)]", yf_hashset_getlen(hset));
+    while (yf_hashset_getlen(hset) != 0) {
+      uintptr_t kv = (uintptr_t)yf_hashset_extract(hset, NULL);
+      uint16_t code = kv;
+      uint16_t id = kv >> 16;
+      uint32_t off;
+      if (sfnt->head->loca_fmt == 0)
+        off = be16toh(sfnt->ttf.loca->off16[id]) << 1;
+      else
+        off = be32toh(sfnt->ttf.loca->off32[id]);
+      assert((off % _Alignof(L_glyfd)) == 0);
+      L_glyfd *gd = (L_glyfd *)(sfnt->ttf.glyf->glyphs+off);
+      printf("\n[glyf #%hu (%c)]", id, code);
+      YF_SFNT_GLYFD_PRINT(gd);
+    }
   }
 #endif
 
@@ -1494,6 +1524,11 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         free(var);
         return -1;
       }
+      YF_hashset glyph_ids = yf_hashset_init(NULL, cmp_fmap);
+      if (glyph_ids == NULL) {
+        free(var);
+        return -1;
+      }
       uint16_t end_code, start_code, code, delta, rng_off, idx;
       for (uint16_t i = 0; var[i] != 0xffff; ++i) {
         end_code = be16toh(var[i]);
@@ -1504,32 +1539,32 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
           do {
             idx = var[3*seg_cnt+i+1 + (rng_off>>1) + (code-start_code)];
             idx = be16toh(idx);
-            /* TODO: 'code','idx' mapping. */
-            assert(0);
+            yf_hashset_insert(glyph_ids,
+                (const void *)((uintptr_t)code | (idx << 16)));
           } while (code++ < end_code);
         } else {
           do {
             idx = delta + code;
-            /* TODO: 'code','idx' mapping. */
-            assert(0);
+            yf_hashset_insert(glyph_ids,
+                (const void *)((uintptr_t)code | (idx << 16)));
           } while (code++ < end_code);
         }
       }
       free(var);
+      fmap->map = YF_SFNT_MAP_SPAR;
+      fmap->sparse.glyph_ids = glyph_ids;
     } break;
 
     case 6: {
       /* trimmed format */
-      uint16_t first_code;
-      uint16_t entry_n;
-      if (fread(&first_code, sizeof first_code, 1, file) < 1 ||
-          fread(&entry_n, sizeof entry_n, 1, file) < 1)
-      {
+      struct { uint16_t first_code, entry_n; } sub_6;
+      static_assert(sizeof sub_6 == 4, "!sizeof");
+      if (fread(&sub_6, sizeof sub_6, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
       }
-      first_code = be16toh(first_code);
-      entry_n = be16toh(entry_n);
+      const uint16_t first_code = be16toh(sub_6.first_code);
+      const uint16_t entry_n = be16toh(sub_6.entry_n);
       uint16_t *glyph_ids = malloc(entry_n * sizeof *glyph_ids);
       if (glyph_ids == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
@@ -1540,12 +1575,13 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         free(glyph_ids);
         return -1;
       }
-      /* TODO */
-      fmap->first_code = first_code;
-      fmap->entry_n = entry_n;
+      fmap->map = YF_SFNT_MAP_TRIM;
+      fmap->trimmed.first_code = first_code;
+      fmap->trimmed.entry_n = entry_n;
       for (uint16_t i = 0; i < entry_n; ++i)
         glyph_ids[i] = be16toh(glyph_ids[i]);
-      fmap->glyph_ids = glyph_ids;
+      fmap->trimmed.glyph_ids = glyph_ids;
+
 #ifdef YF_DEBUG
       printf("\n-- Font mapping (debug) --");
       printf("\nsub (6) - first_code: %hu", first_code);
@@ -1691,4 +1727,9 @@ static int fill_str(const L_name *name, FILE *file, uint32_t str_off,
   printf("\n--\n");
 #endif
   return 0;
+}
+
+static int cmp_fmap(const void *a, const void *b) {
+  /*return (uint16_t)a - (uint16_t)b;*/
+  return ((uintptr_t)a & 0xffff) - ((uintptr_t)b & 0xffff);
 }
