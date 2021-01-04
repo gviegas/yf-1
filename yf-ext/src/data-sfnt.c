@@ -1419,21 +1419,25 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
   assert(!feof(file));
   assert(fmap != NULL);
 
-  const uint16_t platf[3] = {htobe16(1), htobe16(3), 0};
-  const uint16_t encod[3] = {0,          htobe16(1), htobe16(3)};
-  const uint16_t fmt  [3] = {htobe16(6), htobe16(4), htobe16(4)};
+  /* encodings */
+  const struct { uint16_t plat, spec, fmt, lang; } encods[] = {
+    {0, 3, 4, 0}, /* Unicode (sparse) */
+    {1, 0, 6, 0}, /* Macintosh (roman, trimmed) */
+    {3, 1, 4, 0}  /* Windows (sparse) */
+  };
 
-  const uint16_t encod_n = be16toh(cmap->cmaph.tab_n);
+  const uint16_t tab_n = be16toh(cmap->cmaph.tab_n);
+  const uint16_t encod_n = sizeof encods / sizeof encods[0];
   uint16_t encod_i = UINT16_MAX;
 
   uint32_t sub_off = 0;
   struct { uint16_t fmt, len, lang; } sub_hdr;
   static_assert(sizeof sub_hdr == 6, "!sizeof");
 
-  for (uint16_t i = 0; i < sizeof fmt / sizeof fmt[0]; ++i) {
-    for (uint16_t j = 0; j < encod_n; ++j) {
-      if (cmap->cmapes[j].platform != platf[i] ||
-          cmap->cmapes[j].encoding != encod[i])
+  for (uint16_t i = 0; i < encod_n; ++i) {
+    for (uint16_t j = 0; j < tab_n; ++j) {
+      if (be16toh(cmap->cmapes[j].platform) != encods[i].plat ||
+          be16toh(cmap->cmapes[j].encoding) != encods[i].spec)
         continue;
 
       sub_off = off + be32toh(cmap->cmapes[j].off);
@@ -1444,7 +1448,7 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         return -1;
       }
 
-      if (sub_hdr.fmt == fmt[i]) {
+      if (be16toh(sub_hdr.fmt) == encods[i].fmt) {
         encod_i = j;
         i = UINT16_MAX-1;
         break;
@@ -1470,12 +1474,52 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
       assert(0);
       return -1;
 
-    case 4:
-      /* TODO */
-      assert(0);
-      return -1;
+    case 4: {
+      /* sparse format */
+      struct { uint16_t seg_cnt_x2, search_rng, entry_sel, rng_shf; } sub_4;
+      static_assert(sizeof sub_4 == 8, "!sizeof");
+      if (fread(&sub_4, sizeof sub_4, 1, file) < 1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+      }
+      const uint16_t seg_cnt = be16toh(sub_4.seg_cnt_x2) >> 1;
+      const size_t len = be16toh(sub_hdr.len) - (sizeof sub_hdr+sizeof sub_4);
+      uint16_t *var = malloc(len);
+      if (var == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+      }
+      if (fread(var, len, 1, file) < 1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        free(var);
+        return -1;
+      }
+      uint16_t end_code, start_code, code, delta, rng_off, idx;
+      for (uint16_t i = 0; var[i] != 0xffff; ++i) {
+        end_code = be16toh(var[i]);
+        start_code = code = be16toh(var[seg_cnt+i+1]);
+        delta = be16toh(var[2*seg_cnt+i+1]);
+        rng_off = be16toh(var[3*seg_cnt+i+1]);
+        if (rng_off != 0) {
+          do {
+            idx = var[3*seg_cnt+i+1 + (rng_off>>1) + (code-start_code)];
+            idx = be16toh(idx);
+            /* TODO: 'code','idx' mapping. */
+            assert(0);
+          } while (code++ < end_code);
+        } else {
+          do {
+            idx = delta + code;
+            /* TODO: 'code','idx' mapping. */
+            assert(0);
+          } while (code++ < end_code);
+        }
+      }
+      free(var);
+    } break;
 
     case 6: {
+      /* trimmed format */
       uint16_t first_code;
       uint16_t entry_n;
       if (fread(&first_code, sizeof first_code, 1, file) < 1 ||
