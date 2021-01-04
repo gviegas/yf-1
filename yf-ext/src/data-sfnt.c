@@ -677,8 +677,11 @@ static int verify_file(FILE *file);
 /* Loads a font containing TrueType outline. */
 static int load_ttf(L_sfnt *sfnt, FILE *file);
 
+/* Deinitializes SFNT tables. */
+static void deinit_tables(L_sfnt *sfnt);
+
 /* Deinitializes font data. */
-static void deinit_font(L_sfnt *sfnt);
+static void deinit_font(L_font *font);
 
 /* Sets mapping of character codes to glyph indices. */
 static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
@@ -719,7 +722,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->dir = calloc(1, sizeof(L_dir));
   if (sfnt->dir == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -727,13 +730,13 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   /* offset subtable */
   if (fread(&sfnt->dir->diro, YF_SFNT_DIROSZ, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
   if (sfnt->dir->diro.version != YF_SFNT_TTF) {
     yf_seterr(YF_ERR_UNSUP, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -746,13 +749,13 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->dir->dires = malloc(tab_n * sizeof(L_dire));
   if (sfnt->dir->dires == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
   if (fread(sfnt->dir->dires, sizeof(L_dire), tab_n, file) < tab_n) {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -821,7 +824,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
       os2_len < YF_SFNT_OS2V0 || post_len < YF_SFNT_POSTHSZ)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -830,7 +833,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->head = calloc(1, sizeof(L_head));
   if (sfnt->head == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -838,7 +841,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
       fread(sfnt->head, head_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -850,7 +853,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->hhea = calloc(1, sizeof(L_hhea));
   if (sfnt->hhea == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -858,7 +861,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
       fread(sfnt->hhea, hhea_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -871,7 +874,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->maxp = calloc(1, sizeof(L_maxp));
   if (sfnt->maxp == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -879,7 +882,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
       fread(sfnt->maxp, maxp_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -892,7 +895,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->hmtx = calloc(1, sizeof(L_hmtx));
   if (sfnt->hmtx == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -901,7 +904,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->hmtx->hmtxes = malloc(hmetric_n * sizeof(L_hmtxe));
   if (sfnt->hmtx->hmtxes == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -909,7 +912,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
       fread(sfnt->hmtx->hmtxes, sizeof(L_hmtxe), hmetric_n, file) < hmetric_n)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -918,13 +921,13 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     sfnt->hmtx->lbears = malloc(n * sizeof(int16_t));
     if (sfnt->hmtx->lbears == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_font(sfnt);
+      deinit_tables(sfnt);
       fclose(file);
       return -1;
     }
     if (fread(sfnt->hmtx->lbears, sizeof(int16_t), n, file) < n) {
       yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_font(sfnt);
+      deinit_tables(sfnt);
       fclose(file);
       return -1;
     }
@@ -943,7 +946,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->os2 = calloc(1, sizeof(L_os2));
   if (sfnt->os2 == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -951,7 +954,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
       fread(sfnt->os2, os2_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -963,7 +966,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->post = calloc(1, sizeof(L_post));
   if (sfnt->post == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -971,7 +974,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
       fread(&sfnt->post->posth, YF_SFNT_POSTHSZ, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -983,7 +986,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->cmap = calloc(1, sizeof(L_cmap));
   if (sfnt->cmap == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -991,7 +994,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
       fread(&sfnt->cmap->cmaph, YF_SFNT_CMAPHSZ, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -1004,13 +1007,13 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->cmap->cmapes = malloc(cmap_n * sizeof(L_cmape));
   if (sfnt->cmap->cmapes == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
   if (fread(sfnt->cmap->cmapes, sizeof(L_cmape), cmap_n, file) < cmap_n) {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -1026,17 +1029,11 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   }
 #endif
 
-  /* TODO */
-  L_fontmap fmap = {0};
-  if (set_mapping(sfnt->cmap, file, cmap_off, &fmap) != 0)
-    /* TODO */
-    assert(0);
-
   /* name table */
   sfnt->name = calloc(1, sizeof(L_name));
   if (sfnt->name == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -1044,7 +1041,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
       fread(&sfnt->name->nameh, YF_SFNT_NAMEHSZ, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -1057,13 +1054,13 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   sfnt->name->namees = malloc(name_n * sizeof(L_namee));
   if (sfnt->name->namees == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
   if (fread(sfnt->name->namees, sizeof(L_namee), name_n, file) < name_n) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
@@ -1074,7 +1071,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   if (sfnt->name->nameh.format != 0) {
     if (fread(&sfnt->name->lang_n, sizeof(uint16_t), 1, file) < 1) {
       yf_seterr(YF_ERR_INVFILE, __func__);
-      deinit_font(sfnt);
+      deinit_tables(sfnt);
       fclose(file);
       return -1;
     }
@@ -1082,33 +1079,62 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     sfnt->name->namels = malloc(n * sizeof(L_namel));
     if (sfnt->name->namels == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_font(sfnt);
+      deinit_tables(sfnt);
       fclose(file);
       return -1;
     }
     if (fread(sfnt->name->namels, sizeof(L_namel), n, file) < n) {
       yf_seterr(YF_ERR_INVFILE, __func__);
-      deinit_font(sfnt);
+      deinit_tables(sfnt);
       fclose(file);
       return -1;
     }
   }
 
-  /* TODO */
-  L_fontstr fstr = {0};
-  const uint32_t str_off = name_off + be16toh(sfnt->name->nameh.str_off);
-  if (fill_str(sfnt->name, file, str_off, &fstr) != 0)
-    /* TODO */
-    assert(0);
-
   /* TODO: Check if this is a ttf file before this call. */
   if (load_ttf(sfnt, file) != 0) {
-    deinit_font(sfnt);
+    deinit_tables(sfnt);
     fclose(file);
     return -1;
   }
 
-  /* TODO... */
+  L_font *font = calloc(1, sizeof *font);
+  if (font == NULL) {
+    deinit_tables(sfnt);
+    fclose(file);
+    return -1;
+  }
+
+  font->upem = be16toh(sfnt->head->upem);
+  font->x_min = be16toh(sfnt->head->x_min);
+  font->y_min = be16toh(sfnt->head->y_min);
+  font->x_max = be16toh(sfnt->head->x_max);
+  font->y_max = be16toh(sfnt->head->y_max);
+  font->glyph_n = be16toh(sfnt->maxp->glyph_n);
+  font->pt_max = be16toh(sfnt->maxp->pt_max);
+  font->contr_max = be16toh(sfnt->maxp->contr_max);
+  font->comp_pt_max = be16toh(sfnt->maxp->comp_pt_max);
+  font->comp_contr_max = be16toh(sfnt->maxp->comp_contr_max);
+  font->ascender = be16toh(sfnt->hhea->ascender);
+  font->descender = be16toh(sfnt->hhea->descender);
+  font->line_gap = be16toh(sfnt->hhea->line_gap);
+  font->adv_wdt_max = be16toh(sfnt->hhea->adv_wdt_max);
+  font->lbear_min = be16toh(sfnt->hhea->lbear_min);
+  font->rbear_min = be16toh(sfnt->hhea->rbear_min);
+  font->x_extent_max = be16toh(sfnt->hhea->x_extent_max);
+
+  if (set_mapping(sfnt->cmap, file, cmap_off, &font->map) != 0) {
+    deinit_tables(sfnt);
+    free(font);
+    fclose(file);
+    return -1;
+  }
+
+  /* TODO: This is unlikely to be of any use. */
+  const uint32_t str_off = name_off + be16toh(sfnt->name->nameh.str_off);
+  fill_str(sfnt->name, file, str_off, &font->str);
+
+  // TODO...
 
   fclose(file);
   return 0;
@@ -1417,7 +1443,7 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
   return 0;
 }
 
-static void deinit_font(L_sfnt *sfnt) {
+static void deinit_tables(L_sfnt *sfnt) {
   if (sfnt == NULL)
     return;
 
@@ -1444,6 +1470,7 @@ static void deinit_font(L_sfnt *sfnt) {
   }
   free(sfnt->os2);
   free(sfnt->post);
+
   if (sfnt->ttf.cvt != NULL) {
     free(sfnt->ttf.cvt->ctrl_vals);
     free(sfnt->ttf.cvt);
@@ -1468,7 +1495,43 @@ static void deinit_font(L_sfnt *sfnt) {
     free(sfnt->ttf.prep->program);
     free(sfnt->ttf.prep);
   }
-  free(sfnt);
+
+  /* XXX: The 'sfnt' ptr itself is not freed, since this structure is
+     expected to be allocated from the stack. */
+}
+
+static void deinit_font(L_font *font) {
+  if (font == NULL)
+    return;
+
+  free(font->str.copyright);
+  free(font->str.family);
+  free(font->str.subfamily);
+  free(font->str.uid);
+  free(font->str.name);
+  free(font->str.version);
+  free(font->str.trademark);
+  free(font->str.manufacturer);
+  free(font->str.designer);
+  free(font->str.description);
+  free(font->str.license);
+  free(font->str.typographic_family);
+  free(font->str.typographic_subfamily);
+  free(font->str.sample_text);
+
+  switch (font->map.map) {
+    case YF_SFNT_MAP_SPAR:
+      yf_hashset_deinit(font->map.sparse.glyph_ids);
+      break;
+    case YF_SFNT_MAP_TRIM:
+      free(font->map.trimmed.glyph_ids);
+      break;
+  }
+
+  free(font->ttf.loca);
+  free(font->ttf.glyf);
+
+  free(font);
 }
 
 static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
