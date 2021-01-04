@@ -700,62 +700,56 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     return -1;
   }
 
-  L_sfnt *sfnt = calloc(1, sizeof(L_sfnt));
-  if (sfnt == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    return -1;
-  }
+  L_sfnt sfnt = {0};
   FILE *file = fopen(pathname, "r");
   if (file == NULL) {
     yf_seterr(YF_ERR_NOFILE, __func__);
-    free(sfnt);
     return -1;
   }
   if (verify_file(file) != 0) {
     fclose(file);
-    free(sfnt);
     return -1;
   }
   rewind(file);
 
   /* font directory */
-  sfnt->dir = calloc(1, sizeof(L_dir));
-  if (sfnt->dir == NULL) {
+  sfnt.dir = calloc(1, sizeof(L_dir));
+  if (sfnt.dir == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
 
   /* offset subtable */
-  if (fread(&sfnt->dir->diro, YF_SFNT_DIROSZ, 1, file) < 1) {
+  if (fread(&sfnt.dir->diro, YF_SFNT_DIROSZ, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
-  if (sfnt->dir->diro.version != YF_SFNT_TTF) {
+  if (sfnt.dir->diro.version != YF_SFNT_TTF) {
     yf_seterr(YF_ERR_UNSUP, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
-  const uint16_t tab_n = be16toh(sfnt->dir->diro.tab_n);
+  const uint16_t tab_n = be16toh(sfnt.dir->diro.tab_n);
 #ifdef YF_DEBUG
-  YF_SFNT_DIRO_PRINT(&sfnt->dir->diro);
+  YF_SFNT_DIRO_PRINT(&sfnt.dir->diro);
 #endif
 
   /* directory entries */
-  sfnt->dir->dires = malloc(tab_n * sizeof(L_dire));
-  if (sfnt->dir->dires == NULL) {
+  sfnt.dir->dires = malloc(tab_n * sizeof(L_dire));
+  if (sfnt.dir->dires == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
-  if (fread(sfnt->dir->dires, sizeof(L_dire), tab_n, file) < tab_n) {
+  if (fread(sfnt.dir->dires, sizeof(L_dire), tab_n, file) < tab_n) {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
@@ -786,34 +780,34 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   uint32_t post_len = 0;
 
   for (uint16_t i = 0; i < tab_n; ++i) {
-    const uint32_t tag = be32toh(sfnt->dir->dires[i].tag);
+    const uint32_t tag = be32toh(sfnt.dir->dires[i].tag);
     if (tag == cmap_tag) {
-      cmap_off = be32toh(sfnt->dir->dires[i].off);
-      cmap_len = be32toh(sfnt->dir->dires[i].len);
+      cmap_off = be32toh(sfnt.dir->dires[i].off);
+      cmap_len = be32toh(sfnt.dir->dires[i].len);
     } else if (tag == head_tag) {
-      head_off = be32toh(sfnt->dir->dires[i].off);
-      head_len = be32toh(sfnt->dir->dires[i].len);
+      head_off = be32toh(sfnt.dir->dires[i].off);
+      head_len = be32toh(sfnt.dir->dires[i].len);
     } else if (tag == hhea_tag) {
-      hhea_off = be32toh(sfnt->dir->dires[i].off);
-      hhea_len = be32toh(sfnt->dir->dires[i].len);
+      hhea_off = be32toh(sfnt.dir->dires[i].off);
+      hhea_len = be32toh(sfnt.dir->dires[i].len);
     } else if (tag == hmtx_tag) {
-      hmtx_off = be32toh(sfnt->dir->dires[i].off);
-      hmtx_len = be32toh(sfnt->dir->dires[i].len);
+      hmtx_off = be32toh(sfnt.dir->dires[i].off);
+      hmtx_len = be32toh(sfnt.dir->dires[i].len);
     } else if (tag == maxp_tag) {
-      maxp_off = be32toh(sfnt->dir->dires[i].off);
-      maxp_len = be32toh(sfnt->dir->dires[i].len);
+      maxp_off = be32toh(sfnt.dir->dires[i].off);
+      maxp_len = be32toh(sfnt.dir->dires[i].len);
     } else if (tag == name_tag) {
-      name_off = be32toh(sfnt->dir->dires[i].off);
-      name_len = be32toh(sfnt->dir->dires[i].len);
+      name_off = be32toh(sfnt.dir->dires[i].off);
+      name_len = be32toh(sfnt.dir->dires[i].len);
     } else if (tag == os2_tag) {
-      os2_off = be32toh(sfnt->dir->dires[i].off);
-      os2_len = be32toh(sfnt->dir->dires[i].len);
+      os2_off = be32toh(sfnt.dir->dires[i].off);
+      os2_len = be32toh(sfnt.dir->dires[i].len);
     } else if (tag == post_tag) {
-      post_off = be32toh(sfnt->dir->dires[i].off);
-      post_len = be32toh(sfnt->dir->dires[i].len);
+      post_off = be32toh(sfnt.dir->dires[i].off);
+      post_len = be32toh(sfnt.dir->dires[i].len);
     }
 #ifdef YF_DEBUG
-    YF_SFNT_DIRE_PRINT(sfnt->dir->dires+i);
+    YF_SFNT_DIRE_PRINT(sfnt.dir->dires+i);
 #endif
   }
   if (cmap_off == 0 || head_off == 0 || hhea_off == 0 || hmtx_off == 0 ||
@@ -824,117 +818,117 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
       os2_len < YF_SFNT_OS2V0 || post_len < YF_SFNT_POSTHSZ)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
 
   /* head table */
-  sfnt->head = calloc(1, sizeof(L_head));
-  if (sfnt->head == NULL) {
+  sfnt.head = calloc(1, sizeof(L_head));
+  if (sfnt.head == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
   if (fseek(file, head_off, SEEK_SET) != 0 ||
-      fread(sfnt->head, head_len, 1, file) < 1)
+      fread(sfnt.head, head_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
 #ifdef YF_DEBUG
-  YF_SFNT_HEAD_PRINT(sfnt->head);
+  YF_SFNT_HEAD_PRINT(sfnt.head);
 #endif
 
   /* hhea table */
-  sfnt->hhea = calloc(1, sizeof(L_hhea));
-  if (sfnt->hhea == NULL) {
+  sfnt.hhea = calloc(1, sizeof(L_hhea));
+  if (sfnt.hhea == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
   if (fseek(file, hhea_off, SEEK_SET) != 0 ||
-      fread(sfnt->hhea, hhea_len, 1, file) < 1)
+      fread(sfnt.hhea, hhea_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
-  const uint16_t hmetric_n = be16toh(sfnt->hhea->hmetric_n);
+  const uint16_t hmetric_n = be16toh(sfnt.hhea->hmetric_n);
 #ifdef YF_DEBUG
-  YF_SFNT_HHEA_PRINT(sfnt->hhea);
+  YF_SFNT_HHEA_PRINT(sfnt.hhea);
 #endif
 
   /* maxp table */
-  sfnt->maxp = calloc(1, sizeof(L_maxp));
-  if (sfnt->maxp == NULL) {
+  sfnt.maxp = calloc(1, sizeof(L_maxp));
+  if (sfnt.maxp == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
   if (fseek(file, maxp_off, SEEK_SET) != 0 ||
-      fread(sfnt->maxp, maxp_len, 1, file) < 1)
+      fread(sfnt.maxp, maxp_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
-  const uint16_t glyph_n = be16toh(sfnt->maxp->glyph_n);
+  const uint16_t glyph_n = be16toh(sfnt.maxp->glyph_n);
 #ifdef YF_DEBUG
-  YF_SFNT_MAXP_PRINT(sfnt->maxp);
+  YF_SFNT_MAXP_PRINT(sfnt.maxp);
 #endif
 
   /* hmtx table */
-  sfnt->hmtx = calloc(1, sizeof(L_hmtx));
-  if (sfnt->hmtx == NULL) {
+  sfnt.hmtx = calloc(1, sizeof(L_hmtx));
+  if (sfnt.hmtx == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
 
   /* hmtx entries */
-  sfnt->hmtx->hmtxes = malloc(hmetric_n * sizeof(L_hmtxe));
-  if (sfnt->hmtx->hmtxes == NULL) {
+  sfnt.hmtx->hmtxes = malloc(hmetric_n * sizeof(L_hmtxe));
+  if (sfnt.hmtx->hmtxes == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
   if (fseek(file, hmtx_off, SEEK_SET) != 0 ||
-      fread(sfnt->hmtx->hmtxes, sizeof(L_hmtxe), hmetric_n, file) < hmetric_n)
+      fread(sfnt.hmtx->hmtxes, sizeof(L_hmtxe), hmetric_n, file) < hmetric_n)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
   if (hmetric_n < glyph_n) {
     const uint16_t n = glyph_n - hmetric_n;
-    sfnt->hmtx->lbears = malloc(n * sizeof(int16_t));
-    if (sfnt->hmtx->lbears == NULL) {
+    sfnt.hmtx->lbears = malloc(n * sizeof(int16_t));
+    if (sfnt.hmtx->lbears == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_tables(sfnt);
+      deinit_tables(&sfnt);
       fclose(file);
       return -1;
     }
-    if (fread(sfnt->hmtx->lbears, sizeof(int16_t), n, file) < n) {
+    if (fread(sfnt.hmtx->lbears, sizeof(int16_t), n, file) < n) {
       yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_tables(sfnt);
+      deinit_tables(&sfnt);
       fclose(file);
       return -1;
     }
   }
 #ifdef YF_DEBUG
   for (uint16_t i = 0; i < hmetric_n; ++i) {
-    YF_SFNT_HMTXE_PRINT(sfnt->hmtx->hmtxes+i);
+    YF_SFNT_HMTXE_PRINT(sfnt.hmtx->hmtxes+i);
     if (i == 3) {
       printf("\n... (#%hu hmtx entries)\n", hmetric_n);
       break;
@@ -943,85 +937,85 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
 #endif
 
   /* os2 table */
-  sfnt->os2 = calloc(1, sizeof(L_os2));
-  if (sfnt->os2 == NULL) {
+  sfnt.os2 = calloc(1, sizeof(L_os2));
+  if (sfnt.os2 == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
   if (fseek(file, os2_off, SEEK_SET) != 0 ||
-      fread(sfnt->os2, os2_len, 1, file) < 1)
+      fread(sfnt.os2, os2_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
 #ifdef YF_DEBUG
-  YF_SFNT_OS2_PRINT(sfnt->os2);
+  YF_SFNT_OS2_PRINT(sfnt.os2);
 #endif
 
   /* post table */
-  sfnt->post = calloc(1, sizeof(L_post));
-  if (sfnt->post == NULL) {
+  sfnt.post = calloc(1, sizeof(L_post));
+  if (sfnt.post == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
   if (fseek(file, post_off, SEEK_SET) != 0 ||
-      fread(&sfnt->post->posth, YF_SFNT_POSTHSZ, 1, file) < 1)
+      fread(&sfnt.post->posth, YF_SFNT_POSTHSZ, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
 #ifdef YF_DEBUG
-  YF_SFNT_POSTH_PRINT(&sfnt->post->posth);
+  YF_SFNT_POSTH_PRINT(&sfnt.post->posth);
 #endif
 
   /* cmap table */
-  sfnt->cmap = calloc(1, sizeof(L_cmap));
-  if (sfnt->cmap == NULL) {
+  sfnt.cmap = calloc(1, sizeof(L_cmap));
+  if (sfnt.cmap == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
   if (fseek(file, cmap_off, SEEK_SET) != 0 ||
-      fread(&sfnt->cmap->cmaph, YF_SFNT_CMAPHSZ, 1, file) < 1)
+      fread(&sfnt.cmap->cmaph, YF_SFNT_CMAPHSZ, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
-  const uint16_t cmap_n = be16toh(sfnt->cmap->cmaph.tab_n);
+  const uint16_t cmap_n = be16toh(sfnt.cmap->cmaph.tab_n);
 #ifdef YF_DEBUG
-  YF_SFNT_CMAPH_PRINT(&sfnt->cmap->cmaph);
+  YF_SFNT_CMAPH_PRINT(&sfnt.cmap->cmaph);
 #endif
 
   /* cmap entries */
-  sfnt->cmap->cmapes = malloc(cmap_n * sizeof(L_cmape));
-  if (sfnt->cmap->cmapes == NULL) {
+  sfnt.cmap->cmapes = malloc(cmap_n * sizeof(L_cmape));
+  if (sfnt.cmap->cmapes == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
-  if (fread(sfnt->cmap->cmapes, sizeof(L_cmape), cmap_n, file) < cmap_n) {
+  if (fread(sfnt.cmap->cmapes, sizeof(L_cmape), cmap_n, file) < cmap_n) {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
 #ifdef YF_DEBUG
   for (uint16_t i = 0; i < cmap_n; ++i) {
-    YF_SFNT_CMAPE_PRINT(sfnt->cmap->cmapes+i);
+    YF_SFNT_CMAPE_PRINT(sfnt.cmap->cmapes+i);
     uint16_t fmt;
-    uint32_t off = cmap_off+be32toh(sfnt->cmap->cmapes[i].off);
+    uint32_t off = cmap_off+be32toh(sfnt.cmap->cmapes[i].off);
     if (fseek(file, off, SEEK_SET) != 0 ||
         fread(&fmt, sizeof fmt, 1, file) < 1)
       assert(0);
@@ -1030,109 +1024,109 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
 #endif
 
   /* name table */
-  sfnt->name = calloc(1, sizeof(L_name));
-  if (sfnt->name == NULL) {
+  sfnt.name = calloc(1, sizeof(L_name));
+  if (sfnt.name == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
   if (fseek(file, name_off, SEEK_SET) != 0 ||
-      fread(&sfnt->name->nameh, YF_SFNT_NAMEHSZ, 1, file) < 1)
+      fread(&sfnt.name->nameh, YF_SFNT_NAMEHSZ, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
-  const uint16_t name_n = be16toh(sfnt->name->nameh.count);
+  const uint16_t name_n = be16toh(sfnt.name->nameh.count);
 #ifdef YF_DEBUG
-  YF_SFNT_NAMEH_PRINT(&sfnt->name->nameh);
+  YF_SFNT_NAMEH_PRINT(&sfnt.name->nameh);
 #endif
 
   /* name entries */
-  sfnt->name->namees = malloc(name_n * sizeof(L_namee));
-  if (sfnt->name->namees == NULL) {
+  sfnt.name->namees = malloc(name_n * sizeof(L_namee));
+  if (sfnt.name->namees == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
-  if (fread(sfnt->name->namees, sizeof(L_namee), name_n, file) < name_n) {
+  if (fread(sfnt.name->namees, sizeof(L_namee), name_n, file) < name_n) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
 #ifdef YF_DEBUG
   for (uint16_t i = 0; i < name_n; ++i)
-    YF_SFNT_NAMEE_PRINT(sfnt->name->namees+i);
+    YF_SFNT_NAMEE_PRINT(sfnt.name->namees+i);
 #endif
-  if (sfnt->name->nameh.format != 0) {
-    if (fread(&sfnt->name->lang_n, sizeof(uint16_t), 1, file) < 1) {
+  if (sfnt.name->nameh.format != 0) {
+    if (fread(&sfnt.name->lang_n, sizeof(uint16_t), 1, file) < 1) {
       yf_seterr(YF_ERR_INVFILE, __func__);
-      deinit_tables(sfnt);
+      deinit_tables(&sfnt);
       fclose(file);
       return -1;
     }
-    const uint16_t n = be16toh(sfnt->name->lang_n);
-    sfnt->name->namels = malloc(n * sizeof(L_namel));
-    if (sfnt->name->namels == NULL) {
+    const uint16_t n = be16toh(sfnt.name->lang_n);
+    sfnt.name->namels = malloc(n * sizeof(L_namel));
+    if (sfnt.name->namels == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_tables(sfnt);
+      deinit_tables(&sfnt);
       fclose(file);
       return -1;
     }
-    if (fread(sfnt->name->namels, sizeof(L_namel), n, file) < n) {
+    if (fread(sfnt.name->namels, sizeof(L_namel), n, file) < n) {
       yf_seterr(YF_ERR_INVFILE, __func__);
-      deinit_tables(sfnt);
+      deinit_tables(&sfnt);
       fclose(file);
       return -1;
     }
   }
 
   /* TODO: Check if this is a ttf file before this call. */
-  if (load_ttf(sfnt, file) != 0) {
-    deinit_tables(sfnt);
+  if (load_ttf(&sfnt, file) != 0) {
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
 
   L_font *font = calloc(1, sizeof *font);
   if (font == NULL) {
-    deinit_tables(sfnt);
+    deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
 
-  font->upem = be16toh(sfnt->head->upem);
-  font->x_min = be16toh(sfnt->head->x_min);
-  font->y_min = be16toh(sfnt->head->y_min);
-  font->x_max = be16toh(sfnt->head->x_max);
-  font->y_max = be16toh(sfnt->head->y_max);
-  font->glyph_n = be16toh(sfnt->maxp->glyph_n);
-  font->pt_max = be16toh(sfnt->maxp->pt_max);
-  font->contr_max = be16toh(sfnt->maxp->contr_max);
-  font->comp_pt_max = be16toh(sfnt->maxp->comp_pt_max);
-  font->comp_contr_max = be16toh(sfnt->maxp->comp_contr_max);
-  font->ascender = be16toh(sfnt->hhea->ascender);
-  font->descender = be16toh(sfnt->hhea->descender);
-  font->line_gap = be16toh(sfnt->hhea->line_gap);
-  font->adv_wdt_max = be16toh(sfnt->hhea->adv_wdt_max);
-  font->lbear_min = be16toh(sfnt->hhea->lbear_min);
-  font->rbear_min = be16toh(sfnt->hhea->rbear_min);
-  font->x_extent_max = be16toh(sfnt->hhea->x_extent_max);
+  font->upem = be16toh(sfnt.head->upem);
+  font->x_min = be16toh(sfnt.head->x_min);
+  font->y_min = be16toh(sfnt.head->y_min);
+  font->x_max = be16toh(sfnt.head->x_max);
+  font->y_max = be16toh(sfnt.head->y_max);
+  font->glyph_n = be16toh(sfnt.maxp->glyph_n);
+  font->pt_max = be16toh(sfnt.maxp->pt_max);
+  font->contr_max = be16toh(sfnt.maxp->contr_max);
+  font->comp_pt_max = be16toh(sfnt.maxp->comp_pt_max);
+  font->comp_contr_max = be16toh(sfnt.maxp->comp_contr_max);
+  font->ascender = be16toh(sfnt.hhea->ascender);
+  font->descender = be16toh(sfnt.hhea->descender);
+  font->line_gap = be16toh(sfnt.hhea->line_gap);
+  font->adv_wdt_max = be16toh(sfnt.hhea->adv_wdt_max);
+  font->lbear_min = be16toh(sfnt.hhea->lbear_min);
+  font->rbear_min = be16toh(sfnt.hhea->rbear_min);
+  font->x_extent_max = be16toh(sfnt.hhea->x_extent_max);
 
-  if (set_mapping(sfnt->cmap, file, cmap_off, &font->map) != 0) {
-    deinit_tables(sfnt);
+  if (set_mapping(sfnt.cmap, file, cmap_off, &font->map) != 0) {
+    deinit_tables(&sfnt);
     free(font);
     fclose(file);
     return -1;
   }
 
   /* TODO: This is unlikely to be of any use. */
-  const uint32_t str_off = name_off + be16toh(sfnt->name->nameh.str_off);
-  fill_str(sfnt->name, file, str_off, &font->str);
+  const uint32_t str_off = name_off + be16toh(sfnt.name->nameh.str_off);
+  fill_str(sfnt.name, file, str_off, &font->str);
 
   // TODO...
 
