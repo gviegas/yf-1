@@ -1330,7 +1330,7 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
     return -1;
   }
   if (fseek(file, glyf_off, SEEK_SET) != 0 ||
-      fread(sfnt->ttf.glyf->glyphs, glyf_off, 1, file) < 1)
+      fread(sfnt->ttf.glyf->glyphs, glyf_len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
@@ -1508,6 +1508,7 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
       /* sparse format */
       struct { uint16_t seg_cnt_x2, search_rng, entry_sel, rng_shf; } sub_4;
       static_assert(sizeof sub_4 == 8, "!sizeof");
+
       if (fread(&sub_4, sizeof sub_4, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
@@ -1524,6 +1525,7 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         free(var);
         return -1;
       }
+
       YF_hashset glyph_ids = yf_hashset_init(NULL, cmp_fmap);
       if (glyph_ids == NULL) {
         free(var);
@@ -1559,6 +1561,7 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
       /* trimmed format */
       struct { uint16_t first_code, entry_n; } sub_6;
       static_assert(sizeof sub_6 == 4, "!sizeof");
+
       if (fread(&sub_6, sizeof sub_6, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
