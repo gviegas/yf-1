@@ -642,6 +642,35 @@ typedef struct {
   char *sample_text;
 } L_fontstr;
 
+/* Font. */
+typedef struct {
+  uint16_t upem;
+  int16_t x_min;
+  int16_t y_min;
+  int16_t x_max;
+  int16_t y_max;
+  uint16_t glyph_n;
+  uint16_t pt_max;
+  uint16_t contr_max;
+  uint16_t comp_pt_max;
+  uint16_t comp_contr_max;
+  int16_t ascender;
+  int16_t descender;
+  int16_t line_gap;
+  uint16_t adv_wdt_max;
+  int16_t lbear_min;
+  int16_t rbear_min;
+  int16_t x_extent_max;
+  L_fontmap map;
+  L_fontstr str;
+  struct {
+    /* glyph offsets stored pre-multiplied/byte-swapped */
+    uint32_t *loca;
+    /* glyph descriptions stored as is */
+    uint8_t *glyf;
+  } ttf;
+} L_font;
+
 /* Verifies if file is valid. */
 static int verify_file(FILE *file);
 
