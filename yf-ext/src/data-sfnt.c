@@ -235,7 +235,7 @@
 
 # define YF_SFNT_GLYFD_PRINT(gd_p) do { \
    printf("\n-- SFNT (debug) --"); \
-   printf("\nglyfd - contour_n: %hd", be16toh((gd_p)->contour_n)); \
+   printf("\nglyfd - contr_n: %hd", be16toh((gd_p)->contr_n)); \
    printf("\nglyfd - x_min: %hd", be16toh((gd_p)->x_min)); \
    printf("\nglyfd - y_min: %hd", be16toh((gd_p)->y_min)); \
    printf("\nglyfd - x_max: %hd", be16toh((gd_p)->x_max)); \
@@ -557,7 +557,7 @@ typedef struct {
 /* Glyph data. */
 #define YF_SFNT_GLYFTAG YF_SFNT_MAKETAG('g', 'l', 'y', 'f')
 typedef struct {
-  int16_t contour_n;
+  int16_t contr_n;
   int16_t x_min;
   int16_t y_min;
   int16_t x_max;
@@ -1163,7 +1163,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   }
 
   /* TODO: Pass on the font data. */
-  fetch_glyph(font, L'1');
+  fetch_glyph(font, L'I');
 
   deinit_tables(&sfnt);
   fclose(file);
@@ -1856,6 +1856,40 @@ static int cmp_fmap(const void *a, const void *b) {
   return ((uintptr_t)a & 0xffff) - ((uintptr_t)b & 0xffff);
 }
 
+/* Checks whether a glyph is made of parts (compound/composite). */
+#define YF_SFNT_ISCOMPND(fnt, id) \
+  (be16toh(((L_glyfd *)((fnt)->ttf.glyf+((fnt)->ttf.loca[id])))->contr_n) \
+  > 0x7fff)
+
+/* Component of a simple glyph. */
+typedef struct {
+  /* indices of last points, one per contour */
+  uint16_t *ends;
+  uint16_t end_n;
+  /* point list */
+  struct { int on_curve; int16_t x, y; } *pts;
+  uint16_t pt_n;
+} L_component;
+
+/* Complete outline of a glyph. */
+typedef struct {
+  /* boundaries */
+  int16_t x_min;
+  int16_t y_min;
+  int16_t x_max;
+  int16_t y_max;
+  /* component list */
+  L_component *comps;
+  uint16_t comp_n;
+} L_outline;
+
+/* Fetches a simple glyph. */
+static int fetch_simple(L_font *font, uint16_t id, L_component *comp);
+
+/* Fetches a compound glyph. */
+static int fetch_compnd(L_font *font, uint16_t id, L_component **comp_list,
+    uint16_t *comp_i);
+
 static int fetch_glyph(L_font *font, wchar_t glyph) {
   assert(font != NULL);
   assert(font->ttf.loca != NULL);
@@ -1889,8 +1923,34 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
   const L_glyfd *gd = (L_glyfd *)(font->ttf.glyf+off);
 #ifdef YF_DEBUG
   YF_SFNT_GLYFD_PRINT(gd);
-  printf("[id: %hu, off: %u, len: %u]\n", id, off, len);
+  printf("[id: %hu, off: %u, len: %u, is comp: %d]\n", id, off, len,
+      YF_SFNT_ISCOMPND(font, id));
 #endif
 
+  L_outline *outln = calloc(1, sizeof *outln);
+  if (outln == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  outln->x_min = be16toh(gd->x_min);
+  outln->y_min = be16toh(gd->y_min);
+  outln->x_max = be16toh(gd->x_max);
+  outln->y_max = be16toh(gd->y_max);
+
+  if (YF_SFNT_ISCOMPND(font, id)) {
+    fetch_compnd(font, id, &outln->comps, &outln->comp_n);
+  } else {
+    outln->comp_n = 1;
+    outln->comps = calloc(outln->comp_n, sizeof *outln->comps);
+    if (outln->comps == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      free(outln);
+      return -1;
+    }
+    fetch_simple(font, id, outln->comps);
+  }
+
   /* TODO... */
+
+  return 0;
 }
