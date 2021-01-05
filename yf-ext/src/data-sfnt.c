@@ -609,8 +609,8 @@ typedef struct {
 
 /* Font mapping. */
 typedef struct {
-#define YF_SFNT_MAP_SPAR 0
-#define YF_SFNT_MAP_TRIM 1
+#define YF_SFNT_MAP_SPARSE  0
+#define YF_SFNT_MAP_TRIMMED 1
   int map;
   union {
     struct {
@@ -691,7 +691,10 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
 static int fill_str(const L_name *name, FILE *file, uint32_t str_off,
     L_fontstr *fstr);
 
-/* Compares glyph IDs of a 'L_fontmap' sparse format. */
+/* Hashes glyphs of a 'L_fontmap' sparse format. */
+static size_t hash_fmap(const void *x);
+
+/* Compares glyphs of a 'L_fontmap' sparse format. */
 static int cmp_fmap(const void *a, const void *b);
 
 int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
@@ -1426,7 +1429,7 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
   if (set_mapping(sfnt->cmap, file, cmap_off, &fmap) != 0)
     assert(0);
   YF_SFNT_GLYF_PRINT(sfnt->ttf.glyf, glyf_len);
-  if (fmap.map == YF_SFNT_MAP_TRIM) {
+  if (fmap.map == YF_SFNT_MAP_TRIMMED) {
     printf("\n[glyf - trimmed format (#%hu)]", fmap.trimmed.entry_n);
     for (uint16_t i = 0; i < fmap.trimmed.entry_n; ++i) {
       uint16_t code = fmap.trimmed.first_code+i;
@@ -1446,8 +1449,11 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
   } else {
     YF_hashset hset = fmap.sparse.glyph_ids;
     printf("\n[glyf - sparse format (#%lu)]", yf_hashset_getlen(hset));
-    while (yf_hashset_getlen(hset) != 0) {
-      uintptr_t kv = (uintptr_t)yf_hashset_extract(hset, NULL);
+    const uint16_t codes[] = {'a', 'b', 'C', 'D', '0', '1', '@', '!', ' ', '%'};
+    int n = sizeof codes / sizeof codes[0];
+    while (yf_hashset_getlen(hset) != 0 && n != 0) {
+      /*uintptr_t kv = (uintptr_t)yf_hashset_extract(hset, NULL);*/
+      uintptr_t kv = (uintptr_t)yf_hashset_search(hset, codes[--n]);
       uint16_t code = kv;
       uint16_t id = kv >> 16;
       uint32_t off;
@@ -1543,10 +1549,10 @@ static void deinit_font(L_font *font) {
   free(font->str.sample_text);
 
   switch (font->map.map) {
-    case YF_SFNT_MAP_SPAR:
+    case YF_SFNT_MAP_SPARSE:
       yf_hashset_deinit(font->map.sparse.glyph_ids);
       break;
-    case YF_SFNT_MAP_TRIM:
+    case YF_SFNT_MAP_TRIMMED:
       free(font->map.trimmed.glyph_ids);
       break;
   }
@@ -1565,24 +1571,24 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
   assert(fmap != NULL);
 
   /* encodings */
-  const struct { uint16_t plat, spec, fmt, lang; } encods[] = {
+  const struct { uint16_t plat, encd, fmt, lang; } encds[] = {
     {0, 3, 4, 0}, /* Unicode (sparse) */
     {1, 0, 6, 0}, /* Macintosh (roman, trimmed) */
     {3, 1, 4, 0}  /* Windows (sparse) */
   };
 
   const uint16_t tab_n = be16toh(cmap->cmaph.tab_n);
-  const uint16_t encod_n = sizeof encods / sizeof encods[0];
-  uint16_t encod_i = UINT16_MAX;
+  const uint16_t encd_n = sizeof encds / sizeof encds[0];
+  uint16_t encd_i = UINT16_MAX;
 
   uint32_t sub_off = 0;
   struct { uint16_t fmt, len, lang; } sub_hdr;
   static_assert(sizeof sub_hdr == 6, "!sizeof");
 
-  for (uint16_t i = 0; i < encod_n; ++i) {
+  for (uint16_t i = 0; i < encd_n; ++i) {
     for (uint16_t j = 0; j < tab_n; ++j) {
-      if (be16toh(cmap->cmapes[j].platform) != encods[i].plat ||
-          be16toh(cmap->cmapes[j].encoding) != encods[i].spec)
+      if (be16toh(cmap->cmapes[j].platform) != encds[i].plat ||
+          be16toh(cmap->cmapes[j].encoding) != encds[i].encd)
         continue;
 
       sub_off = off + be32toh(cmap->cmapes[j].off);
@@ -1593,15 +1599,15 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         return -1;
       }
 
-      if (be16toh(sub_hdr.fmt) == encods[i].fmt) {
-        encod_i = j;
+      if (be16toh(sub_hdr.fmt) == encds[i].fmt) {
+        encd_i = j;
         i = UINT16_MAX-1;
         break;
       }
     }
   }
 
-  if (encod_i == UINT16_MAX) {
+  if (encd_i == UINT16_MAX) {
     yf_seterr(YF_ERR_UNSUP, __func__);
     return -1;
   }
@@ -1641,7 +1647,7 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         return -1;
       }
 
-      YF_hashset glyph_ids = yf_hashset_init(NULL, cmp_fmap);
+      YF_hashset glyph_ids = yf_hashset_init(hash_fmap, cmp_fmap);
       if (glyph_ids == NULL) {
         free(var);
         return -1;
@@ -1668,7 +1674,7 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         }
       }
       free(var);
-      fmap->map = YF_SFNT_MAP_SPAR;
+      fmap->map = YF_SFNT_MAP_SPARSE;
       fmap->sparse.glyph_ids = glyph_ids;
     } break;
 
@@ -1693,7 +1699,7 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         free(glyph_ids);
         return -1;
       }
-      fmap->map = YF_SFNT_MAP_TRIM;
+      fmap->map = YF_SFNT_MAP_TRIMMED;
       fmap->trimmed.first_code = first_code;
       fmap->trimmed.entry_n = entry_n;
       for (uint16_t i = 0; i < entry_n; ++i)
@@ -1730,21 +1736,24 @@ static int fill_str(const L_name *name, FILE *file, uint32_t str_off,
   assert(fstr != NULL);
 
   /* TODO: Select correct platform-encoding-language combination. */
-  const uint16_t platf = htobe16(1);
-  const uint16_t encod = 0;
+  const uint16_t plat = htobe16(1);
+  const uint16_t encd = 0;
   const uint16_t lang = 0;
 
   const uint16_t name_n = be16toh(name->nameh.count);
   uint16_t name_i = 0;
 
   for (; name_i < name_n; ++name_i) {
-    if (name->namees[name_i].platform == platf) break;
+    if (name->namees[name_i].platform == plat)
+      break;
   }
   for (; name_i < name_n; ++name_i) {
-    if (name->namees[name_i].encoding == encod) break;
+    if (name->namees[name_i].encoding == encd)
+      break;
   }
   for (; name_i < name_n; ++name_i) {
-    if (name->namees[name_i].language == lang) break;
+    if (name->namees[name_i].language == lang)
+      break;
   }
 
   if (name_i >= name_n) {
@@ -1756,8 +1765,8 @@ static int fill_str(const L_name *name, FILE *file, uint32_t str_off,
   char **str_p;
 
   for (; name_i < name_n; ++name_i) {
-    if (name->namees[name_i].platform != platf ||
-        name->namees[name_i].encoding != encod ||
+    if (name->namees[name_i].platform != plat ||
+        name->namees[name_i].encoding != encd ||
         name->namees[name_i].language != lang)
       break;
 
@@ -1845,6 +1854,10 @@ static int fill_str(const L_name *name, FILE *file, uint32_t str_off,
   printf("\n--\n");
 #endif
   return 0;
+}
+
+static size_t hash_fmap(const void *x) {
+  return ((uintptr_t)x & 0xffff) ^ 0xa993;
 }
 
 static int cmp_fmap(const void *a, const void *b) {
