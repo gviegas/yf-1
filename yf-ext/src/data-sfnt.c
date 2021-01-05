@@ -1163,7 +1163,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   }
 
   /* TODO: Pass on the font data. */
-  fetch_glyph(font, L'I');
+  fetch_glyph(font, L'*');
 
   deinit_tables(&sfnt);
   fclose(file);
@@ -1950,7 +1950,144 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
     fetch_simple(font, id, outln->comps);
   }
 
+#ifdef YF_DEBUG
+  printf("\n-- Outline (debug) --");
+  for (uint16_t i = 0; i < outln->comp_n; ++i) {
+    printf("\n--\n[Component #%hd]", i);
+
+    printf("\nend indices (#%hu): ", outln->comps[i].end_n);
+    for (uint16_t j = 0; j < outln->comps[i].end_n; ++j)
+      printf("%hu ", outln->comps[i].ends[j]);
+
+    printf("\npoints (#%hu): ", outln->comps[i].pt_n);
+    for (uint16_t j = 0; j < outln->comps[i].pt_n; ++j)
+      printf("\n[%s] (%hd %hd)", outln->comps[i].pts[j].on_curve ? "y" : "n",
+          outln->comps[i].pts[j].x, outln->comps[i].pts[j].y);
+  }
+  printf("\n--\n");
+#endif
+
   /* TODO... */
 
   return 0;
+}
+
+static int fetch_simple(L_font *font, uint16_t id, L_component *comp) {
+  assert(font != NULL);
+  assert(comp != NULL);
+
+  uint32_t off = font->ttf.loca[id];
+  const L_glyfd *gd = (L_glyfd *)(font->ttf.glyf+off);
+
+  const int16_t contr_n = be16toh(gd->contr_n);
+  if (contr_n == 0) {
+    /* TODO */
+    assert(0);
+  }
+
+  comp->end_n = contr_n;
+  comp->ends = malloc(comp->end_n * sizeof *comp->ends);
+  if (comp->ends == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  for (uint16_t i = 0; i < comp->end_n; ++i)
+    comp->ends[i] = be16toh(((uint16_t *)gd->data)[i]);
+
+  comp->pt_n = comp->ends[contr_n-1] + 1;
+  comp->pts = calloc(comp->pt_n, sizeof *comp->pts);
+  if (comp->pts == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    /* TODO: Let the caller handle deinitialization. */
+    free(comp->ends);
+    comp->ends = NULL;
+    return -1;
+  }
+
+  const uint16_t instr_len = be16toh(((uint16_t *)gd->data)[contr_n]);
+
+  off = contr_n*sizeof(uint16_t) + sizeof instr_len + instr_len;
+  int32_t flag_n = comp->ends[contr_n-1];
+  uint8_t flags = 0;
+  uint8_t repeat_n = 0;
+  uint32_t y_off = 0;
+
+  /* compute offsets from flags array */
+  do {
+    flags = gd->data[off++];
+    repeat_n = (flags & 8) ? gd->data[off++] : 0;
+    flag_n -= repeat_n + 1;
+    if (flags & 2)
+      /* x is byte */
+      y_off += repeat_n + 1;
+    else if (!(flags & 16))
+      /* x is word */
+      y_off += (repeat_n + 1) << 1;
+    /* x is same value otherwise */
+  } while (flag_n >= 0);
+
+  uint32_t x_off = off;
+  y_off += off;
+  off = contr_n*sizeof(uint16_t) + sizeof instr_len + instr_len;
+  flag_n = comp->ends[contr_n-1];
+  int on_curve;
+  int16_t x = 0;
+  int16_t y = 0;
+  int16_t d;
+  uint16_t pt_i = 0;
+
+  /* fetch point data */
+  do {
+    flags = gd->data[off++];
+    repeat_n = (flags & 8) ? gd->data[off++] : 0;
+    flag_n -= repeat_n + 1;
+
+    do {
+      on_curve = flags & 1;
+
+      if (flags & 2) {
+        if (flags & 16)
+          /* x is byte, positive sign */
+          x += gd->data[x_off++];
+        else
+          /* x is byte, negative sign */
+          x += -(gd->data[x_off++]);
+      } else if (!(flags & 16)) {
+        /* x is signed word */
+        d = gd->data[x_off+1];
+        d = (d << 8) | gd->data[x_off];
+        x += be16toh(d);
+        x_off += 2;
+      }
+
+      if (flags & 4) {
+        if (flags & 32)
+          /* y is byte, positive sign */
+          y += gd->data[y_off++];
+        else
+          /* y is byte, negative sign */
+          y += -(gd->data[y_off++]);
+      } else if (!(flags & 32)) {
+        /* y is signed word */
+        d = gd->data[y_off+1];
+        d = (d << 8) | gd->data[y_off];
+        y += be16toh(d);
+        y_off += 2;
+      }
+
+      comp->pts[pt_i].on_curve = on_curve;
+      comp->pts[pt_i].x = x;
+      comp->pts[pt_i].y = y;
+      ++pt_i;
+    } while (repeat_n-- > 0);
+
+  } while (flag_n >= 0);
+  return 0;
+}
+
+static int fetch_compnd(L_font *font, uint16_t id, L_component **comp_list,
+    uint16_t *comp_i)
+{
+  /* TODO */
+  assert(0);
 }
