@@ -697,6 +697,9 @@ static size_t hash_fmap(const void *x);
 /* Compares glyphs of a 'L_fontmap' sparse format. */
 static int cmp_fmap(const void *a, const void *b);
 
+/* Fetches glyph data. */
+static int fetch_glyph(L_font *font, wchar_t glyph/*, (?) dst */);
+
 int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
@@ -1134,7 +1137,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   if (sfnt.ttf.glyf != NULL && sfnt.ttf.loca != NULL) {
     if (sfnt.head->loca_fmt == 0) {
       /* 16-bit offsets: pre-multiply, byte-swap and copy to dw buffer */
-      font->ttf.loca = malloc(font->glyph_n * sizeof(uint32_t));
+      font->ttf.loca = malloc((font->glyph_n + 1) * sizeof(uint32_t));
       if (font->ttf.loca == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_font(font);
@@ -1160,6 +1163,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   }
 
   /* TODO: Pass on the font data. */
+  fetch_glyph(font, L'1');
 
   deinit_tables(&sfnt);
   fclose(file);
@@ -1652,7 +1656,7 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         free(var);
         return -1;
       }
-      uint16_t end_code, start_code, code, delta, rng_off, idx;
+      uint16_t end_code, start_code, code, delta, rng_off, id;
       for (uint16_t i = 0; var[i] != 0xffff; ++i) {
         end_code = be16toh(var[i]);
         start_code = code = be16toh(var[seg_cnt+i+1]);
@@ -1660,16 +1664,16 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         rng_off = be16toh(var[3*seg_cnt+i+1]);
         if (rng_off != 0) {
           do {
-            idx = var[3*seg_cnt+i+1 + (rng_off>>1) + (code-start_code)];
-            idx = be16toh(idx);
+            id = var[3*seg_cnt+i+1 + (rng_off>>1) + (code-start_code)];
+            id = be16toh(id);
             yf_hashset_insert(glyph_ids,
-                (const void *)((uintptr_t)code | (idx << 16)));
+                (const void *)((uintptr_t)code | (id << 16)));
           } while (code++ < end_code);
         } else {
           do {
-            idx = delta + code;
+            id = delta + code;
             yf_hashset_insert(glyph_ids,
-                (const void *)((uintptr_t)code | (idx << 16)));
+                (const void *)((uintptr_t)code | (id << 16)));
           } while (code++ < end_code);
         }
       }
@@ -1705,25 +1709,12 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
       for (uint16_t i = 0; i < entry_n; ++i)
         glyph_ids[i] = be16toh(glyph_ids[i]);
       fmap->trimmed.glyph_ids = glyph_ids;
-
-#ifdef YF_DEBUG
-      printf("\n-- Font mapping (debug) --");
-      printf("\nsub (6) - first_code: %hu", first_code);
-      printf("\nsub (6) - entry_n: %hu", entry_n);
-      for (uint16_t i = 0; i < entry_n; ++i) { \
-        if (i % 16 == 0) printf("\n[%d-%d]:", i, i+15); \
-        printf(" %hu", glyph_ids[i]); \
-      } \
-      printf("\n--\n");
-#endif
     } break;
 
     default:
       assert(0);
       return -1;
   }
-
-  /* TODO */
 
   return 0;
 }
@@ -1863,4 +1854,43 @@ static size_t hash_fmap(const void *x) {
 static int cmp_fmap(const void *a, const void *b) {
   /*return (uint16_t)a - (uint16_t)b;*/
   return ((uintptr_t)a & 0xffff) - ((uintptr_t)b & 0xffff);
+}
+
+static int fetch_glyph(L_font *font, wchar_t glyph) {
+  assert(font != NULL);
+  assert(font->ttf.loca != NULL);
+  assert(font->ttf.glyf != NULL);
+
+  uint16_t id;
+  if (font->map.map == YF_SFNT_MAP_SPARSE) {
+    YF_hashset hset = font->map.sparse.glyph_ids;
+    const void *key = (const void *)(uintptr_t)glyph;
+    if (!yf_hashset_contains(hset, key)) {
+      yf_seterr(YF_ERR_NOTFND, __func__);
+      return -1;
+    }
+    id = (uintptr_t)yf_hashset_search(font->map.sparse.glyph_ids, key) >> 16;
+  } else {
+    const uint16_t first = font->map.trimmed.first_code;
+    const uint16_t n = font->map.trimmed.entry_n;
+    const uint16_t *ids = font->map.trimmed.glyph_ids;
+    const uint16_t code = glyph - first;
+    if (glyph < first || glyph >= first+n) {
+      yf_seterr(YF_ERR_NOTFND, __func__);
+      return -1;
+    }
+    id = ids[code];
+  }
+
+  const uint32_t off = font->ttf.loca[id];
+  const uint32_t len = font->ttf.loca[id+1] - off;
+  assert((off % _Alignof(L_glyfd)) == 0);
+
+  const L_glyfd *gd = (L_glyfd *)(font->ttf.glyf+off);
+#ifdef YF_DEBUG
+  YF_SFNT_GLYFD_PRINT(gd);
+  printf("[id: %hu, off: %u, len: %u]\n", id, off, len);
+#endif
+
+  /* TODO... */
 }
