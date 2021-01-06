@@ -23,6 +23,13 @@
 # error "Invalid platform"
 #endif
 
+#ifndef YF_MIN
+# define YF_MIN(a, b) (a < b ? a : b)
+#endif
+#ifndef YF_MAX
+# define YF_MAX(a, b) (a > b ? a : b)
+#endif
+
 #ifdef YF_DEBUG
 # define YF_SFNT_DIRO_PRINT(do_p) do { \
    printf("\n-- SFNT (debug) --"); \
@@ -1165,7 +1172,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   }
 
   /* TODO: Pass on the font data. */
-  fetch_glyph(font, L'Ń');
+  fetch_glyph(font, L'z');
 
   deinit_tables(&sfnt);
   fclose(file);
@@ -1992,6 +1999,7 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
 #endif
 
   /* TODO... */
+  rasterize(outln);
   deinit_outline(outln);
 
   return 0;
@@ -2216,8 +2224,8 @@ static void deinit_outline(L_outline *outln) {
 
 /* Contour point. */
 typedef struct {
-  uint32_t x;
-  uint32_t y;
+  int32_t x;
+  int32_t y;
 } L_point;
 
 /* Contour Segment. */
@@ -2266,11 +2274,85 @@ static int rasterize(L_outline *outln/*, dst*/) {
       }
       /* close the contour */
       YF_NEWSEG(segs[seg_i], outln->comps[i], end, begn);
+      ++seg_i;
       begn = end+1;
     }
   }
 
-  /* TODO... */
+#ifdef YF_DEBUG
+  printf("\n-- Segments (debug) --");
+  printf("\n#%hu (#%hu max)", seg_i, seg_max);
+  for (uint32_t i = 0; i < seg_i; ++i)
+    printf("\n[w:%d] (%d,%d)--(%d,%d)", segs[i].wind,
+        segs[i].p1.x, segs[i].p1.y, segs[i].p2.x, segs[i].p2.y);
+  printf("\n--\n");
+#endif
 
+#undef YF_DIRECTION
+#define YF_DIRECTION(p1, p2, p3) \
+  (((p3).x-(p1).x) * ((p2).y-(p1).y) - ((p2).x-(p1).x) * ((p3).y-(p1).y))
+
+#undef YF_ONPOINT
+#define YF_ONPOINT(p1, p2, p3) \
+  (YF_MIN((p1).x, (p2).x) <= (p3).x && YF_MAX((p1).x, (p2).x) >= (p3).x && \
+    YF_MIN((p1).y, (p2).y) <= (p3).y && YF_MAX((p1).y, (p2).y) >= (p3).y)
+
+#undef YF_ONSEG
+#define YF_ONSEG(seg, p) \
+  (YF_DIRECTION((seg).p1, (seg).p2, (p)) != 0 ? 0 : \
+    YF_ONPOINT((seg).p1, (seg).p2, (p)))
+
+#undef YF_INTERSECTS
+#define YF_INTERSECTS(res, seg, p1, p2) do { \
+  const int32_t d1 = YF_DIRECTION(p1, p2, (seg).p1); \
+  const int32_t d2 = YF_DIRECTION(p1, p2, (seg).p2); \
+  const int32_t d3 = YF_DIRECTION((seg).p1, (seg).p2, p1); \
+  const int32_t d4 = YF_DIRECTION((seg).p1, (seg).p2, p2); \
+  if (((d1 < 0 && d2 > 0) || (d1 > 0 && d2 < 0)) && \
+      ((d3 < 0 && d4 > 0) || (d3 > 0 && d4 < 0))) \
+    res = 1; \
+  else if (d1 == 0 && YF_ONPOINT(p1, p2, (seg).p1)) \
+    res = 1; \
+  else if (d2 == 0 && YF_ONPOINT(p1, p2, (seg).p2)) \
+    res = 1; \
+  else if (d3 == 0 && YF_ONPOINT((seg).p1, (seg).p2, p1)) \
+    res = 1; \
+  else if (d4 == 0 && YF_ONPOINT((seg).p1, (seg).p2, p2)) \
+    res = 1; \
+  else \
+    res = 0; } while (0)
+
+  /* rasterize */
+  const uint16_t w = outln->x_max - outln->x_min;
+  const uint16_t h = outln->y_max - outln->y_min;
+  uint8_t *bitmap = malloc(w*h);
+  if (bitmap == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    free(segs);
+    return -1;
+  }
+  for (uint16_t y = 0; y < h; ++y) {
+    for (uint16_t x = 0; x < w; ++x) {
+      L_point p1 = {x+outln->x_min, y+outln->y_min};
+      L_point p2 = {p1.x+0xffff, p1.y};
+      int wind = YF_SFNT_WIND_NONE;
+      for (uint32_t i = 0; i < seg_i; ++i) {
+        if (YF_ONSEG(segs[i], p1)) {
+          wind = YF_SFNT_WIND_ON;
+          break;
+        }
+        int isect;
+        YF_INTERSECTS(isect, segs[i], p1, p2);
+        if (isect)
+          wind += segs[i].wind;
+      }
+      bitmap[y*w+x] = wind != YF_SFNT_WIND_NONE ? 255 : 0;
+    }
+  }
+
+  /* TODO... */
+  free(bitmap);
+
+  free(segs);
   return 0;
 }
