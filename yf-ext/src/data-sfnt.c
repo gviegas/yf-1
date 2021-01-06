@@ -654,6 +654,7 @@ typedef struct {
   uint16_t contr_max;
   uint16_t comp_pt_max;
   uint16_t comp_contr_max;
+  uint16_t comp_elem_max;
   int16_t ascender;
   int16_t descender;
   int16_t line_gap;
@@ -1115,6 +1116,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   font->contr_max = be16toh(sfnt.maxp->contr_max);
   font->comp_pt_max = be16toh(sfnt.maxp->comp_pt_max);
   font->comp_contr_max = be16toh(sfnt.maxp->comp_contr_max);
+  font->comp_elem_max = be16toh(sfnt.maxp->comp_elem_max);
   font->ascender = be16toh(sfnt.hhea->ascender);
   font->descender = be16toh(sfnt.hhea->descender);
   font->line_gap = be16toh(sfnt.hhea->line_gap);
@@ -1163,7 +1165,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   }
 
   /* TODO: Pass on the font data. */
-  fetch_glyph(font, L'*');
+  fetch_glyph(font, L'Ń');
 
   deinit_tables(&sfnt);
   fclose(file);
@@ -1887,7 +1889,7 @@ typedef struct {
 static int fetch_simple(L_font *font, uint16_t id, L_component *comp);
 
 /* Fetches a compound glyph. */
-static int fetch_compnd(L_font *font, uint16_t id, L_component **comp_list,
+static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
     uint16_t *comp_i);
 
 static int fetch_glyph(L_font *font, wchar_t glyph) {
@@ -1903,6 +1905,7 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
       yf_seterr(YF_ERR_NOTFND, __func__);
       return -1;
     }
+    /* the glyph ID is encoded in the 3rd and 4th bytes of the value ptr */
     id = (uintptr_t)yf_hashset_search(font->map.sparse.glyph_ids, key) >> 16;
   } else {
     const uint16_t first = font->map.trimmed.first_code;
@@ -1938,8 +1941,21 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
   outln->y_max = be16toh(gd->y_max);
 
   if (YF_SFNT_ISCOMPND(font, id)) {
-    fetch_compnd(font, id, &outln->comps, &outln->comp_n);
+    /* allocate max. components and let callee update the count */
+    outln->comp_n = 0;
+    outln->comps = calloc(font->comp_elem_max, sizeof *outln->comps);
+    if (outln->comps == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      free(outln);
+      return -1;
+    }
+    if (fetch_compnd(font, id, outln->comps, &outln->comp_n) != 0) {
+      free(outln->comps);
+      free(outln);
+      return -1;
+    }
   } else {
+    /* one component suffices */
     outln->comp_n = 1;
     outln->comps = calloc(outln->comp_n, sizeof *outln->comps);
     if (outln->comps == NULL) {
@@ -1947,7 +1963,11 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
       free(outln);
       return -1;
     }
-    fetch_simple(font, id, outln->comps);
+    if (fetch_simple(font, id, outln->comps) != 0) {
+      free(outln->comps);
+      free(outln);
+      return -1;
+    }
   }
 
 #ifdef YF_DEBUG
@@ -1995,10 +2015,9 @@ static int fetch_simple(L_font *font, uint16_t id, L_component *comp) {
     comp->ends[i] = be16toh(((uint16_t *)gd->data)[i]);
 
   comp->pt_n = comp->ends[contr_n-1] + 1;
-  comp->pts = calloc(comp->pt_n, sizeof *comp->pts);
+  comp->pts = malloc(comp->pt_n * sizeof *comp->pts);
   if (comp->pts == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    /* TODO: Let the caller handle deinitialization. */
     free(comp->ends);
     comp->ends = NULL;
     return -1;
@@ -2085,9 +2104,92 @@ static int fetch_simple(L_font *font, uint16_t id, L_component *comp) {
   return 0;
 }
 
-static int fetch_compnd(L_font *font, uint16_t id, L_component **comp_list,
+static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
     uint16_t *comp_i)
 {
-  /* TODO */
-  assert(0);
+  assert(font != NULL);
+  assert(comps != NULL);
+  assert(comp_i != NULL);
+
+#undef YF_GETWRD
+#define YF_GETWRD(res, gd, off) do { \
+  res = gd->data[off+1]; \
+  res = ((res) << 8) | gd->data[off]; \
+  res = be16toh(res); \
+  off += 2; } while (0)
+
+  uint32_t off = font->ttf.loca[id];
+  const L_glyfd *gd = (L_glyfd *)(font->ttf.glyf+off);
+  off = 0;
+
+  uint16_t idx = *comp_i;
+  uint16_t flags;
+  uint16_t comp_id;
+  uint16_t arg[2];
+  int16_t v[4];
+
+  do {
+    YF_GETWRD(flags, gd, off);
+    YF_GETWRD(comp_id, gd, off);
+
+    /* TODO: Deinitialize previous components on failure. */
+    if (YF_SFNT_ISCOMPND(font, comp_id)) {
+      if (fetch_compnd(font, comp_id, comps, comp_i) != 0)
+        return -1;
+    } else {
+      if (fetch_simple(font, comp_id, comps+(*comp_i)) != 0)
+        return -1;
+      (*comp_i)++;
+    }
+
+    if (flags & 1) {
+      /* arguments are words */
+      YF_GETWRD(arg[0], gd, off);
+      YF_GETWRD(arg[1], gd, off);
+    } else {
+      /* arguments are bytes */
+      arg[0] = gd->data[off++];
+      arg[1] = gd->data[off++];
+    }
+
+    if (flags & 2) {
+      /* arguments are x,y values */
+      for (uint16_t i = idx; i < *comp_i; ++i) {
+        for (uint16_t j = 0; j < comps[i].pt_n; ++j) {
+          comps[i].pts[j].x += arg[0];
+          comps[i].pts[j].y += arg[1];
+        }
+      }
+    } else {
+      /* arguments are points */
+      /* TODO */
+      assert(0);
+    }
+
+    /* TODO: Transform points. */
+    if (flags & 8) {
+      /* simple scale */
+      YF_GETWRD(v[0], gd, off);
+      v[3] = v[0];
+      v[1] = v[2] = 0;
+    } else if (flags & 64) {
+      /* different scales */
+      YF_GETWRD(v[0], gd, off);
+      YF_GETWRD(v[3], gd, off);
+      v[1] = v[2] = 0;
+    } else if (flags & 128) {
+      /* 2x2 transformation */
+      YF_GETWRD(v[0], gd, off);
+      YF_GETWRD(v[1], gd, off);
+      YF_GETWRD(v[2], gd, off);
+      YF_GETWRD(v[3], gd, off);
+    } else {
+      /* as is */
+      v[0] = v[3] = 1;
+      v[1] = v[2] = 0;
+    }
+
+    ++idx;
+  } while (flags & 32);
+  return 0;
 }
