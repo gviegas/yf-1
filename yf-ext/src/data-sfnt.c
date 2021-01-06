@@ -1895,6 +1895,9 @@ static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
 /* Deinitializes an outline. */
 static void deinit_outline(L_outline *outln);
 
+/* Rasterizes an outline. */
+static int rasterize(L_outline *outln/*, dst*/);
+
 static int fetch_glyph(L_font *font, wchar_t glyph) {
   assert(font != NULL);
   assert(font->ttf.loca != NULL);
@@ -2204,4 +2207,70 @@ static void deinit_outline(L_outline *outln) {
     free(outln->comps);
   }
   free(outln);
+}
+
+/* Contour winding directions. */
+#define YF_SFNT_WIND_NONE 0
+#define YF_SFNT_WIND_ON   1
+#define YF_SFNT_WIND_OFF -1
+
+/* Contour point. */
+typedef struct {
+  uint32_t x;
+  uint32_t y;
+} L_point;
+
+/* Contour Segment. */
+typedef struct {
+  int wind;
+  L_point p1;
+  L_point p2;
+} L_segment;
+
+/* TODO: Scale outline before rasterization. */
+static int rasterize(L_outline *outln/*, dst*/) {
+  assert(outln != NULL);
+  assert(outln->comps != NULL);
+
+#undef YF_NEWSEG
+#define YF_NEWSEG(seg, comp, i, j) do { \
+  const int16_t x1 = (comp).pts[i].x; \
+  const int16_t y1 = (comp).pts[i].y; \
+  const int16_t x2 = (comp).pts[j].x; \
+  const int16_t y2 = (comp).pts[j].y; \
+  (seg).wind = y1 < y2 ? YF_SFNT_WIND_ON : \
+    (y1 > y2 ? YF_SFNT_WIND_OFF : YF_SFNT_WIND_NONE); \
+  (seg).p1 = (L_point){x1, y1}; \
+  (seg).p2 = (L_point){x2, y2}; } while (0)
+
+  uint32_t seg_max = 0;
+  for (uint16_t i = 0; i < outln->comp_n; ++i)
+    seg_max += outln->comps[i].ends[outln->comps[i].end_n-1] + 1;
+
+  L_segment *segs = malloc(seg_max * sizeof *segs);
+  if (segs == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+
+  /* create segments for each contour of each component */
+  uint32_t seg_i = 0;
+  for (uint16_t i = 0; i < outln->comp_n; ++i) {
+    uint16_t curr, end, begn = 0;
+    for (uint16_t j = 0; j < outln->comps[i].end_n; ++j) {
+      curr = begn;
+      end = outln->comps[i].ends[j];
+      while (curr++ < end) {
+        YF_NEWSEG(segs[seg_i], outln->comps[i], curr-1, curr);
+        ++seg_i;
+      }
+      /* close the contour */
+      YF_NEWSEG(segs[seg_i], outln->comps[i], end, begn);
+      begn = end+1;
+    }
+  }
+
+  /* TODO... */
+
+  return 0;
 }
