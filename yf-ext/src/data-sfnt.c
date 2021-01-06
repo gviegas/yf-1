@@ -1892,6 +1892,9 @@ static int fetch_simple(L_font *font, uint16_t id, L_component *comp);
 static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
     uint16_t *comp_i);
 
+/* Deinitializes an outline. */
+static void deinit_outline(L_outline *outln);
+
 static int fetch_glyph(L_font *font, wchar_t glyph) {
   assert(font != NULL);
   assert(font->ttf.loca != NULL);
@@ -1950,8 +1953,7 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
       return -1;
     }
     if (fetch_compnd(font, id, outln->comps, &outln->comp_n) != 0) {
-      free(outln->comps);
-      free(outln);
+      deinit_outline(outln);
       return -1;
     }
   } else {
@@ -1964,8 +1966,7 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
       return -1;
     }
     if (fetch_simple(font, id, outln->comps) != 0) {
-      free(outln->comps);
-      free(outln);
+      deinit_outline(outln);
       return -1;
     }
   }
@@ -1988,6 +1989,7 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
 #endif
 
   /* TODO... */
+  deinit_outline(outln);
 
   return 0;
 }
@@ -2018,8 +2020,6 @@ static int fetch_simple(L_font *font, uint16_t id, L_component *comp) {
   comp->pts = malloc(comp->pt_n * sizeof *comp->pts);
   if (comp->pts == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    free(comp->ends);
-    comp->ends = NULL;
     return -1;
   }
 
@@ -2132,14 +2132,12 @@ static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
     YF_GETWRD(flags, gd, off);
     YF_GETWRD(comp_id, gd, off);
 
-    /* TODO: Deinitialize previous components on failure. */
     if (YF_SFNT_ISCOMPND(font, comp_id)) {
       if (fetch_compnd(font, comp_id, comps, comp_i) != 0)
         return -1;
     } else {
-      if (fetch_simple(font, comp_id, comps+(*comp_i)) != 0)
+      if (fetch_simple(font, comp_id, comps+((*comp_i)++)) != 0)
         return -1;
-      (*comp_i)++;
     }
 
     if (flags & 1) {
@@ -2192,4 +2190,18 @@ static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
     ++idx;
   } while (flags & 32);
   return 0;
+}
+
+static void deinit_outline(L_outline *outln) {
+  if (outln == NULL)
+    return;
+
+  if (outln->comps != NULL) {
+    for (uint16_t i = 0; i < outln->comp_n; ++i) {
+      free(outln->comps[i].ends);
+      free(outln->comps[i].pts);
+    }
+    free(outln->comps);
+  }
+  free(outln);
 }
