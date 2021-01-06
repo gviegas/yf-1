@@ -235,7 +235,7 @@
 
 # define YF_SFNT_GLYFD_PRINT(gd_p) do { \
    printf("\n-- SFNT (debug) --"); \
-   printf("\nglyfd - contour_n: %hd", be16toh((gd_p)->contour_n)); \
+   printf("\nglyfd - contr_n: %hd", be16toh((gd_p)->contr_n)); \
    printf("\nglyfd - x_min: %hd", be16toh((gd_p)->x_min)); \
    printf("\nglyfd - y_min: %hd", be16toh((gd_p)->y_min)); \
    printf("\nglyfd - x_max: %hd", be16toh((gd_p)->x_max)); \
@@ -557,7 +557,7 @@ typedef struct {
 /* Glyph data. */
 #define YF_SFNT_GLYFTAG YF_SFNT_MAKETAG('g', 'l', 'y', 'f')
 typedef struct {
-  int16_t contour_n;
+  int16_t contr_n;
   int16_t x_min;
   int16_t y_min;
   int16_t x_max;
@@ -654,6 +654,7 @@ typedef struct {
   uint16_t contr_max;
   uint16_t comp_pt_max;
   uint16_t comp_contr_max;
+  uint16_t comp_elem_max;
   int16_t ascender;
   int16_t descender;
   int16_t line_gap;
@@ -696,6 +697,9 @@ static size_t hash_fmap(const void *x);
 
 /* Compares glyphs of a 'L_fontmap' sparse format. */
 static int cmp_fmap(const void *a, const void *b);
+
+/* Fetches glyph data. */
+static int fetch_glyph(L_font *font, wchar_t glyph/*, (?) dst */);
 
 int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   if (pathname == NULL) {
@@ -1112,6 +1116,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   font->contr_max = be16toh(sfnt.maxp->contr_max);
   font->comp_pt_max = be16toh(sfnt.maxp->comp_pt_max);
   font->comp_contr_max = be16toh(sfnt.maxp->comp_contr_max);
+  font->comp_elem_max = be16toh(sfnt.maxp->comp_elem_max);
   font->ascender = be16toh(sfnt.hhea->ascender);
   font->descender = be16toh(sfnt.hhea->descender);
   font->line_gap = be16toh(sfnt.hhea->line_gap);
@@ -1134,7 +1139,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   if (sfnt.ttf.glyf != NULL && sfnt.ttf.loca != NULL) {
     if (sfnt.head->loca_fmt == 0) {
       /* 16-bit offsets: pre-multiply, byte-swap and copy to dw buffer */
-      font->ttf.loca = malloc(font->glyph_n * sizeof(uint32_t));
+      font->ttf.loca = malloc((font->glyph_n + 1) * sizeof(uint32_t));
       if (font->ttf.loca == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_font(font);
@@ -1160,6 +1165,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   }
 
   /* TODO: Pass on the font data. */
+  fetch_glyph(font, L'Ń');
 
   deinit_tables(&sfnt);
   fclose(file);
@@ -1652,7 +1658,7 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         free(var);
         return -1;
       }
-      uint16_t end_code, start_code, code, delta, rng_off, idx;
+      uint16_t end_code, start_code, code, delta, rng_off, id;
       for (uint16_t i = 0; var[i] != 0xffff; ++i) {
         end_code = be16toh(var[i]);
         start_code = code = be16toh(var[seg_cnt+i+1]);
@@ -1660,16 +1666,16 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
         rng_off = be16toh(var[3*seg_cnt+i+1]);
         if (rng_off != 0) {
           do {
-            idx = var[3*seg_cnt+i+1 + (rng_off>>1) + (code-start_code)];
-            idx = be16toh(idx);
+            id = var[3*seg_cnt+i+1 + (rng_off>>1) + (code-start_code)];
+            id = be16toh(id);
             yf_hashset_insert(glyph_ids,
-                (const void *)((uintptr_t)code | (idx << 16)));
+                (const void *)((uintptr_t)code | (id << 16)));
           } while (code++ < end_code);
         } else {
           do {
-            idx = delta + code;
+            id = delta + code;
             yf_hashset_insert(glyph_ids,
-                (const void *)((uintptr_t)code | (idx << 16)));
+                (const void *)((uintptr_t)code | (id << 16)));
           } while (code++ < end_code);
         }
       }
@@ -1705,25 +1711,12 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
       for (uint16_t i = 0; i < entry_n; ++i)
         glyph_ids[i] = be16toh(glyph_ids[i]);
       fmap->trimmed.glyph_ids = glyph_ids;
-
-#ifdef YF_DEBUG
-      printf("\n-- Font mapping (debug) --");
-      printf("\nsub (6) - first_code: %hu", first_code);
-      printf("\nsub (6) - entry_n: %hu", entry_n);
-      for (uint16_t i = 0; i < entry_n; ++i) { \
-        if (i % 16 == 0) printf("\n[%d-%d]:", i, i+15); \
-        printf(" %hu", glyph_ids[i]); \
-      } \
-      printf("\n--\n");
-#endif
     } break;
 
     default:
       assert(0);
       return -1;
   }
-
-  /* TODO */
 
   return 0;
 }
@@ -1863,4 +1856,352 @@ static size_t hash_fmap(const void *x) {
 static int cmp_fmap(const void *a, const void *b) {
   /*return (uint16_t)a - (uint16_t)b;*/
   return ((uintptr_t)a & 0xffff) - ((uintptr_t)b & 0xffff);
+}
+
+/* Checks whether a glyph is made of parts (compound/composite). */
+#define YF_SFNT_ISCOMPND(fnt, id) \
+  (be16toh(((L_glyfd *)((fnt)->ttf.glyf+((fnt)->ttf.loca[id])))->contr_n) \
+  > 0x7fff)
+
+/* Component of a simple glyph. */
+typedef struct {
+  /* indices of last points, one per contour */
+  uint16_t *ends;
+  uint16_t end_n;
+  /* point list */
+  struct { int on_curve; int16_t x, y; } *pts;
+  uint16_t pt_n;
+} L_component;
+
+/* Complete outline of a glyph. */
+typedef struct {
+  /* boundaries */
+  int16_t x_min;
+  int16_t y_min;
+  int16_t x_max;
+  int16_t y_max;
+  /* component list */
+  L_component *comps;
+  uint16_t comp_n;
+} L_outline;
+
+/* Fetches a simple glyph. */
+static int fetch_simple(L_font *font, uint16_t id, L_component *comp);
+
+/* Fetches a compound glyph. */
+static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
+    uint16_t *comp_i);
+
+/* Deinitializes an outline. */
+static void deinit_outline(L_outline *outln);
+
+static int fetch_glyph(L_font *font, wchar_t glyph) {
+  assert(font != NULL);
+  assert(font->ttf.loca != NULL);
+  assert(font->ttf.glyf != NULL);
+
+  uint16_t id;
+  if (font->map.map == YF_SFNT_MAP_SPARSE) {
+    YF_hashset hset = font->map.sparse.glyph_ids;
+    const void *key = (const void *)(uintptr_t)glyph;
+    if (!yf_hashset_contains(hset, key)) {
+      yf_seterr(YF_ERR_NOTFND, __func__);
+      return -1;
+    }
+    /* the glyph ID is encoded in the 3rd and 4th bytes of the value ptr */
+    id = (uintptr_t)yf_hashset_search(font->map.sparse.glyph_ids, key) >> 16;
+  } else {
+    const uint16_t first = font->map.trimmed.first_code;
+    const uint16_t n = font->map.trimmed.entry_n;
+    const uint16_t *ids = font->map.trimmed.glyph_ids;
+    const uint16_t code = glyph - first;
+    if (glyph < first || glyph >= first+n) {
+      yf_seterr(YF_ERR_NOTFND, __func__);
+      return -1;
+    }
+    id = ids[code];
+  }
+
+  const uint32_t off = font->ttf.loca[id];
+  const uint32_t len = font->ttf.loca[id+1] - off;
+  assert((off % _Alignof(L_glyfd)) == 0);
+
+  const L_glyfd *gd = (L_glyfd *)(font->ttf.glyf+off);
+#ifdef YF_DEBUG
+  YF_SFNT_GLYFD_PRINT(gd);
+  printf("[id: %hu, off: %u, len: %u, is comp: %d]\n", id, off, len,
+      YF_SFNT_ISCOMPND(font, id));
+#endif
+
+  L_outline *outln = calloc(1, sizeof *outln);
+  if (outln == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  outln->x_min = be16toh(gd->x_min);
+  outln->y_min = be16toh(gd->y_min);
+  outln->x_max = be16toh(gd->x_max);
+  outln->y_max = be16toh(gd->y_max);
+
+  if (YF_SFNT_ISCOMPND(font, id)) {
+    /* allocate max. components and let callee update the count */
+    outln->comp_n = 0;
+    outln->comps = calloc(font->comp_elem_max, sizeof *outln->comps);
+    if (outln->comps == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      free(outln);
+      return -1;
+    }
+    if (fetch_compnd(font, id, outln->comps, &outln->comp_n) != 0) {
+      deinit_outline(outln);
+      return -1;
+    }
+  } else {
+    /* one component suffices */
+    outln->comp_n = 1;
+    outln->comps = calloc(outln->comp_n, sizeof *outln->comps);
+    if (outln->comps == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      free(outln);
+      return -1;
+    }
+    if (fetch_simple(font, id, outln->comps) != 0) {
+      deinit_outline(outln);
+      return -1;
+    }
+  }
+
+#ifdef YF_DEBUG
+  printf("\n-- Outline (debug) --");
+  for (uint16_t i = 0; i < outln->comp_n; ++i) {
+    printf("\n--\n[Component #%hd]", i);
+
+    printf("\nend indices (#%hu): ", outln->comps[i].end_n);
+    for (uint16_t j = 0; j < outln->comps[i].end_n; ++j)
+      printf("%hu ", outln->comps[i].ends[j]);
+
+    printf("\npoints (#%hu): ", outln->comps[i].pt_n);
+    for (uint16_t j = 0; j < outln->comps[i].pt_n; ++j)
+      printf("\n[%s] (%hd %hd)", outln->comps[i].pts[j].on_curve ? "y" : "n",
+          outln->comps[i].pts[j].x, outln->comps[i].pts[j].y);
+  }
+  printf("\n--\n");
+#endif
+
+  /* TODO... */
+  deinit_outline(outln);
+
+  return 0;
+}
+
+static int fetch_simple(L_font *font, uint16_t id, L_component *comp) {
+  assert(font != NULL);
+  assert(comp != NULL);
+
+  uint32_t off = font->ttf.loca[id];
+  const L_glyfd *gd = (L_glyfd *)(font->ttf.glyf+off);
+
+  const int16_t contr_n = be16toh(gd->contr_n);
+  if (contr_n == 0) {
+    /* TODO */
+    assert(0);
+  }
+
+  comp->end_n = contr_n;
+  comp->ends = malloc(comp->end_n * sizeof *comp->ends);
+  if (comp->ends == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  for (uint16_t i = 0; i < comp->end_n; ++i)
+    comp->ends[i] = be16toh(((uint16_t *)gd->data)[i]);
+
+  comp->pt_n = comp->ends[contr_n-1] + 1;
+  comp->pts = malloc(comp->pt_n * sizeof *comp->pts);
+  if (comp->pts == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+
+  const uint16_t instr_len = be16toh(((uint16_t *)gd->data)[contr_n]);
+
+  off = contr_n*sizeof(uint16_t) + sizeof instr_len + instr_len;
+  int32_t flag_n = comp->ends[contr_n-1];
+  uint8_t flags = 0;
+  uint8_t repeat_n = 0;
+  uint32_t y_off = 0;
+
+  /* compute offsets from flags array */
+  do {
+    flags = gd->data[off++];
+    repeat_n = (flags & 8) ? gd->data[off++] : 0;
+    flag_n -= repeat_n + 1;
+    if (flags & 2)
+      /* x is byte */
+      y_off += repeat_n + 1;
+    else if (!(flags & 16))
+      /* x is word */
+      y_off += (repeat_n + 1) << 1;
+    /* x is same value otherwise */
+  } while (flag_n >= 0);
+
+  uint32_t x_off = off;
+  y_off += off;
+  off = contr_n*sizeof(uint16_t) + sizeof instr_len + instr_len;
+  flag_n = comp->ends[contr_n-1];
+  int on_curve;
+  int16_t x = 0;
+  int16_t y = 0;
+  int16_t d;
+  uint16_t pt_i = 0;
+
+  /* fetch point data */
+  do {
+    flags = gd->data[off++];
+    repeat_n = (flags & 8) ? gd->data[off++] : 0;
+    flag_n -= repeat_n + 1;
+
+    do {
+      on_curve = flags & 1;
+
+      if (flags & 2) {
+        if (flags & 16)
+          /* x is byte, positive sign */
+          x += gd->data[x_off++];
+        else
+          /* x is byte, negative sign */
+          x += -(gd->data[x_off++]);
+      } else if (!(flags & 16)) {
+        /* x is signed word */
+        d = gd->data[x_off+1];
+        d = (d << 8) | gd->data[x_off];
+        x += be16toh(d);
+        x_off += 2;
+      }
+
+      if (flags & 4) {
+        if (flags & 32)
+          /* y is byte, positive sign */
+          y += gd->data[y_off++];
+        else
+          /* y is byte, negative sign */
+          y += -(gd->data[y_off++]);
+      } else if (!(flags & 32)) {
+        /* y is signed word */
+        d = gd->data[y_off+1];
+        d = (d << 8) | gd->data[y_off];
+        y += be16toh(d);
+        y_off += 2;
+      }
+
+      comp->pts[pt_i].on_curve = on_curve;
+      comp->pts[pt_i].x = x;
+      comp->pts[pt_i].y = y;
+      ++pt_i;
+    } while (repeat_n-- > 0);
+
+  } while (flag_n >= 0);
+  return 0;
+}
+
+static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
+    uint16_t *comp_i)
+{
+  assert(font != NULL);
+  assert(comps != NULL);
+  assert(comp_i != NULL);
+
+#undef YF_GETWRD
+#define YF_GETWRD(res, gd, off) do { \
+  res = gd->data[off+1]; \
+  res = ((res) << 8) | gd->data[off]; \
+  res = be16toh(res); \
+  off += 2; } while (0)
+
+  uint32_t off = font->ttf.loca[id];
+  const L_glyfd *gd = (L_glyfd *)(font->ttf.glyf+off);
+  off = 0;
+
+  uint16_t idx = *comp_i;
+  uint16_t flags;
+  uint16_t comp_id;
+  uint16_t arg[2];
+  int16_t v[4];
+
+  do {
+    YF_GETWRD(flags, gd, off);
+    YF_GETWRD(comp_id, gd, off);
+
+    if (YF_SFNT_ISCOMPND(font, comp_id)) {
+      if (fetch_compnd(font, comp_id, comps, comp_i) != 0)
+        return -1;
+    } else {
+      if (fetch_simple(font, comp_id, comps+((*comp_i)++)) != 0)
+        return -1;
+    }
+
+    if (flags & 1) {
+      /* arguments are words */
+      YF_GETWRD(arg[0], gd, off);
+      YF_GETWRD(arg[1], gd, off);
+    } else {
+      /* arguments are bytes */
+      arg[0] = gd->data[off++];
+      arg[1] = gd->data[off++];
+    }
+
+    if (flags & 2) {
+      /* arguments are x,y values */
+      for (uint16_t i = idx; i < *comp_i; ++i) {
+        for (uint16_t j = 0; j < comps[i].pt_n; ++j) {
+          comps[i].pts[j].x += arg[0];
+          comps[i].pts[j].y += arg[1];
+        }
+      }
+    } else {
+      /* arguments are points */
+      /* TODO */
+      assert(0);
+    }
+
+    /* TODO: Transform points. */
+    if (flags & 8) {
+      /* simple scale */
+      YF_GETWRD(v[0], gd, off);
+      v[3] = v[0];
+      v[1] = v[2] = 0;
+    } else if (flags & 64) {
+      /* different scales */
+      YF_GETWRD(v[0], gd, off);
+      YF_GETWRD(v[3], gd, off);
+      v[1] = v[2] = 0;
+    } else if (flags & 128) {
+      /* 2x2 transformation */
+      YF_GETWRD(v[0], gd, off);
+      YF_GETWRD(v[1], gd, off);
+      YF_GETWRD(v[2], gd, off);
+      YF_GETWRD(v[3], gd, off);
+    } else {
+      /* as is */
+      v[0] = v[3] = 1;
+      v[1] = v[2] = 0;
+    }
+
+    ++idx;
+  } while (flags & 32);
+  return 0;
+}
+
+static void deinit_outline(L_outline *outln) {
+  if (outln == NULL)
+    return;
+
+  if (outln->comps != NULL) {
+    for (uint16_t i = 0; i < outln->comp_n; ++i) {
+      free(outln->comps[i].ends);
+      free(outln->comps[i].pts);
+    }
+    free(outln->comps);
+  }
+  free(outln);
 }
