@@ -1172,7 +1172,7 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
   }
 
   /* TODO: Pass on the font data. */
-  fetch_glyph(font, L'z');
+  fetch_glyph(font, L'Ń');
 
   deinit_tables(&sfnt);
   fclose(file);
@@ -2236,6 +2236,10 @@ typedef struct {
 } L_segment;
 
 /* TODO: Scale outline before rasterization. */
+/* XXX */
+uint16_t YF_SFNT_size[2];
+const void *YF_SFNT_bitmap;
+/* --- */
 static int rasterize(L_outline *outln/*, dst*/) {
   assert(outln != NULL);
   assert(outln->comps != NULL);
@@ -2351,7 +2355,10 @@ static int rasterize(L_outline *outln/*, dst*/) {
   }
 
   /* TODO... */
-  free(bitmap);
+  /*free(bitmap);*/
+  YF_SFNT_size[0] = w;
+  YF_SFNT_size[1] = h;
+  YF_SFNT_bitmap = bitmap;
 
   free(segs);
   return 0;
