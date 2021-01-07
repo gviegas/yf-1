@@ -8,8 +8,9 @@
 #ifndef YF_DATA_SFNT_H
 #define YF_DATA_SFNT_H
 
+#include "font.h"
+
 /* Loads font resource from a SFNT file. */
-/* TODO */
-int yf_loadsfnt(const char *pathname/* 'fontdt'... */);
+int yf_loadsfnt(const char *pathname, YF_fontdt *data);
 
 #endif /* YF_DATA_SFNT_H */

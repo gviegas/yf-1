@@ -689,7 +689,7 @@ static int load_ttf(L_sfnt *sfnt, FILE *file);
 static void deinit_tables(L_sfnt *sfnt);
 
 /* Deinitializes font data. */
-static void deinit_font(L_font *font);
+static void deinit_font(void *font);
 
 /* Sets mapping of character codes to glyph indices. */
 static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
@@ -705,10 +705,11 @@ static size_t hash_fmap(const void *x);
 /* Compares glyphs of a 'L_fontmap' sparse format. */
 static int cmp_fmap(const void *a, const void *b);
 
-/* Fetches glyph data. */
-static int fetch_glyph(L_font *font, wchar_t glyph/*, (?) dst */);
+/* Gets a glyph. */
+static int get_glyph(void *font, wchar_t code, uint16_t pts, uint16_t dpi,
+    YF_glyph *glyph);
 
-int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
+int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
@@ -1171,8 +1172,9 @@ int yf_loadsfnt(const char *pathname/* 'fontdt' */) {
     assert(0);
   }
 
-  /* TODO: Pass on the font data. */
-  fetch_glyph(font, L'Ń');
+  data->font = font;
+  data->glyph = get_glyph;
+  data->deinit = deinit_font;
 
   deinit_tables(&sfnt);
   fclose(file);
@@ -1542,36 +1544,38 @@ static void deinit_tables(L_sfnt *sfnt) {
      expected to be allocated from the stack. */
 }
 
-static void deinit_font(L_font *font) {
+static void deinit_font(void *font) {
   if (font == NULL)
     return;
 
-  free(font->str.copyright);
-  free(font->str.family);
-  free(font->str.subfamily);
-  free(font->str.uid);
-  free(font->str.name);
-  free(font->str.version);
-  free(font->str.trademark);
-  free(font->str.manufacturer);
-  free(font->str.designer);
-  free(font->str.description);
-  free(font->str.license);
-  free(font->str.typographic_family);
-  free(font->str.typographic_subfamily);
-  free(font->str.sample_text);
+  L_font *fnt = font;
 
-  switch (font->map.map) {
+  free(fnt->str.copyright);
+  free(fnt->str.family);
+  free(fnt->str.subfamily);
+  free(fnt->str.uid);
+  free(fnt->str.name);
+  free(fnt->str.version);
+  free(fnt->str.trademark);
+  free(fnt->str.manufacturer);
+  free(fnt->str.designer);
+  free(fnt->str.description);
+  free(fnt->str.license);
+  free(fnt->str.typographic_family);
+  free(fnt->str.typographic_subfamily);
+  free(fnt->str.sample_text);
+
+  switch (fnt->map.map) {
     case YF_SFNT_MAP_SPARSE:
-      yf_hashset_deinit(font->map.sparse.glyph_ids);
+      yf_hashset_deinit(fnt->map.sparse.glyph_ids);
       break;
     case YF_SFNT_MAP_TRIMMED:
-      free(font->map.trimmed.glyph_ids);
+      free(fnt->map.trimmed.glyph_ids);
       break;
   }
 
-  free(font->ttf.loca);
-  free(font->ttf.glyf);
+  free(fnt->ttf.loca);
+  free(fnt->ttf.glyf);
 
   free(font);
 }
@@ -1892,6 +1896,9 @@ typedef struct {
   uint16_t comp_n;
 } L_outline;
 
+/* Fetches glyph data to produce an outline. */
+static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln);
+
 /* Fetches a simple glyph. */
 static int fetch_simple(L_font *font, uint16_t id, L_component *comp);
 
@@ -1902,18 +1909,40 @@ static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
 /* Deinitializes an outline. */
 static void deinit_outline(L_outline *outln);
 
-/* Rasterizes an outline. */
-static int rasterize(L_outline *outln/*, dst*/);
+/* Rasterizes an outline to produce a glyph. */
+static int rasterize(L_outline *outln, YF_glyph *glyph);
 
-static int fetch_glyph(L_font *font, wchar_t glyph) {
+static int get_glyph(void *font, wchar_t code, uint16_t pts, uint16_t dpi,
+    YF_glyph *glyph)
+{
+  assert(font != NULL);
+  assert(pts != 0 && dpi != 0);
+  assert(glyph != NULL);
+
+  L_outline outln = {0};
+  if (fetch_glyph(font, code, &outln) != 0) {
+    deinit_outline(&outln);
+    return -1;
+  }
+  /* TODO: Scale outline before rasterization. */
+  if (rasterize(&outln, glyph) != 0) {
+    deinit_outline(&outln);
+    return -1;
+  }
+  deinit_outline(&outln);
+  return 0;
+}
+
+static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
   assert(font != NULL);
   assert(font->ttf.loca != NULL);
   assert(font->ttf.glyf != NULL);
+  assert(outln != NULL);
 
   uint16_t id;
   if (font->map.map == YF_SFNT_MAP_SPARSE) {
     YF_hashset hset = font->map.sparse.glyph_ids;
-    const void *key = (const void *)(uintptr_t)glyph;
+    const void *key = (const void *)(uintptr_t)code;
     if (!yf_hashset_contains(hset, key)) {
       yf_seterr(YF_ERR_NOTFND, __func__);
       return -1;
@@ -1924,12 +1953,11 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
     const uint16_t first = font->map.trimmed.first_code;
     const uint16_t n = font->map.trimmed.entry_n;
     const uint16_t *ids = font->map.trimmed.glyph_ids;
-    const uint16_t code = glyph - first;
-    if (glyph < first || glyph >= first+n) {
+    if (code < first || code >= first+n) {
       yf_seterr(YF_ERR_NOTFND, __func__);
       return -1;
     }
-    id = ids[code];
+    id = ids[code-first];
   }
 
   const uint32_t off = font->ttf.loca[id];
@@ -1943,11 +1971,6 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
       YF_SFNT_ISCOMPND(font, id));
 #endif
 
-  L_outline *outln = calloc(1, sizeof *outln);
-  if (outln == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    return -1;
-  }
   outln->x_min = be16toh(gd->x_min);
   outln->y_min = be16toh(gd->y_min);
   outln->x_max = be16toh(gd->x_max);
@@ -1959,26 +1982,20 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
     outln->comps = calloc(font->comp_elem_max, sizeof *outln->comps);
     if (outln->comps == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
-      free(outln);
       return -1;
     }
-    if (fetch_compnd(font, id, outln->comps, &outln->comp_n) != 0) {
-      deinit_outline(outln);
+    if (fetch_compnd(font, id, outln->comps, &outln->comp_n) != 0)
       return -1;
-    }
   } else {
     /* one component suffices */
     outln->comp_n = 1;
     outln->comps = calloc(outln->comp_n, sizeof *outln->comps);
     if (outln->comps == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
-      free(outln);
       return -1;
     }
-    if (fetch_simple(font, id, outln->comps) != 0) {
-      deinit_outline(outln);
+    if (fetch_simple(font, id, outln->comps) != 0)
       return -1;
-    }
   }
 
 #ifdef YF_DEBUG
@@ -1997,10 +2014,6 @@ static int fetch_glyph(L_font *font, wchar_t glyph) {
   }
   printf("\n--\n");
 #endif
-
-  /* TODO... */
-  rasterize(outln);
-  deinit_outline(outln);
 
   return 0;
 }
@@ -2214,7 +2227,7 @@ static void deinit_outline(L_outline *outln) {
     }
     free(outln->comps);
   }
-  free(outln);
+  /* XXX: 'outln' ptr not freed. */
 }
 
 /* Contour winding directions. */
@@ -2235,14 +2248,10 @@ typedef struct {
   L_point p2;
 } L_segment;
 
-/* TODO: Scale outline before rasterization. */
-/* XXX */
-uint16_t YF_SFNT_size[2];
-const void *YF_SFNT_bitmap;
-/* --- */
-static int rasterize(L_outline *outln/*, dst*/) {
+static int rasterize(L_outline *outln, YF_glyph *glyph) {
   assert(outln != NULL);
   assert(outln->comps != NULL);
+  assert(glyph != NULL);
 
 #undef YF_NEWSEG
 #define YF_NEWSEG(seg, comp, i, j) do { \
@@ -2355,10 +2364,11 @@ static int rasterize(L_outline *outln/*, dst*/) {
   }
 
   /* TODO... */
-  /*free(bitmap);*/
-  YF_SFNT_size[0] = w;
-  YF_SFNT_size[1] = h;
-  YF_SFNT_bitmap = bitmap;
+
+  glyph->width = w;
+  glyph->height = h;
+  glyph->bpp = 8;
+  glyph->bitmap.u8 = bitmap;
 
   free(segs);
   return 0;

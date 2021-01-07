@@ -11,10 +11,11 @@
 #include <yf/com/yf-error.h>
 
 #include "font.h"
+#include "data-sfnt.h"
 
 struct YF_font_o {
-  /* TODO */
-  int _;
+  YF_fontdt data;
+  /* TODO... */
 };
 
 YF_font yf_font_init(int filetype, const char *pathname) {
@@ -28,20 +29,23 @@ YF_font yf_font_init(int filetype, const char *pathname) {
       /* TODO */
       assert(0);
     case YF_FILETYPE_TTF:
-      /* TODO */
-      assert(0);
+      if (yf_loadsfnt(pathname, &font->data) != 0) {
+        yf_font_deinit(font);
+        return NULL;
+      }
+      break;
     default:
       yf_seterr(YF_ERR_INVARG, __func__);
       yf_font_deinit(font);
       return NULL;
   }
-  /* TODO */
   return font;
 }
 
 void yf_font_deinit(YF_font font) {
   if (font != NULL) {
-    /* TODO */
+    if (font->data.deinit != NULL)
+      font->data.deinit(font->data.font);
     free(font);
   }
 }
