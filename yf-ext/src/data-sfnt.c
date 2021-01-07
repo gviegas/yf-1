@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <assert.h>
 
 #include <yf/com/yf-hashset.h>
@@ -1880,17 +1881,18 @@ typedef struct {
   uint16_t *ends;
   uint16_t end_n;
   /* point list */
-  struct { int on_curve; int16_t x, y; } *pts;
+  struct { int on_curve; int32_t x, y; } *pts;
   uint16_t pt_n;
 } L_component;
 
 /* Complete outline of a glyph. */
 typedef struct {
+  uint16_t upem;
   /* boundaries */
-  int16_t x_min;
-  int16_t y_min;
-  int16_t x_max;
-  int16_t y_max;
+  int32_t x_min;
+  int32_t y_min;
+  int32_t x_max;
+  int32_t y_max;
   /* component list */
   L_component *comps;
   uint16_t comp_n;
@@ -1909,6 +1911,9 @@ static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
 /* Deinitializes an outline. */
 static void deinit_outline(L_outline *outln);
 
+/* Scales an outline. */
+static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi);
+
 /* Rasterizes an outline to produce a glyph. */
 static int rasterize(L_outline *outln, YF_glyph *glyph);
 
@@ -1919,18 +1924,16 @@ static int get_glyph(void *font, wchar_t code, uint16_t pts, uint16_t dpi,
   assert(pts != 0 && dpi != 0);
   assert(glyph != NULL);
 
+  int r = 0;
   L_outline outln = {0};
-  if (fetch_glyph(font, code, &outln) != 0) {
-    deinit_outline(&outln);
-    return -1;
-  }
-  /* TODO: Scale outline before rasterization. */
-  if (rasterize(&outln, glyph) != 0) {
-    deinit_outline(&outln);
-    return -1;
-  }
+
+  if (fetch_glyph(font, code, &outln) != 0 ||
+      scale_outline(&outln, pts, dpi) != 0 ||
+      rasterize(&outln, glyph) != 0)
+    r = -1;
+
   deinit_outline(&outln);
-  return 0;
+  return r;
 }
 
 static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
@@ -1938,6 +1941,8 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
   assert(font->ttf.loca != NULL);
   assert(font->ttf.glyf != NULL);
   assert(outln != NULL);
+
+  outln->upem = font->upem;
 
   uint16_t id;
   if (font->map.map == YF_SFNT_MAP_SPARSE) {
@@ -2230,6 +2235,34 @@ static void deinit_outline(L_outline *outln) {
   /* XXX: 'outln' ptr not freed. */
 }
 
+static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi) {
+  assert(outln != NULL);
+  assert(outln->comps != NULL);
+  assert(pts > 0 && dpi > 0);
+
+  /* XXX: Should use 26.6 fixed point instead of float. */
+  /*const float fac = (float)(pts*dpi) / (float)(outln->upem*72);*/
+
+  /* create scaled points for each contour of each component */
+  for (uint16_t i = 0; i < outln->comp_n; ++i) {
+    uint16_t begn = 0;
+    uint16_t curr = 0;
+
+    for (uint16_t j = 0; j < outln->comps[i].end_n; ++j) {
+      uint16_t end = outln->comps[i].ends[j];
+
+      do {
+        /* ... */
+      } while (curr++ != end);
+
+      begn = end+1;
+    }
+  }
+
+  /* TODO... */
+  return 0;
+}
+
 /* Contour winding directions. */
 #define YF_SFNT_WIND_NONE 0
 #define YF_SFNT_WIND_ON   1
@@ -2255,10 +2288,10 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
 
 #undef YF_NEWSEG
 #define YF_NEWSEG(seg, comp, i, j) do { \
-  const int16_t x1 = (comp).pts[i].x; \
-  const int16_t y1 = (comp).pts[i].y; \
-  const int16_t x2 = (comp).pts[j].x; \
-  const int16_t y2 = (comp).pts[j].y; \
+  const int32_t x1 = (comp).pts[i].x; \
+  const int32_t y1 = (comp).pts[i].y; \
+  const int32_t x2 = (comp).pts[j].x; \
+  const int32_t y2 = (comp).pts[j].y; \
   (seg).wind = y1 < y2 ? YF_SFNT_WIND_ON : \
     (y1 > y2 ? YF_SFNT_WIND_OFF : YF_SFNT_WIND_NONE); \
   (seg).p1 = (L_point){x1, y1}; \
