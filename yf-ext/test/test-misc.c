@@ -198,15 +198,19 @@ static void init(void) {
 
   /* Bitmap */
   /* XXX */
-  extern uint16_t YF_SFNT_size[2];
-  extern const void *YF_SFNT_bitmap;
-  assert(yf_loadsfnt("tmp/font.ttf") == 0);
+  YF_fontdt fdt;
+  assert(yf_loadsfnt("tmp/font.ttf", &fdt) == 0);
+  YF_glyph glyph;
+  if (fdt.glyph(fdt.font, L'*', 16, 72, &glyph) != 0)
+    assert(0);
+  assert(glyph.bpp == 8);
 
-  const YF_dim3 bitmap_dim = {YF_SFNT_size[0], YF_SFNT_size[1], 1};
+  const YF_dim3 bitmap_dim = {glyph.width, glyph.height, 1};
   YF_image bitmap = yf_image_init(ctx, YF_PIXFMT_R8UNORM, bitmap_dim, 1, 1, 1);
   assert(bitmap != NULL);
-  YF_off3 bitmap_off = {0};
-  if (yf_image_copy(bitmap, bitmap_off, bitmap_dim, 0, 0, YF_SFNT_bitmap) != 0)
+  const YF_off3 bitmap_off = {0};
+  const void *bitmap_dt = glyph.bitmap.u8;
+  if (yf_image_copy(bitmap, bitmap_off, bitmap_dim, 0, 0, bitmap_dt) != 0)
     assert(0);
 
   const unsigned layer = 0;

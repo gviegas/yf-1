@@ -29,9 +29,10 @@ typedef struct {
   /* Font implementation. */
   void *font;
   /* Glyph generation. */
-  YF_glyph *(*glyph_fn)(void *font, wchar_t code, uint16_t pts, uint16_t dpi);
+  int (*glyph)(void *font, wchar_t code, uint16_t pts, uint16_t dpi,
+      YF_glyph *glyph);
   /* Deinitialization. */
-  int (*deinit_fn)(void *font);
+  void (*deinit)(void *font);
 } YF_fontdt;
 
 #endif /* YF_FONT_H */
