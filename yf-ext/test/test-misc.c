@@ -166,12 +166,41 @@ static void init(void) {
   YF_gstate gst = yf_gstate_init(ctx, &conf);
   assert(gst != NULL);
 
+  /* Bitmap */
+/*
+  YF_fontdt fdt;
+  assert(yf_loadsfnt("tmp/font.ttf", &fdt) == 0);
+*/
+  YF_font font = yf_font_init(YF_FILETYPE_TTF, "tmp/font.ttf");
+  assert(font != NULL);
+  YF_fontdt fdt = *((YF_fontdt *)font);
+  YF_glyph glyph;
+  if (fdt.glyph(fdt.font, L'?'/*L'ń'*/, 16, 72, &glyph) != 0)
+    assert(0);
+  assert(glyph.bpp == 8);
+
+  const YF_off3 bitmap_off = {0};
+  const void *bitmap_dt = glyph.bitmap.u8;
+  const YF_dim3 bitmap_dim = {glyph.width, glyph.height, 1};
+
+  YF_image bitmap = yf_image_init(ctx, YF_PIXFMT_R8UNORM, bitmap_dim, 1, 1, 1);
+  assert(bitmap != NULL);
+
   /* Data copy */
-  YF_mat4 m, v, p;
+  YF_mat4 m, s, vp, v, p;
   const YF_vec3 eye = {0.0, 0.0, -3.0}, center = {0}, up = {0.0, -1.0, 0.0};
+
   yf_mat4_persp(p, 0.79, (YF_float)YF_WINW / (YF_float)YF_WINH, 0.1, 100.0);
   yf_mat4_lookat(v, eye, center, up);
-  yf_mat4_mul(m, p, v);
+  yf_mat4_mul(vp, p, v);
+
+  YF_float ratio = (YF_float)bitmap_dim.width / (YF_float)bitmap_dim.height;
+  if (ratio > 1.0)
+    yf_mat4_scale(s, 1.0, 1.0/ratio, 1.0);
+  else
+    yf_mat4_scale(s, ratio, 1.0, 1.0);
+
+  yf_mat4_mul(m, vp, s);
 
   const L_vertex verts[4] = {
     {{-1.0f, -1.0f, 0.5f}, {0.0f, 1.0f}},
@@ -196,27 +225,12 @@ static void init(void) {
   if (yf_dtable_copybuf(dtb, 0, 0, elems, &buf, &buf_off, &buf_sz) != 0)
     assert(0);
 
-  /* Bitmap */
-  /* XXX */
-  YF_fontdt fdt;
-  assert(yf_loadsfnt("tmp/font.ttf", &fdt) == 0);
-  YF_glyph glyph;
-  if (fdt.glyph(fdt.font, L'*', 16, 72, &glyph) != 0)
-    assert(0);
-  assert(glyph.bpp == 8);
-
-  const YF_dim3 bitmap_dim = {glyph.width, glyph.height, 1};
-  YF_image bitmap = yf_image_init(ctx, YF_PIXFMT_R8UNORM, bitmap_dim, 1, 1, 1);
-  assert(bitmap != NULL);
-  const YF_off3 bitmap_off = {0};
-  const void *bitmap_dt = glyph.bitmap.u8;
   if (yf_image_copy(bitmap, bitmap_off, bitmap_dim, 0, 0, bitmap_dt) != 0)
     assert(0);
 
   const unsigned layer = 0;
   if (yf_dtable_copyimg(dtb, 0, 1, elems, &bitmap, &layer) != 0)
     assert(0);
-  /* --- */
 
   l_vars.ctx = ctx;
   l_vars.wsi = wsi;
