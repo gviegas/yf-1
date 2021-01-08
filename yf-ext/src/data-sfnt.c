@@ -2235,13 +2235,32 @@ static void deinit_outline(L_outline *outln) {
   /* XXX: 'outln' ptr not freed. */
 }
 
+/* 26.6 fixed-point arithmetic used for scaling. */
+/* XXX: May require additional bounds check for large point values. */
+#define YF_SFNT_Q 6
+
+#define YF_SFNT_INTTOFIX(x) ((x)<<YF_SFNT_Q)
+#define YF_SFNT_FIXTOINT(x) \
+  (((x)>>YF_SFNT_Q)+((((x)&(1<<(YF_SFNT_Q-1)))>>(YF_SFNT_Q-1))))
+
+#define YF_SFNT_FLTTOFIX(x) ((int32_t)round((float)(x)*(1<<YF_SFNT_Q)))
+#define YF_SFNT_FIXTOFLT(x) ((float)(x)*(1.0f/(1<<YF_SFNT_Q)))
+
+#define YF_SFNT_FIXMUL(x, y) ((((x)*(y))+(1<<(YF_SFNT_Q-1)))>>YF_SFNT_Q)
+#define YF_SFNT_FIXDIV(x, y) \
+  (((x)&(1<<31)) && ((y)&(1<<31)) ? \
+    (((x)<<YF_SFNT_Q)+((y)>>1))/(y) : (((x)<<YF_SFNT_Q)-((y)>>1))/(y))
+
 static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi) {
   assert(outln != NULL);
   assert(outln->comps != NULL);
   assert(pts > 0 && dpi > 0);
 
-  /* XXX: Should use 26.6 fixed point instead of float. */
-  /*const float fac = (float)(pts*dpi) / (float)(outln->upem*72);*/
+  const float fac = (float)(pts*dpi) / (float)(outln->upem*72);
+  const int32_t x_min = YF_SFNT_FLTTOFIX(outln->x_min*fac);
+  const int32_t y_min = YF_SFNT_FLTTOFIX(outln->y_min*fac);
+  const int32_t x_max = YF_SFNT_FLTTOFIX(outln->x_max*fac);
+  const int32_t y_max = YF_SFNT_FLTTOFIX(outln->y_max*fac);
 
   /* create scaled points for each contour of each component */
   for (uint16_t i = 0; i < outln->comp_n; ++i) {
