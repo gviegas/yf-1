@@ -2281,8 +2281,13 @@ static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi) {
           comp.pts[pt_i].x = YF_SFNT_FLTTOFIX(outln->comps[i].pts[curr].x*fac);
           comp.pts[pt_i].y = YF_SFNT_FLTTOFIX(outln->comps[i].pts[curr].y*fac);
           if (++pt_i == comp.pt_n) {
-            /* TODO: Realloc. */
-            assert(0);
+            comp.pt_n = YF_MIN(comp.pt_n<<1, 0xffff);
+            void *tmp = realloc(comp.pts, comp.pt_n * sizeof *comp.pts);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            comp.pts = tmp;
           }
           continue;
         }
@@ -2349,9 +2354,15 @@ static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi) {
           comp.pts[pt_i].y = YF_SFNT_FIXMUL(a, y0) + YF_SFNT_FIXMUL(b, y1) +
             YF_SFNT_FIXMUL(c, y2);
 
+          /* XXX: Careful with overflow here. */
           if (++pt_i == comp.pt_n) {
-            /* TODO: Realloc. */
-            assert(0);
+            comp.pt_n = YF_MIN(comp.pt_n<<1, 0xffff);
+            void *tmp = realloc(comp.pts, comp.pt_n * sizeof *comp.pts);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            comp.pts = tmp;
           }
         }
 
@@ -2362,9 +2373,14 @@ static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi) {
     }
 
     free(outln->comps[i].pts);
-    /* TODO: Shrink new point list to fit. */
+    if (comp.pt_n > pt_i) {
+      comp.pt_n = pt_i;
+      void *tmp = realloc(comp.pts, comp.pt_n * sizeof *comp.pts);
+      if (tmp != NULL)
+        comp.pts = tmp;
+    }
     outln->comps[i].pts = comp.pts;
-    outln->comps[i].pt_n = pt_i;
+    outln->comps[i].pt_n = comp.pt_n;
   }
 
   outln->x_min = YF_SFNT_FLTTOFIX(outln->x_min*fac);
@@ -2447,7 +2463,11 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
 
 #undef YF_DIRECTION
 #define YF_DIRECTION(p1, p2, p3) \
+  (YF_SFNT_FIXMUL((p3).x-(p1).x, (p2).y-(p1).y) - \
+    YF_SFNT_FIXMUL((p2).x-(p1).x, (p3).y-(p1).y))
+/*
   (((p3).x-(p1).x) * ((p2).y-(p1).y) - ((p2).x-(p1).x) * ((p3).y-(p1).y))
+*/
 
 #undef YF_ONPOINT
 #define YF_ONPOINT(p1, p2, p3) \
