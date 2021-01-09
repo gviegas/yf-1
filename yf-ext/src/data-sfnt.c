@@ -2264,21 +2264,111 @@ static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi) {
 
   /* create scaled points for each contour of each component */
   for (uint16_t i = 0; i < outln->comp_n; ++i) {
+    L_component comp;
+    comp.ends = outln->comps[i].ends;
+    comp.end_n = outln->comps[i].end_n;
+    comp.pt_n = outln->comps[i].pt_n << 1;
+    comp.pts = malloc(comp.pt_n * sizeof *comp.pts);
+    if (comp.pts == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+    uint16_t pt_i = 0;
     uint16_t begn = 0;
     uint16_t curr = 0;
 
-    for (uint16_t j = 0; j < outln->comps[i].end_n; ++j) {
-      uint16_t end = outln->comps[i].ends[j];
-
+    for (uint16_t j = 0; j < comp.end_n; ++j) {
+      uint16_t end = comp.ends[j];
       do {
-        /* ... */
+        if (outln->comps[i].pts[curr].on_curve) {
+          comp.pts[pt_i].on_curve = 1;
+          comp.pts[pt_i].x = YF_SFNT_FLTTOFIX(outln->comps[i].pts[curr].x*fac);
+          comp.pts[pt_i].y = YF_SFNT_FLTTOFIX(outln->comps[i].pts[curr].y*fac);
+          if (++pt_i == comp.pt_n) {
+            /* TODO: Realloc. */
+            assert(0);
+          }
+          continue;
+        }
+
+        const uint16_t p0_i = curr == begn ? end : curr-1;
+        const uint16_t p1_i = curr;
+        const uint16_t p2_i = curr == end ? begn : curr+1;
+
+        struct { int on; int32_t x, y; } curve[3] = {
+          {
+            outln->comps[i].pts[p0_i].on_curve,
+            outln->comps[i].pts[p0_i].x,
+            outln->comps[i].pts[p0_i].y
+          },
+          {
+            outln->comps[i].pts[p1_i].on_curve,
+            outln->comps[i].pts[p1_i].x,
+            outln->comps[i].pts[p1_i].y
+          },
+          {
+            outln->comps[i].pts[p2_i].on_curve,
+            outln->comps[i].pts[p2_i].x,
+            outln->comps[i].pts[p2_i].y
+          }
+        };
+
+        /* missing on-curve points created as needed */
+        if (curve[0].on) {
+          curve[0].x = YF_SFNT_FLTTOFIX(curve[0].x*fac);
+          curve[0].y = YF_SFNT_FLTTOFIX(curve[0].y*fac);
+        } else {
+          curve[0].x = YF_SFNT_FLTTOFIX((curve[0].x+curve[1].x)*fac*0.5f);
+          curve[0].y = YF_SFNT_FLTTOFIX((curve[0].y+curve[1].y)*fac*0.5f);
+        }
+        if (curve[2].on) {
+          curve[2].x = YF_SFNT_FLTTOFIX(curve[2].x*fac);
+          curve[2].y = YF_SFNT_FLTTOFIX(curve[2].y*fac);
+        } else {
+          curve[2].x = YF_SFNT_FLTTOFIX((curve[1].x+curve[2].x)*fac*0.5f);
+          curve[2].y = YF_SFNT_FLTTOFIX((curve[1].y+curve[2].y)*fac*0.5f);
+        }
+        curve[1].x = YF_SFNT_FLTTOFIX(curve[1].x*fac);
+        curve[1].y = YF_SFNT_FLTTOFIX(curve[1].y*fac);
+
+        /* TODO: Dynamic range instead. */
+        const int32_t ts = (1<<YF_SFNT_Q)>>2;
+        int32_t t = 0;
+        while ((t += ts) < (1<<YF_SFNT_Q)) {
+          const int32_t diff = (1<<YF_SFNT_Q)-t;
+          const int32_t dbl = YF_SFNT_FIXMUL(t, 2<<YF_SFNT_Q);
+          const int32_t a = YF_SFNT_FIXMUL(diff, diff);
+          const int32_t b = YF_SFNT_FIXMUL(dbl, diff);
+          const int32_t c = YF_SFNT_FIXMUL(t, t);
+          const int32_t x0 = curve[0].x;
+          const int32_t y0 = curve[0].y;
+          const int32_t x1 = curve[1].x;
+          const int32_t y1 = curve[1].y;
+          const int32_t x2 = curve[2].x;
+          const int32_t y2 = curve[2].y;
+
+          /* p(t) = (1-t)^2*p0 + 2*t*(1-t)*p1 + t^2*p2 */
+          comp.pts[pt_i].x = YF_SFNT_FIXMUL(a, x0) + YF_SFNT_FIXMUL(b, x1) +
+            YF_SFNT_FIXMUL(c, x2);
+          comp.pts[pt_i].y = YF_SFNT_FIXMUL(a, y0) + YF_SFNT_FIXMUL(b, y1) +
+            YF_SFNT_FIXMUL(c, y2);
+
+          if (++pt_i == comp.pt_n) {
+            /* TODO: Realloc. */
+            assert(0);
+          }
+        }
+
       } while (curr++ != end);
 
       begn = end+1;
+      comp.ends[j] = pt_i-1;
     }
+    free(outln->comps[i].pts);
+    /* TODO: Shrink new point list to fit. */
+    outln->comps[i].pts = comp.pts;
+    outln->comps[i].pt_n = pt_i;
   }
-
-  /* TODO... */
   return 0;
 }
 
