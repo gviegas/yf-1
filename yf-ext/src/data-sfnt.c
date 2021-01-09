@@ -2257,10 +2257,6 @@ static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi) {
   assert(pts > 0 && dpi > 0);
 
   const float fac = (float)(pts*dpi) / (float)(outln->upem*72);
-  const int32_t x_min = YF_SFNT_FLTTOFIX(outln->x_min*fac);
-  const int32_t y_min = YF_SFNT_FLTTOFIX(outln->y_min*fac);
-  const int32_t x_max = YF_SFNT_FLTTOFIX(outln->x_max*fac);
-  const int32_t y_max = YF_SFNT_FLTTOFIX(outln->y_max*fac);
 
   /* create scaled points for each contour of each component */
   for (uint16_t i = 0; i < outln->comp_n; ++i) {
@@ -2364,11 +2360,17 @@ static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi) {
       begn = end+1;
       comp.ends[j] = pt_i-1;
     }
+
     free(outln->comps[i].pts);
     /* TODO: Shrink new point list to fit. */
     outln->comps[i].pts = comp.pts;
     outln->comps[i].pt_n = pt_i;
   }
+
+  outln->x_min = YF_SFNT_FLTTOFIX(outln->x_min*fac);
+  outln->y_min = YF_SFNT_FLTTOFIX(outln->y_min*fac);
+  outln->x_max = YF_SFNT_FLTTOFIX(outln->x_max*fac);
+  outln->y_max = YF_SFNT_FLTTOFIX(outln->y_max*fac);
   return 0;
 }
 
