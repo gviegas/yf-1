@@ -1976,10 +1976,10 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
       YF_SFNT_ISCOMPND(font, id));
 #endif
 
-  outln->x_min = be16toh(gd->x_min);
-  outln->y_min = be16toh(gd->y_min);
-  outln->x_max = be16toh(gd->x_max);
-  outln->y_max = be16toh(gd->y_max);
+  outln->x_min = (int16_t)be16toh(gd->x_min);
+  outln->y_min = (int16_t)be16toh(gd->y_min);
+  outln->x_max = (int16_t)be16toh(gd->x_max);
+  outln->y_max = (int16_t)be16toh(gd->y_max);
 
   if (YF_SFNT_ISCOMPND(font, id)) {
     /* allocate max. components and let callee update the count */
@@ -2500,16 +2500,19 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
     res = 0; } while (0)
 
   /* rasterize */
-  const uint16_t w = outln->x_max - outln->x_min;
-  const uint16_t h = outln->y_max - outln->y_min;
-  uint8_t *bitmap = malloc(w*h);
+  const uint32_t w = outln->x_max - outln->x_min;
+  const uint32_t h = outln->y_max - outln->y_min;
+  uint8_t *bitmap = malloc(YF_SFNT_FIXTOINT(w)*YF_SFNT_FIXTOINT(h));
   if (bitmap == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     free(segs);
     return -1;
   }
-  for (uint16_t y = 0; y < h; ++y) {
-    for (uint16_t x = 0; x < w; ++x) {
+  const uint32_t half = 1<<(YF_SFNT_Q-1);
+  const uint32_t one = half<<1;
+  uint32_t idx = 0;
+  for (uint32_t y = half; y < h; y += one) {
+    for (uint32_t x = half; x < w; x += one) {
       L_point p1 = {x+outln->x_min, y+outln->y_min};
       L_point p2 = {p1.x+0xffff, p1.y};
       int wind = YF_SFNT_WIND_NONE;
@@ -2523,14 +2526,14 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
         if (isect)
           wind += segs[i].wind;
       }
-      bitmap[y*w+x] = wind != YF_SFNT_WIND_NONE ? 255 : 0;
+      bitmap[idx++] = wind != YF_SFNT_WIND_NONE ? 255 : 0;
     }
   }
 
   /* TODO... */
 
-  glyph->width = w;
-  glyph->height = h;
+  glyph->width = YF_SFNT_FIXTOINT(w);
+  glyph->height = YF_SFNT_FIXTOINT(h);
   glyph->bpp = 8;
   glyph->bitmap.u8 = bitmap;
 
