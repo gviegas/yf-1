@@ -1914,6 +1914,9 @@ static void deinit_outline(L_outline *outln);
 /* Scales an outline. */
 static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi);
 
+/* Grid-fits a scaled outline. */
+static int grid_fit(L_outline *outln);
+
 /* Rasterizes an outline to produce a glyph. */
 static int rasterize(L_outline *outln, YF_glyph *glyph);
 
@@ -1929,6 +1932,7 @@ static int get_glyph(void *font, wchar_t code, uint16_t pts, uint16_t dpi,
 
   if (fetch_glyph(font, code, &outln) != 0 ||
       scale_outline(&outln, pts, dpi) != 0 ||
+      grid_fit(&outln) != 0 ||
       rasterize(&outln, glyph) != 0)
     r = -1;
 
@@ -2387,6 +2391,24 @@ static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi) {
   outln->y_min = YF_SFNT_FLTTOFIX(outln->y_min*fac);
   outln->x_max = YF_SFNT_FLTTOFIX(outln->x_max*fac);
   outln->y_max = YF_SFNT_FLTTOFIX(outln->y_max*fac);
+  return 0;
+}
+
+static int grid_fit(L_outline *outln) {
+  assert(outln != NULL);
+
+  /* TODO: Improve this. */
+  for (uint16_t i = 0; i < outln->comp_n; ++i) {
+    for (uint16_t j = 0; j < outln->comps[i].pt_n; ++j) {
+      int32_t x = outln->comps[i].pts[j].x;
+      x = (x&(~((1<<YF_SFNT_Q)-1))) + ((x&(1<<(YF_SFNT_Q-1)))<<1);
+      outln->comps[i].pts[j].x = x;
+
+      int32_t y = outln->comps[i].pts[j].y;
+      y = (y&(~((1<<YF_SFNT_Q)-1))) + ((y&(1<<(YF_SFNT_Q-1)))<<1);
+      outln->comps[i].pts[j].y = y;
+    }
+  }
   return 0;
 }
 
