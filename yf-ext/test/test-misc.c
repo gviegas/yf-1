@@ -175,7 +175,7 @@ static void init(void) {
   assert(font != NULL);
   YF_fontdt fdt = *((YF_fontdt *)font);
   YF_glyph glyph;
-  if (fdt.glyph(fdt.font, L'&', 44, 72, &glyph) != 0)
+  if (fdt.glyph(fdt.font, L'?', 18, 72, &glyph) != 0)
     assert(0);
   assert(glyph.bpp == 8);
 
