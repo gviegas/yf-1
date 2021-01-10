@@ -16,8 +16,8 @@
 #include "yf-matrix.h"
 #include "data-sfnt.h"
 
-#define YF_WINW 484
-#define YF_WINH 363
+#define YF_WINW 600
+#define YF_WINH 600
 #define YF_WINT "Misc"
 
 /* Shared variables. */
@@ -175,7 +175,7 @@ static void init(void) {
   assert(font != NULL);
   YF_fontdt fdt = *((YF_fontdt *)font);
   YF_glyph glyph;
-  if (fdt.glyph(fdt.font, L'?'/*L'ń'*/, 16, 72, &glyph) != 0)
+  if (fdt.glyph(fdt.font, L'&', 44, 72, &glyph) != 0)
     assert(0);
   assert(glyph.bpp == 8);
 
@@ -272,7 +272,7 @@ static void update(void) {
   yf_cmdbuf_setdtable(cb, 0, 0);
   yf_cmdbuf_setvbuf(cb, 0, l_vars.buf, sizeof(float[16]));
   yf_cmdbuf_setibuf(cb, l_vars.buf, sizeof(YF_mat4)+sizeof(L_vertex[4]), 2);
-  yf_cmdbuf_clearcolor(cb, 0, YF_COLOR_WHITE);
+  yf_cmdbuf_clearcolor(cb, 0, YF_COLOR_DARKGREY);
   yf_cmdbuf_cleardepth(cb, 1.0f);
   yf_cmdbuf_draw(cb, 1, 0, 6, 1, 0, 0);
 

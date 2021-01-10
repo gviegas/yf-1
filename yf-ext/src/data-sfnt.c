@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include <assert.h>
 
 #include <yf/com/yf-hashset.h>
@@ -1880,17 +1881,18 @@ typedef struct {
   uint16_t *ends;
   uint16_t end_n;
   /* point list */
-  struct { int on_curve; int16_t x, y; } *pts;
+  struct { int on_curve; int32_t x, y; } *pts;
   uint16_t pt_n;
 } L_component;
 
 /* Complete outline of a glyph. */
 typedef struct {
+  uint16_t upem;
   /* boundaries */
-  int16_t x_min;
-  int16_t y_min;
-  int16_t x_max;
-  int16_t y_max;
+  int32_t x_min;
+  int32_t y_min;
+  int32_t x_max;
+  int32_t y_max;
   /* component list */
   L_component *comps;
   uint16_t comp_n;
@@ -1909,6 +1911,9 @@ static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
 /* Deinitializes an outline. */
 static void deinit_outline(L_outline *outln);
 
+/* Scales an outline. */
+static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi);
+
 /* Rasterizes an outline to produce a glyph. */
 static int rasterize(L_outline *outln, YF_glyph *glyph);
 
@@ -1919,18 +1924,16 @@ static int get_glyph(void *font, wchar_t code, uint16_t pts, uint16_t dpi,
   assert(pts != 0 && dpi != 0);
   assert(glyph != NULL);
 
+  int r = 0;
   L_outline outln = {0};
-  if (fetch_glyph(font, code, &outln) != 0) {
-    deinit_outline(&outln);
-    return -1;
-  }
-  /* TODO: Scale outline before rasterization. */
-  if (rasterize(&outln, glyph) != 0) {
-    deinit_outline(&outln);
-    return -1;
-  }
+
+  if (fetch_glyph(font, code, &outln) != 0 ||
+      scale_outline(&outln, pts, dpi) != 0 ||
+      rasterize(&outln, glyph) != 0)
+    r = -1;
+
   deinit_outline(&outln);
-  return 0;
+  return r;
 }
 
 static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
@@ -1938,6 +1941,8 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
   assert(font->ttf.loca != NULL);
   assert(font->ttf.glyf != NULL);
   assert(outln != NULL);
+
+  outln->upem = font->upem;
 
   uint16_t id;
   if (font->map.map == YF_SFNT_MAP_SPARSE) {
@@ -1971,10 +1976,10 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
       YF_SFNT_ISCOMPND(font, id));
 #endif
 
-  outln->x_min = be16toh(gd->x_min);
-  outln->y_min = be16toh(gd->y_min);
-  outln->x_max = be16toh(gd->x_max);
-  outln->y_max = be16toh(gd->y_max);
+  outln->x_min = (int16_t)be16toh(gd->x_min);
+  outln->y_min = (int16_t)be16toh(gd->y_min);
+  outln->x_max = (int16_t)be16toh(gd->x_max);
+  outln->y_max = (int16_t)be16toh(gd->y_max);
 
   if (YF_SFNT_ISCOMPND(font, id)) {
     /* allocate max. components and let callee update the count */
@@ -2230,6 +2235,161 @@ static void deinit_outline(L_outline *outln) {
   /* XXX: 'outln' ptr not freed. */
 }
 
+/* 26.6 fixed-point arithmetic used for scaling. */
+/* XXX: May require additional bounds check for large point values. */
+#define YF_SFNT_Q 6
+
+#define YF_SFNT_INTTOFIX(x) ((x)<<YF_SFNT_Q)
+#define YF_SFNT_FIXTOINT(x) \
+  (((x)>>YF_SFNT_Q)+((((x)&(1<<(YF_SFNT_Q-1)))>>(YF_SFNT_Q-1))))
+
+#define YF_SFNT_FLTTOFIX(x) ((int32_t)round((float)(x)*(1<<YF_SFNT_Q)))
+#define YF_SFNT_FIXTOFLT(x) ((float)(x)*(1.0f/(1<<YF_SFNT_Q)))
+
+#define YF_SFNT_FIXMUL(x, y) ((((x)*(y))+(1<<(YF_SFNT_Q-1)))>>YF_SFNT_Q)
+#define YF_SFNT_FIXDIV(x, y) \
+  (((x)&(1<<31)) && ((y)&(1<<31)) ? \
+    (((x)<<YF_SFNT_Q)+((y)>>1))/(y) : (((x)<<YF_SFNT_Q)-((y)>>1))/(y))
+
+static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi) {
+  assert(outln != NULL);
+  assert(outln->comps != NULL);
+  assert(pts > 0 && dpi > 0);
+
+  const float fac = (float)(pts*dpi) / (float)(outln->upem*72);
+
+  /* create scaled points for each contour of each component */
+  for (uint16_t i = 0; i < outln->comp_n; ++i) {
+    L_component comp;
+    comp.ends = outln->comps[i].ends;
+    comp.end_n = outln->comps[i].end_n;
+    comp.pt_n = outln->comps[i].pt_n << 1;
+    comp.pts = malloc(comp.pt_n * sizeof *comp.pts);
+    if (comp.pts == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+    uint16_t pt_i = 0;
+    uint16_t begn = 0;
+    uint16_t curr = 0;
+
+    for (uint16_t j = 0; j < comp.end_n; ++j) {
+      uint16_t end = comp.ends[j];
+      do {
+        if (outln->comps[i].pts[curr].on_curve) {
+          comp.pts[pt_i].on_curve = 1;
+          comp.pts[pt_i].x = YF_SFNT_FLTTOFIX(outln->comps[i].pts[curr].x*fac);
+          comp.pts[pt_i].y = YF_SFNT_FLTTOFIX(outln->comps[i].pts[curr].y*fac);
+          if (++pt_i == comp.pt_n) {
+            comp.pt_n = YF_MIN(comp.pt_n<<1, 0xffff);
+            void *tmp = realloc(comp.pts, comp.pt_n * sizeof *comp.pts);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            comp.pts = tmp;
+          }
+          continue;
+        }
+
+        const uint16_t p0_i = curr == begn ? end : curr-1;
+        const uint16_t p1_i = curr;
+        const uint16_t p2_i = curr == end ? begn : curr+1;
+
+        struct { int on; int32_t x, y; } curve[3] = {
+          {
+            outln->comps[i].pts[p0_i].on_curve,
+            outln->comps[i].pts[p0_i].x,
+            outln->comps[i].pts[p0_i].y
+          },
+          {
+            outln->comps[i].pts[p1_i].on_curve,
+            outln->comps[i].pts[p1_i].x,
+            outln->comps[i].pts[p1_i].y
+          },
+          {
+            outln->comps[i].pts[p2_i].on_curve,
+            outln->comps[i].pts[p2_i].x,
+            outln->comps[i].pts[p2_i].y
+          }
+        };
+
+        /* missing on-curve points created as needed */
+        if (curve[0].on) {
+          curve[0].x = YF_SFNT_FLTTOFIX(curve[0].x*fac);
+          curve[0].y = YF_SFNT_FLTTOFIX(curve[0].y*fac);
+        } else {
+          curve[0].x = YF_SFNT_FLTTOFIX((curve[0].x+curve[1].x)*fac*0.5f);
+          curve[0].y = YF_SFNT_FLTTOFIX((curve[0].y+curve[1].y)*fac*0.5f);
+        }
+        if (curve[2].on) {
+          curve[2].x = YF_SFNT_FLTTOFIX(curve[2].x*fac);
+          curve[2].y = YF_SFNT_FLTTOFIX(curve[2].y*fac);
+        } else {
+          curve[2].x = YF_SFNT_FLTTOFIX((curve[1].x+curve[2].x)*fac*0.5f);
+          curve[2].y = YF_SFNT_FLTTOFIX((curve[1].y+curve[2].y)*fac*0.5f);
+        }
+        curve[1].x = YF_SFNT_FLTTOFIX(curve[1].x*fac);
+        curve[1].y = YF_SFNT_FLTTOFIX(curve[1].y*fac);
+
+        /* TODO: Dynamic range instead. */
+        const int32_t ts = (1<<YF_SFNT_Q)>>2;
+        int32_t t = 0;
+        while ((t += ts) < (1<<YF_SFNT_Q)) {
+          const int32_t diff = (1<<YF_SFNT_Q)-t;
+          const int32_t dbl = YF_SFNT_FIXMUL(t, 2<<YF_SFNT_Q);
+          const int32_t a = YF_SFNT_FIXMUL(diff, diff);
+          const int32_t b = YF_SFNT_FIXMUL(dbl, diff);
+          const int32_t c = YF_SFNT_FIXMUL(t, t);
+          const int32_t x0 = curve[0].x;
+          const int32_t y0 = curve[0].y;
+          const int32_t x1 = curve[1].x;
+          const int32_t y1 = curve[1].y;
+          const int32_t x2 = curve[2].x;
+          const int32_t y2 = curve[2].y;
+
+          /* p(t) = (1-t)^2*p0 + 2*t*(1-t)*p1 + t^2*p2 */
+          comp.pts[pt_i].x = YF_SFNT_FIXMUL(a, x0) + YF_SFNT_FIXMUL(b, x1) +
+            YF_SFNT_FIXMUL(c, x2);
+          comp.pts[pt_i].y = YF_SFNT_FIXMUL(a, y0) + YF_SFNT_FIXMUL(b, y1) +
+            YF_SFNT_FIXMUL(c, y2);
+
+          /* XXX: Careful with overflow here. */
+          if (++pt_i == comp.pt_n) {
+            comp.pt_n = YF_MIN(comp.pt_n<<1, 0xffff);
+            void *tmp = realloc(comp.pts, comp.pt_n * sizeof *comp.pts);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            comp.pts = tmp;
+          }
+        }
+
+      } while (curr++ != end);
+
+      begn = end+1;
+      comp.ends[j] = pt_i-1;
+    }
+
+    free(outln->comps[i].pts);
+    if (comp.pt_n > pt_i) {
+      comp.pt_n = pt_i;
+      void *tmp = realloc(comp.pts, comp.pt_n * sizeof *comp.pts);
+      if (tmp != NULL)
+        comp.pts = tmp;
+    }
+    outln->comps[i].pts = comp.pts;
+    outln->comps[i].pt_n = comp.pt_n;
+  }
+
+  outln->x_min = YF_SFNT_FLTTOFIX(outln->x_min*fac);
+  outln->y_min = YF_SFNT_FLTTOFIX(outln->y_min*fac);
+  outln->x_max = YF_SFNT_FLTTOFIX(outln->x_max*fac);
+  outln->y_max = YF_SFNT_FLTTOFIX(outln->y_max*fac);
+  return 0;
+}
+
 /* Contour winding directions. */
 #define YF_SFNT_WIND_NONE 0
 #define YF_SFNT_WIND_ON   1
@@ -2255,12 +2415,18 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
 
 #undef YF_NEWSEG
 #define YF_NEWSEG(seg, comp, i, j) do { \
-  const int16_t x1 = (comp).pts[i].x; \
-  const int16_t y1 = (comp).pts[i].y; \
-  const int16_t x2 = (comp).pts[j].x; \
-  const int16_t y2 = (comp).pts[j].y; \
-  (seg).wind = y1 < y2 ? YF_SFNT_WIND_ON : \
-    (y1 > y2 ? YF_SFNT_WIND_OFF : YF_SFNT_WIND_NONE); \
+  const int32_t x1 = (comp).pts[i].x; \
+  const int32_t y1 = (comp).pts[i].y; \
+  const int32_t x2 = (comp).pts[j].x; \
+  const int32_t y2 = (comp).pts[j].y; \
+  if (y1 < y2) \
+    (seg).wind = YF_SFNT_WIND_ON; \
+  else if (y1 > y2) \
+    (seg).wind = YF_SFNT_WIND_OFF; \
+  else if (x1 < x2) \
+    (seg).wind = YF_SFNT_WIND_ON; \
+  else \
+    (seg).wind = YF_SFNT_WIND_OFF; \
   (seg).p1 = (L_point){x1, y1}; \
   (seg).p2 = (L_point){x2, y2}; } while (0)
 
@@ -2303,7 +2469,11 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
 
 #undef YF_DIRECTION
 #define YF_DIRECTION(p1, p2, p3) \
+  (YF_SFNT_FIXMUL((p3).x-(p1).x, (p2).y-(p1).y) - \
+    YF_SFNT_FIXMUL((p2).x-(p1).x, (p3).y-(p1).y))
+/*
   (((p3).x-(p1).x) * ((p2).y-(p1).y) - ((p2).x-(p1).x) * ((p3).y-(p1).y))
+*/
 
 #undef YF_ONPOINT
 #define YF_ONPOINT(p1, p2, p3) \
@@ -2316,38 +2486,41 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
     YF_ONPOINT((seg).p1, (seg).p2, (p)))
 
 #undef YF_INTERSECTS
-#define YF_INTERSECTS(res, seg, p1, p2) do { \
-  const int32_t d1 = YF_DIRECTION(p1, p2, (seg).p1); \
-  const int32_t d2 = YF_DIRECTION(p1, p2, (seg).p2); \
-  const int32_t d3 = YF_DIRECTION((seg).p1, (seg).p2, p1); \
-  const int32_t d4 = YF_DIRECTION((seg).p1, (seg).p2, p2); \
+#define YF_INTERSECTS(res, seg, p1_, p2_) do { \
+  const int32_t d1 = YF_DIRECTION(p1_, p2_, (seg).p1); \
+  const int32_t d2 = YF_DIRECTION(p1_, p2_, (seg).p2); \
+  const int32_t d3 = YF_DIRECTION((seg).p1, (seg).p2, p1_); \
+  const int32_t d4 = YF_DIRECTION((seg).p1, (seg).p2, p2_); \
   if (((d1 < 0 && d2 > 0) || (d1 > 0 && d2 < 0)) && \
       ((d3 < 0 && d4 > 0) || (d3 > 0 && d4 < 0))) \
     res = 1; \
-  else if (d1 == 0 && YF_ONPOINT(p1, p2, (seg).p1)) \
+  else if (d1 == 0 && YF_ONPOINT(p1_, p2_, (seg).p1)) \
     res = 1; \
-  else if (d2 == 0 && YF_ONPOINT(p1, p2, (seg).p2)) \
+  else if (d2 == 0 && YF_ONPOINT(p1_, p2_, (seg).p2)) \
     res = 1; \
-  else if (d3 == 0 && YF_ONPOINT((seg).p1, (seg).p2, p1)) \
+  else if (d3 == 0 && YF_ONPOINT((seg).p1, (seg).p2, p1_)) \
     res = 1; \
-  else if (d4 == 0 && YF_ONPOINT((seg).p1, (seg).p2, p2)) \
+  else if (d4 == 0 && YF_ONPOINT((seg).p1, (seg).p2, p2_)) \
     res = 1; \
   else \
     res = 0; } while (0)
 
   /* rasterize */
-  const uint16_t w = outln->x_max - outln->x_min;
-  const uint16_t h = outln->y_max - outln->y_min;
-  uint8_t *bitmap = malloc(w*h);
+  const uint32_t w = outln->x_max - outln->x_min;
+  const uint32_t h = outln->y_max - outln->y_min;
+  uint8_t *bitmap = malloc(YF_SFNT_FIXTOINT(w)*YF_SFNT_FIXTOINT(h));
   if (bitmap == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     free(segs);
     return -1;
   }
-  for (uint16_t y = 0; y < h; ++y) {
-    for (uint16_t x = 0; x < w; ++x) {
+  const uint32_t half = 1<<(YF_SFNT_Q-1);
+  const uint32_t one = half<<1;
+  uint32_t idx = 0;
+  for (uint32_t y = half; y < h; y += one) {
+    for (uint32_t x = half; x < w; x += one) {
       L_point p1 = {x+outln->x_min, y+outln->y_min};
-      L_point p2 = {p1.x+0xffff, p1.y};
+      L_point p2 = {one+outln->x_max, p1.y};
       int wind = YF_SFNT_WIND_NONE;
       for (uint32_t i = 0; i < seg_i; ++i) {
         if (YF_ONSEG(segs[i], p1)) {
@@ -2359,14 +2532,14 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
         if (isect)
           wind += segs[i].wind;
       }
-      bitmap[y*w+x] = wind != YF_SFNT_WIND_NONE ? 255 : 0;
+      bitmap[idx++] = wind != YF_SFNT_WIND_NONE ? 255 : 0;
     }
   }
 
   /* TODO... */
 
-  glyph->width = w;
-  glyph->height = h;
+  glyph->width = YF_SFNT_FIXTOINT(w);
+  glyph->height = YF_SFNT_FIXTOINT(h);
   glyph->bpp = 8;
   glyph->bitmap.u8 = bitmap;
 
