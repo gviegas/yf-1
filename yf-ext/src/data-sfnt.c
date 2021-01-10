@@ -2419,8 +2419,14 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
   const int32_t y1 = (comp).pts[i].y; \
   const int32_t x2 = (comp).pts[j].x; \
   const int32_t y2 = (comp).pts[j].y; \
-  (seg).wind = y1 < y2 ? YF_SFNT_WIND_ON : \
-    (y1 > y2 ? YF_SFNT_WIND_OFF : YF_SFNT_WIND_NONE); \
+  if (y1 < y2) \
+    (seg).wind = YF_SFNT_WIND_ON; \
+  else if (y1 > y2) \
+    (seg).wind = YF_SFNT_WIND_OFF; \
+  else if (x1 < x2) \
+    (seg).wind = YF_SFNT_WIND_ON; \
+  else \
+    (seg).wind = YF_SFNT_WIND_OFF; \
   (seg).p1 = (L_point){x1, y1}; \
   (seg).p2 = (L_point){x2, y2}; } while (0)
 
@@ -2480,21 +2486,21 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
     YF_ONPOINT((seg).p1, (seg).p2, (p)))
 
 #undef YF_INTERSECTS
-#define YF_INTERSECTS(res, seg, p1, p2) do { \
-  const int32_t d1 = YF_DIRECTION(p1, p2, (seg).p1); \
-  const int32_t d2 = YF_DIRECTION(p1, p2, (seg).p2); \
-  const int32_t d3 = YF_DIRECTION((seg).p1, (seg).p2, p1); \
-  const int32_t d4 = YF_DIRECTION((seg).p1, (seg).p2, p2); \
+#define YF_INTERSECTS(res, seg, p1_, p2_) do { \
+  const int32_t d1 = YF_DIRECTION(p1_, p2_, (seg).p1); \
+  const int32_t d2 = YF_DIRECTION(p1_, p2_, (seg).p2); \
+  const int32_t d3 = YF_DIRECTION((seg).p1, (seg).p2, p1_); \
+  const int32_t d4 = YF_DIRECTION((seg).p1, (seg).p2, p2_); \
   if (((d1 < 0 && d2 > 0) || (d1 > 0 && d2 < 0)) && \
       ((d3 < 0 && d4 > 0) || (d3 > 0 && d4 < 0))) \
     res = 1; \
-  else if (d1 == 0 && YF_ONPOINT(p1, p2, (seg).p1)) \
+  else if (d1 == 0 && YF_ONPOINT(p1_, p2_, (seg).p1)) \
     res = 1; \
-  else if (d2 == 0 && YF_ONPOINT(p1, p2, (seg).p2)) \
+  else if (d2 == 0 && YF_ONPOINT(p1_, p2_, (seg).p2)) \
     res = 1; \
-  else if (d3 == 0 && YF_ONPOINT((seg).p1, (seg).p2, p1)) \
+  else if (d3 == 0 && YF_ONPOINT((seg).p1, (seg).p2, p1_)) \
     res = 1; \
-  else if (d4 == 0 && YF_ONPOINT((seg).p1, (seg).p2, p2)) \
+  else if (d4 == 0 && YF_ONPOINT((seg).p1, (seg).p2, p2_)) \
     res = 1; \
   else \
     res = 0; } while (0)
@@ -2514,7 +2520,7 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
   for (uint32_t y = half; y < h; y += one) {
     for (uint32_t x = half; x < w; x += one) {
       L_point p1 = {x+outln->x_min, y+outln->y_min};
-      L_point p2 = {p1.x+0xffff, p1.y};
+      L_point p2 = {one+outln->x_max, p1.y};
       int wind = YF_SFNT_WIND_NONE;
       for (uint32_t i = 0; i < seg_i; ++i) {
         if (YF_ONSEG(segs[i], p1)) {
