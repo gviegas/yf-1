@@ -18,6 +18,8 @@
 struct YF_label_o {
   YF_node node;
   YF_mat4 xform;
+  YF_mesh mesh;
+  wchar_t *str;
   /* TODO: Other label properties. */
   YF_mat4 mvp;
 };
@@ -46,6 +48,21 @@ YF_node yf_label_getnode(YF_label labl) {
 YF_mat4 *yf_label_getxform(YF_label labl) {
   assert(labl != NULL);
   return &labl->xform;
+}
+
+YF_mesh yf_label_getmesh(YF_label labl) {
+  /* TODO */
+  assert(0);
+}
+
+wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n) {
+  /* TODO */
+  assert(0);
+}
+
+void yf_label_setstr(YF_label labl, wchar_t *str) {
+  /* TODO */
+  assert(0);
 }
 
 void yf_label_deinit(YF_label labl) {
