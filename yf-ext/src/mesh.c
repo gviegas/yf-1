@@ -11,6 +11,7 @@
 #include <limits.h>
 #include <assert.h>
 
+#include <yf/com/yf-util.h>
 #include <yf/com/yf-error.h>
 #include <yf/core/yf-buffer.h>
 
@@ -32,10 +33,6 @@
    for (size_t i = 0; i < l_blk_n; ++i) \
     printf("\nblk(%lu): o=%lu, sz=%lu", i, l_blks[i].offset, l_blks[i].size); \
    printf("\n--\n"); } while (0)
-#endif
-
-#ifndef YF_MIN
-# define YF_MIN(a, b) (a < b ? a : b)
 #endif
 
 #undef YF_BUFLEN

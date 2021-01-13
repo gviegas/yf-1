@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-util.h>
 #include <yf/com/yf-error.h>
 #include <yf/core/yf-image.h>
 
@@ -21,10 +22,6 @@
 #else
 /* TODO */
 # error "Invalid platform"
-#endif
-
-#ifndef YF_MIN
-# define YF_MIN(a, b) (a < b ? a : b)
 #endif
 
 #ifdef YF_DEBUG_MORE
