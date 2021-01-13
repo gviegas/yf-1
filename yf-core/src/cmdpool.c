@@ -2,26 +2,19 @@
  * YF
  * cmdpool.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-util.h>
 #include <yf/com/yf-list.h>
 #include <yf/com/yf-error.h>
 
 #include "cmdpool.h"
 #include "cmdbuf.h"
 #include "context.h"
-
-#ifndef YF_MIN
-# define YF_MIN(a, b) (a < b ? a : b)
-#endif
-
-#ifndef YF_MAX
-# define YF_MAX(a, b) (a > b ? a : b)
-#endif
 
 #define YF_CMDPMIN 2
 #define YF_CMDPMAX 32

@@ -2,7 +2,7 @@
  * YF
  * context.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -17,16 +17,13 @@
 # error "Missing C11 atomics"
 #endif
 
+#include <yf/com/yf-util.h>
 #include <yf/com/yf-error.h>
 
 #include "context.h"
 #include "cmdpool.h"
 #include "cmdexec.h"
 #include "wsi.h"
-
-#ifndef YF_MIN
-# define YF_MIN(a, b) (a < b ? a : b)
-#endif
 
 #undef YF
 #define YF "YF"

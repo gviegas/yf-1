@@ -2,20 +2,17 @@
  * YF
  * limits.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-util.h>
 #include <yf/com/yf-error.h>
 
 #include "limits.h"
 #include "context.h"
-
-#ifndef YF_MIN
-# define YF_MIN(a, b) (a < b ? a : b)
-#endif
 
 /* Destroys the 'YF_limits' data stored in a given context. */
 static void destroy_lim(YF_context ctx);

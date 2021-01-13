@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-util.h>
 #include <yf/com/yf-error.h>
 
 #include "cmdbuf.h"
@@ -23,10 +24,6 @@
 #include "dtable.h"
 #include "limits.h"
 #include "vk.h"
-
-#ifndef YF_MIN
-# define YF_MIN(a, b) (a < b ? a : b)
-#endif
 
 /* Type defining graphics decoding state. */
 typedef struct {
