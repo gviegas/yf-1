@@ -2,7 +2,7 @@
  * YF
  * yf-mesh.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_MESH_H
@@ -13,7 +13,7 @@
 YF_DECLS_BEGIN
 
 /**
- * Opaque type defining the mesh data.
+ * Opaque type defining a mesh resource (geometry).
  */
 typedef struct YF_mesh_o *YF_mesh;
 

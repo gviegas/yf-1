@@ -2,7 +2,7 @@
  * YF
  * mesh.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_MESH_H
@@ -12,7 +12,7 @@
 
 #include "yf-mesh.h"
 
-/* Type defining the mesh data itself. */
+/* Type defining the mesh data. */
 typedef struct {
   struct {
     int vtype;

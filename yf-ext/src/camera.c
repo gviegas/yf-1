@@ -10,6 +10,7 @@
 #include <math.h>
 #include <assert.h>
 
+#include <yf/com/yf-util.h>
 #include <yf/com/yf-error.h>
 
 #include "camera.h"
@@ -32,9 +33,6 @@
     printf("\n** At origin **"); \
    printf("\n--\n"); } while (0)
 #endif
-
-#undef YF_CLAMP
-#define YF_CLAMP(v, min, max) (v) < (min) ? (min) : ((v) > (max) ? (max) : (v))
 
 #define YF_FOV_MIN (YF_float)0.07957747154594767280
 #define YF_FOV_MAX (YF_float)M_PI_4

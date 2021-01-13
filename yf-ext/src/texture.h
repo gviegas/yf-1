@@ -2,7 +2,7 @@
  * YF
  * texture.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_TEXTURE_H
@@ -12,7 +12,7 @@
 
 #include "yf-texture.h"
 
-/* Type defining the texture data itself. */
+/* Type defining the texture data. */
 typedef struct {
   void *data;
   int pixfmt;

@@ -2,7 +2,7 @@
  * YF
  * yf-texture.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_TEXTURE_H
@@ -13,7 +13,7 @@
 YF_DECLS_BEGIN
 
 /**
- * Opaque type defining the texture data.
+ * Opaque type defining a texture resource.
  */
 typedef struct YF_texture_o *YF_texture;
 
