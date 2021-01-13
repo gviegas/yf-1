@@ -2,7 +2,7 @@
  * YF
  * quad.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -25,7 +25,7 @@ struct YF_quad_o {
   YF_mat4 mvp;
 };
 
-/* Initializes rect mesh. */
+/* Initializes a quad's mesh rectangle. */
 static int init_rect(YF_quad quad);
 
 YF_quad yf_quad_init(void) {
@@ -107,22 +107,22 @@ static int init_rect(YF_quad quad) {
     {
       .pos = {-1.0, -1.0, 0.5},
       .tc = {0.0, 1.0},
-      .col = {1.0, 1.0, 1.0, 1.0}
+      .clr = {1.0, 1.0, 1.0, 1.0}
     },
     {
       .pos = {-1.0, 1.0, 0.5},
       .tc = {0.0, 0.0},
-      .col = {1.0, 1.0, 1.0, 1.0}
+      .clr = {1.0, 1.0, 1.0, 1.0}
     },
     {
       .pos = {1.0, 1.0, 0.5},
       .tc = {1.0, 0.0},
-      .col = {1.0, 1.0, 1.0, 1.0}
+      .clr = {1.0, 1.0, 1.0, 1.0}
     },
     {
       .pos = {1.0, -1.0, 0.5},
       .tc = {1.0, 1.0},
-      .col = {1.0, 1.0, 1.0, 1.0}
+      .clr = {1.0, 1.0, 1.0, 1.0}
     }
   };
   static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};

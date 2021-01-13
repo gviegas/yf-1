@@ -2,7 +2,7 @@
  * YF
  * particle.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -154,10 +154,10 @@ void yf_particle_simulate(YF_particle part, double tm) {
         pt->pos[0] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
         pt->pos[1] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
         pt->pos[2] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
-        pt->col[0] = YF_LERP(sys->color.min[0], sys->color.max[0], YF_NRND);
-        pt->col[1] = YF_LERP(sys->color.min[1], sys->color.max[1], YF_NRND);
-        pt->col[2] = YF_LERP(sys->color.min[2], sys->color.max[2], YF_NRND);
-        pt->col[3] = 0.0;
+        pt->clr[0] = YF_LERP(sys->color.min[0], sys->color.max[0], YF_NRND);
+        pt->clr[1] = YF_LERP(sys->color.min[1], sys->color.max[1], YF_NRND);
+        pt->clr[2] = YF_LERP(sys->color.min[2], sys->color.max[2], YF_NRND);
+        pt->clr[3] = 0.0;
 
         st->tm = 0.0;
         st->alpha = YF_LERP(sys->color.min[3], sys->color.max[3], YF_NRND);
@@ -181,14 +181,14 @@ void yf_particle_simulate(YF_particle part, double tm) {
 
       case YF_PSTATE_SPAWNING:
         if (st->tm >= st->spawn) {
-          pt->col[3] = st->alpha;
+          pt->clr[3] = st->alpha;
           st->tm -= st->spawn;
           st->pstate = YF_PSTATE_SPAWNED;
         } else {
           pt->pos[0] += st->vel[0];
           pt->pos[1] += st->vel[1];
           pt->pos[2] += st->vel[2];
-          pt->col[3] = st->tm / st->spawn * st->alpha;
+          pt->clr[3] = st->tm / st->spawn * st->alpha;
           st->tm += dt;
         }
         break;
@@ -207,14 +207,14 @@ void yf_particle_simulate(YF_particle part, double tm) {
 
       case YF_PSTATE_DYING:
         if (st->tm >= st->death) {
-          pt->col[3] = 0.0;
+          pt->clr[3] = 0.0;
           st->tm -= st->death;
           st->pstate = YF_PSTATE_DEAD;
         } else {
           pt->pos[0] += st->vel[0];
           pt->pos[1] += st->vel[1];
           pt->pos[2] += st->vel[2];
-          pt->col[3] = st->alpha - st->tm / st->death * st->alpha;
+          pt->clr[3] = st->alpha - st->tm / st->death * st->alpha;
           st->tm += dt;
         }
         break;
@@ -262,7 +262,7 @@ static int init_points(YF_particle part) {
     return -1;
   }
 
-  const YF_vpart pt = {.pos = {0.0, 0.0, 0.5}, .col = {1.0, 1.0, 1.0, 1.0}};
+  const YF_vpart pt = {.pos = {0.0, 0.0, 0.5}, .clr = {1.0, 1.0, 1.0, 1.0}};
   const L_pstate st = {YF_PSTATE_UNSET, 0.0, 0.0, 0.0, 0.0, 0.0, {0}};
   for (unsigned i = 0; i < part->count; ++i) {
     memcpy(part->pts+i, &pt, sizeof pt);

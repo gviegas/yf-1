@@ -2,7 +2,7 @@
  * YF
  * vertex.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_VERTEX_H
@@ -31,7 +31,7 @@ typedef struct {
 /* Type defining the mesh vertex for particle system objects. */
 typedef struct {
   YF_vec3 pos;
-  YF_vec4 col;
+  YF_vec4 clr;
   /* TODO */
 } YF_vpart;
 #define YF_VTYPE_PART 2
@@ -40,10 +40,19 @@ typedef struct {
 typedef struct {
   YF_vec3 pos;
   YF_vec2 tc;
-  YF_vec4 col;
+  YF_vec4 clr;
   /* TODO */
 } YF_vquad;
 #define YF_VTYPE_QUAD 3
+
+/* Type defining the mesh vertex for label objects. */
+typedef struct {
+  YF_vec3 pos;
+  YF_vec2 tc;
+  YF_vec4 clr;
+  /* TODO */
+} YF_vlabl;
+#define YF_VTYPE_LABL 4
 
 #ifdef YF_DEBUG
 # define YF_VMDL_PRINT(vtx) do { \
@@ -68,8 +77,8 @@ typedef struct {
    printf("\n-- Vertex (debug) --"); \
    printf("\npos:  [%.3f %.3f %.3f]", \
     (vtx).pos[0], (vtx).pos[1], (vtx).pos[2]); \
-   printf("\ncol: [%.3f %.3f %.3f %.3f]", \
-    (vtx).col[0], (vtx).col[1], (vtx).col[2], (vtx).col[3]); \
+   printf("\nclr: [%.3f %.3f %.3f %.3f]", \
+    (vtx).clr[0], (vtx).clr[1], (vtx).clr[2], (vtx).clr[3]); \
    printf("\n--\n"); } while (0)
 
 # define YF_VQUAD_PRINT(vtx) do { \
@@ -77,8 +86,17 @@ typedef struct {
    printf("\npos: [%.3f %.3f %.3f]", \
     (vtx).pos[0], (vtx).pos[1], (vtx).pos[2]); \
    printf("\ntc: [%.3f %.3f]", (vtx).tc[0], (vtx).tc[1]); \
-   printf("\ncol: [%.3f %.3f %.3f %.3f]", \
-    (vtx).col[0], (vtx).col[1], (vtx).col[2], (vtx).col[3]); \
+   printf("\nclr: [%.3f %.3f %.3f %.3f]", \
+    (vtx).clr[0], (vtx).clr[1], (vtx).clr[2], (vtx).clr[3]); \
+   printf("\n--\n"); } while (0)
+
+# define YF_VLABL_PRINT(vtx) do { \
+   printf("\n-- Vertex (debug) --"); \
+   printf("\npos: [%.3f %.3f %.3f]", \
+    (vtx).pos[0], (vtx).pos[1], (vtx).pos[2]); \
+   printf("\ntc: [%.3f %.3f]", (vtx).tc[0], (vtx).tc[1]); \
+   printf("\nclr: [%.3f %.3f %.3f %.3f]", \
+    (vtx).clr[0], (vtx).clr[1], (vtx).clr[2], (vtx).clr[3]); \
    printf("\n--\n"); } while (0)
 #endif
 
