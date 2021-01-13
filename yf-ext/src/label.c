@@ -2,10 +2,11 @@
  * YF
  * label.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 #include <assert.h>
 
@@ -26,6 +27,9 @@ struct YF_label_o {
   YF_mat4 mvp;
 };
 
+/* Initializes a label's mesh rectangle. */
+static int init_rect(YF_label labl);
+
 YF_label yf_label_init(void) {
   YF_label labl = calloc(1, sizeof(struct YF_label_o));
   if (labl == NULL) {
@@ -39,6 +43,11 @@ YF_label yf_label_init(void) {
   yf_node_setobj(labl->node, YF_NODEOBJ_LABEL, labl);
   yf_mat4_iden(labl->xform);
   yf_mat4_iden(labl->mvp);
+
+  if (init_rect(labl) != 0) {
+    yf_label_deinit(labl);
+    return NULL;
+  }
   return labl;
 }
 
@@ -108,6 +117,7 @@ int yf_label_setstr(YF_label labl, wchar_t *str) {
 void yf_label_deinit(YF_label labl) {
   if (labl != NULL) {
     yf_node_deinit(labl->node);
+    yf_mesh_deinit(labl->mesh);
     free(labl->str);
     free(labl);
   }
@@ -116,4 +126,52 @@ void yf_label_deinit(YF_label labl) {
 YF_mat4 *yf_label_getmvp(YF_label labl) {
   assert(labl != NULL);
   return &labl->mvp;
+}
+
+static int init_rect(YF_label labl) {
+  assert(labl != NULL);
+
+  YF_meshdt data = {
+    .v = {YF_VTYPE_LABL, NULL, 4},
+    .i = {NULL, sizeof(unsigned short), 6}
+  };
+  data.v.data = malloc(sizeof(YF_vlabl) * data.v.n);
+  data.i.data = malloc(data.i.stride * data.i.n);
+  if (data.v.data == NULL || data.i.data == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    free(data.v.data);
+    free(data.i.data);
+    return -1;
+  }
+
+  static const YF_vlabl verts[4] = {
+    {
+      .pos = {-1.0, -1.0, 0.5},
+      .tc = {0.0, 1.0,},
+      .clr = {1.0, 1.0, 1.0, 1.0}
+    },
+    {
+      .pos = {-1.0, 1.0, 0.5},
+      .tc = {0.0, 0.0},
+      .clr = {1.0, 1.0, 1.0, 1.0}
+    },
+    {
+      .pos = {1.0, 1.0, 0.5},
+      .tc = {1.0, 0.0},
+      .clr = {1.0, 1.0, 1.0, 1.0}
+    },
+    {
+      .pos = {1.0, -1.0, 0.5},
+      .tc = {1.0, 1.0},
+      .clr = {1.0, 1.0, 1.0, 1.0}
+    }
+  };
+  static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
+
+  memcpy(data.v.data, verts, sizeof verts);
+  memcpy(data.i.data, inds, sizeof inds);
+  labl->mesh = yf_mesh_initdt(&data);
+  free(data.v.data);
+  free(data.i.data);
+  return labl->mesh == NULL ? -1 : 0;
 }

@@ -132,7 +132,5 @@ static int init_rect(YF_quad quad) {
   quad->mesh = yf_mesh_initdt(&data);
   free(data.v.data);
   free(data.i.data);
-  if (quad->mesh == NULL)
-    return -1;
-  return 0;
+  return quad->mesh == NULL ? -1 : 0;
 }
