@@ -2,7 +2,7 @@
  * YF
  * font.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -48,4 +48,14 @@ void yf_font_deinit(YF_font font) {
       font->data.deinit(font->data.font);
     free(font);
   }
+}
+
+int yf_font_getglyph(YF_font font, wchar_t code, uint16_t pts, uint16_t dpi,
+    YF_glyph *glyph)
+{
+  assert(font != NULL);
+  assert(pts != 0 && dpi != 0);
+  assert(glyph != NULL);
+
+  return font->data.glyph(font->data.font, code, pts, dpi, glyph);
 }

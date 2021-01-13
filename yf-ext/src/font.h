@@ -2,7 +2,7 @@
  * YF
  * font.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_FONT_H
@@ -34,5 +34,9 @@ typedef struct {
   /* Deinitialization. */
   void (*deinit)(void *font);
 } YF_fontdt;
+
+/* Gets a font glyph. */
+int yf_font_getglyph(YF_font font, wchar_t code, uint16_t pts, uint16_t dpi,
+    YF_glyph *glyph);
 
 #endif /* YF_FONT_H */
