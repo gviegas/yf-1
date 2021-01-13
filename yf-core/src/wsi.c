@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <yf/com/yf-util.h>
 #include <yf/com/yf-error.h>
 #include <yf/wsys/yf-platform.h>
 
@@ -17,13 +18,6 @@
 #include "cmdpool.h"
 #include "cmdexec.h"
 #include "cmdbuf.h"
-
-#undef YF_MIN
-#undef YF_MAX
-#undef YF_CLAMP
-#define YF_MIN(a, b) (a) < (b) ? (a) : (b)
-#define YF_MAX(a, b) (a) > (b) ? (a) : (b)
-#define YF_CLAMP(x, a, b) YF_MAX(a, YF_MIN(b, x))
 
 /* Initializes surface. */
 static int init_surface(YF_wsi wsi);

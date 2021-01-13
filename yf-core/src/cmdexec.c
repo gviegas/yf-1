@@ -2,27 +2,20 @@
  * YF
  * cmdexec.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-util.h>
 #include <yf/com/yf-list.h>
 #include <yf/com/yf-error.h>
 
 #include "cmdexec.h"
 #include "context.h"
 #include "cmdbuf.h"
-
-#ifndef YF_MIN
-# define YF_MIN(a, b) (a < b ? a : b)
-#endif
-
-#ifndef YF_MAX
-# define YF_MAX(a, b) (a > b ? a : b)
-#endif
 
 #define YF_CMDEMIN 2
 #define YF_CMDEMAX 32
