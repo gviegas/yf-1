@@ -201,14 +201,14 @@ int yf_test_model(void) {
 
   if (instanced) {
     /* Create mesh */
-    l_vars.mesh[0] = yf_mesh_init(YF_FILETYPE_OBJ, getenv("MESHOBJ1"));
-    l_vars.mesh[1] = yf_mesh_init(YF_FILETYPE_OBJ, getenv("MESHOBJ2"));
+    l_vars.mesh[0] = yf_mesh_init(YF_FILETYPE_OBJ, "tmp/cube.obj");
+    l_vars.mesh[1] = yf_mesh_init(YF_FILETYPE_OBJ, "tmp/cone.obj");
     assert(l_vars.mesh[0] != NULL);
     assert(l_vars.mesh[1] != NULL);
 
     /* Create texture */
-    l_vars.tex[0] = yf_texture_init(YF_FILETYPE_BMP, getenv("TEXBMP1"));
-    l_vars.tex[1] = yf_texture_init(YF_FILETYPE_BMP, getenv("TEXBMP2"));
+    l_vars.tex[0] = yf_texture_init(YF_FILETYPE_BMP, "tmp/cube.bmp");
+    l_vars.tex[1] = yf_texture_init(YF_FILETYPE_BMP, "tmp/cone.bmp");
     assert(l_vars.tex[0] != NULL);
     assert(l_vars.tex[1] != NULL);
 
@@ -227,18 +227,18 @@ int yf_test_model(void) {
     /* Create mesh */
     for (unsigned i = 0; i < YF_MDLN; ++i) {
       if (i % 2 != 0)
-        l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_OBJ, getenv("MESHOBJ1"));
+        l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_OBJ, "tmp/cube.obj");
       else
-        l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_OBJ, getenv("MESHOBJ2"));
+        l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_OBJ, "tmp/cone.obj");
       assert(l_vars.mesh[i] != NULL);
     }
 
     /* Create texture */
     for (unsigned i = 0; i < YF_MDLN; ++i) {
       if (i % 2 != 0)
-        l_vars.tex[i] = yf_texture_init(YF_FILETYPE_BMP, getenv("TEXBMP1"));
+        l_vars.tex[i] = yf_texture_init(YF_FILETYPE_BMP, "tmp/cube.bmp");
       else
-        l_vars.tex[i] = yf_texture_init(YF_FILETYPE_BMP, getenv("TEXBMP2"));
+        l_vars.tex[i] = yf_texture_init(YF_FILETYPE_BMP, "tmp/cone.bmp");
       assert(l_vars.tex[i] != NULL);
     }
 
