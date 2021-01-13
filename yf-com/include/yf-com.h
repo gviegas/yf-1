@@ -20,5 +20,6 @@
 #include "yf-iter.h"
 #include "yf-list.h"
 #include "yf-types.h"
+#include "yf-util.h"
 
 #endif /* YF_YF_COM_H */
