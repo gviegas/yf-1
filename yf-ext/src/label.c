@@ -20,6 +20,7 @@ struct YF_label_o {
   YF_node node;
   YF_mat4 xform;
   YF_mesh mesh;
+  YF_font font;
   wchar_t *str;
   /* TODO: Other label properties. */
   YF_mat4 mvp;
@@ -54,6 +55,16 @@ YF_mat4 *yf_label_getxform(YF_label labl) {
 YF_mesh yf_label_getmesh(YF_label labl) {
   assert(labl != NULL);
   return labl->mesh;
+}
+
+YF_font yf_label_getfont(YF_label labl) {
+  assert(labl != NULL);
+  return labl->font;
+}
+
+void yf_label_setfont(YF_label labl, YF_font font) {
+  assert(labl != NULL);
+  labl->font = font;
 }
 
 wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n) {

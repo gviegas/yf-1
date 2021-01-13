@@ -15,7 +15,7 @@
 #include "yf-node.h"
 #include "yf-matrix.h"
 #include "yf-mesh.h"
-#include "yf-texture.h"
+#include "yf-font.h"
 
 YF_DECLS_BEGIN
 
@@ -55,6 +55,22 @@ YF_mat4 *yf_label_getxform(YF_label labl);
  * @return: The mesh used by the label.
  */
 YF_mesh yf_label_getmesh(YF_label labl);
+
+/**
+ * Gets the font of a label.
+ *
+ * @param labl: The label.
+ * @return: The font used by the label, or 'NULL' if none is set.
+ */
+YF_font yf_label_getfont(YF_label labl);
+
+/**
+ * Sets the font for a label.
+ *
+ * @param labl: The label.
+ * @param font: The font to set. Can be 'NULL'.
+ */
+void yf_label_setfont(YF_label labl, YF_font font);
 
 /**
  * Gets the string of a label.
