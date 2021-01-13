@@ -52,7 +52,7 @@ YF_mat4 *yf_terrain_getxform(YF_terrain terr);
  * Gets the mesh of a terrain.
  *
  * @param terr: The terrain.
- * @return : The mesh used by the terrain.
+ * @return: The mesh used by the terrain.
  */
 YF_mesh yf_terrain_getmesh(YF_terrain terr);
 
