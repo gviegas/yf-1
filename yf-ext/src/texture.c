@@ -74,17 +74,6 @@ static size_t hash_kv(const void *x);
 static int cmp_kv(const void *a, const void *b);
 
 YF_texture yf_texture_init(int filetype, const char *pathname) {
-  if (l_ctx == NULL && (l_ctx = yf_getctx()) == NULL)
-    return NULL;
-  if (l_imges == NULL && (l_imges = yf_hashset_init(hash_kv, cmp_kv)) == NULL)
-    return NULL;
-
-  YF_texture tex = calloc(1, sizeof(struct YF_texture_o));
-  if (tex == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    return NULL;
-  }
-
   YF_texdt data = {0};
   switch (filetype) {
     case YF_FILETYPE_INTERNAL:
@@ -94,30 +83,15 @@ YF_texture yf_texture_init(int filetype, const char *pathname) {
       /* TODO */
       assert(0);
     case YF_FILETYPE_BMP:
-      if (yf_loadbmp(pathname, &data) != 0) {
-        yf_texture_deinit(tex);
+      if (yf_loadbmp(pathname, &data) != 0)
         return NULL;
-      }
       break;
     default:
       yf_seterr(YF_ERR_INVARG, __func__);
-      yf_texture_deinit(tex);
       return NULL;
   }
-
-#ifdef YF_DEBUG
-  YF_TEXDT_PRINT(&data);
-#endif
-  if (copy_data(tex, &data) != 0) {
-    yf_texture_deinit(tex);
-    tex = NULL;
-  }
+  YF_texture tex = yf_texture_initdt(&data);
   free(data.data);
-
-#ifdef YF_DEBUG
-  if (tex != NULL)
-    YF_TEX_PRINT(tex);
-#endif
   return tex;
 }
 
@@ -143,6 +117,33 @@ void yf_texture_deinit(YF_texture tex) {
     free(val);
   }
   free(tex);
+}
+
+YF_texture yf_texture_initdt(const YF_texdt *data) {
+  assert(data != NULL);
+#ifdef YF_DEBUG
+  YF_TEXDT_PRINT(data);
+#endif
+
+  if (l_ctx == NULL && (l_ctx = yf_getctx()) == NULL)
+    return NULL;
+  if (l_imges == NULL && (l_imges = yf_hashset_init(hash_kv, cmp_kv)) == NULL)
+    return NULL;
+
+  YF_texture tex = calloc(1, sizeof(struct YF_texture_o));
+  if (tex == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return NULL;
+  }
+  if (copy_data(tex, data) != 0) {
+    yf_texture_deinit(tex);
+    tex = NULL;
+  }
+#ifdef YF_DEBUG
+  if (tex != NULL)
+    YF_TEX_PRINT(tex);
+#endif
+  return tex;
 }
 
 int yf_texture_copyres(YF_texture tex, YF_dtable dtb, unsigned alloc_i,
