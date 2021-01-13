@@ -2,7 +2,7 @@
  * YF
  * yf-label.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_LABEL_H
@@ -15,6 +15,7 @@
 #include "yf-node.h"
 #include "yf-matrix.h"
 #include "yf-mesh.h"
+#include "yf-texture.h"
 #include "yf-font.h"
 
 YF_DECLS_BEGIN
@@ -55,6 +56,14 @@ YF_mat4 *yf_label_getxform(YF_label labl);
  * @return: The mesh used by the label.
  */
 YF_mesh yf_label_getmesh(YF_label labl);
+
+/**
+ * Gets the texture of a label.
+ *
+ * @param labl: The label.
+ * @return: The texture used by the label.
+ */
+YF_texture yf_label_gettex(YF_label labl);
 
 /**
  * Gets the font of a label.
