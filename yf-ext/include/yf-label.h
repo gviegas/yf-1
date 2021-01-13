@@ -61,7 +61,8 @@ YF_mesh yf_label_getmesh(YF_label labl);
  *
  * @param labl: The label.
  * @param dst: The destination for the string.
- * @param n: The length of the destination buffer.
+ * @param n: The number of wide characters that the destination buffer can
+ *  contain. Must be at least one.
  * @return: If the length of the string exceeds 'n', returns 'NULL'.
  *  Otherwise, returns 'dst'.
  */
@@ -72,8 +73,10 @@ wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n);
  *
  * @param labl: The label.
  * @param str: The string to set. Can be 'NULL'.
+ * @return: On success, returns zero. Otherwise, a non-zero value is returned
+ *  and the global error is set to indicate the cause.
  */
-void yf_label_setstr(YF_label labl, wchar_t *str);
+int yf_label_setstr(YF_label labl, wchar_t *str);
 
 /**
  * Deinitializes a label.

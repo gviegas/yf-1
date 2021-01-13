@@ -78,8 +78,8 @@ int yf_label_setstr(YF_label labl, wchar_t *str) {
     return 0;
   }
 
-  size_t n = wcslen(labl->str);
-  size_t new_n = wcslen(str);
+  const size_t n = wcslen(labl->str);
+  const size_t new_n = wcslen(str);
 
   if (n != new_n) {
     void *tmp = realloc(labl->str, sizeof(wchar_t) * (new_n + 1));
@@ -97,6 +97,7 @@ int yf_label_setstr(YF_label labl, wchar_t *str) {
 void yf_label_deinit(YF_label labl) {
   if (labl != NULL) {
     yf_node_deinit(labl->node);
+    free(labl->str);
     free(labl);
   }
 }
