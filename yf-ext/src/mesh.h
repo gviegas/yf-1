@@ -57,6 +57,10 @@ void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n, int inst_id);
       for (size_t i = 0; i < (dt_p)->v.n; ++i) \
        YF_VQUAD_PRINT(((YF_vquad *)(dt_p)->v.data)[i]); \
       break; \
+     case YF_VTYPE_LABL: \
+      for (size_t i = 0; i < (dt_p)->v.n; ++i) \
+       YF_VLABL_PRINT(((YF_vlabl *)(dt_p)->v.data)[i]); \
+      break; \
      default: assert(0); \
     } \
    } \
