@@ -701,7 +701,7 @@ static size_t hash_fmap(const void *x);
 static int cmp_fmap(const void *a, const void *b);
 
 /* Gets a glyph. */
-static int get_glyph(void *font, wchar_t code, uint16_t pts, uint16_t dpi,
+static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
     YF_glyph *glyph);
 
 int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
@@ -1906,7 +1906,7 @@ static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
 static void deinit_outline(L_outline *outln);
 
 /* Scales an outline. */
-static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi);
+static int scale_outline(L_outline *outln, uint16_t pt, uint16_t dpi);
 
 /* Grid-fits a scaled outline. */
 static int grid_fit(L_outline *outln);
@@ -1914,18 +1914,18 @@ static int grid_fit(L_outline *outln);
 /* Rasterizes an outline to produce a glyph. */
 static int rasterize(L_outline *outln, YF_glyph *glyph);
 
-static int get_glyph(void *font, wchar_t code, uint16_t pts, uint16_t dpi,
+static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
     YF_glyph *glyph)
 {
   assert(font != NULL);
-  assert(pts != 0 && dpi != 0);
+  assert(pt != 0 && dpi != 0);
   assert(glyph != NULL);
 
   int r = 0;
   L_outline outln = {0};
 
   if (fetch_glyph(font, code, &outln) != 0 ||
-      scale_outline(&outln, pts, dpi) != 0 ||
+      scale_outline(&outln, pt, dpi) != 0 ||
       grid_fit(&outln) != 0 ||
       rasterize(&outln, glyph) != 0)
     r = -1;
@@ -2249,12 +2249,12 @@ static void deinit_outline(L_outline *outln) {
   (((x)&(1<<31)) && ((y)&(1<<31)) ? \
     (((x)<<YF_SFNT_Q)+((y)>>1))/(y) : (((x)<<YF_SFNT_Q)-((y)>>1))/(y))
 
-static int scale_outline(L_outline *outln, uint16_t pts, uint16_t dpi) {
+static int scale_outline(L_outline *outln, uint16_t pt, uint16_t dpi) {
   assert(outln != NULL);
   assert(outln->comps != NULL);
-  assert(pts > 0 && dpi > 0);
+  assert(pt > 0 && dpi > 0);
 
-  const float fac = (float)(pts*dpi) / (float)(outln->upem*72);
+  const float fac = (float)(pt*dpi) / (float)(outln->upem*72);
 
   /* create scaled points for each contour of each component */
   for (uint16_t i = 0; i < outln->comp_n; ++i) {

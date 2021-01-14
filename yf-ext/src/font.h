@@ -29,14 +29,14 @@ typedef struct {
   /* Font implementation. */
   void *font;
   /* Glyph generation. */
-  int (*glyph)(void *font, wchar_t code, uint16_t pts, uint16_t dpi,
+  int (*glyph)(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
       YF_glyph *glyph);
   /* Deinitialization. */
   void (*deinit)(void *font);
 } YF_fontdt;
 
 /* Gets a font glyph. */
-int yf_font_getglyph(YF_font font, wchar_t code, uint16_t pts, uint16_t dpi,
+int yf_font_getglyph(YF_font font, wchar_t code, uint16_t pt, uint16_t dpi,
     YF_glyph *glyph);
 
 #endif /* YF_FONT_H */

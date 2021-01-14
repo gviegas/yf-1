@@ -50,12 +50,12 @@ void yf_font_deinit(YF_font font) {
   }
 }
 
-int yf_font_getglyph(YF_font font, wchar_t code, uint16_t pts, uint16_t dpi,
+int yf_font_getglyph(YF_font font, wchar_t code, uint16_t pt, uint16_t dpi,
     YF_glyph *glyph)
 {
   assert(font != NULL);
-  assert(pts != 0 && dpi != 0);
+  assert(pt != 0 && dpi != 0);
   assert(glyph != NULL);
 
-  return font->data.glyph(font->data.font, code, pts, dpi, glyph);
+  return font->data.glyph(font->data.font, code, pt, dpi, glyph);
 }

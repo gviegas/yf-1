@@ -104,6 +104,24 @@ wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n);
 int yf_label_setstr(YF_label labl, wchar_t *str);
 
 /**
+ * Gets the font size of a label.
+ *
+ * @param labl: The label.
+ * @return: The size used for the label's font, in points.
+ */
+unsigned short yf_label_getpt(YF_label labl);
+
+/**
+ * Sets the font size for a label.
+ *
+ * @param labl: The label.
+ * @param pt: The size to use for the label's font, in points.
+ * @return: On success, returns zero. Otherwise, a non-zero value is returned
+ *  and the global error is set to indicate the cause.
+ */
+int yf_label_setpt(YF_label labl, unsigned short pt);
+
+/**
  * Deinitializes a label.
  *
  * @param labl: The label to deinitialize. Can be 'NULL'.
