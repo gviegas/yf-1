@@ -17,6 +17,10 @@
 #include "mesh.h"
 #include "vertex.h"
 
+/* TODO: Consider taking this values from the font instead. */
+#define YF_FONTSZ_MIN 9
+#define YF_FONTSZ_MAX 144
+
 struct YF_label_o {
   YF_node node;
   YF_mat4 xform;
@@ -24,6 +28,7 @@ struct YF_label_o {
   YF_texture tex;
   YF_font font;
   wchar_t *str;
+  unsigned short pt;
   /* TODO: Other label properties. */
   YF_mat4 mvp;
 };
@@ -44,6 +49,7 @@ YF_label yf_label_init(void) {
   yf_node_setobj(labl->node, YF_NODEOBJ_LABEL, labl);
   yf_mat4_iden(labl->xform);
   yf_mat4_iden(labl->mvp);
+  labl->pt = 16;
 
   if (init_rect(labl) != 0) {
     yf_label_deinit(labl);
@@ -117,6 +123,22 @@ int yf_label_setstr(YF_label labl, wchar_t *str) {
     }
   }
   wcscpy(labl->str, str);
+  return 0;
+}
+
+unsigned short yf_label_getpt(YF_label labl) {
+  assert(labl != NULL);
+  return labl->pt;
+}
+
+int yf_label_setpt(YF_label labl, unsigned short pt) {
+  assert(labl != NULL);
+
+  if (pt < YF_FONTSZ_MIN || pt > YF_FONTSZ_MAX) {
+    yf_seterr(YF_ERR_LIMIT, __func__);
+    return -1;
+  }
+  labl->pt = pt;
   return 0;
 }
 
