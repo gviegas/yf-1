@@ -285,6 +285,9 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data) {
     case YF_VTYPE_QUAD:
       mesh->v.stride = sizeof(YF_vquad);
       break;
+    case YF_VTYPE_LABL:
+      mesh->v.stride = sizeof(YF_vlabl);
+      break;
     default:
       assert(0);
       yf_seterr(YF_ERR_OTHER, __func__);
