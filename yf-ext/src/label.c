@@ -84,6 +84,9 @@ YF_mesh yf_label_getmesh(YF_label labl) {
 
 YF_texture yf_label_gettex(YF_label labl) {
   assert(labl != NULL);
+
+  /* TODO: Observe string changes to avoid needless copying. */
+  copy_glyphs(labl);
   return labl->tex;
 }
 
@@ -268,6 +271,8 @@ static int copy_glyphs(YF_label labl) {
     return -1;
   }
 
+  /* XXX: Cannot copy string of glyphs to linear buffer directly. */
+/*
   unsigned char *b = data.data;
   for (size_t i = 0; i < len; ++i) {
     size_t sz = (glyphs[i].width * glyphs[i].height) << (glyphs[i].bpp == 16);
@@ -275,8 +280,24 @@ static int copy_glyphs(YF_label labl) {
     free(glyphs[i].bitmap.u8);
     b += sz;
   }
+*/
 
   labl->tex = yf_texture_initdt(&data);
   free(data.data);
+
+  ////////////////////
+  // XXX
+  YF_off2 off = {0};
+  for (size_t i = 0; i < len; ++i) {
+    dim.width = glyphs[i].width;
+    dim.height = glyphs[i].height;
+    if (yf_texture_setdata(labl->tex, off, dim, glyphs[i].bitmap.u8) != 0)
+      assert(0);
+    printf("#%lu %u,%u %u,%u\n", i, off.x, off.y, dim.width, dim.height);
+    off.x += glyphs[i].width;
+    free(glyphs[i].bitmap.u8);
+  }
+  ////////////////////
+
   return labl->tex == NULL ? -1 : 0;
 }

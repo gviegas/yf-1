@@ -14,10 +14,12 @@
 #include <yf/core/yf-core.h>
 
 #include "yf-matrix.h"
-#include "data-sfnt.h"
+#include "yf-label.h"
+#include "coreobj.h"
+#include "texture.h"
 
-#define YF_WINW 600
-#define YF_WINH 600
+#define YF_WINW 700
+#define YF_WINH 200
 #define YF_WINT "Misc"
 
 /* Shared variables. */
@@ -31,7 +33,7 @@ struct L_vars {
   YF_target *tgts;
   YF_gstate gst;
 
-  YF_image bitmap;
+  YF_label labl;
 
   YF_window win;
   int key;
@@ -45,7 +47,9 @@ typedef struct {
 } L_vertex;
 
 /* Key event function. */
-static void key_kb(int key, int state, unsigned mod_mask, void *data) {
+static void key_kb(int key, int state,
+    YF_UNUSED unsigned mod_mask, YF_UNUSED void *data)
+{
   if (state == YF_KEYSTATE_RELEASED)
     l_vars.key = key;
 }
@@ -53,7 +57,7 @@ static void key_kb(int key, int state, unsigned mod_mask, void *data) {
 /* Initializes content. */
 static void init(void) {
   /* Context */
-  YF_context ctx = yf_context_init();
+  YF_context ctx = yf_getctx();
   assert(ctx != NULL);
 
   /* Buffer */
@@ -166,35 +170,27 @@ static void init(void) {
   YF_gstate gst = yf_gstate_init(ctx, &conf);
   assert(gst != NULL);
 
-  /* Bitmap */
-/*
-  YF_fontdt fdt;
-  assert(yf_loadsfnt("tmp/font.ttf", &fdt) == 0);
-*/
+  /* Font/Label */
   YF_font font = yf_font_init(YF_FILETYPE_TTF, "tmp/font.ttf");
   assert(font != NULL);
-  YF_fontdt fdt = *((YF_fontdt *)font);
-  YF_glyph glyph;
-  if (fdt.glyph(fdt.font, L'?', 18, 72, &glyph) != 0)
-    assert(0);
-  assert(glyph.bpp == 8);
+  YF_label labl = yf_label_init();
+  assert(labl != NULL);
+  yf_label_setfont(labl, font);
+  assert(yf_label_setstr(labl, L"abcdefghijklmnopqrstuvwxyz") == 0);
+  assert(yf_label_setpt(labl, 40) == 0);
 
-  const YF_off3 bitmap_off = {0};
-  const void *bitmap_dt = glyph.bitmap.u8;
-  const YF_dim3 bitmap_dim = {glyph.width, glyph.height, 1};
-
-  YF_image bitmap = yf_image_init(ctx, YF_PIXFMT_R8UNORM, bitmap_dim, 1, 1, 1);
-  assert(bitmap != NULL);
+  /* XXX: Should be the label dimensions... */
+  const YF_dim3 labl_dim = {YF_WINW, YF_WINH, 1};
 
   /* Data copy */
   YF_mat4 m, s, vp, v, p;
-  const YF_vec3 eye = {0.0, 0.0, -3.0}, center = {0}, up = {0.0, -1.0, 0.0};
+  const YF_vec3 eye = {0.0, 0.0, -1.1}, center = {0}, up = {0.0, -1.0, 0.0};
 
   yf_mat4_persp(p, 0.79, (YF_float)YF_WINW / (YF_float)YF_WINH, 0.1, 100.0);
   yf_mat4_lookat(v, eye, center, up);
   yf_mat4_mul(vp, p, v);
 
-  YF_float ratio = (YF_float)bitmap_dim.width / (YF_float)bitmap_dim.height;
+  YF_float ratio = (YF_float)labl_dim.width / (YF_float)labl_dim.height;
   if (ratio > 1.0)
     yf_mat4_scale(s, 1.0, 1.0/ratio, 1.0);
   else
@@ -225,11 +221,10 @@ static void init(void) {
   if (yf_dtable_copybuf(dtb, 0, 0, elems, &buf, &buf_off, &buf_sz) != 0)
     assert(0);
 
-  if (yf_image_copy(bitmap, bitmap_off, bitmap_dim, 0, 0, bitmap_dt) != 0)
-    assert(0);
+  YF_texture tex = yf_label_gettex(labl);
+  assert(tex != NULL);
 
-  const unsigned layer = 0;
-  if (yf_dtable_copyimg(dtb, 0, 1, elems, &bitmap, &layer) != 0)
+  if (yf_texture_copyres(tex, dtb, 0, 1, 0) != 0)
     assert(0);
 
   l_vars.ctx = ctx;
@@ -241,7 +236,7 @@ static void init(void) {
   l_vars.tgts = tgts;
   l_vars.gst = gst;
 
-  l_vars.bitmap = bitmap;
+  l_vars.labl = labl;
 
   l_vars.win = win;
   l_vars.key = YF_KEY_UNKNOWN;
