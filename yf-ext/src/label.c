@@ -119,7 +119,7 @@ int yf_label_setstr(YF_label labl, wchar_t *str) {
     return 0;
   }
 
-  const size_t n = wcslen(labl->str);
+  const size_t n = labl->str == NULL ? 0 : wcslen(labl->str);
   const size_t new_n = wcslen(str);
 
   if (n != new_n) {
