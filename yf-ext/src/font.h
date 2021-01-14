@@ -22,6 +22,9 @@ typedef struct {
     uint8_t *u8;
     uint16_t *u16;
   } bitmap;
+  /* horizontal metrics */
+  uint16_t adv_wdt;
+  uint16_t lsb;
 } YF_glyph;
 
 /* Type defining the font data. */
