@@ -10,16 +10,22 @@
 #include <wchar.h>
 #include <assert.h>
 
+#include <yf/com/yf-util.h>
 #include <yf/com/yf-error.h>
 
 #include "label.h"
 #include "node.h"
 #include "mesh.h"
+#include "texture.h"
+#include "font.h"
 #include "vertex.h"
 
 /* TODO: Consider taking this values from the font instead. */
 #define YF_FONTSZ_MIN 9
 #define YF_FONTSZ_MAX 144
+#ifndef YF_DPI
+# define YF_DPI 72
+#endif
 
 struct YF_label_o {
   YF_node node;
@@ -35,6 +41,9 @@ struct YF_label_o {
 
 /* Initializes a label's mesh rectangle. */
 static int init_rect(YF_label labl);
+
+/* Copies label glyphs to texture. */
+static int copy_glyphs(YF_label labl);
 
 YF_label yf_label_init(void) {
   YF_label labl = calloc(1, sizeof(struct YF_label_o));
@@ -202,4 +211,72 @@ static int init_rect(YF_label labl) {
   free(data.v.data);
   free(data.i.data);
   return labl->mesh == NULL ? -1 : 0;
+}
+
+static int copy_glyphs(YF_label labl) {
+  assert(labl != NULL);
+  assert(labl->font != NULL);
+  assert(labl->str != NULL);
+
+  const size_t len = wcslen(labl->str);
+  if (len == 0)
+    return 0;
+
+  YF_glyph glyphs[len];
+  YF_dim2 dim = {0};
+
+  /* TODO: Filter glyphs used more than once. */
+  for (size_t i = 0; i < len; ++i) {
+    if (yf_font_getglyph(labl->font, labl->str[i], labl->pt, YF_DPI, glyphs+i)
+        != 0)
+    {
+      for (size_t j = 0; j < i; ++j)
+        free(glyphs[j].bitmap.u8);
+      return -1;
+    }
+    /* TODO: Handle whitespace/newline/etc. */
+    dim.width += glyphs[i].width;
+    dim.height = YF_MAX(dim.height, glyphs[i].height);
+  }
+
+  /* TODO: Use shared textures instead. */
+  if (labl->tex != NULL) {
+    yf_texture_deinit(labl->tex);
+    labl->tex = NULL;
+  }
+
+  YF_texdt data;
+  data.dim = dim;
+
+  switch (glyphs[0].bpp) {
+    case 8:
+      data.pixfmt = YF_PIXFMT_R8UNORM;
+      data.data = calloc(1, dim.width * dim.height);
+      break;
+    case 16:
+      data.pixfmt = YF_PIXFMT_R16UNORM;
+      data.data = calloc(1, (dim.width * dim.height) << 1);
+      break;
+    default:
+      assert(0);
+  }
+
+  if (data.data == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    for (size_t i = 0; i < len; ++i)
+      free(glyphs[i].bitmap.u8);
+    return -1;
+  }
+
+  unsigned char *b = data.data;
+  for (size_t i = 0; i < len; ++i) {
+    size_t sz = (glyphs[i].width * glyphs[i].height) << (glyphs[i].bpp == 16);
+    memcpy(b, glyphs[i].bitmap.u8, sz);
+    free(glyphs[i].bitmap.u8);
+    b += sz;
+  }
+
+  labl->tex = yf_texture_initdt(&data);
+  free(data.data);
+  return labl->tex == NULL ? -1 : 0;
 }
