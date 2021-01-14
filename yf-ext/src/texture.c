@@ -155,7 +155,7 @@ int yf_texture_setdata(YF_texture tex, YF_off2 off, YF_dim2 dim,
   const YF_off3 off3 = {off.x, off.y, 0};
   const YF_dim3 dim3 = {dim.width, dim.height, 1};
   /* TODO: Mip level. */
-  return yf_image_copy(tex->imge->img, off3, dim3, tex->layer, 1, data);
+  return yf_image_copy(tex->imge->img, off3, dim3, tex->layer, 0, data);
 }
 
 int yf_texture_copyres(YF_texture tex, YF_dtable dtb, unsigned alloc_i,
