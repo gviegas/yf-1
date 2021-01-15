@@ -666,24 +666,13 @@ typedef struct {
 
 /* Font. */
 typedef struct {
-  uint16_t upem;
-  int16_t x_min;
-  int16_t y_min;
-  int16_t x_max;
-  int16_t y_max;
   uint16_t glyph_n;
   uint16_t pt_max;
   uint16_t contr_max;
   uint16_t comp_pt_max;
   uint16_t comp_contr_max;
   uint16_t comp_elem_max;
-  int16_t ascent;
-  int16_t descent;
-  int16_t line_gap;
-  uint16_t adv_wdt_max;
-  int16_t lsb_min;
-  int16_t rsb_min;
-  int16_t x_extent_max;
+  L_fontmet met;
   L_fontmap map;
   L_fontstr str;
   struct {
@@ -1140,27 +1129,16 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     fclose(file);
     return -1;
   }
-
-  font->upem = be16toh(sfnt.head->upem);
-  font->x_min = be16toh(sfnt.head->x_min);
-  font->y_min = be16toh(sfnt.head->y_min);
-  font->x_max = be16toh(sfnt.head->x_max);
-  font->y_max = be16toh(sfnt.head->y_max);
   font->glyph_n = be16toh(sfnt.maxp->glyph_n);
   font->pt_max = be16toh(sfnt.maxp->pt_max);
   font->contr_max = be16toh(sfnt.maxp->contr_max);
   font->comp_pt_max = be16toh(sfnt.maxp->comp_pt_max);
   font->comp_contr_max = be16toh(sfnt.maxp->comp_contr_max);
   font->comp_elem_max = be16toh(sfnt.maxp->comp_elem_max);
-  font->ascent = be16toh(sfnt.hhea->ascent);
-  font->descent = be16toh(sfnt.hhea->descent);
-  font->line_gap = be16toh(sfnt.hhea->line_gap);
-  font->adv_wdt_max = be16toh(sfnt.hhea->adv_wdt_max);
-  font->lsb_min = be16toh(sfnt.hhea->lsb_min);
-  font->rsb_min = be16toh(sfnt.hhea->rsb_min);
-  font->x_extent_max = be16toh(sfnt.hhea->x_extent_max);
 
-  if (set_mapping(sfnt.cmap, file, cmap_off, &font->map) != 0) {
+  if (get_metrics(&sfnt, &font->met) != 0 ||
+      set_mapping(sfnt.cmap, file, cmap_off, &font->map) != 0)
+  {
     deinit_tables(&sfnt);
     free(font);
     fclose(file);
@@ -1601,6 +1579,8 @@ static void deinit_font(void *font) {
       break;
   }
 
+  free(fnt->met.glyphs);
+
   free(fnt->ttf.loca);
   free(fnt->ttf.glyf);
 
@@ -2009,7 +1989,7 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
   assert(font->ttf.glyf != NULL);
   assert(outln != NULL);
 
-  outln->upem = font->upem;
+  outln->upem = font->met.upem;
 
   uint16_t id;
   if (font->map.map == YF_SFNT_MAP_SPARSE) {
