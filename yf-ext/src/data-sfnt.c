@@ -692,9 +692,6 @@ static int load_ttf(L_sfnt *sfnt, FILE *file);
 /* Deinitializes SFNT tables. */
 static void deinit_tables(L_sfnt *sfnt);
 
-/* Deinitializes font data. */
-static void deinit_font(void *font);
-
 /* Gets font metrics. */
 static int get_metrics(const L_sfnt *sfnt, L_fontmet *fmet);
 
@@ -711,6 +708,13 @@ static size_t hash_fmap(const void *x);
 
 /* Compares glyphs of a 'L_fontmap' sparse format. */
 static int cmp_fmap(const void *a, const void *b);
+
+/* Deinitializes font data. */
+static void deinit_font(void *font);
+
+/* Scales metrics. */
+static void scale_metrics(void *font, uint16_t pt, uint16_t dpi,
+    int16_t *x_min, int16_t *y_min, int16_t *x_max, int16_t *y_max);
 
 /* Gets a glyph. */
 static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
@@ -1179,6 +1183,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
 
   data->font = font;
   data->glyph = get_glyph;
+  data->metrics = scale_metrics;
   data->deinit = deinit_font;
 
   deinit_tables(&sfnt);
@@ -1549,44 +1554,6 @@ static void deinit_tables(L_sfnt *sfnt) {
      expected to be allocated from the stack. */
 }
 
-static void deinit_font(void *font) {
-  if (font == NULL)
-    return;
-
-  L_font *fnt = font;
-
-  free(fnt->str.copyright);
-  free(fnt->str.family);
-  free(fnt->str.subfamily);
-  free(fnt->str.uid);
-  free(fnt->str.name);
-  free(fnt->str.version);
-  free(fnt->str.trademark);
-  free(fnt->str.manufacturer);
-  free(fnt->str.designer);
-  free(fnt->str.description);
-  free(fnt->str.license);
-  free(fnt->str.typographic_family);
-  free(fnt->str.typographic_subfamily);
-  free(fnt->str.sample_text);
-
-  switch (fnt->map.map) {
-    case YF_SFNT_MAP_SPARSE:
-      yf_hashset_deinit(fnt->map.sparse.glyph_ids);
-      break;
-    case YF_SFNT_MAP_TRIMMED:
-      free(fnt->map.trimmed.glyph_ids);
-      break;
-  }
-
-  free(fnt->met.glyphs);
-
-  free(fnt->ttf.loca);
-  free(fnt->ttf.glyf);
-
-  free(font);
-}
-
 static int get_metrics(const L_sfnt *sfnt, L_fontmet *fmet) {
   assert(sfnt != NULL);
   assert(fmet != NULL);
@@ -1911,6 +1878,62 @@ static size_t hash_fmap(const void *x) {
 static int cmp_fmap(const void *a, const void *b) {
   /*return (uint16_t)a - (uint16_t)b;*/
   return ((uintptr_t)a & 0xffff) - ((uintptr_t)b & 0xffff);
+}
+
+static void deinit_font(void *font) {
+  if (font == NULL)
+    return;
+
+  L_font *fnt = font;
+
+  free(fnt->str.copyright);
+  free(fnt->str.family);
+  free(fnt->str.subfamily);
+  free(fnt->str.uid);
+  free(fnt->str.name);
+  free(fnt->str.version);
+  free(fnt->str.trademark);
+  free(fnt->str.manufacturer);
+  free(fnt->str.designer);
+  free(fnt->str.description);
+  free(fnt->str.license);
+  free(fnt->str.typographic_family);
+  free(fnt->str.typographic_subfamily);
+  free(fnt->str.sample_text);
+
+  switch (fnt->map.map) {
+    case YF_SFNT_MAP_SPARSE:
+      yf_hashset_deinit(fnt->map.sparse.glyph_ids);
+      break;
+    case YF_SFNT_MAP_TRIMMED:
+      free(fnt->map.trimmed.glyph_ids);
+      break;
+  }
+
+  free(fnt->met.glyphs);
+
+  free(fnt->ttf.loca);
+  free(fnt->ttf.glyf);
+
+  free(font);
+}
+
+static void scale_metrics(void *font, uint16_t pt, uint16_t dpi,
+    int16_t *x_min, int16_t *y_min, int16_t *x_max, int16_t *y_max)
+{
+  assert(font != NULL);
+
+  L_font *fnt = font;
+  const float scale = (float)(pt*dpi) / (float)(fnt->met.upem*72);
+
+  if (x_min != NULL)
+    *x_min = round(fnt->met.x_min*scale);
+  if (y_min != NULL)
+    *y_min = round(fnt->met.y_min*scale);
+  if (x_max != NULL)
+    *x_max = round(fnt->met.x_max*scale);
+  if (y_max != NULL)
+    *y_max = round(fnt->met.y_max*scale);
 }
 
 /* Checks whether a glyph is made of parts (compound/composite). */

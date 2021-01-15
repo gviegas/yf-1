@@ -176,7 +176,7 @@ static void init(void) {
   YF_label labl = yf_label_init();
   assert(labl != NULL);
   yf_label_setfont(labl, font);
-  assert(yf_label_setstr(labl, L"abcdefghijklmnopqrstuvwxyz") == 0);
+  assert(yf_label_setstr(labl, L"abc-ABC_123=pP|sS/xX;yY,zZ.") == 0);
   assert(yf_label_setpt(labl, 40) == 0);
 
   /* XXX: Should be the label dimensions... */
