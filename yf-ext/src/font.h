@@ -42,6 +42,9 @@ typedef struct {
   void (*deinit)(void *font);
 } YF_fontdt;
 
+/* Initializes a new font object from font data directly. */
+YF_font yf_font_initdt(const YF_fontdt *data);
+
 /* Type defining rasterized font glyphs on a texture. */
 typedef struct {
   YF_texture tex;

@@ -6,6 +6,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 #include <assert.h>
 
@@ -22,26 +23,23 @@ struct YF_font_o {
 };
 
 YF_font yf_font_init(int filetype, const char *pathname) {
-  YF_font font = calloc(1, sizeof(struct YF_font_o));
-  if (font == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    return NULL;
-  }
+  YF_fontdt data = {0};
   switch (filetype) {
     case YF_FILETYPE_INTERNAL:
       /* TODO */
       assert(0);
     case YF_FILETYPE_TTF:
-      if (yf_loadsfnt(pathname, &font->data) != 0) {
-        yf_font_deinit(font);
+      if (yf_loadsfnt(pathname, &data) != 0) {
         return NULL;
       }
       break;
     default:
       yf_seterr(YF_ERR_INVARG, __func__);
-      yf_font_deinit(font);
       return NULL;
   }
+  YF_font font = yf_font_initdt(&data);
+  if (font == NULL && data.deinit != NULL)
+    data.deinit(data.font);
   return font;
 }
 
@@ -51,6 +49,18 @@ void yf_font_deinit(YF_font font) {
       font->data.deinit(font->data.font);
     free(font);
   }
+}
+
+YF_font yf_font_initdt(const YF_fontdt *data) {
+  assert(data != NULL);
+
+  YF_font font = calloc(1, sizeof(struct YF_font_o));
+  if (font == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return NULL;
+  }
+  memcpy(&font->data, data, sizeof *data);
+  return font;
 }
 
 int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
