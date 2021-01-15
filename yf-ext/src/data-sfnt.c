@@ -85,12 +85,12 @@
    printf("\n-- SFNT (debug) --"); \
    printf("\nhhea - major: %hu", be16toh((hh_p)->major)); \
    printf("\nhhea - minor: %hu", be16toh((hh_p)->minor)); \
-   printf("\nhhea - ascender: %hd", be16toh((hh_p)->ascender)); \
-   printf("\nhhea - descender: %hd", be16toh((hh_p)->descender)); \
+   printf("\nhhea - ascent: %hd", be16toh((hh_p)->ascent)); \
+   printf("\nhhea - descent: %hd", be16toh((hh_p)->descent)); \
    printf("\nhhea - line_gap: %hd", be16toh((hh_p)->line_gap)); \
    printf("\nhhea - adv_wdt_max: %hu", be16toh((hh_p)->adv_wdt_max)); \
-   printf("\nhhea - lbear_min: %hd", be16toh((hh_p)->lbear_min)); \
-   printf("\nhhea - rbear_min: %hd", be16toh((hh_p)->rbear_min)); \
+   printf("\nhhea - lsb_min: %hd", be16toh((hh_p)->lsb_min)); \
+   printf("\nhhea - rsb_min: %hd", be16toh((hh_p)->rsb_min)); \
    printf("\nhhea - x_extent_max: %hd", be16toh((hh_p)->x_extent_max)); \
    printf("\nhhea - caret_slp_rise: %hd", be16toh((hh_p)->caret_slp_rise)); \
    printf("\nhhea - caret_slp_run: %hd", be16toh((hh_p)->caret_slp_run)); \
@@ -102,7 +102,7 @@
 # define YF_SFNT_HMTXE_PRINT(hm_p) do { \
    printf("\n-- SFNT (debug) --"); \
    printf("\nhmtxe - adv_wdt: %hu", be16toh((hm_p)->adv_wdt)); \
-   printf("\nhmtxe - lbear: %hd", be16toh((hm_p)->lbear)); \
+   printf("\nhmtxe - lsb: %hd", be16toh((hm_p)->lsb)); \
    printf("\n--\n"); } while (0)
 
 # define YF_SFNT_MAXP_PRINT(mp_p) do { \
@@ -179,8 +179,8 @@
    printf("\nos2 - sel: 0x%.4hx", be16toh((o2_p)->sel)); \
    printf("\nos2 - first_char_i: %hu", be16toh((o2_p)->first_char_i)); \
    printf("\nos2 - last_char_i: %hu", be16toh((o2_p)->last_char_i)); \
-   printf("\nos2 - typo_ascender: %hd", be16toh((o2_p)->typo_ascender)); \
-   printf("\nos2 - typo_descender: %hd", be16toh((o2_p)->typo_descender)); \
+   printf("\nos2 - typo_ascent: %hd", be16toh((o2_p)->typo_ascent)); \
+   printf("\nos2 - typo_descent: %hd", be16toh((o2_p)->typo_descent)); \
    printf("\nos2 - typo_line_gap: %hd", be16toh((o2_p)->typo_line_gap)); \
    printf("\nos2 - win_ascent: %hu", be16toh((o2_p)->win_ascent)); \
    printf("\nos2 - win_descent: %hu", be16toh((o2_p)->win_descent)); \
@@ -357,12 +357,12 @@ static_assert(offsetof(L_head, glyph_fmt) == YF_SFNT_HEADSZ-2, "!offsetof");
 typedef struct {
   uint16_t major;
   uint16_t minor;
-  int16_t ascender;
-  int16_t descender;
+  int16_t ascent;
+  int16_t descent;
   int16_t line_gap;
   uint16_t adv_wdt_max;
-  int16_t lbear_min;
-  int16_t rbear_min;
+  int16_t lsb_min;
+  int16_t rsb_min;
   int16_t x_extent_max;
   int16_t caret_slp_rise;
   int16_t caret_slp_run;
@@ -378,14 +378,14 @@ static_assert(offsetof(L_hhea, hmetric_n) == YF_SFNT_HHEASZ-2, "!offsetof");
 #define YF_SFNT_HMTXTAG YF_SFNT_MAKETAG('h', 'm', 't', 'x')
 typedef struct {
   uint16_t adv_wdt;
-  int16_t lbear;
+  int16_t lsb;
 } L_hmtxe;
 #define YF_SFNT_HMTXESZ 4
 static_assert(sizeof(L_hmtxe) == YF_SFNT_HMTXESZ, "!sizeof");
 
 typedef struct {
   L_hmtxe *hmtxes;
-  int16_t *lbears;
+  int16_t *lsbs;
 } L_hmtx;
 
 /* Maximum profile. */
@@ -475,8 +475,8 @@ typedef struct {
   uint16_t sel;
   uint16_t first_char_i;
   uint16_t last_char_i;
-  int16_t typo_ascender;
-  int16_t typo_descender;
+  int16_t typo_ascent;
+  int16_t typo_descent;
   int16_t typo_line_gap;
   uint16_t win_ascent;
   uint16_t win_descent;
@@ -609,6 +609,26 @@ typedef struct {
   } ttf;
 } L_sfnt;
 
+/* Font metrics. */
+typedef struct {
+  uint16_t upem;
+  int16_t x_min;
+  int16_t y_min;
+  int16_t x_max;
+  int16_t y_max;
+  int16_t ascent;
+  int16_t descent;
+  int16_t line_gap;
+  uint16_t adv_wdt_max;
+  int16_t lsb_min;
+  int16_t rsb_min;
+  struct {
+    uint16_t adv_wdt;
+    int16_t lsb;
+    /* TODO: Other per-glyph metrics. */
+  } *glyphs;
+} L_fontmet;
+
 /* Font mapping. */
 typedef struct {
 #define YF_SFNT_MAP_SPARSE  0
@@ -646,24 +666,13 @@ typedef struct {
 
 /* Font. */
 typedef struct {
-  uint16_t upem;
-  int16_t x_min;
-  int16_t y_min;
-  int16_t x_max;
-  int16_t y_max;
   uint16_t glyph_n;
   uint16_t pt_max;
   uint16_t contr_max;
   uint16_t comp_pt_max;
   uint16_t comp_contr_max;
   uint16_t comp_elem_max;
-  int16_t ascender;
-  int16_t descender;
-  int16_t line_gap;
-  uint16_t adv_wdt_max;
-  int16_t lbear_min;
-  int16_t rbear_min;
-  int16_t x_extent_max;
+  L_fontmet met;
   L_fontmap map;
   L_fontstr str;
   struct {
@@ -685,6 +694,9 @@ static void deinit_tables(L_sfnt *sfnt);
 
 /* Deinitializes font data. */
 static void deinit_font(void *font);
+
+/* Gets font metrics. */
+static int get_metrics(const L_sfnt *sfnt, L_fontmet *fmet);
 
 /* Sets mapping of character codes to glyph indices. */
 static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
@@ -922,14 +934,14 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
   }
   if (hmetric_n < glyph_n) {
     const uint16_t n = glyph_n - hmetric_n;
-    sfnt.hmtx->lbears = malloc(n * sizeof(int16_t));
-    if (sfnt.hmtx->lbears == NULL) {
+    sfnt.hmtx->lsbs = malloc(n * sizeof(int16_t));
+    if (sfnt.hmtx->lsbs == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       deinit_tables(&sfnt);
       fclose(file);
       return -1;
     }
-    if (fread(sfnt.hmtx->lbears, sizeof(int16_t), n, file) < n) {
+    if (fread(sfnt.hmtx->lsbs, sizeof(int16_t), n, file) < n) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       deinit_tables(&sfnt);
       fclose(file);
@@ -939,8 +951,17 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
 #ifdef YF_DEBUG
   for (uint16_t i = 0; i < hmetric_n; ++i) {
     YF_SFNT_HMTXE_PRINT(sfnt.hmtx->hmtxes+i);
-    if (i == 3) {
+    if (i == 5) {
       printf("\n... (#%hu hmtx entries)\n", hmetric_n);
+      break;
+    }
+  }
+  for (uint16_t i = 0; i < glyph_n - hmetric_n; ++i) {
+    printf("\n-- SFNT (debug) --");
+    printf("\nhmtx (lsb-only): %hd", be16toh(sfnt.hmtx->lsbs[i]));
+    printf("\n--\n");
+    if (i == 5) {
+      printf("\n... (#%hu hmtx (lsb only) entries)\n", glyph_n - hmetric_n);
       break;
     }
   }
@@ -1108,27 +1129,16 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     fclose(file);
     return -1;
   }
-
-  font->upem = be16toh(sfnt.head->upem);
-  font->x_min = be16toh(sfnt.head->x_min);
-  font->y_min = be16toh(sfnt.head->y_min);
-  font->x_max = be16toh(sfnt.head->x_max);
-  font->y_max = be16toh(sfnt.head->y_max);
   font->glyph_n = be16toh(sfnt.maxp->glyph_n);
   font->pt_max = be16toh(sfnt.maxp->pt_max);
   font->contr_max = be16toh(sfnt.maxp->contr_max);
   font->comp_pt_max = be16toh(sfnt.maxp->comp_pt_max);
   font->comp_contr_max = be16toh(sfnt.maxp->comp_contr_max);
   font->comp_elem_max = be16toh(sfnt.maxp->comp_elem_max);
-  font->ascender = be16toh(sfnt.hhea->ascender);
-  font->descender = be16toh(sfnt.hhea->descender);
-  font->line_gap = be16toh(sfnt.hhea->line_gap);
-  font->adv_wdt_max = be16toh(sfnt.hhea->adv_wdt_max);
-  font->lbear_min = be16toh(sfnt.hhea->lbear_min);
-  font->rbear_min = be16toh(sfnt.hhea->rbear_min);
-  font->x_extent_max = be16toh(sfnt.hhea->x_extent_max);
 
-  if (set_mapping(sfnt.cmap, file, cmap_off, &font->map) != 0) {
+  if (get_metrics(&sfnt, &font->met) != 0 ||
+      set_mapping(sfnt.cmap, file, cmap_off, &font->map) != 0)
+  {
     deinit_tables(&sfnt);
     free(font);
     fclose(file);
@@ -1498,7 +1508,7 @@ static void deinit_tables(L_sfnt *sfnt) {
   free(sfnt->hhea);
   if (sfnt->hmtx != NULL) {
     free(sfnt->hmtx->hmtxes);
-    free(sfnt->hmtx->lbears);
+    free(sfnt->hmtx->lsbs);
     free(sfnt->hmtx);
   }
   free(sfnt->maxp);
@@ -1569,10 +1579,49 @@ static void deinit_font(void *font) {
       break;
   }
 
+  free(fnt->met.glyphs);
+
   free(fnt->ttf.loca);
   free(fnt->ttf.glyf);
 
   free(font);
+}
+
+static int get_metrics(const L_sfnt *sfnt, L_fontmet *fmet) {
+  assert(sfnt != NULL);
+  assert(fmet != NULL);
+
+  fmet->upem = be16toh(sfnt->head->upem);
+  fmet->x_min = be16toh(sfnt->head->x_min);
+  fmet->y_min = be16toh(sfnt->head->y_min);
+  fmet->x_max = be16toh(sfnt->head->x_max);
+  fmet->y_max = be16toh(sfnt->head->y_max);
+  fmet->ascent = be16toh(sfnt->hhea->ascent);
+  fmet->descent = be16toh(sfnt->hhea->descent);
+  fmet->line_gap = be16toh(sfnt->hhea->line_gap);
+  fmet->adv_wdt_max = be16toh(sfnt->hhea->adv_wdt_max);
+  fmet->lsb_min = be16toh(sfnt->hhea->lsb_min);
+  fmet->rsb_min = be16toh(sfnt->hhea->rsb_min);
+
+  const uint16_t hmetric_n = be16toh(sfnt->hhea->hmetric_n);
+  const uint16_t glyph_n = be16toh(sfnt->maxp->glyph_n);
+
+  fmet->glyphs = malloc(glyph_n * sizeof *fmet->glyphs);
+  if (fmet->glyphs == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+
+  uint16_t i;
+  for (i = 0; i < hmetric_n; ++i) {
+    fmet->glyphs[i].adv_wdt = be16toh(sfnt->hmtx->hmtxes[i].adv_wdt);
+    fmet->glyphs[i].lsb = be16toh(sfnt->hmtx->hmtxes[i].lsb);
+  }
+  for (; i < glyph_n; ++i) {
+    fmet->glyphs[i].adv_wdt = fmet->glyphs[hmetric_n-1].adv_wdt;
+    fmet->glyphs[i].lsb = be16toh(sfnt->hmtx->lsbs[i-hmetric_n]);
+  }
+  return 0;
 }
 
 static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
@@ -1881,7 +1930,11 @@ typedef struct {
 
 /* Complete outline of a glyph. */
 typedef struct {
-  uint16_t upem;
+  /* (pt*dpi)/(upem*72) */
+  float scale;
+  /* metrics */
+  uint16_t adv_wdt;
+  int16_t lsb;
   /* boundaries */
   int32_t x_min;
   int32_t y_min;
@@ -1906,7 +1959,7 @@ static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
 static void deinit_outline(L_outline *outln);
 
 /* Scales an outline. */
-static int scale_outline(L_outline *outln, uint16_t pt, uint16_t dpi);
+static int scale_outline(L_outline *outln);
 
 /* Grid-fits a scaled outline. */
 static int grid_fit(L_outline *outln);
@@ -1923,9 +1976,10 @@ static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
 
   int r = 0;
   L_outline outln = {0};
+  outln.scale = (float)(pt*dpi) / (float)(((L_font *)font)->met.upem*72);
 
   if (fetch_glyph(font, code, &outln) != 0 ||
-      scale_outline(&outln, pt, dpi) != 0 ||
+      scale_outline(&outln) != 0 ||
       grid_fit(&outln) != 0 ||
       rasterize(&outln, glyph) != 0)
     r = -1;
@@ -1939,8 +1993,6 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
   assert(font->ttf.loca != NULL);
   assert(font->ttf.glyf != NULL);
   assert(outln != NULL);
-
-  outln->upem = font->upem;
 
   uint16_t id;
   if (font->map.map == YF_SFNT_MAP_SPARSE) {
@@ -2018,6 +2070,8 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
   printf("\n--\n");
 #endif
 
+  outln->adv_wdt = font->met.glyphs[id].adv_wdt;
+  outln->lsb = font->met.glyphs[id].lsb;
   return 0;
 }
 
@@ -2249,12 +2303,11 @@ static void deinit_outline(L_outline *outln) {
   (((x)&(1<<31)) && ((y)&(1<<31)) ? \
     (((x)<<YF_SFNT_Q)+((y)>>1))/(y) : (((x)<<YF_SFNT_Q)-((y)>>1))/(y))
 
-static int scale_outline(L_outline *outln, uint16_t pt, uint16_t dpi) {
+static int scale_outline(L_outline *outln) {
   assert(outln != NULL);
   assert(outln->comps != NULL);
-  assert(pt > 0 && dpi > 0);
 
-  const float fac = (float)(pt*dpi) / (float)(outln->upem*72);
+  const float fac = outln->scale;
 
   /* create scaled points for each contour of each component */
   for (uint16_t i = 0; i < outln->comp_n; ++i) {
@@ -2552,12 +2605,13 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
     }
   }
 
-  /* TODO... */
-
   glyph->width = YF_SFNT_FIXTOINT(w);
   glyph->height = YF_SFNT_FIXTOINT(h);
   glyph->bpp = 8;
   glyph->bitmap.u8 = bitmap;
+  glyph->base_h = YF_SFNT_FIXTOINT(outln->y_min);
+  glyph->adv_wdt = round(outln->scale*outln->adv_wdt);
+  glyph->lsb = round(outln->scale*outln->lsb);
 
   free(segs);
   return 0;
