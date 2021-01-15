@@ -150,6 +150,9 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
     rz->dim.height = YF_MAX(rz->dim.height, dim.height);
     free(glyphs[i].bitmap.u8);
   }
+  int16_t x[2], y[2];
+  font->data.metrics(font->data.font, pt, dpi, x, y, x+1, y+1);
+  printf("font metrics: x=[%hd, %hd], y=[%hd, %hd]\n", x[0], x[1], y[0], y[1]);
   ////////////////////
 
   return rz->tex == NULL ? -1 : 0;
