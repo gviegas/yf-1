@@ -22,7 +22,8 @@ typedef struct {
     uint8_t *u8;
     uint16_t *u16;
   } bitmap;
-  /* horizontal metrics */
+  /* Horizontal metrics. */
+  int16_t base_h;
   uint16_t adv_wdt;
   int16_t lsb;
 } YF_glyph;
