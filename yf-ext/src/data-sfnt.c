@@ -85,8 +85,8 @@
    printf("\n-- SFNT (debug) --"); \
    printf("\nhhea - major: %hu", be16toh((hh_p)->major)); \
    printf("\nhhea - minor: %hu", be16toh((hh_p)->minor)); \
-   printf("\nhhea - ascender: %hd", be16toh((hh_p)->ascender)); \
-   printf("\nhhea - descender: %hd", be16toh((hh_p)->descender)); \
+   printf("\nhhea - ascent: %hd", be16toh((hh_p)->ascent)); \
+   printf("\nhhea - descent: %hd", be16toh((hh_p)->descent)); \
    printf("\nhhea - line_gap: %hd", be16toh((hh_p)->line_gap)); \
    printf("\nhhea - adv_wdt_max: %hu", be16toh((hh_p)->adv_wdt_max)); \
    printf("\nhhea - lsb_min: %hd", be16toh((hh_p)->lsb_min)); \
@@ -179,8 +179,8 @@
    printf("\nos2 - sel: 0x%.4hx", be16toh((o2_p)->sel)); \
    printf("\nos2 - first_char_i: %hu", be16toh((o2_p)->first_char_i)); \
    printf("\nos2 - last_char_i: %hu", be16toh((o2_p)->last_char_i)); \
-   printf("\nos2 - typo_ascender: %hd", be16toh((o2_p)->typo_ascender)); \
-   printf("\nos2 - typo_descender: %hd", be16toh((o2_p)->typo_descender)); \
+   printf("\nos2 - typo_ascent: %hd", be16toh((o2_p)->typo_ascent)); \
+   printf("\nos2 - typo_descent: %hd", be16toh((o2_p)->typo_descent)); \
    printf("\nos2 - typo_line_gap: %hd", be16toh((o2_p)->typo_line_gap)); \
    printf("\nos2 - win_ascent: %hu", be16toh((o2_p)->win_ascent)); \
    printf("\nos2 - win_descent: %hu", be16toh((o2_p)->win_descent)); \
@@ -357,8 +357,8 @@ static_assert(offsetof(L_head, glyph_fmt) == YF_SFNT_HEADSZ-2, "!offsetof");
 typedef struct {
   uint16_t major;
   uint16_t minor;
-  int16_t ascender;
-  int16_t descender;
+  int16_t ascent;
+  int16_t descent;
   int16_t line_gap;
   uint16_t adv_wdt_max;
   int16_t lsb_min;
@@ -475,8 +475,8 @@ typedef struct {
   uint16_t sel;
   uint16_t first_char_i;
   uint16_t last_char_i;
-  int16_t typo_ascender;
-  int16_t typo_descender;
+  int16_t typo_ascent;
+  int16_t typo_descent;
   int16_t typo_line_gap;
   uint16_t win_ascent;
   uint16_t win_descent;
@@ -616,13 +616,12 @@ typedef struct {
   int16_t y_min;
   int16_t x_max;
   int16_t y_max;
-  int16_t ascender;
-  int16_t descender;
+  int16_t ascent;
+  int16_t descent;
   int16_t line_gap;
   uint16_t adv_wdt_max;
   int16_t lsb_min;
   int16_t rsb_min;
-  int16_t x_extent_max;
   struct {
     uint16_t adv_wdt;
     int16_t lsb;
@@ -678,8 +677,8 @@ typedef struct {
   uint16_t comp_pt_max;
   uint16_t comp_contr_max;
   uint16_t comp_elem_max;
-  int16_t ascender;
-  int16_t descender;
+  int16_t ascent;
+  int16_t descent;
   int16_t line_gap;
   uint16_t adv_wdt_max;
   int16_t lsb_min;
@@ -1153,8 +1152,8 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
   font->comp_pt_max = be16toh(sfnt.maxp->comp_pt_max);
   font->comp_contr_max = be16toh(sfnt.maxp->comp_contr_max);
   font->comp_elem_max = be16toh(sfnt.maxp->comp_elem_max);
-  font->ascender = be16toh(sfnt.hhea->ascender);
-  font->descender = be16toh(sfnt.hhea->descender);
+  font->ascent = be16toh(sfnt.hhea->ascent);
+  font->descent = be16toh(sfnt.hhea->descent);
   font->line_gap = be16toh(sfnt.hhea->line_gap);
   font->adv_wdt_max = be16toh(sfnt.hhea->adv_wdt_max);
   font->lsb_min = be16toh(sfnt.hhea->lsb_min);
@@ -1609,8 +1608,40 @@ static void deinit_font(void *font) {
 }
 
 static int get_metrics(const L_sfnt *sfnt, L_fontmet *fmet) {
-  /* TODO */
-  assert(0);
+  assert(sfnt != NULL);
+  assert(fmet != NULL);
+
+  fmet->upem = be16toh(sfnt->head->upem);
+  fmet->x_min = be16toh(sfnt->head->x_min);
+  fmet->y_min = be16toh(sfnt->head->y_min);
+  fmet->x_max = be16toh(sfnt->head->x_max);
+  fmet->y_max = be16toh(sfnt->head->y_max);
+  fmet->ascent = be16toh(sfnt->hhea->ascent);
+  fmet->descent = be16toh(sfnt->hhea->descent);
+  fmet->line_gap = be16toh(sfnt->hhea->line_gap);
+  fmet->adv_wdt_max = be16toh(sfnt->hhea->adv_wdt_max);
+  fmet->lsb_min = be16toh(sfnt->hhea->lsb_min);
+  fmet->rsb_min = be16toh(sfnt->hhea->rsb_min);
+
+  const uint16_t hmetric_n = be16toh(sfnt->hhea->hmetric_n);
+  const uint16_t glyph_n = be16toh(sfnt->maxp->glyph_n);
+
+  fmet->glyphs = malloc(glyph_n * sizeof *fmet->glyphs);
+  if (fmet->glyphs == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+
+  uint16_t i;
+  for (i = 0; i < hmetric_n; ++i) {
+    fmet->glyphs[i].adv_wdt = be16toh(sfnt->hmtx->hmtxes[i].adv_wdt);
+    fmet->glyphs[i].lsb = be16toh(sfnt->hmtx->hmtxes[i].lsb);
+  }
+  for (; i < glyph_n; ++i) {
+    fmet->glyphs[i].adv_wdt = fmet->glyphs[hmetric_n-1].adv_wdt;
+    fmet->glyphs[i].lsb = be16toh(sfnt->hmtx->lsbs[i-hmetric_n]);
+  }
+  return 0;
 }
 
 static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
