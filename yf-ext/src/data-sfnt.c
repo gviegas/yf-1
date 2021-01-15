@@ -1930,7 +1930,11 @@ typedef struct {
 
 /* Complete outline of a glyph. */
 typedef struct {
-  uint16_t upem;
+  /* (pt*dpi)/(upem*72) */
+  float scale;
+  /* metrics */
+  uint16_t adv_wdt;
+  int16_t lsb;
   /* boundaries */
   int32_t x_min;
   int32_t y_min;
@@ -1955,7 +1959,7 @@ static int fetch_compnd(L_font *font, uint16_t id, L_component *comps,
 static void deinit_outline(L_outline *outln);
 
 /* Scales an outline. */
-static int scale_outline(L_outline *outln, uint16_t pt, uint16_t dpi);
+static int scale_outline(L_outline *outln);
 
 /* Grid-fits a scaled outline. */
 static int grid_fit(L_outline *outln);
@@ -1972,9 +1976,10 @@ static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
 
   int r = 0;
   L_outline outln = {0};
+  outln.scale = (float)(pt*dpi) / (float)(((L_font *)font)->met.upem*72);
 
   if (fetch_glyph(font, code, &outln) != 0 ||
-      scale_outline(&outln, pt, dpi) != 0 ||
+      scale_outline(&outln) != 0 ||
       grid_fit(&outln) != 0 ||
       rasterize(&outln, glyph) != 0)
     r = -1;
@@ -1988,8 +1993,6 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
   assert(font->ttf.loca != NULL);
   assert(font->ttf.glyf != NULL);
   assert(outln != NULL);
-
-  outln->upem = font->met.upem;
 
   uint16_t id;
   if (font->map.map == YF_SFNT_MAP_SPARSE) {
@@ -2067,6 +2070,8 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
   printf("\n--\n");
 #endif
 
+  outln->adv_wdt = font->met.glyphs[id].adv_wdt;
+  outln->lsb = font->met.glyphs[id].lsb;
   return 0;
 }
 
@@ -2298,12 +2303,11 @@ static void deinit_outline(L_outline *outln) {
   (((x)&(1<<31)) && ((y)&(1<<31)) ? \
     (((x)<<YF_SFNT_Q)+((y)>>1))/(y) : (((x)<<YF_SFNT_Q)-((y)>>1))/(y))
 
-static int scale_outline(L_outline *outln, uint16_t pt, uint16_t dpi) {
+static int scale_outline(L_outline *outln) {
   assert(outln != NULL);
   assert(outln->comps != NULL);
-  assert(pt > 0 && dpi > 0);
 
-  const float fac = (float)(pt*dpi) / (float)(outln->upem*72);
+  const float fac = outln->scale;
 
   /* create scaled points for each contour of each component */
   for (uint16_t i = 0; i < outln->comp_n; ++i) {
@@ -2601,12 +2605,13 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
     }
   }
 
-  /* TODO... */
-
   glyph->width = YF_SFNT_FIXTOINT(w);
   glyph->height = YF_SFNT_FIXTOINT(h);
   glyph->bpp = 8;
   glyph->bitmap.u8 = bitmap;
+
+  glyph->adv_wdt = round(outln->scale*outln->adv_wdt);
+  glyph->lsb = round(outln->scale*outln->lsb);
 
   free(segs);
   return 0;
