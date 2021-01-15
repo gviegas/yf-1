@@ -10,7 +10,10 @@
 
 #include <stdint.h>
 
+#include <yf/com/yf-types.h>
+
 #include "yf-font.h"
+#include "yf-texture.h"
 
 /* Type defining a font glyph. */
 typedef struct {
@@ -39,8 +42,15 @@ typedef struct {
   void (*deinit)(void *font);
 } YF_fontdt;
 
-/* Gets a font glyph. */
-int yf_font_getglyph(YF_font font, wchar_t code, uint16_t pt, uint16_t dpi,
-    YF_glyph *glyph);
+/* Type defining rasterized font glyphs on a texture. */
+typedef struct {
+  YF_texture tex;
+  YF_off2 off;
+  YF_dim2 dim;
+} YF_fontrz;
+
+/* Rasterizes font glyphs. */
+int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
+    YF_fontrz *rz);
 
 #endif /* YF_FONT_H */

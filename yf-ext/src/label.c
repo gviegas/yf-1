@@ -31,7 +31,7 @@ struct YF_label_o {
   YF_node node;
   YF_mat4 xform;
   YF_mesh mesh;
-  YF_texture tex;
+  YF_fontrz rz;
   YF_font font;
   wchar_t *str;
   unsigned short pt;
@@ -87,7 +87,7 @@ YF_texture yf_label_gettex(YF_label labl) {
 
   /* TODO: Observe string changes to avoid needless copying. */
   copy_glyphs(labl);
-  return labl->tex;
+  return labl->rz.tex;
 }
 
 YF_font yf_label_getfont(YF_label labl) {
@@ -158,6 +158,7 @@ void yf_label_deinit(YF_label labl) {
   if (labl != NULL) {
     yf_node_deinit(labl->node);
     yf_mesh_deinit(labl->mesh);
+    /* TODO: Yield texture. */
     free(labl->str);
     free(labl);
   }
@@ -225,79 +226,5 @@ static int copy_glyphs(YF_label labl) {
   if (len == 0)
     return 0;
 
-  YF_glyph glyphs[len];
-  YF_dim2 dim = {0};
-
-  /* TODO: Filter glyphs used more than once. */
-  for (size_t i = 0; i < len; ++i) {
-    if (yf_font_getglyph(labl->font, labl->str[i], labl->pt, YF_DPI, glyphs+i)
-        != 0)
-    {
-      for (size_t j = 0; j < i; ++j)
-        free(glyphs[j].bitmap.u8);
-      return -1;
-    }
-    /* TODO: Handle whitespace/newline/etc. */
-    dim.width += glyphs[i].width;
-    dim.height = YF_MAX(dim.height, glyphs[i].height);
-  }
-
-  /* TODO: Use shared textures instead. */
-  if (labl->tex != NULL) {
-    yf_texture_deinit(labl->tex);
-    labl->tex = NULL;
-  }
-
-  YF_texdt data;
-  data.dim = dim;
-
-  switch (glyphs[0].bpp) {
-    case 8:
-      data.pixfmt = YF_PIXFMT_R8UNORM;
-      data.data = calloc(1, dim.width * dim.height);
-      break;
-    case 16:
-      data.pixfmt = YF_PIXFMT_R16UNORM;
-      data.data = calloc(1, (dim.width * dim.height) << 1);
-      break;
-    default:
-      assert(0);
-  }
-
-  if (data.data == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    for (size_t i = 0; i < len; ++i)
-      free(glyphs[i].bitmap.u8);
-    return -1;
-  }
-
-  /* XXX: Cannot copy string of glyphs to linear buffer directly. */
-/*
-  unsigned char *b = data.data;
-  for (size_t i = 0; i < len; ++i) {
-    size_t sz = (glyphs[i].width * glyphs[i].height) << (glyphs[i].bpp == 16);
-    memcpy(b, glyphs[i].bitmap.u8, sz);
-    free(glyphs[i].bitmap.u8);
-    b += sz;
-  }
-*/
-
-  labl->tex = yf_texture_initdt(&data);
-  free(data.data);
-
-  ////////////////////
-  // XXX
-  YF_off2 off = {0};
-  for (size_t i = 0; i < len; ++i) {
-    dim.width = glyphs[i].width;
-    dim.height = glyphs[i].height;
-    if (yf_texture_setdata(labl->tex, off, dim, glyphs[i].bitmap.u8) != 0)
-      assert(0);
-    printf("#%lu %u,%u %u,%u\n", i, off.x, off.y, dim.width, dim.height);
-    off.x += glyphs[i].width;
-    free(glyphs[i].bitmap.u8);
-  }
-  ////////////////////
-
-  return labl->tex == NULL ? -1 : 0;
+  return yf_font_rasterize(labl->font, labl->str, labl->pt, YF_DPI, &labl->rz);
 }
