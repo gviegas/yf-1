@@ -59,3 +59,10 @@ int yf_font_getglyph(YF_font font, wchar_t code, uint16_t pt, uint16_t dpi,
 
   return font->data.glyph(font->data.font, code, pt, dpi, glyph);
 }
+
+int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
+    YF_fontrz *rz)
+{
+  /* TODO */
+  assert(0);
+}
