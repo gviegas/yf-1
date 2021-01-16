@@ -19,7 +19,7 @@
 #include "texture.h"
 
 #define YF_WINW 1080
-#define YF_WINH 270
+#define YF_WINH 300
 #define YF_WINT "Misc"
 
 /* Shared variables. */
@@ -176,8 +176,12 @@ static void init(void) {
   YF_label labl = yf_label_init();
   assert(labl != NULL);
   yf_label_setfont(labl, font);
-  assert(yf_label_setstr(labl, L"abc-ABC_123=pP|sS/xX;yY,zZ.") == 0);
-  assert(yf_label_setpt(labl, 40) == 0);
+  const wchar_t str[] =
+    //L"_'abcdefghijklmnopqrstuvwxyz\n"
+    //L"=-ABCDEFGHIJKLMNOPQRSTUVWXYZ.,!@#$%^&*()_+=-`\n"
+    L"`:;|/<>[]{}1234567890\"_?";
+  assert(yf_label_setstr(labl, str) == 0);
+  assert(yf_label_setpt(labl, 144) == 0);
 
   /* XXX: Should be the label dimensions... */
   const YF_dim3 labl_dim = {YF_WINW, YF_WINH, 1};
