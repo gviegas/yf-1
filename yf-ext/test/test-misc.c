@@ -176,7 +176,7 @@ static void init(void) {
   YF_label labl = yf_label_init();
   assert(labl != NULL);
   yf_label_setfont(labl, font);
-  assert(yf_label_setstr(labl, L"ab\nxyz\n123VwXyZ?") == 0);
+  assert(yf_label_setstr(labl, L"ab\n~xyz_'O*,\n123VwXyZ?") == 0);
   assert(yf_label_setpt(labl, 40) == 0);
 
   /* XXX: Should be the label dimensions... */
@@ -184,7 +184,7 @@ static void init(void) {
 
   /* Data copy */
   YF_mat4 m, s, vp, v, p;
-  const YF_vec3 eye = {0.0, 0.0, -5.0}, center = {0}, up = {0.0, -1.0, 0.0};
+  const YF_vec3 eye = {0.0, 0.0, -3.0}, center = {0}, up = {0.0, -1.0, 0.0};
 
   yf_mat4_persp(p, 0.79, (YF_float)YF_WINW / (YF_float)YF_WINH, 0.01, 100.0);
   yf_mat4_lookat(v, eye, center, up);
