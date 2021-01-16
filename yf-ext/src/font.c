@@ -110,8 +110,8 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
   YF_off2 off = {0};
   YF_dim2 dim = {0};
   L_kv_glyph key = {0};
-  int16_t x_min, y_min, x_max, y_max;
-  font->data.metrics(font->data.font, pt, dpi, &x_min, &y_min, &x_max, &y_max);
+  int16_t y_min, y_max;
+  font->data.metrics(font->data.font, pt, dpi, NULL, &y_min, NULL, &y_max);
 
   for (size_t i = 0; i < len; ++i) {
     /* TODO: Other special characters. */
@@ -150,14 +150,19 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
     off.x += glyph->val.adv_wdt;
   }
 
-  if (chr_i == 0)
-    /* TODO */
-    assert(0);
+  if (chr_i == 0) {
+    /* no characters to rasterize */
+    yf_seterr(YF_ERR_OTHER, __func__);
+    memset(rz, 0, sizeof *rz);
+    return -1;
+  }
 
   if (off.x != 0) {
     /* last valid character is not eol */
     dim.width = YF_MAX(dim.width, off.x);
     dim.height += y_max-y_min;
+  } else {
+    off.y -= y_max-y_min;
   }
 
   /* TODO: Use shared textures instead. */
@@ -170,9 +175,7 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
 
   YF_texdt data;
   data.dim = dim;
-  uint16_t bpp = ((L_kv_glyph *)yf_hashset_next(font->glyphs, NULL))->val.bpp;
-
-  switch (bpp) {
+  switch (((L_kv_glyph *)yf_hashset_next(font->glyphs, NULL))->val.bpp) {
     case 8:
       data.pixfmt = YF_PIXFMT_R8UNORM;
       data.data = calloc(1, dim.width * dim.height);
@@ -189,46 +192,25 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-
   rz->tex = yf_texture_initdt(&data);
   free(data.data);
+  if (rz->tex == NULL)
+    return -1;
 
   /* TODO: Consider copying glyphs to 'data' buffer instead. */
   const YF_off2 bias = {rz->off.x, rz->off.y + off.y};
   for (size_t i = 0; i < chr_i; ++i) {
     key.key = chrs[i].code;
     L_kv_glyph *glyph = yf_hashset_search(font->glyphs, &key);
-    //off.x = rz->off.x + chrs[i].off.x + glyph->val.lsb;
-    //off.y = rz->off.y + chrs[i].off.y + glyph->val.base_h;
+
     off.x = bias.x + chrs[i].off.x + glyph->val.lsb;
     off.y = bias.y - chrs[i].off.y + (glyph->val.base_h - y_min);
-    dim.width = glyph->val.width;
-    dim.height = glyph->val.height;
+    dim = (YF_dim2){glyph->val.width, glyph->val.height};
+
     if (yf_texture_setdata(rz->tex, off, dim, glyph->val.bitmap.u8) != 0)
       return -1;
   }
-
-/*
-  ////////////////////
-  // XXX
-  YF_off2 off = {0};
-  for (size_t i = 0; i < len; ++i) {
-    dim.width = glyphs[i].width;
-    dim.height = glyphs[i].height;
-    if (yf_texture_setdata(rz->tex, off, dim, glyphs[i].bitmap.u8) != 0)
-      assert(0);
-    off.x += dim.width;
-    rz->dim.width += dim.width;
-    rz->dim.height = YF_MAX(rz->dim.height, dim.height);
-    free(glyphs[i].bitmap.u8);
-  }
-  int16_t x[2], y[2];
-  font->data.metrics(font->data.font, pt, dpi, x, y, x+1, y+1);
-  printf("font metrics: x=[%hd, %hd], y=[%hd, %hd]\n", x[0], x[1], y[0], y[1]);
-  ////////////////////
-*/
-
-  return rz->tex == NULL ? -1 : 0;
+  return 0;
 }
 
 static size_t hash_glyph(const void *x) {
