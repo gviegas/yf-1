@@ -95,32 +95,69 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
   assert(pt != 0 && dpi != 0);
   assert(rz != NULL);
 
+  /* do not discard glyphs if using the same scale */
+  if (pt != font->pt || dpi != font->dpi) {
+    yf_hashset_each(font->glyphs, deinit_glyph, NULL);
+    yf_hashset_clear(font->glyphs);
+    font->pt = pt;
+    font->dpi = dpi;
+  }
+
   /* XXX: Caller must ensure 'str' is not empty. */
   const size_t len = wcslen(str);
-
   struct { uint16_t code; YF_off2 off; } chrs[len];
-
-  YF_glyph glyphs[len];
+  size_t chr_i = 0;
+  YF_off2 off = {0};
   YF_dim2 dim = {0};
+  L_kv_glyph key = {0};
+  int16_t x_min, y_min, x_max, y_max;
+  font->data.metrics(font->data.font, pt, dpi, &x_min, &y_min, &x_max, &y_max);
 
-  /* TODO: Filter glyphs used more than once. */
   for (size_t i = 0; i < len; ++i) {
-    /* TODO... */
+    /* TODO: Other special characters. */
     switch (str[i]) {
       case '\n':
-        chrs[i].code = str[i];
-        chrs[i].off = (YF_off2){0};
-        break;
+        /* XXX: Should use other metrics to compute spacing. */
+        dim.width = YF_MAX(dim.width, off.x);
+        dim.height += y_max-y_min;
+        off.x = 0;
+        off.y = dim.height;
+        continue;
       default:
         break;
     }
-    if (font->data.glyph(font->data.font, str[i], pt, dpi, glyphs+i) != 0) {
-      for (size_t j = 0; j < i; ++j)
-        free(glyphs[j].bitmap.u8);
-      return -1;
+
+    key.key = str[i];
+    L_kv_glyph *glyph = yf_hashset_search(font->glyphs, &key);
+
+    if (glyph == NULL) {
+      glyph = malloc(sizeof *glyph);
+      if (glyph == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+      }
+      glyph->key = str[i];
+      if (yf_hashset_insert(font->glyphs, glyph) != 0)
+        return -1;
+      /* TODO: Consider ignoring failure here. */
+      if (font->data.glyph(font->data.font, str[i], pt, dpi, &glyph->val) != 0)
+        return -1;
     }
-    dim.width += glyphs[i].width;
-    dim.height = YF_MAX(dim.height, glyphs[i].height);
+
+    chrs[chr_i].code = str[i];
+    chrs[chr_i].off = off;
+    ++chr_i;
+    off.x += glyph->val.adv_wdt;
+  }
+
+  if (chr_i == 0)
+    /* TODO */
+    assert(0);
+
+  if (off.x != 0) {
+    /* last valid character is not eol */
+    dim.width = YF_MAX(dim.width, off.x);
+    dim.height += y_max-y_min;
   }
 
   /* TODO: Use shared textures instead. */
@@ -133,8 +170,9 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
 
   YF_texdt data;
   data.dim = dim;
+  uint16_t bpp = ((L_kv_glyph *)yf_hashset_next(font->glyphs, NULL))->val.bpp;
 
-  switch (glyphs[0].bpp) {
+  switch (bpp) {
     case 8:
       data.pixfmt = YF_PIXFMT_R8UNORM;
       data.data = calloc(1, dim.width * dim.height);
@@ -149,25 +187,15 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
 
   if (data.data == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    for (size_t i = 0; i < len; ++i)
-      free(glyphs[i].bitmap.u8);
     return -1;
   }
-
-  /* XXX: Cannot copy string of glyphs to linear buffer directly. */
-/*
-  unsigned char *b = data.data;
-  for (size_t i = 0; i < len; ++i) {
-    size_t sz = (glyphs[i].width * glyphs[i].height) << (glyphs[i].bpp == 16);
-    memcpy(b, glyphs[i].bitmap.u8, sz);
-    free(glyphs[i].bitmap.u8);
-    b += sz;
-  }
-*/
 
   rz->tex = yf_texture_initdt(&data);
   free(data.data);
 
+  /* TODO: Consider copying glyphs to 'data' buffer instead. */
+
+/*
   ////////////////////
   // XXX
   YF_off2 off = {0};
@@ -185,6 +213,7 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
   font->data.metrics(font->data.font, pt, dpi, x, y, x+1, y+1);
   printf("font metrics: x=[%hd, %hd], y=[%hd, %hd]\n", x[0], x[1], y[0], y[1]);
   ////////////////////
+*/
 
   return rz->tex == NULL ? -1 : 0;
 }
