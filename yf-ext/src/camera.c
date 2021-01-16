@@ -300,7 +300,7 @@ static void update_view(YF_camera cam) {
 
 static void update_proj(YF_camera cam) {
   cam->zoom = YF_CLAMP(cam->zoom, YF_FOV_MIN, YF_FOV_MAX);
-  yf_mat4_persp(cam->proj, cam->zoom, cam->aspect, 0.1, 100.0);
+  yf_mat4_persp(cam->proj, cam->zoom, cam->aspect, 0.01, 100.0);
 
   cam->pend_mask &= ~YF_PEND_P;
   cam->pend_mask |= YF_PEND_VP;
