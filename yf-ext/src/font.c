@@ -11,6 +11,7 @@
 #include <assert.h>
 
 #include <yf/com/yf-util.h>
+#include <yf/com/yf-hashset.h>
 #include <yf/com/yf-error.h>
 
 #include "font.h"
@@ -19,8 +20,21 @@
 
 struct YF_font_o {
   YF_fontdt data;
-  /* TODO... */
+  YF_hashset glyphs;
+  uint16_t pt;
+  uint16_t dpi;
 };
+
+/* Type defining key/value for the glyph hashset. */
+typedef struct {
+  uint16_t key;
+  YF_glyph val;
+} L_kv_glyph;
+
+/* Glyph hashset functions. */
+static size_t hash_glyph(const void *x);
+static int cmp_glyph(const void *a, const void *b);
+static int deinit_glyph(void *val, void *arg);
 
 YF_font yf_font_init(int filetype, const char *pathname) {
   YF_fontdt data = {0};
@@ -47,6 +61,10 @@ void yf_font_deinit(YF_font font) {
   if (font != NULL) {
     if (font->data.deinit != NULL)
       font->data.deinit(font->data.font);
+
+    yf_hashset_each(font->glyphs, deinit_glyph, NULL);
+    yf_hashset_deinit(font->glyphs);
+
     free(font);
   }
 }
@@ -60,6 +78,12 @@ YF_font yf_font_initdt(const YF_fontdt *data) {
     return NULL;
   }
   memcpy(&font->data, data, sizeof *data);
+
+  font->glyphs = yf_hashset_init(hash_glyph, cmp_glyph);
+  if (font->glyphs == NULL) {
+    free(font);
+    return NULL;
+  }
   return font;
 }
 
@@ -71,23 +95,30 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
   assert(pt != 0 && dpi != 0);
   assert(rz != NULL);
 
+  /* XXX: Caller must ensure 'str' is not empty. */
   const size_t len = wcslen(str);
-/*
-  if (len == 0)
-    return 0;
-*/
+
+  struct { uint16_t code; YF_off2 off; } chrs[len];
 
   YF_glyph glyphs[len];
   YF_dim2 dim = {0};
 
   /* TODO: Filter glyphs used more than once. */
   for (size_t i = 0; i < len; ++i) {
+    /* TODO... */
+    switch (str[i]) {
+      case '\n':
+        chrs[i].code = str[i];
+        chrs[i].off = (YF_off2){0};
+        break;
+      default:
+        break;
+    }
     if (font->data.glyph(font->data.font, str[i], pt, dpi, glyphs+i) != 0) {
       for (size_t j = 0; j < i; ++j)
         free(glyphs[j].bitmap.u8);
       return -1;
     }
-    /* TODO: Handle whitespace/newline/etc. */
     dim.width += glyphs[i].width;
     dim.height = YF_MAX(dim.height, glyphs[i].height);
   }
@@ -156,4 +187,18 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
   ////////////////////
 
   return rz->tex == NULL ? -1 : 0;
+}
+
+static size_t hash_glyph(const void *x) {
+  return ((L_kv_glyph *)x)->key ^ 21221;
+}
+
+static int cmp_glyph(const void *a, const void *b) {
+  return ((L_kv_glyph *)a)->key - ((L_kv_glyph *)b)->key;
+}
+
+static int deinit_glyph(void *val, YF_UNUSED void *arg) {
+  free(((L_kv_glyph *)val)->val.bitmap.u8);
+  free(val);
+  return 0;
 }
