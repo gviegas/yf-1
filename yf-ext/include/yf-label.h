@@ -101,7 +101,7 @@ wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_label_setstr(YF_label labl, wchar_t *str);
+int yf_label_setstr(YF_label labl, const wchar_t *str);
 
 /**
  * Gets the font size of a label.
