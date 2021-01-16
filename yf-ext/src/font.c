@@ -194,6 +194,16 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
   free(data.data);
 
   /* TODO: Consider copying glyphs to 'data' buffer instead. */
+  for (size_t i = 0; i < chr_i; ++i) {
+    key.key = chrs[i].code;
+    L_kv_glyph *glyph = yf_hashset_search(font->glyphs, &key);
+    off.x = rz->off.x + chrs[i].off.x;
+    off.y = rz->off.y + chrs[i].off.y;
+    dim.width = glyph->val.width;
+    dim.height = glyph->val.height;
+    if (yf_texture_setdata(rz->tex, off, dim, glyph->val.bitmap.u8) != 0)
+      return -1;
+  }
 
 /*
   ////////////////////
