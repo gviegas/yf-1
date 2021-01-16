@@ -18,7 +18,7 @@
 #include "coreobj.h"
 #include "texture.h"
 
-#define YF_WINW 400
+#define YF_WINW 1080
 #define YF_WINH 300
 #define YF_WINT "Misc"
 
@@ -176,15 +176,19 @@ static void init(void) {
   YF_label labl = yf_label_init();
   assert(labl != NULL);
   yf_label_setfont(labl, font);
-  assert(yf_label_setstr(labl, L"ab\n~xyz_'O*,\n123VwXyZ?") == 0);
-  assert(yf_label_setpt(labl, 40) == 0);
+  const wchar_t str[] =
+    //L"_'abcdefghijklmnopqrstuvwxyz\n"
+    //L"=-ABCDEFGHIJKLMNOPQRSTUVWXYZ.,!@#$%^&*()_+=-`\n"
+    L"`:;|/<>[]{}1234567890\"_?";
+  assert(yf_label_setstr(labl, str) == 0);
+  assert(yf_label_setpt(labl, 144) == 0);
 
   /* XXX: Should be the label dimensions... */
   const YF_dim3 labl_dim = {YF_WINW, YF_WINH, 1};
 
   /* Data copy */
   YF_mat4 m, s, vp, v, p;
-  const YF_vec3 eye = {0.0, 0.0, -3.0}, center = {0}, up = {0.0, -1.0, 0.0};
+  const YF_vec3 eye = {0.0, 0.0, -0.2}, center = {0}, up = {0.0, -1.0, 0.0};
 
   yf_mat4_persp(p, 0.79, (YF_float)YF_WINW / (YF_float)YF_WINH, 0.01, 100.0);
   yf_mat4_lookat(v, eye, center, up);
