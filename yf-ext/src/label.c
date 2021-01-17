@@ -35,6 +35,7 @@ struct YF_label_o {
   YF_font font;
   wchar_t *str;
   unsigned short pt;
+  int changed;
   /* TODO: Other label properties. */
   YF_mat4 mvp;
 };
@@ -59,6 +60,7 @@ YF_label yf_label_init(void) {
   yf_mat4_iden(labl->xform);
   yf_mat4_iden(labl->mvp);
   labl->pt = 16;
+  labl->changed = 1;
 
   if (init_rect(labl) != 0) {
     yf_label_deinit(labl);
@@ -85,8 +87,10 @@ YF_mesh yf_label_getmesh(YF_label labl) {
 YF_texture yf_label_gettex(YF_label labl) {
   assert(labl != NULL);
 
-  /* TODO: Observe string changes to avoid needless copying. */
-  copy_glyphs(labl);
+  if (labl->changed) {
+    copy_glyphs(labl);
+    labl->changed = 0;
+  }
   return labl->rz.tex;
 }
 
@@ -97,7 +101,14 @@ YF_font yf_label_getfont(YF_label labl) {
 
 void yf_label_setfont(YF_label labl, YF_font font) {
   assert(labl != NULL);
+
+  if (font == labl->font)
+    return;
+
+  /* TODO: Yield texture. */
+
   labl->font = font;
+  labl->changed = 1;
 }
 
 wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n) {
@@ -135,6 +146,7 @@ int yf_label_setstr(YF_label labl, const wchar_t *str) {
     }
   }
   wcscpy(labl->str, str);
+  labl->changed = 1;
   return 0;
 }
 
@@ -146,11 +158,15 @@ unsigned short yf_label_getpt(YF_label labl) {
 int yf_label_setpt(YF_label labl, unsigned short pt) {
   assert(labl != NULL);
 
+  if (pt == labl->pt)
+    return 0;
+
   if (pt < YF_FONTSZ_MIN || pt > YF_FONTSZ_MAX) {
     yf_seterr(YF_ERR_LIMIT, __func__);
     return -1;
   }
   labl->pt = pt;
+  labl->changed = 1;
   return 0;
 }
 
