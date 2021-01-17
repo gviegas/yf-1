@@ -1,19 +1,19 @@
 /*
  * YF
- * debug.c
+ * print.c
  *
  * Copyright © 2021 Gustavo C. Viegas.
  */
 
-#if defined(YF_DEBUG)
-# include <stdio.h>
-# include "debug.h"
+#include <stdio.h>
 
-#undef YF_DBGTITLE
-#define YF_DBGTITLE(title) "\n[YF] DEBUG (" title "):"
+#include "print.h"
 
-void yf_debug_ctx(YF_context ctx) {
-  printf("%s", YF_DBGTITLE("context"));
+#undef YF_PTITLE
+#define YF_PTITLE printf("\n[YF] OUTPUT (%s):", __func__)
+
+void yf_print_ctx(YF_context ctx) {
+  YF_PTITLE;
 
   printf("\nqueue indices (graph/comp/pres): %d/%d/%d",
       ctx->graph_queue_i, ctx->comp_queue_i, ctx->pres_queue_i);
@@ -33,8 +33,8 @@ void yf_debug_ctx(YF_context ctx) {
   printf("\n\n");
 }
 
-void yf_debug_lim(const YF_limits *lim) {
-  printf("%s", YF_DBGTITLE("limits"));
+void yf_print_lim(const YF_limits *lim) {
+  YF_PTITLE;
 
   printf("\nmemory - max objects: %lu", lim->memory.obj_max);
 
@@ -78,5 +78,3 @@ void yf_debug_lim(const YF_limits *lim) {
 
   printf("\n\n");
 }
-
-#endif /* defined(YF_DEBUG) */
