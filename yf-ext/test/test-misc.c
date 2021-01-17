@@ -18,8 +18,8 @@
 #include "coreobj.h"
 #include "texture.h"
 
-#define YF_WINW 1080
-#define YF_WINH 300
+#define YF_WINW 780
+#define YF_WINH 130
 #define YF_WINT "Misc"
 
 /* Shared variables. */
@@ -177,30 +177,15 @@ static void init(void) {
   assert(labl != NULL);
   yf_label_setfont(labl, font);
   const wchar_t str[] =
-    //L"_'abcdefghijklmnopqrstuvwxyz\n"
-    //L"=-ABCDEFGHIJKLMNOPQRSTUVWXYZ.,!@#$%^&*()_+=-`\n"
+    L"_'abcdefghijklmnopqrstuvwxyz\n"
+    L"=-ABCDEFGHIJKLMNOPQRSTUVWXYZ.,!@#$%^&*()_+=-`\n"
     L"`:;|/<>[]{}1234567890\"_?";
   assert(yf_label_setstr(labl, str) == 0);
   assert(yf_label_setpt(labl, 144) == 0);
 
-  /* XXX: Should be the label dimensions... */
-  const YF_dim3 labl_dim = {YF_WINW, YF_WINH, 1};
-
   /* Data copy */
-  YF_mat4 m, s, vp, v, p;
-  const YF_vec3 eye = {0.0, 0.0, -0.2}, center = {0}, up = {0.0, -1.0, 0.0};
-
-  yf_mat4_persp(p, 0.79, (YF_float)YF_WINW / (YF_float)YF_WINH, 0.01, 100.0);
-  yf_mat4_lookat(v, eye, center, up);
-  yf_mat4_mul(vp, p, v);
-
-  YF_float ratio = (YF_float)labl_dim.width / (YF_float)labl_dim.height;
-  if (ratio > 1.0)
-    yf_mat4_scale(s, 1.0, 1.0/ratio, 1.0);
-  else
-    yf_mat4_scale(s, ratio, 1.0, 1.0);
-
-  yf_mat4_mul(m, vp, s);
+  YF_mat4 m;
+  yf_mat4_ortho(m, -1.0, 1.0, 1.0, -1.0, 0.0, -1.0);
 
   const L_vertex verts[4] = {
     {{-1.0f, -1.0f, 0.5f}, {0.0f, 1.0f}},
