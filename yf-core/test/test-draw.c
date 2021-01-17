@@ -2,7 +2,7 @@
  * YF
  * test-draw.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -42,7 +42,9 @@ struct L_vertex {
 };
 
 /* Key event function. */
-static void key_kb(int key, int state, unsigned mod_mask, void *data) {
+static void key_kb(int key, int state,
+    YF_UNUSED unsigned mod_mask, YF_UNUSED void *data)
+{
   if (state == YF_KEYSTATE_RELEASED)
     l_vars.key = key;
 }
@@ -189,7 +191,7 @@ static void init(void) {
   const size_t buf_off = 0;
   const size_t buf_sz = sizeof m;
 
-  if ((yf_dtable_copybuf(dtb, 0, 0, elems, &buf, &buf_off, &buf_sz)) != 0)
+  if (yf_dtable_copybuf(dtb, 0, 0, elems, &buf, &buf_off, &buf_sz) != 0)
     assert(0);
 
   l_vars.ctx = ctx;
@@ -271,8 +273,14 @@ static int run(void) {
         (double)999999999 / (double)dt);
   } while (l_vars.key == YF_KEY_UNKNOWN);
 
-  /* TODO: Deinitialization. */
-
+  yf_gstate_deinit(l_vars.gst);
+  yf_pass_deinit(l_vars.pass);
+  yf_dtable_deinit(l_vars.dtb);
+  yf_image_deinit(l_vars.img);
+  yf_buffer_deinit(l_vars.buf);
+  yf_wsi_deinit(l_vars.wsi);
+  yf_window_deinit(l_vars.win);
+  yf_context_deinit(l_vars.ctx);
   return 0;
 }
 
