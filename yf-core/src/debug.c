@@ -30,4 +30,50 @@ void yf_debug_ctx(YF_context ctx) {
   printf("\n--\n");
 }
 
+void yf_debug_lim(const YF_limits *lim) {
+  printf("\n-- Limits (debug) --");
+
+  printf("\nmemory - max objects: %lu", lim->memory.obj_max);
+
+  printf("\nbuffer - max size: %lu", lim->buffer.sz_max);
+
+  printf("\nimage - max 1d: %u", lim->image.dim_1d_max);
+  printf("\nimage - max 2d: %u", lim->image.dim_2d_max);
+  printf("\nimage - max 3d: %u", lim->image.dim_3d_max);
+  printf("\nimage - max layers: %u", lim->image.layer_max);
+
+  printf("\ndtable - max resources: %u", lim->dtable.res_max);
+  printf("\ndtable - max uniforms buffers: %u", lim->dtable.unif_max);
+  printf("\ndtable - max mutables buffers: %u", lim->dtable.mut_max);
+  printf("\ndtable - max r/w images: %u", lim->dtable.img_max);
+  printf("\ndtable - max sampled images: %u", lim->dtable.sampd_max);
+  printf("\ndtable - max samplers: %u", lim->dtable.sampr_max);
+  printf("\ndtable - max image+samplers: %u", lim->dtable.isamp_max);
+  printf("\ndtable - max copy size (uniform): %lu",
+      lim->dtable.cpy_unif_sz_max);
+  printf("\ndtable - max copy size (mutable): %lu", lim->dtable.cpy_mut_sz_max);
+
+  printf("\nvinput - max input attributes: %u", lim->vinput.attr_max);
+  printf("\nvinput - max input offset: %u", lim->vinput.offs_max);
+  printf("\nvinput - max input stride: %u", lim->vinput.strd_max);
+
+  printf("\npass - max color attachments: %u", lim->pass.color_max);
+  printf("\npass - max target dimensions: %u, %u", lim->pass.dim_max.width,
+      lim->pass.dim_max.height);
+  printf("\npass - max target layers: %u", lim->pass.layer_max);
+
+  printf("\nviewport - max: %u", lim->viewport.max);
+  printf("\nviewport - max dimensions: %u, %u", lim->viewport.dim_max.width,
+      lim->viewport.dim_max.height);
+  printf("\nviewport - min/max bounds: %.3f, %.3f", lim->viewport.bounds_min,
+      lim->viewport.bounds_max);
+
+  printf("\nstate - max bound dtables: %u", lim->state.dtable_max);
+  printf("\nstate - max vinputs: %u", lim->state.vinput_max);
+
+  printf("\ncmdbuf - max draw index value: %u", lim->cmdbuf.draw_idx_max);
+
+  printf("\n--\n");
+}
+
 #endif /* defined(YF_DEBUG) */
