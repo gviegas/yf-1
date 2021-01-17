@@ -58,7 +58,7 @@ static int init_device(YF_context ctx);
 static int init_cache(YF_context ctx);
 
 /* Sets layers. */
-#if defined(YF_DEBUG) && !defined(YF_NO_VALIDATION)
+#if defined(YF_DEVEL) && !defined(YF_NO_VALIDATION)
 static int set_layers(YF_context ctx);
 #endif
 
@@ -155,7 +155,7 @@ static int init_instance(YF_context ctx) {
   else
     ctx->inst_version = VK_API_VERSION_1_0;
 
-#if defined(YF_DEBUG) && !defined(YF_NO_VALIDATION)
+#if defined(YF_DEVEL) && !defined(YF_NO_VALIDATION)
   if (set_layers(ctx) != 0)
     return -1;
 #endif
@@ -359,7 +359,7 @@ static int init_cache(YF_context ctx) {
   return 0;
 }
 
-#if defined(YF_DEBUG) && !defined(YF_NO_VALIDATION)
+#if defined(YF_DEVEL) && !defined(YF_NO_VALIDATION)
 static int set_layers(YF_context ctx) {
   const char *opt_lays[4];
   size_t opt_n = 0;
@@ -432,7 +432,7 @@ static int set_layers(YF_context ctx) {
   free(props);
   return 0;
 }
-#endif /* defined(YF_DEBUG) && !defined(YF_NO_VALIDATION) */
+#endif /* defined(YF_DEVEL) && !defined(YF_NO_VALIDATION) */
 
 static int set_inst_exts(YF_context ctx) {
   const char *req_exts[] = {
