@@ -17,6 +17,8 @@
 #include "yf-label.h"
 #include "coreobj.h"
 #include "texture.h"
+#include "mesh.h"
+#include "vertex.h"
 
 #define YF_WINW 780
 #define YF_WINH 130
@@ -39,12 +41,6 @@ struct L_vars {
   int key;
 };
 static struct L_vars l_vars = {0};
-
-/* Vertex type. */
-typedef struct {
-  float pos[3];
-  float tc[2];
-} L_vertex;
 
 /* Key event function. */
 static void key_kb(int key, int state,
@@ -90,11 +86,12 @@ static void init(void) {
     assert(0);
 
   /* VInput */
-  const YF_vattr attrs[2] = {
+  const YF_vattr attrs[3] = {
     {0, YF_TYPEFMT_FLOAT3, 0},
-    {1, YF_TYPEFMT_FLOAT2, offsetof(L_vertex, tc)}
+    {1, YF_TYPEFMT_FLOAT2, offsetof(YF_vlabl, tc)},
+    {2, YF_TYPEFMT_FLOAT4, offsetof(YF_vlabl, clr)}
   };
-  const YF_vinput vin = {attrs, 2, sizeof(L_vertex), YF_VRATE_VERT};
+  const YF_vinput vin = {attrs, 3, sizeof(YF_vlabl), YF_VRATE_VERT};
 
   /* Wsi */
   YF_window win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
@@ -187,20 +184,7 @@ static void init(void) {
   YF_mat4 m;
   yf_mat4_ortho(m, -1.0, 1.0, 1.0, -1.0, 0.0, -1.0);
 
-  const L_vertex verts[4] = {
-    {{-1.0f, -1.0f, 0.5f}, {0.0f, 1.0f}},
-    {{-1.0f,  1.0f, 0.5f}, {0.0f, 0.0f}},
-    {{ 1.0f,  1.0f, 0.5f}, {1.0f, 0.0f}},
-    {{ 1.0f, -1.0f, 0.5f}, {1.0f, 1.0f}}
-  };
-
-  const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
-
   if (yf_buffer_copy(buf, 0, m, sizeof m) != 0)
-    assert(0);
-  if (yf_buffer_copy(buf, sizeof m, verts, sizeof verts) != 0)
-    assert(0);
-  if (yf_buffer_copy(buf, sizeof m + sizeof verts, inds, sizeof inds) != 0)
     assert(0);
 
   const YF_slice elems = {0, 1};
@@ -254,11 +238,12 @@ static void update(void) {
   yf_cmdbuf_setvport(cb, 0, &vp);
   yf_cmdbuf_setsciss(cb, 0, sciss);
   yf_cmdbuf_setdtable(cb, 0, 0);
-  yf_cmdbuf_setvbuf(cb, 0, l_vars.buf, sizeof(float[16]));
-  yf_cmdbuf_setibuf(cb, l_vars.buf, sizeof(YF_mat4)+sizeof(L_vertex[4]), 2);
   yf_cmdbuf_clearcolor(cb, 0, YF_COLOR_DARKGREY);
   yf_cmdbuf_cleardepth(cb, 1.0f);
-  yf_cmdbuf_draw(cb, 1, 0, 6, 1, 0, 0);
+
+  YF_mesh mesh = yf_label_getmesh(l_vars.labl);
+  assert(mesh != NULL);
+  yf_mesh_draw(mesh, cb, 1, 0);
 
   if (yf_cmdbuf_end(cb) != 0)
     assert(0);
@@ -300,6 +285,9 @@ static int run(void) {
   } while (l_vars.key == YF_KEY_UNKNOWN);
 
   /* TODO: Deinitialization. */
+  idle.tv_sec = 0;
+  idle.tv_nsec = 10000000;
+  clock_nanosleep(CLOCK_MONOTONIC, 0, &idle, NULL);
 
   return 0;
 }
