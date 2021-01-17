@@ -9,8 +9,11 @@
 # include <stdio.h>
 # include "debug.h"
 
+#undef YF_DBGTITLE
+#define YF_DBGTITLE(title) "\n[YF] DEBUG (" title "):"
+
 void yf_debug_ctx(YF_context ctx) {
-  printf("\n-- Context (debug) --");
+  printf("%s", YF_DBGTITLE("context"));
 
   printf("\nqueue indices (graph/comp/pres): %d/%d/%d",
       ctx->graph_queue_i, ctx->comp_queue_i, ctx->pres_queue_i);
@@ -27,11 +30,11 @@ void yf_debug_ctx(YF_context ctx) {
   for (unsigned i = 0; i < ctx->dev_ext_n; ++i)
     printf("\n\t%s", ctx->dev_exts[i]);
 
-  printf("\n--\n");
+  printf("\n\n");
 }
 
 void yf_debug_lim(const YF_limits *lim) {
-  printf("\n-- Limits (debug) --");
+  printf("%s", YF_DBGTITLE("limits"));
 
   printf("\nmemory - max objects: %lu", lim->memory.obj_max);
 
@@ -73,7 +76,7 @@ void yf_debug_lim(const YF_limits *lim) {
 
   printf("\ncmdbuf - max draw index value: %u", lim->cmdbuf.draw_idx_max);
 
-  printf("\n--\n");
+  printf("\n\n");
 }
 
 #endif /* defined(YF_DEBUG) */
