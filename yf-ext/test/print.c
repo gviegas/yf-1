@@ -9,10 +9,55 @@
 #include <assert.h>
 
 #include "print.h"
+#include "model.h"
 #include "vertex.h"
 
 #undef YF_PTITLE
 #define YF_PTITLE printf("\n[YF] OUTPUT (%s):", __func__);
+
+void yf_print_nodeobj(YF_node node) {
+  YF_PTITLE;
+
+  void *obj;
+  switch (yf_node_getobj(node, &obj)) {
+    case YF_NODEOBJ_NONE:
+      printf("\nno object for this node");
+      break;
+    case YF_NODEOBJ_MODEL:
+      printf("\nnodeobj is a model (%p)", obj);
+      printf("\n mesh: %p", (void *)yf_model_getmesh((YF_model)obj));
+      printf("\n tex: %p", (void *)yf_model_gettex((YF_model)node));
+      break;
+    case YF_NODEOBJ_TERRAIN:
+      /* TODO */
+      assert(0);
+      break;
+    case YF_NODEOBJ_PARTICLE:
+      /* TODO */
+      assert(0);
+      break;
+    case YF_NODEOBJ_QUAD:
+      /* TODO */
+      assert(0);
+      break;
+    case YF_NODEOBJ_LABEL:
+      /* TODO */
+      assert(0);
+      break;
+    case YF_NODEOBJ_LIGHT:
+      /* TODO */
+      assert(0);
+      break;
+    case YF_NODEOBJ_EFFECT:
+      /* TODO */
+      assert(0);
+      break;
+    default:
+      assert(0);
+  }
+
+  printf("\n\n");
+}
 
 void yf_print_meshdt(const YF_meshdt *data) {
   YF_PTITLE;

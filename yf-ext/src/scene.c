@@ -21,18 +21,6 @@
 #include "mesh.h"
 #include "model.h"
 
-#ifdef YF_DEBUG
-# include <stdio.h>
-# define YF_NODEOBJ_PRINT(nobj, obj) do { \
-   printf("\n-- Nodeobj (debug) --"); \
-   if (nobj == YF_NODEOBJ_MODEL) { \
-    printf("\nmdl obj (%p)", obj); \
-    printf("\nmesh: %p", (void *)yf_model_getmesh((YF_model)obj)); \
-    printf("\ntex: %p", (void *)yf_model_gettex((YF_model)obj)); \
-   } else { printf("\n???"); } \
-   printf("\n--\n"); } while (0)
-#endif
-
 #ifdef YF_USE_FLOAT64
 # define YF_CAMORIG (YF_vec3){0.0, 0.0, -10.0}
 # define YF_CAMTGT  (YF_vec3){0.0, 0.0, 0.0}
@@ -440,7 +428,7 @@ static int traverse_scn(YF_node node, void *arg) {
   }
 
 #ifdef YF_DEBUG
-  YF_NODEOBJ_PRINT(nodeobj, obj);
+  yf_print_nodeobj(node);
 #endif
   return 0;
 }
