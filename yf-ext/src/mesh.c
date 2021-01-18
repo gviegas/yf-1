@@ -198,7 +198,7 @@ void yf_mesh_deinit(YF_mesh mesh) {
 YF_mesh yf_mesh_initdt(const YF_meshdt *data) {
   assert(data != NULL);
 #ifdef YF_DEBUG
-  YF_MESHDT_PRINT(data);
+  yf_print_meshdt(data);
 #endif
 
   if (l_ctx == NULL) {

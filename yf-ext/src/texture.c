@@ -122,7 +122,7 @@ void yf_texture_deinit(YF_texture tex) {
 YF_texture yf_texture_initdt(const YF_texdt *data) {
   assert(data != NULL);
 #ifdef YF_DEBUG
-  YF_TEXDT_PRINT(data);
+  yf_print_texdt(data);
 #endif
 
   if (l_ctx == NULL && (l_ctx = yf_getctx()) == NULL)
