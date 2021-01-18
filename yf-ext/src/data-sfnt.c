@@ -25,253 +25,6 @@
 # error "Invalid platform"
 #endif
 
-#ifdef YF_DEBUG
-# define YF_SFNT_DIRO_PRINT(do_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\ndiro - version: 0x%.8x", be32toh((do_p)->version)); \
-   printf("\ndiro - tab_n: %hu", be16toh((do_p)->tab_n)); \
-   printf("\ndiro - search_rng: %hu", be16toh((do_p)->search_rng)); \
-   printf("\ndiro - entry_sel: %hu", be16toh((do_p)->entry_sel)); \
-   printf("\ndiro - rng_shf: %hu", be16toh((do_p)->rng_shf)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_DIRE_PRINT(de_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\ndire - tag: %c%c%c%c", \
-    (de_p)->tag, (de_p)->tag >> 8, (de_p)->tag >> 16, (de_p)->tag >> 24); \
-   printf("\ndire - chsum: %u", be32toh((de_p)->chsum)); \
-   printf("\ndire - off: %u", be32toh((de_p)->off)); \
-   printf("\ndire - len: %u", be32toh((de_p)->len)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_CMAPH_PRINT(ch_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\ncmaph - version: %hu", (ch_p)->version); \
-   printf("\ncmaph - tab_n: %hu", be16toh((ch_p)->tab_n)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_CMAPE_PRINT(ce_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\ncmape - platform: %hu", be16toh((ce_p)->platform)); \
-   printf("\ncmape - encoding: %hu", be16toh((ce_p)->encoding)); \
-   printf("\ncmape - off: %u", be32toh((ce_p)->off)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_HEAD_PRINT(hd_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nhead - major: %hu", be16toh((hd_p)->major)); \
-   printf("\nhead - minor: %hu", be16toh((hd_p)->minor)); \
-   printf("\nhead - revision: %u", (hd_p)->revision); \
-   printf("\nhead - chsum_adj: %u", (hd_p)->chsum_adj); \
-   printf("\nhead - magic: 0x%.8x", be32toh((hd_p)->magic)); \
-   printf("\nhead - flags: %hx", be16toh((hd_p)->flags)); \
-   printf("\nhead - upem: %hu", be16toh((hd_p)->upem)); \
-   printf("\nhead - created: %ld", \
-    ((int64_t)(hd_p)->created[0] << 32) | (int64_t)(hd_p)->created[1]); \
-   printf("\nhead - modified: %ld", \
-    ((int64_t)(hd_p)->modified[0] << 32) | (int64_t)(hd_p)->modified[1]); \
-   printf("\nhead - x_min: %hd", be16toh((hd_p)->x_min)); \
-   printf("\nhead - y_min: %hd", be16toh((hd_p)->y_min)); \
-   printf("\nhead - x_max: %hd", be16toh((hd_p)->x_max)); \
-   printf("\nhead - y_max: %hd", be16toh((hd_p)->y_max)); \
-   printf("\nhead - style: %hx", be16toh((hd_p)->style)); \
-   printf("\nhead - low_rec_ppm: %hu", be16toh((hd_p)->low_rec_ppem)); \
-   printf("\nhead - dir_hint: %hd", be16toh((hd_p)->dir_hint)); \
-   printf("\nhead - loca_fmt: %hd", be16toh((hd_p)->loca_fmt)); \
-   printf("\nhead - glyph_fmt: %hd", be16toh((hd_p)->glyph_fmt)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_HHEA_PRINT(hh_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nhhea - major: %hu", be16toh((hh_p)->major)); \
-   printf("\nhhea - minor: %hu", be16toh((hh_p)->minor)); \
-   printf("\nhhea - ascent: %hd", be16toh((hh_p)->ascent)); \
-   printf("\nhhea - descent: %hd", be16toh((hh_p)->descent)); \
-   printf("\nhhea - line_gap: %hd", be16toh((hh_p)->line_gap)); \
-   printf("\nhhea - adv_wdt_max: %hu", be16toh((hh_p)->adv_wdt_max)); \
-   printf("\nhhea - lsb_min: %hd", be16toh((hh_p)->lsb_min)); \
-   printf("\nhhea - rsb_min: %hd", be16toh((hh_p)->rsb_min)); \
-   printf("\nhhea - x_extent_max: %hd", be16toh((hh_p)->x_extent_max)); \
-   printf("\nhhea - caret_slp_rise: %hd", be16toh((hh_p)->caret_slp_rise)); \
-   printf("\nhhea - caret_slp_run: %hd", be16toh((hh_p)->caret_slp_run)); \
-   printf("\nhhea - caret_off: %hd", be16toh((hh_p)->caret_off)); \
-   printf("\nhhea - metric_fmt: %hd", be16toh((hh_p)->metric_fmt)); \
-   printf("\nhhea - hmetric_n: %hu", be16toh((hh_p)->hmetric_n)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_HMTXE_PRINT(hm_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nhmtxe - adv_wdt: %hu", be16toh((hm_p)->adv_wdt)); \
-   printf("\nhmtxe - lsb: %hd", be16toh((hm_p)->lsb)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_MAXP_PRINT(mp_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nmaxp - version: 0x%.8x", be32toh((mp_p)->version)); \
-   printf("\nmaxp - glyph_n: %hu", be16toh((mp_p)->glyph_n)); \
-   printf("\nmaxp - pt_max: %hu", be16toh((mp_p)->pt_max)); \
-   printf("\nmaxp - contr_max: %hu", be16toh((mp_p)->contr_max)); \
-   printf("\nmaxp - comp_pt_max: %hu", be16toh((mp_p)->comp_pt_max)); \
-   printf("\nmaxp - comp_contr_max: %hu", be16toh((mp_p)->comp_contr_max)); \
-   printf("\nmaxp - zone_max: %hu", be16toh((mp_p)->zone_max)); \
-   printf("\nmaxp - z0_pt_max: %hu", be16toh((mp_p)->z0_pt_max)); \
-   printf("\nmaxp - storage_max: %hu", be16toh((mp_p)->storage_max)); \
-   printf("\nmaxp - fdef_max: %hu", be16toh((mp_p)->fdef_max)); \
-   printf("\nmaxp - idef_max: %hu", be16toh((mp_p)->idef_max)); \
-   printf("\nmaxp - stack_elem_max: %hu", be16toh((mp_p)->stack_elem_max)); \
-   printf("\nmaxp - hint_sz_max: %hu", be16toh((mp_p)->hint_sz_max)); \
-   printf("\nmaxp - comp_elem_max: %hu", be16toh((mp_p)->comp_elem_max)); \
-   printf("\nmaxp - comp_dep_max: %hu", be16toh((mp_p)->comp_dep_max)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_NAMEH_PRINT(nh_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nnameh - format: %hu", be16toh((nh_p)->format)); \
-   printf("\nnameh - count: %hu", be16toh((nh_p)->count)); \
-   printf("\nnameh - str_off: %hu", be16toh((nh_p)->str_off)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_NAMEE_PRINT(ne_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nnamee - platform: %hu", be16toh((ne_p)->platform)); \
-   printf("\nnamee - encoding: %hu", be16toh((ne_p)->encoding)); \
-   printf("\nnamee - language: %hu", be16toh((ne_p)->language)); \
-   printf("\nnamee - name: %hu", be16toh((ne_p)->name)); \
-   printf("\nnamee - len: %hu", be16toh((ne_p)->len)); \
-   printf("\nnamee - off: %hu", be16toh((ne_p)->off)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_OS2_PRINT(o2_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nos2 - version: %hu", be16toh((o2_p)->version)); \
-   printf("\nos2 - x_avg_char_wdt: %hd", be16toh((o2_p)->x_avg_char_wdt)); \
-   printf("\nos2 - wgt_class: %hu", be16toh((o2_p)->wgt_class)); \
-   printf("\nos2 - wdt_class: %hu", be16toh((o2_p)->wdt_class)); \
-   printf("\nos2 - type: 0x%.4hx", be16toh((o2_p)->type)); \
-   printf("\nos2 - y_subsc_x_sz: %hd", be16toh((o2_p)->y_subsc_x_sz)); \
-   printf("\nos2 - y_subsc_y_sz: %hd", be16toh((o2_p)->y_subsc_y_sz)); \
-   printf("\nos2 - y_subsc_x_off: %hd", be16toh((o2_p)->y_subsc_x_off)); \
-   printf("\nos2 - y_subsc_y_off: %hd", be16toh((o2_p)->y_subsc_y_off)); \
-   printf("\nos2 - y_supersc_x_sz: %hd", be16toh((o2_p)->y_supersc_x_sz)); \
-   printf("\nos2 - y_supersc_y_sz: %hd", be16toh((o2_p)->y_supersc_y_sz)); \
-   printf("\nos2 - y_supersc_x_off: %hd", be16toh((o2_p)->y_supersc_x_off)); \
-   printf("\nos2 - y_supersc_y_off: %hd", be16toh((o2_p)->y_supersc_y_off)); \
-   printf("\nos2 - y_strikeout_sz: %hd", be16toh((o2_p)->y_strikeout_sz)); \
-   printf("\nos2 - y_strikeout_pos: %hd", be16toh((o2_p)->y_strikeout_pos)); \
-   printf("\nos2 - family_class: %hd", be16toh((o2_p)->family_class)); \
-   printf("\nos2 - panose: %u %u %u %u %u %u %u %u %u %u", \
-    (o2_p)->panose[0], (o2_p)->panose[1], (o2_p)->panose[2], \
-    (o2_p)->panose[3], (o2_p)->panose[4], (o2_p)->panose[5], \
-    (o2_p)->panose[6], (o2_p)->panose[7], (o2_p)->panose[8], \
-    (o2_p)->panose[9]); \
-   printf("\nos2 - unicode_rng: 0x%.8x 0x%.8x 0x%.8x 0x%.8x", \
-    (be32toh((o2_p)->unicode_rng1[0]) << 16) | \
-     be32toh((o2_p)->unicode_rng1[1]), \
-    (be32toh((o2_p)->unicode_rng2[0]) << 16) | \
-     be32toh((o2_p)->unicode_rng2[1]), \
-    (be32toh((o2_p)->unicode_rng3[0]) << 16) | \
-     be32toh((o2_p)->unicode_rng3[1]), \
-    (be32toh((o2_p)->unicode_rng4[0]) << 16) | \
-     be32toh((o2_p)->unicode_rng4[1])); \
-   printf("\nos2 - ach_vend: %c%c%c%c", \
-    (o2_p)->ach_vend[0], (o2_p)->ach_vend[1], \
-    (o2_p)->ach_vend[2], (o2_p)->ach_vend[3]); \
-   printf("\nos2 - sel: 0x%.4hx", be16toh((o2_p)->sel)); \
-   printf("\nos2 - first_char_i: %hu", be16toh((o2_p)->first_char_i)); \
-   printf("\nos2 - last_char_i: %hu", be16toh((o2_p)->last_char_i)); \
-   printf("\nos2 - typo_ascent: %hd", be16toh((o2_p)->typo_ascent)); \
-   printf("\nos2 - typo_descent: %hd", be16toh((o2_p)->typo_descent)); \
-   printf("\nos2 - typo_line_gap: %hd", be16toh((o2_p)->typo_line_gap)); \
-   printf("\nos2 - win_ascent: %hu", be16toh((o2_p)->win_ascent)); \
-   printf("\nos2 - win_descent: %hu", be16toh((o2_p)->win_descent)); \
-   printf("\nos2 - code_page_rng: 0x%.8x 0x%.8x", \
-    (be32toh((o2_p)->code_page_rng1[0]) << 16) | \
-     be32toh((o2_p)->code_page_rng1[1]), \
-    (be32toh((o2_p)->code_page_rng2[0]) << 16) | \
-     be32toh((o2_p)->code_page_rng2[1])); \
-   printf("\nos2 - x_hgt: %hd", be16toh((o2_p)->x_hgt)); \
-   printf("\nos2 - cap_hgt: %hd", be16toh((o2_p)->cap_hgt)); \
-   printf("\nos2 - deft_char: %hu", be16toh((o2_p)->deft_char)); \
-   printf("\nos2 - break_char: %hu", be16toh((o2_p)->break_char)); \
-   printf("\nos2 - max_ctx: %hu", be16toh((o2_p)->max_ctx)); \
-   printf("\nos2 - lo_optical_pt_sz: %hu", be16toh((o2_p)->lo_optical_pt_sz)); \
-   printf("\nos2 - up_optical_pt_sz: %hu", be16toh((o2_p)->up_optical_pt_sz)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_POSTH_PRINT(ps_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nposth - version: 0x%.8x", be32toh((ps_p)->version)); \
-   printf("\nposth - italic_ang: %u", be32toh((ps_p)->italic_ang)); \
-   printf("\nposth - undln_pos: %hd", be16toh((ps_p)->undln_pos)); \
-   printf("\nposth - undln_thick: %hd", be16toh((ps_p)->undln_thick)); \
-   printf("\nposth - fixed_pitch: %u", be32toh((ps_p)->fixed_pitch)); \
-   printf("\nposth - mem42_min: %u", be32toh((ps_p)->mem42_min)); \
-   printf("\nposth - mem42_max: %u", be32toh((ps_p)->mem42_max)); \
-   printf("\nposth - mem1_min: %u", be32toh((ps_p)->mem1_min)); \
-   printf("\nposth - mem1_max: %u", be32toh((ps_p)->mem1_max)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_CVT_PRINT(cv_p, len) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\ncvt len is %u", len); \
-   printf("\ncvt @%p", (void *)(cv_p)->ctrl_vals); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_FPGM_PRINT(fp_p, len) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nfpgm len is %u", len); \
-   printf("\nfpgm @%p", (void *)(fp_p)->instrs); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_GASPH_PRINT(gh_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\ngasph - version: 0x%.4hx", be16toh((gh_p)->version)); \
-   printf("\ngasph - rng_n: %hu", be16toh((gh_p)->rng_n)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_GASPE_PRINT(ge_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\ngaspe - rng_ppem_max: %hu", be16toh((ge_p)->rng_ppem_max)); \
-   printf("\ngaspe - rng_behav: %hu", be16toh((ge_p)->rng_behav)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_GLYFD_PRINT(gd_p) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nglyfd - contr_n: %hd", be16toh((gd_p)->contr_n)); \
-   printf("\nglyfd - x_min: %hd", be16toh((gd_p)->x_min)); \
-   printf("\nglyfd - y_min: %hd", be16toh((gd_p)->y_min)); \
-   printf("\nglyfd - x_max: %hd", be16toh((gd_p)->x_max)); \
-   printf("\nglyfd - y_max: %hd", be16toh((gd_p)->y_max)); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_GLYF_PRINT(gf_p, len) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nglyf len is %u", len); \
-   printf("\nglyf @%p", (void *)(gf_p)->glyphs); \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_LOCA_PRINT(lc_p, len, strd) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nloca len is %u", len); \
-   printf("\nloca @%p", (void *)lc_p); \
-   for (uint16_t i = 0; i < len / strd; ++i) { \
-    if (i % 16 == 0) printf("\n[%d-%d]:", i, i+15); \
-    if (strd == 2) printf(" %hu", be16toh((lc_p)->off16[i])); \
-    else printf(" %u", be32toh((lc_p)->off32[i])); \
-   } \
-   printf("\n--\n"); } while (0)
-
-# define YF_SFNT_PREP_PRINT(pr_p, len) do { \
-   printf("\n-- SFNT (debug) --"); \
-   printf("\nprep len is %u", len); \
-   printf("\nprep @%p", (void *)(pr_p)->program); \
-   printf("\n--\n"); } while (0)
-#endif /* YF_DEBUG */
-
-/*
- * XXX: Ongoing devel.
- */
-
 #define YF_SFNT_MAKETAG(c1, c2, c3, c4) \
   ((c1 << 24) | (c2 << 16) | (c3 << 8) | c4)
 
@@ -281,6 +34,7 @@
 
 /* Font directory. */
 #define YF_SFNT_TTF be32toh(0x00010000)
+
 typedef struct {
   uint32_t version;
   uint16_t tab_n;
@@ -307,6 +61,7 @@ typedef struct {
 
 /* Character to glyph mapping. */
 #define YF_SFNT_CMAPTAG YF_SFNT_MAKETAG('c', 'm', 'a', 'p')
+
 typedef struct {
   uint16_t version;
   uint16_t tab_n;
@@ -329,6 +84,7 @@ typedef struct {
 
 /* Font header. */
 #define YF_SFNT_HEADTAG YF_SFNT_MAKETAG('h', 'e', 'a', 'd')
+
 typedef struct {
   uint16_t major;
   uint16_t minor;
@@ -354,6 +110,7 @@ static_assert(offsetof(L_head, glyph_fmt) == YF_SFNT_HEADSZ-2, "!offsetof");
 
 /* Horizontal layout header. */
 #define YF_SFNT_HHEATAG YF_SFNT_MAKETAG('h', 'h', 'e', 'a')
+
 typedef struct {
   uint16_t major;
   uint16_t minor;
@@ -376,6 +133,7 @@ static_assert(offsetof(L_hhea, hmetric_n) == YF_SFNT_HHEASZ-2, "!offsetof");
 
 /* Horizontal layout metrics. */
 #define YF_SFNT_HMTXTAG YF_SFNT_MAKETAG('h', 'm', 't', 'x')
+
 typedef struct {
   uint16_t adv_wdt;
   int16_t lsb;
@@ -390,6 +148,7 @@ typedef struct {
 
 /* Maximum profile. */
 #define YF_SFNT_MAXPTAG YF_SFNT_MAKETAG('m', 'a', 'x', 'p')
+
 typedef struct {
   uint32_t version;
   uint16_t glyph_n;
@@ -412,6 +171,7 @@ static_assert(offsetof(L_maxp, comp_dep_max) == YF_SFNT_MAXPSZ-2, "!offsetof");
 
 /* Naming. */
 #define YF_SFNT_NAMETAG YF_SFNT_MAKETAG('n', 'a', 'm', 'e')
+
 typedef struct {
   uint16_t format;
   uint16_t count;
@@ -448,6 +208,7 @@ typedef struct {
 
 /* OS/2 & Windows metrics. */
 #define YF_SFNT_OS2TAG YF_SFNT_MAKETAG('O', 'S', '/', '2')
+
 typedef struct {
   /* v0 */
   uint16_t version;
@@ -500,6 +261,7 @@ static_assert(offsetof(L_os2, up_optical_pt_sz) == YF_SFNT_OS2SZ-2,
 
 /* PostScript info. */
 #define YF_SFNT_POSTTAG YF_SFNT_MAKETAG('p', 'o', 's', 't')
+
 typedef struct {
   uint32_t version;
   uint32_t italic_ang;
@@ -525,18 +287,21 @@ typedef struct {
 
 /* Control values. */
 #define YF_SFNT_CVTTAG YF_SFNT_MAKETAG('c', 'v', 't', ' ')
+
 typedef struct {
   int16_t *ctrl_vals;
 } L_cvt;
 
 /* Font program (executed once). */
 #define YF_SFNT_FPGMTAG YF_SFNT_MAKETAG('f', 'p', 'g', 'm')
+
 typedef struct {
   uint8_t *instrs;
 } L_fpgm;
 
-/* Grayscale device rendering. */
+/* Greyscale device rendering. */
 #define YF_SFNT_GASPTAG YF_SFNT_MAKETAG('g', 'a', 's', 'p')
+
 typedef struct {
   uint16_t version;
   uint16_t rng_n;
@@ -558,6 +323,7 @@ typedef struct {
 
 /* Glyph data. */
 #define YF_SFNT_GLYFTAG YF_SFNT_MAKETAG('g', 'l', 'y', 'f')
+
 typedef struct {
   int16_t contr_n;
   int16_t x_min;
@@ -575,6 +341,7 @@ typedef struct {
 
 /* Glyph location offsets. */
 #define YF_SFNT_LOCATAG YF_SFNT_MAKETAG('l', 'o', 'c', 'a')
+
 typedef struct {
   union {
     uint16_t *off16;
@@ -584,6 +351,7 @@ typedef struct {
 
 /* Control value program (executed on font changes). */
 #define YF_SFNT_PREPTAG YF_SFNT_MAKETAG('p', 'r', 'e', 'p')
+
 typedef struct {
   uint8_t *program;
 } L_prep;
@@ -761,9 +529,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     return -1;
   }
   const uint16_t tab_n = be16toh(sfnt.dir->diro.tab_n);
-#ifdef YF_DEBUG
-  YF_SFNT_DIRO_PRINT(&sfnt.dir->diro);
-#endif
 
   /* directory entries */
   sfnt.dir->dires = malloc(tab_n * sizeof(L_dire));
@@ -832,9 +597,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
       post_off = be32toh(sfnt.dir->dires[i].off);
       post_len = be32toh(sfnt.dir->dires[i].len);
     }
-#ifdef YF_DEBUG
-    YF_SFNT_DIRE_PRINT(sfnt.dir->dires+i);
-#endif
   }
   if (cmap_off == 0 || head_off == 0 || hhea_off == 0 || hmtx_off == 0 ||
       maxp_off == 0 || name_off == 0 || os2_off == 0 || post_off == 0 ||
@@ -865,9 +627,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     fclose(file);
     return -1;
   }
-#ifdef YF_DEBUG
-  YF_SFNT_HEAD_PRINT(sfnt.head);
-#endif
 
   /* hhea table */
   sfnt.hhea = calloc(1, sizeof(L_hhea));
@@ -886,9 +645,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     return -1;
   }
   const uint16_t hmetric_n = be16toh(sfnt.hhea->hmetric_n);
-#ifdef YF_DEBUG
-  YF_SFNT_HHEA_PRINT(sfnt.hhea);
-#endif
 
   /* maxp table */
   sfnt.maxp = calloc(1, sizeof(L_maxp));
@@ -907,9 +663,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     return -1;
   }
   const uint16_t glyph_n = be16toh(sfnt.maxp->glyph_n);
-#ifdef YF_DEBUG
-  YF_SFNT_MAXP_PRINT(sfnt.maxp);
-#endif
 
   /* hmtx table */
   sfnt.hmtx = calloc(1, sizeof(L_hmtx));
@@ -952,24 +705,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
       return -1;
     }
   }
-#ifdef YF_DEBUG
-  for (uint16_t i = 0; i < hmetric_n; ++i) {
-    YF_SFNT_HMTXE_PRINT(sfnt.hmtx->hmtxes+i);
-    if (i == 5) {
-      printf("\n... (#%hu hmtx entries)\n", hmetric_n);
-      break;
-    }
-  }
-  for (uint16_t i = 0; i < glyph_n - hmetric_n; ++i) {
-    printf("\n-- SFNT (debug) --");
-    printf("\nhmtx (lsb-only): %hd", be16toh(sfnt.hmtx->lsbs[i]));
-    printf("\n--\n");
-    if (i == 5) {
-      printf("\n... (#%hu hmtx (lsb only) entries)\n", glyph_n - hmetric_n);
-      break;
-    }
-  }
-#endif
 
   /* os2 table */
   sfnt.os2 = calloc(1, sizeof(L_os2));
@@ -987,9 +722,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     fclose(file);
     return -1;
   }
-#ifdef YF_DEBUG
-  YF_SFNT_OS2_PRINT(sfnt.os2);
-#endif
 
   /* post table */
   sfnt.post = calloc(1, sizeof(L_post));
@@ -1007,9 +739,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     fclose(file);
     return -1;
   }
-#ifdef YF_DEBUG
-  YF_SFNT_POSTH_PRINT(&sfnt.post->posth);
-#endif
 
   /* cmap table */
   sfnt.cmap = calloc(1, sizeof(L_cmap));
@@ -1028,9 +757,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     return -1;
   }
   const uint16_t cmap_n = be16toh(sfnt.cmap->cmaph.tab_n);
-#ifdef YF_DEBUG
-  YF_SFNT_CMAPH_PRINT(&sfnt.cmap->cmaph);
-#endif
 
   /* cmap entries */
   sfnt.cmap->cmapes = malloc(cmap_n * sizeof(L_cmape));
@@ -1046,17 +772,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     fclose(file);
     return -1;
   }
-#ifdef YF_DEBUG
-  for (uint16_t i = 0; i < cmap_n; ++i) {
-    YF_SFNT_CMAPE_PRINT(sfnt.cmap->cmapes+i);
-    uint16_t fmt;
-    uint32_t off = cmap_off+be32toh(sfnt.cmap->cmapes[i].off);
-    if (fseek(file, off, SEEK_SET) != 0 ||
-        fread(&fmt, sizeof fmt, 1, file) < 1)
-      assert(0);
-    printf("\tcmap format: %hu\n", be16toh(fmt));
-  }
-#endif
 
   /* name table */
   sfnt.name = calloc(1, sizeof(L_name));
@@ -1075,9 +790,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     return -1;
   }
   const uint16_t name_n = be16toh(sfnt.name->nameh.count);
-#ifdef YF_DEBUG
-  YF_SFNT_NAMEH_PRINT(&sfnt.name->nameh);
-#endif
 
   /* name entries */
   sfnt.name->namees = malloc(name_n * sizeof(L_namee));
@@ -1093,10 +805,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
     fclose(file);
     return -1;
   }
-#ifdef YF_DEBUG
-  for (uint16_t i = 0; i < name_n; ++i)
-    YF_SFNT_NAMEE_PRINT(sfnt.name->namees+i);
-#endif
   if (sfnt.name->nameh.format != 0) {
     if (fread(&sfnt.name->lang_n, sizeof(uint16_t), 1, file) < 1) {
       yf_seterr(YF_ERR_INVFILE, __func__);
@@ -1315,9 +1023,6 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-#ifdef YF_DEBUG
-    YF_SFNT_CVT_PRINT(sfnt->ttf.cvt, cvt_len);
-#endif
   }
 
   /* fpgm table (optional) */
@@ -1338,9 +1043,6 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-#ifdef YF_DEBUG
-    YF_SFNT_FPGM_PRINT(sfnt->ttf.fpgm, fpgm_len);
-#endif
   }
 
   /* prep table (optional) */
@@ -1361,9 +1063,6 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-#ifdef YF_DEBUG
-    YF_SFNT_PREP_PRINT(sfnt->ttf.prep, prep_len);
-#endif
   }
 
   /* gasp table (optional) */
@@ -1391,11 +1090,6 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
         return -1;
       }
     }
-#ifdef YF_DEBUG
-    YF_SFNT_GASPH_PRINT(&sfnt->ttf.gasp->gasph);
-    for (uint16_t i = 0; i < rng_n; ++i)
-      YF_SFNT_GASPE_PRINT(sfnt->ttf.gasp->gaspes+i);
-#endif
   }
 
   /* loca table */
@@ -1420,9 +1114,6 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
     sfnt->ttf.loca->off16 = loca_data;
   else
     sfnt->ttf.loca->off32 = loca_data;
-#ifdef YF_DEBUG
-  YF_SFNT_LOCA_PRINT(sfnt->ttf.loca, loca_len, (sfnt->head->loca_fmt ? 4 : 2));
-#endif
 
   /* glyf table */
   sfnt->ttf.glyf = calloc(1, sizeof(L_glyf));
@@ -1441,58 +1132,6 @@ static int load_ttf(L_sfnt *sfnt, FILE *file) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
-#ifdef YF_DEBUG
-  uint32_t cmap_off = 0;
-  for (uint16_t i = 0; i < tab_n; ++i) {
-    if (be32toh(sfnt->dir->dires[i].tag) == YF_SFNT_CMAPTAG) {
-      cmap_off = be32toh(sfnt->dir->dires[i].off);
-      break;
-    }
-  }
-  assert(cmap_off != 0);
-  L_fontmap fmap;
-  if (set_mapping(sfnt->cmap, file, cmap_off, &fmap) != 0)
-    assert(0);
-  YF_SFNT_GLYF_PRINT(sfnt->ttf.glyf, glyf_len);
-  if (fmap.map == YF_SFNT_MAP_TRIMMED) {
-    printf("\n[glyf - trimmed format (#%hu)]", fmap.trimmed.entry_n);
-    for (uint16_t i = 0; i < fmap.trimmed.entry_n; ++i) {
-      uint16_t code = fmap.trimmed.first_code+i;
-      if (code < 32) continue;
-      else if (code > 127) break;
-      uint16_t id = fmap.trimmed.glyph_ids[i];
-      uint32_t off;
-      if (sfnt->head->loca_fmt == 0)
-        off = be16toh(sfnt->ttf.loca->off16[id]) << 1;
-      else
-        off = be32toh(sfnt->ttf.loca->off32[id]);
-      assert((off % _Alignof(L_glyfd)) == 0);
-      L_glyfd *gd = (L_glyfd *)(sfnt->ttf.glyf->glyphs+off);
-      printf("\n[glyf #%hu (%c)]", id, code);
-      YF_SFNT_GLYFD_PRINT(gd);
-    }
-  } else {
-    YF_hashset hset = fmap.sparse.glyph_ids;
-    printf("\n[glyf - sparse format (#%lu)]", yf_hashset_getlen(hset));
-    const uint16_t codes[] = {'a', 'b', 'C', 'D', '0', '1', '@', '!', ' ', '%'};
-    int n = sizeof codes / sizeof codes[0];
-    while (yf_hashset_getlen(hset) != 0 && n != 0) {
-      /*uintptr_t kv = (uintptr_t)yf_hashset_extract(hset, NULL);*/
-      uintptr_t kv = (uintptr_t)yf_hashset_search(hset, codes[--n]);
-      uint16_t code = kv;
-      uint16_t id = kv >> 16;
-      uint32_t off;
-      if (sfnt->head->loca_fmt == 0)
-        off = be16toh(sfnt->ttf.loca->off16[id]) << 1;
-      else
-        off = be32toh(sfnt->ttf.loca->off32[id]);
-      assert((off % _Alignof(L_glyfd)) == 0);
-      L_glyfd *gd = (L_glyfd *)(sfnt->ttf.glyf->glyphs+off);
-      printf("\n[glyf #%hu (%c)]", id, code);
-      YF_SFNT_GLYFD_PRINT(gd);
-    }
-  }
-#endif
 
   return 0;
 }
@@ -1639,13 +1278,6 @@ static int set_mapping(const L_cmap *cmap, FILE *file, uint32_t off,
     yf_seterr(YF_ERR_UNSUP, __func__);
     return -1;
   }
-#ifdef YF_DEBUG
-  printf("\n-- Font mapping (debug) --");
-  printf("\nsub_hdr - fmt: %hu", be16toh(sub_hdr.fmt));
-  printf("\nsub_hdr - len: %hu", be16toh(sub_hdr.len));
-  printf("\nsub_hdr - lang: %hu", be16toh(sub_hdr.lang));
-  printf("\n--\n");
-#endif
 
   switch (be16toh(sub_hdr.fmt)) {
     case 0:
@@ -1850,24 +1482,6 @@ static int fill_str(const L_name *name, FILE *file, uint32_t str_off,
     }
   }
 
-#ifdef YF_DEBUG
-  printf("\n-- Font strings (debug) --");
-  printf("\n- copyright:\n%s\n", fstr->copyright);
-  printf("\n- family:\n%s\n", fstr->family);
-  printf("\n- subfamily:\n%s\n", fstr->subfamily);
-  printf("\n- uid:\n%s\n", fstr->uid);
-  printf("\n- name:\n%s\n", fstr->name);
-  printf("\n- version:\n%s\n", fstr->version);
-  printf("\n- trademark:\n%s\n", fstr->trademark);
-  printf("\n- manufacturer:\n%s\n", fstr->manufacturer);
-  printf("\n- designer:\n%s\n", fstr->designer);
-  printf("\n- description:\n%s\n", fstr->description);
-  printf("\n- license:\n%s\n", fstr->license);
-  printf("\n- typographic_family:\n%s\n", fstr->typographic_family);
-  printf("\n- typographic_subfamily:\n%s\n", fstr->typographic_subfamily);
-  printf("\n- sample_text:\n%s\n", fstr->sample_text);
-  printf("\n--\n");
-#endif
   return 0;
 }
 
@@ -2039,15 +1653,9 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
   }
 
   const uint32_t off = font->ttf.loca[id];
-  const uint32_t len = font->ttf.loca[id+1] - off;
+  /*const uint32_t len = font->ttf.loca[id+1] - off;*/
   assert((off % _Alignof(L_glyfd)) == 0);
-
   const L_glyfd *gd = (L_glyfd *)(font->ttf.glyf+off);
-#ifdef YF_DEBUG
-  YF_SFNT_GLYFD_PRINT(gd);
-  printf("[id: %hu, off: %u, len: %u, is comp: %d]\n", id, off, len,
-      YF_SFNT_ISCOMPND(font, id));
-#endif
 
   outln->x_min = (int16_t)be16toh(gd->x_min);
   outln->y_min = (int16_t)be16toh(gd->y_min);
@@ -2075,23 +1683,6 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
     if (fetch_simple(font, id, outln->comps) != 0)
       return -1;
   }
-
-#ifdef YF_DEBUG
-  printf("\n-- Outline (debug) --");
-  for (uint16_t i = 0; i < outln->comp_n; ++i) {
-    printf("\n--\n[Component #%hd]", i);
-
-    printf("\nend indices (#%hu): ", outln->comps[i].end_n);
-    for (uint16_t j = 0; j < outln->comps[i].end_n; ++j)
-      printf("%hu ", outln->comps[i].ends[j]);
-
-    printf("\npoints (#%hu): ", outln->comps[i].pt_n);
-    for (uint16_t j = 0; j < outln->comps[i].pt_n; ++j)
-      printf("\n[%s] (%hd %hd)", outln->comps[i].pts[j].on_curve ? "y" : "n",
-          outln->comps[i].pts[j].x, outln->comps[i].pts[j].y);
-  }
-  printf("\n--\n");
-#endif
 
   outln->adv_wdt = font->met.glyphs[id].adv_wdt;
   outln->lsb = font->met.glyphs[id].lsb;
@@ -2549,15 +2140,6 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
       begn = end+1;
     }
   }
-
-#ifdef YF_DEBUG
-  printf("\n-- Segments (debug) --");
-  printf("\n#%hu (#%hu max)", seg_i, seg_max);
-  for (uint32_t i = 0; i < seg_i; ++i)
-    printf("\n[w:%d] (%d,%d)--(%d,%d)", segs[i].wind,
-        segs[i].p1.x, segs[i].p1.y, segs[i].p2.x, segs[i].p2.y);
-  printf("\n--\n");
-#endif
 
 #undef YF_DIRECTION
 #define YF_DIRECTION(p1, p2, p3) \
