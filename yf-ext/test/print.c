@@ -101,3 +101,41 @@ void yf_print_meshdt(const YF_meshdt *data) {
 
   printf("\n\n");
 }
+
+
+void yf_print_texdt(const YF_texdt *data) {
+  YF_PTITLE;
+
+  printf("\ndim: %u, %u", data->dim.width, data->dim.height);
+
+  switch (data->pixfmt) {
+    case YF_PIXFMT_RGB8SRGB:
+      printf("\npixfmt: %d (rgb8 sRGB)", data->pixfmt);
+      printf("\ndata:");
+      for (unsigned i = 0; i < data->dim.height; ++i) {
+        for (unsigned j = 0; j < data->dim.width; ++j)
+          printf("[%02x %02x %02x] ",
+              ((unsigned char *)data->data)[data->dim.width*3*i+3*j],
+              ((unsigned char *)data->data)[data->dim.width*3*i+3*j+1],
+              ((unsigned char *)data->data)[data->dim.width*3*i+3*j+2]);
+      }
+      break;
+    case YF_PIXFMT_RGBA8SRGB:
+      printf("\npixfmt: %d (rgba8 sRGB)", data->pixfmt);
+      printf("\ndata:");
+      for (unsigned i = 0; i < data->dim.height; ++i) {
+        for (unsigned j = 0; j < data->dim.width; ++j)
+          printf("[%02x %02x %02x %02x] ",
+              ((unsigned char *)data->data)[data->dim.width*4*i+4*j],
+              ((unsigned char *)data->data)[data->dim.width*4*i+4*j+1],
+              ((unsigned char *)data->data)[data->dim.width*4*i+4*j+2],
+              ((unsigned char *)data->data)[data->dim.width*4*i+4*j+3]);
+      }
+      break;
+    default:
+      printf("\npixfmt: %d", data->pixfmt);
+      printf("\n*output unavailable*");
+  }
+
+  printf("\n\n");
+}
