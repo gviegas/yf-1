@@ -17,20 +17,6 @@
 #include "node.h"
 #include "vertex.h"
 
-#ifdef YF_DEBUG
-# define YF_RESMGR_PRINT(info) do { \
-   printf("\n-- Resmgr (debug) --"); \
-   printf("\n> %s\n", info); \
-   for (unsigned i = 0; i < YF_RESRQ_N; ++i) { \
-    printf("\nRQ#%u: gst=%p n=%u i=%u\n  obtd[ ", \
-     i, (void *)l_entries[i].gst, l_entries[i].n, l_entries[i].i); \
-    for (unsigned j = 0; j < l_entries[i].n; ++j) \
-     printf("%d ", l_entries[i].obtained[j]); \
-    printf("]\n"); \
-   } \
-   printf("\n--\n"); } while (0)
-#endif
-
 #ifndef YF_SHD_DIR
 # define YF_SHD_DIR "bin/"
 #endif
@@ -107,9 +93,6 @@ YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc) {
     if (gst == NULL)
       yf_seterr(YF_ERR_INUSE, __func__);
   }
-#ifdef YF_DEBUG
-  YF_RESMGR_PRINT(__func__);
-#endif
   return gst;
 }
 
@@ -119,9 +102,6 @@ void yf_resmgr_yield(int resrq, unsigned inst_alloc) {
 
   l_entries[resrq].obtained[inst_alloc] = 0;
   l_entries[resrq].i = inst_alloc;
-#ifdef YF_DEBUG
-  YF_RESMGR_PRINT(__func__);
-#endif
 }
 
 unsigned yf_resmgr_getallocn(int resrq) {
