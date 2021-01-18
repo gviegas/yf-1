@@ -92,7 +92,7 @@ void yf_camera_place(YF_camera cam, const YF_vec3 pos) {
 
 void yf_camera_point(YF_camera cam, const YF_vec3 pos) {
   assert(cam != NULL);
-#ifdef YF_DEBUG
+#ifdef YF_DEVEL
   assert(!yf_vec3_iseq(pos, cam->pos));
 #else
   if (yf_vec3_iseq(pos, cam->pos)) return;
