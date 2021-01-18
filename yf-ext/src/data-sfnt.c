@@ -1917,6 +1917,11 @@ static void deinit_outline(L_outline *outln) {
   (((x)&(1<<31)) && ((y)&(1<<31)) ? \
     (((x)<<YF_SFNT_Q)+((y)>>1))/(y) : (((x)<<YF_SFNT_Q)-((y)>>1))/(y))
 
+#define YF_SFNT_FIXROUND(x) \
+  ((x)&(1<<31) ? \
+    ((x)&(~((1<<YF_SFNT_Q)-1)))-(((x)&(1<<(YF_SFNT_Q-1)))<<1) : \
+    ((x)&(~((1<<YF_SFNT_Q)-1)))+(((x)&(1<<(YF_SFNT_Q-1)))<<1))
+
 static int scale_outline(L_outline *outln) {
   assert(outln != NULL);
   assert(outln->comps != NULL);
@@ -2059,15 +2064,18 @@ static int grid_fit(L_outline *outln) {
   assert(outln != NULL);
 
   /* TODO: Improve this. */
+
+  outln->x_min = YF_SFNT_FIXROUND(outln->x_min);
+  outln->y_min = YF_SFNT_FIXROUND(outln->y_min);
+  outln->x_max = YF_SFNT_FIXROUND(outln->x_max);
+  outln->y_max = YF_SFNT_FIXROUND(outln->y_max);
+
   for (uint16_t i = 0; i < outln->comp_n; ++i) {
     for (uint16_t j = 0; j < outln->comps[i].pt_n; ++j) {
-      int32_t x = outln->comps[i].pts[j].x;
-      x = (x&(~((1<<YF_SFNT_Q)-1))) + ((x&(1<<(YF_SFNT_Q-1)))<<1);
-      outln->comps[i].pts[j].x = x;
-
-      int32_t y = outln->comps[i].pts[j].y;
-      y = (y&(~((1<<YF_SFNT_Q)-1))) + ((y&(1<<(YF_SFNT_Q-1)))<<1);
-      outln->comps[i].pts[j].y = y;
+      const int32_t x = outln->comps[i].pts[j].x;
+      outln->comps[i].pts[j].x = YF_SFNT_FIXROUND(x);
+      const int32_t y = outln->comps[i].pts[j].y;
+      outln->comps[i].pts[j].y = YF_SFNT_FIXROUND(y);
     }
   }
   return 0;
