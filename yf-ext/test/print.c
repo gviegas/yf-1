@@ -60,6 +60,45 @@ void yf_print_nodeobj(YF_node node) {
 }
 
 void yf_print_meshdt(const YF_meshdt *data) {
+#define YF_VMDL_PRINT(vtx) do { \
+  printf("\n pos:  [%.3f %.3f %.3f]", \
+      (vtx).pos[0], (vtx).pos[1], (vtx).pos[2]); \
+  printf("\n tc:   [%.3f %.3f]", (vtx).tc[0], (vtx).tc[1]); \
+  printf("\n norm: [%.3f %.3f %.3f]", \
+      (vtx).norm[0], (vtx).norm[1], (vtx).norm[2]); \
+  printf("\n"); } while (0)
+
+#define YF_VTERR_PRINT(vtx) do { \
+  printf("\n pos:  [%.3f %.3f %.3f]", \
+      (vtx).pos[0], (vtx).pos[1], (vtx).pos[2]); \
+  printf("\n tc:   [%.3f %.3f]", (vtx).tc[0], (vtx).tc[1]); \
+  printf("\n norm: [%.3f %.3f %.3f]", \
+      (vtx).norm[0], (vtx).norm[1], (vtx).norm[2]); \
+  printf("\n"); } while (0)
+
+#define YF_VPART_PRINT(vtx) do { \
+  printf("\n pos:  [%.3f %.3f %.3f]", \
+      (vtx).pos[0], (vtx).pos[1], (vtx).pos[2]); \
+  printf("\n clr: [%.3f %.3f %.3f %.3f]", \
+      (vtx).clr[0], (vtx).clr[1], (vtx).clr[2], (vtx).clr[3]); \
+  printf("\n"); } while (0)
+
+#define YF_VQUAD_PRINT(vtx) do { \
+  printf("\n pos: [%.3f %.3f %.3f]", \
+      (vtx).pos[0], (vtx).pos[1], (vtx).pos[2]); \
+  printf("\n tc: [%.3f %.3f]", (vtx).tc[0], (vtx).tc[1]); \
+  printf("\n clr: [%.3f %.3f %.3f %.3f]", \
+      (vtx).clr[0], (vtx).clr[1], (vtx).clr[2], (vtx).clr[3]); \
+  printf("\n"); } while (0)
+
+#define YF_VLABL_PRINT(vtx) do { \
+  printf("\n pos: [%.3f %.3f %.3f]", \
+      (vtx).pos[0], (vtx).pos[1], (vtx).pos[2]); \
+  printf("\n tc: [%.3f %.3f]", (vtx).tc[0], (vtx).tc[1]); \
+  printf("\n clr: [%.3f %.3f %.3f %.3f]", \
+      (vtx).clr[0], (vtx).clr[1], (vtx).clr[2], (vtx).clr[3]); \
+  printf("\n"); } while (0)
+
   YF_PTITLE;
 
   printf("\nv.n: %lu", data->v.n);
