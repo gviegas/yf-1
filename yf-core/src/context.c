@@ -118,6 +118,8 @@ void yf_context_deinit(YF_context ctx) {
   if (ctx == NULL)
     return;
 
+  vkDeviceWaitIdle(ctx->device);
+
   if (ctx->stg.deinit_callb != NULL)
     ctx->stg.deinit_callb(ctx);
   if (ctx->lim.deinit_callb != NULL)
