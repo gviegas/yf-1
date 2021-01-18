@@ -2,7 +2,7 @@
  * YF
  * coreobj.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -46,7 +46,7 @@ YF_pass yf_getpass(void) {
 }
 
 static _Noreturn void exit_fatal(const char *info) {
-#ifndef YF_DEBUG
+#ifndef YF_DEVEL
   yf_printerr();
 #endif
   printf("\n[YF] Fatal: Could not initialize core object.\n(%s)\n", info);

@@ -35,7 +35,7 @@ LD_LIBS := -lm -lyf-com -lyf-core -lyf-wsys
 LD_FLAGS := -iquote $(INCLUDE_DIR) -iquote $(SRC_DIR)
 
 PP := $(CC) -E
-PP_FLAGS := -D YF_EXT -D YF_DEVEL -D YF_DEBUG
+PP_FLAGS := -D YF_EXT -D YF_DEVEL
 
 OUT := $(BIN_DIR)devel
 

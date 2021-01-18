@@ -20,21 +20,6 @@
 #include "vertex.h"
 #include "data-obj.h"
 
-#ifdef YF_DEBUG
-# include <stdio.h>
-# define YF_MESH_PRINT(mesh, info, buf_size) do { \
-   printf("\n-- Mesh (debug) --"); \
-   printf("\n%s", info); \
-   printf("\nv: o=%lu, n=%u", mesh->v.offset, mesh->v.n); \
-   printf("\ni: o=%lu, n=%u, strd=%d", \
-    mesh->i.offset, mesh->i.n, mesh->i.stride); \
-   printf("\nbuf: sz=%lu", buf_size); \
-   printf("\nblks: n=%lu, cap=%lu", l_blk_n, l_blk_cap); \
-   for (size_t i = 0; i < l_blk_n; ++i) \
-    printf("\nblk(%lu): o=%lu, sz=%lu", i, l_blks[i].offset, l_blks[i].size); \
-   printf("\n--\n"); } while (0)
-#endif
-
 #undef YF_BUFLEN
 #define YF_BUFLEN 1048576
 
@@ -187,19 +172,11 @@ void yf_mesh_deinit(YF_mesh mesh) {
     }
   }
 
-#ifdef YF_DEBUG
-  size_t buf_len;
-  yf_buffer_getval(l_buf, &buf_len);
-  YF_MESH_PRINT(mesh, __func__, buf_len);
-#endif
   free(mesh);
 }
 
 YF_mesh yf_mesh_initdt(const YF_meshdt *data) {
   assert(data != NULL);
-#ifdef YF_DEBUG
-  yf_print_meshdt(data);
-#endif
 
   if (l_ctx == NULL) {
     assert(l_buf == NULL);
@@ -230,13 +207,6 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data) {
     yf_mesh_deinit(mesh);
     mesh = NULL;
   }
-#ifdef YF_DEBUG
-  if (mesh != NULL) {
-    size_t buf_len;
-    yf_buffer_getval(l_buf, &buf_len);
-    YF_MESH_PRINT(mesh, __func__, buf_len);
-  }
-#endif
   return mesh;
 }
 

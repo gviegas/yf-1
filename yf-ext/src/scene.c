@@ -21,6 +21,11 @@
 #include "mesh.h"
 #include "model.h"
 
+#ifdef YF_DEVEL
+# include <stdio.h>
+# include "../test/print.h"
+#endif
+
 #ifdef YF_USE_FLOAT64
 # define YF_CAMORIG (YF_vec3){0.0, 0.0, -10.0}
 # define YF_CAMTGT  (YF_vec3){0.0, 0.0, 0.0}
@@ -188,7 +193,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
   yf_cmdbuf_clearcolor(l_vars.cb, 0, scn->color);
   yf_cmdbuf_cleardepth(l_vars.cb, 1.0f);
 
-#ifdef YF_DEBUG
+#ifdef YF_DEVEL
   unsigned exec_n = 0;
 #endif
 
@@ -232,7 +237,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
       return -1;
     }
 
-#ifdef YF_DEBUG
+#ifdef YF_DEVEL
     ++exec_n;
 #endif
 
@@ -248,9 +253,11 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
     }
   } while (1);
 
-#ifdef YF_DEBUG
-  printf("######\n[%s]: executed #%u time(s)\n######\n", __func__, exec_n);
+#ifdef YF_DEVEL
+  printf("\n[YF] OUTPUT (%s):\n number of executions: %u\n\n",
+      __func__, exec_n);
 #endif
+
   clear_hset();
   return 0;
 }
@@ -427,7 +434,7 @@ static int traverse_scn(YF_node node, void *arg) {
       break;
   }
 
-#ifdef YF_DEBUG
+#ifdef YF_DEVEL
   yf_print_nodeobj(node);
 #endif
   return 0;

@@ -15,25 +15,6 @@
 
 #include "camera.h"
 
-#ifdef YF_DEBUG
-# include <stdio.h>
-# define YF_CAM_PRINT(cam) do { \
-   const char *pos = "\npos: %.5f, %.5f, %.5f"; \
-   const char *dir = "\ndir: %.5f, %.5f, %.5f"; \
-   const char *turnx = "\nturnx: %.5f"; \
-   const char *zoom = "\nzoom: %.5f"; \
-   const char *asp = "\nasp: %.5f"; \
-   printf("\n-- Camera (debug) --"); \
-   printf(pos, cam->pos[0], cam->pos[1], cam->pos[2]); \
-   printf(dir, cam->dir[0], cam->dir[1], cam->dir[2]); \
-   printf(turnx, cam->turn_x); \
-   printf(zoom, cam->zoom); \
-   printf(asp, cam->aspect); \
-   if (yf_vec3_iszero(cam->pos)) \
-    printf("\n** At origin **"); \
-   printf("\n--\n"); } while (0)
-#endif
-
 #define YF_FOV_MIN (YF_float)0.07957747154594767280
 #define YF_FOV_MAX (YF_float)M_PI_4
 
@@ -111,7 +92,7 @@ void yf_camera_place(YF_camera cam, const YF_vec3 pos) {
 
 void yf_camera_point(YF_camera cam, const YF_vec3 pos) {
   assert(cam != NULL);
-#ifdef YF_DEBUG
+#ifdef YF_DEVEL
   assert(!yf_vec3_iseq(pos, cam->pos));
 #else
   if (yf_vec3_iseq(pos, cam->pos)) return;
@@ -252,10 +233,6 @@ const YF_mat4 *yf_camera_getxform(YF_camera cam) {
     update_proj(cam);
   if (cam->pend_mask & YF_PEND_VP)
     update_vp(cam);
-
-#ifdef YF_DEBUG
-  YF_CAM_PRINT(cam);
-#endif
 
   return (const YF_mat4 *)&cam->view_proj;
 }

@@ -229,7 +229,7 @@ void yf_particle_simulate(YF_particle part, double tm) {
   }
 
   YF_slice range = {0, part->count};
-#ifdef YF_DEBUG
+#ifdef YF_DEVEL
   if (yf_mesh_setvtx(part->mesh, range, part->pts) != 0)
     assert(0);
 #else

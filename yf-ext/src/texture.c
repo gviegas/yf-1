@@ -17,23 +17,6 @@
 #include "coreobj.h"
 #include "data-bmp.h"
 
-#ifdef YF_DEBUG
-# include <stdio.h>
-# define YF_TEX_PRINT(tex) do { \
-   printf("\n-- Texture (debug) --"); \
-   printf("\nimge: %p", (void *)tex->imge); \
-   printf("\nlayer: %u", tex->layer); \
-   printf("\nimge - img: %p", (void *)tex->imge->img); \
-   /* \
-   printf("\nimge - lay_used:\n"); \
-   for (unsigned i = 0; i < lay_cap; ++i) \
-    printf("%d'", tex->imge->lay_used[i]); \
-   */ \
-   printf("\nimge - lay_n: %u", tex->imge->lay_n); \
-   printf("\nimge - lay_i: %u", tex->imge->lay_i); \
-   printf("\n--\n"); } while (0)
-#endif
-
 #undef YF_LAYCAP
 #define YF_LAYCAP 64
 
@@ -121,9 +104,6 @@ void yf_texture_deinit(YF_texture tex) {
 
 YF_texture yf_texture_initdt(const YF_texdt *data) {
   assert(data != NULL);
-#ifdef YF_DEBUG
-  yf_print_texdt(data);
-#endif
 
   if (l_ctx == NULL && (l_ctx = yf_getctx()) == NULL)
     return NULL;
@@ -139,10 +119,6 @@ YF_texture yf_texture_initdt(const YF_texdt *data) {
     yf_texture_deinit(tex);
     tex = NULL;
   }
-#ifdef YF_DEBUG
-  if (tex != NULL)
-    YF_TEX_PRINT(tex);
-#endif
   return tex;
 }
 
