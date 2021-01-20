@@ -117,8 +117,6 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
     /* TODO: Other special characters. */
     switch (str[i]) {
       case '\n':
-        /* XXX: Should use other metrics to compute spacing. */
-        dim.width = YF_MAX(dim.width, off.x);
         dim.height += y_max-y_min;
         off.x = 0;
         off.y = dim.height;
@@ -147,7 +145,12 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
     chrs[chr_i].code = str[i];
     chrs[chr_i].off = off;
     ++chr_i;
-    off.x += glyph->val.adv_wdt;
+
+    /* XXX: Should use other metrics to compute spacing. */
+    const int16_t extent = YF_MAX(glyph->val.adv_wdt - glyph->val.lsb,
+        glyph->val.width);
+    off.x += extent;
+    dim.width = YF_MAX(dim.width, off.x);
   }
 
   if (chr_i == 0) {
@@ -157,13 +160,11 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
     return -1;
   }
 
-  if (off.x != 0) {
+  if (off.x != 0)
     /* last valid character is not eol */
-    dim.width = YF_MAX(dim.width, off.x);
     dim.height += y_max-y_min;
-  } else {
+  else
     off.y -= y_max-y_min;
-  }
 
   /* TODO: Use shared textures instead. */
   if (rz->tex != NULL) {
@@ -203,7 +204,7 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
     key.key = chrs[i].code;
     L_kv_glyph *glyph = yf_hashset_search(font->glyphs, &key);
 
-    off.x = bias.x + chrs[i].off.x + glyph->val.lsb;
+    off.x = bias.x + chrs[i].off.x;
     off.y = bias.y - chrs[i].off.y + (glyph->val.base_h - y_min);
     dim = (YF_dim2){glyph->val.width, glyph->val.height};
 

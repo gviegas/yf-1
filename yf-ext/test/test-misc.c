@@ -21,7 +21,7 @@
 #include "vertex.h"
 
 #define YF_WINW 780
-#define YF_WINH 130
+#define YF_WINH 160
 #define YF_WINT "Misc"
 
 /* Shared variables. */
@@ -174,9 +174,9 @@ static void init(void) {
   assert(labl != NULL);
   yf_label_setfont(labl, font);
   const wchar_t str[] =
-    L"_'abcdefghijklmnopqrstuvwxyz\n"
-    L"=-ABCDEFGHIJKLMNOPQRSTUVWXYZ.,!@#$%^&*()_+=-`\n"
-    L"`:;|/<>[]{}1234567890\"_?";
+    L"abcdefghijklmnopqrstuvwxyz\n"
+    L"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
+    L"_1234567890`!@#$%^&*()-=+{}[]?!<>:;\"'|\\/,._\n";
   assert(yf_label_setstr(labl, str) == 0);
   assert(yf_label_setpt(labl, 144) == 0);
 
@@ -286,7 +286,7 @@ static int run(void) {
 
   /* TODO: Deinitialization. */
   idle.tv_sec = 0;
-  idle.tv_nsec = 10000000;
+  idle.tv_nsec = 100000000;
   clock_nanosleep(CLOCK_MONOTONIC, 0, &idle, NULL);
 
   return 0;
