@@ -147,7 +147,8 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
     ++chr_i;
 
     /* XXX: Should use other metrics to compute spacing. */
-    const int16_t extent = glyph->val.width;
+    const int16_t extent = YF_MAX(glyph->val.adv_wdt - glyph->val.lsb,
+        glyph->val.width);
     off.x += extent;
     dim.width = YF_MAX(dim.width, off.x);
   }
