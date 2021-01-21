@@ -2,7 +2,7 @@
  * YF
  * yf-terrain.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_TERRAIN_H
@@ -60,7 +60,7 @@ YF_mesh yf_terrain_getmesh(YF_terrain terr);
  * Gets the height map of a terrain.
  *
  * @param terr: The terrain.
- * @return: The heigh map used by the terrain, or 'NULL' if none is set.
+ * @return: The height map used by the terrain, or 'NULL' if none is set.
  */
 YF_texture yf_terrain_gethmap(YF_terrain terr);
 
@@ -84,7 +84,7 @@ YF_texture yf_terrain_gettex(YF_terrain terr);
  * Sets the texture for a terrain.
  *
  * @param terr: The terrain.
- * @param hmap: The texture to set. Can be 'NULL'.
+ * @param tex: The texture to set. Can be 'NULL'.
  */
 void yf_terrain_settex(YF_terrain terr, YF_texture tex);
 
