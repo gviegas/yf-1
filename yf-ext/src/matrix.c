@@ -450,10 +450,10 @@ void yf_mat4_ortho(YF_mat4 m, YF_float left, YF_float right,
 #endif
   memset(m, 0, sizeof(YF_mat4));
   m[0] = +two / (right - left);
-  m[5] = +two / (top - bottom);
+  m[5] = +two / (bottom - top);
   m[10] = -two / (zfar - znear);
   m[12] = -(right + left) / (right - left);
-  m[13] = -(top + bottom) / (top - bottom);
+  m[13] = -(bottom + top) / (bottom - top);
   m[14] = -(zfar + znear) / (zfar - znear);
   m[15] = one;
 }

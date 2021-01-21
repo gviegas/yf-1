@@ -184,7 +184,7 @@ static void init(void) {
 
   /* Data copy */
   YF_mat4 m;
-  yf_mat4_ortho(m, -1.0, 1.0, 1.0, -1.0, 0.0, -1.0);
+  yf_mat4_ortho(m, -1.0, 1.0, -1.0, 1.0, 0.0, -1.0);
 
   if (yf_buffer_copy(buf, 0, m, sizeof m) != 0)
     assert(0);
