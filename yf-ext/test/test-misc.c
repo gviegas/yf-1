@@ -20,8 +20,8 @@
 #include "mesh.h"
 #include "vertex.h"
 
-#define YF_WINW 780
-#define YF_WINH 160
+#define YF_WINW 1080
+#define YF_WINH 72
 #define YF_WINT "Misc"
 
 /* Shared variables. */
@@ -173,10 +173,12 @@ static void init(void) {
   YF_label labl = yf_label_init();
   assert(labl != NULL);
   yf_label_setfont(labl, font);
-  const wchar_t str[] =
+  const wchar_t str[] = L"The quick brown fox jumps over the lazy dog.";
+/*
     L"abcdefghijklmnopqrstuvwxyz\n"
     L"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
     L"_1234567890`!@#$%^&*()-=+{}[]?!<>:;\"'|\\/,._\n";
+*/
   assert(yf_label_setstr(labl, str) == 0);
   assert(yf_label_setpt(labl, 144) == 0);
 

@@ -204,6 +204,9 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
     key.key = chrs[i].code;
     L_kv_glyph *glyph = yf_hashset_search(font->glyphs, &key);
 
+    if (glyph->val.bitmap.u8 == NULL)
+      continue;
+
     off.x = bias.x + chrs[i].off.x;
     off.y = bias.y - chrs[i].off.y + (glyph->val.base_h - y_min);
     dim = (YF_dim2){glyph->val.width, glyph->val.height};
