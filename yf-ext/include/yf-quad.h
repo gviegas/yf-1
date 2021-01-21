@@ -2,7 +2,7 @@
  * YF
  * yf-quad.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_QUAD_H
@@ -58,7 +58,7 @@ YF_mesh yf_quad_getmesh(YF_quad quad);
  * Gets the texture of a quad.
  *
  * @param quad: The quad.
- * @param tex: The texture used by the quad, or 'NULL' if none is set.
+ * @return: The texture used by the quad, or 'NULL' if none is set.
  */
 YF_texture yf_quad_gettex(YF_quad quad);
 
