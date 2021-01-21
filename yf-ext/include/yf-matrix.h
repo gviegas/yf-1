@@ -2,7 +2,7 @@
  * YF
  * yf-matrix.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_MATRIX_H
@@ -126,7 +126,7 @@ void yf_mat3_rot(YF_mat3 m, YF_float angle, const YF_vec3 axis);
 void yf_mat4_rot(YF_mat4 m, YF_float angle, const YF_vec3 axis);
 
 /**
- * Computes a rotation matrix for x, y or z axis.
+ * Computes a rotation matrix for the x, y or z-axis.
  *
  * @param m: The destination matrix.
  * @param angle: The rotation angle, in radians.
@@ -142,9 +142,9 @@ void yf_mat4_rotz(YF_mat4 m, YF_float angle);
  * Computes a scaling matrix.
  *
  * @param m: The destination matrix.
- * @param sx: The x scale.
- * @param sy: The y scale.
- * @param sz: The z scale.
+ * @param sx: The x-axis scale.
+ * @param sy: The y-axis scale.
+ * @param sz: The z-axis scale.
  */
 void yf_mat3_scale(YF_mat3 m, YF_float sx, YF_float sy, YF_float sz);
 void yf_mat4_scale(YF_mat4 m, YF_float sx, YF_float sy, YF_float sz);
@@ -153,9 +153,9 @@ void yf_mat4_scale(YF_mat4 m, YF_float sx, YF_float sy, YF_float sz);
  * Computes a translation matrix.
  *
  * @param m: The destination matrix.
- * @param tx: The x translation.
- * @param ty: The y translation.
- * @param tz: The z translation.
+ * @param tx: The x-axis translation.
+ * @param ty: The y-axis translation.
+ * @param tz: The z-axis translation.
  */
 void yf_mat4_xlate(YF_mat4 m, YF_float tx, YF_float ty, YF_float tz);
 
