@@ -1541,13 +1541,13 @@ static void scale_metrics(void *font, uint16_t pt, uint16_t dpi,
   const float scale = (float)(pt*dpi) / (float)(fnt->met.upem*72);
 
   if (x_min != NULL)
-    *x_min = round(fnt->met.x_min*scale);
+    *x_min = roundf(fnt->met.x_min*scale);
   if (y_min != NULL)
-    *y_min = round(fnt->met.y_min*scale);
+    *y_min = roundf(fnt->met.y_min*scale);
   if (x_max != NULL)
-    *x_max = round(fnt->met.x_max*scale);
+    *x_max = roundf(fnt->met.x_max*scale);
   if (y_max != NULL)
-    *y_max = round(fnt->met.y_max*scale);
+    *y_max = roundf(fnt->met.y_max*scale);
 }
 
 /* Checks whether a glyph is made of parts (compound/composite). */
@@ -1913,7 +1913,7 @@ static void deinit_outline(L_outline *outln) {
 #define YF_SFNT_FIXTOINT(x) \
   (((x)>>YF_SFNT_Q)+((((x)&(1<<(YF_SFNT_Q-1)))>>(YF_SFNT_Q-1))))
 
-#define YF_SFNT_FLTTOFIX(x) ((int32_t)round((float)(x)*(1<<YF_SFNT_Q)))
+#define YF_SFNT_FLTTOFIX(x) ((int32_t)roundf((float)(x)*(1<<YF_SFNT_Q)))
 #define YF_SFNT_FIXTOFLT(x) ((float)(x)*(1.0f/(1<<YF_SFNT_Q)))
 
 #define YF_SFNT_FIXMUL(x, y) ((((x)*(y))+(1<<(YF_SFNT_Q-1)))>>YF_SFNT_Q)
@@ -2113,8 +2113,8 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
     glyph->bpp = 8;
     glyph->bitmap.u8 = NULL;
     glyph->base_h = YF_SFNT_FIXTOINT(outln->y_min);
-    glyph->adv_wdt = round(outln->scale*outln->adv_wdt);
-    glyph->lsb = round(outln->scale*outln->lsb);
+    glyph->adv_wdt = roundf(outln->scale*outln->adv_wdt);
+    glyph->lsb = roundf(outln->scale*outln->lsb);
     return 0;
   }
 
@@ -2237,8 +2237,8 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
   glyph->bpp = 8;
   glyph->bitmap.u8 = bitmap;
   glyph->base_h = YF_SFNT_FIXTOINT(outln->y_min);
-  glyph->adv_wdt = round(outln->scale*outln->adv_wdt);
-  glyph->lsb = round(outln->scale*outln->lsb);
+  glyph->adv_wdt = roundf(outln->scale*outln->adv_wdt);
+  glyph->lsb = roundf(outln->scale*outln->lsb);
 
   free(segs);
   return 0;
