@@ -69,11 +69,11 @@ YF_mesh yf_mesh_init(int filetype, const char *pathname) {
   YF_meshdt data = {0};
   switch (filetype) {
     case YF_FILETYPE_INTERNAL:
-      /* TODO */
-      assert(0);
     case YF_FILETYPE_COLLADA:
+    case YF_FILETYPE_GLTF:
       /* TODO */
       assert(0);
+      return NULL;
     case YF_FILETYPE_OBJ:
       if (yf_loadobj(pathname, &data) != 0)
         return NULL;
