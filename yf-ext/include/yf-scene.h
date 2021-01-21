@@ -2,7 +2,7 @@
  * YF
  * yf-scene.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_SCENE_H
@@ -71,6 +71,9 @@ void yf_scene_setcolor(YF_scene scn, YF_color color);
 
 /**
  * Deinitializes a scene.
+ *
+ * NOTE: One must ensure that the scene is not set for any views before
+ * calling this function.
  *
  * @param scn: The scene to deinitialize. Can be 'NULL'.
  */
