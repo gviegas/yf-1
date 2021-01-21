@@ -217,6 +217,15 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
   return 0;
 }
 
+void yf_font_yieldrz(YF_font font, YF_fontrz *rz) {
+  assert(font != NULL);
+  assert(rz != NULL);
+
+  /* TODO: Shared textures. */
+  yf_texture_deinit(rz->tex);
+  memset(rz, 0, sizeof *rz);
+}
+
 static size_t hash_glyph(const void *x) {
   return ((L_kv_glyph *)x)->key ^ 21221;
 }
