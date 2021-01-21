@@ -104,8 +104,8 @@ void yf_label_setfont(YF_label labl, YF_font font) {
 
   if (font == labl->font)
     return;
-
-  /* TODO: Yield texture. */
+  if (labl->font != NULL)
+    yf_font_yieldrz(labl->font, &labl->rz);
 
   labl->font = font;
   labl->changed = 1;
@@ -174,7 +174,10 @@ void yf_label_deinit(YF_label labl) {
   if (labl != NULL) {
     yf_node_deinit(labl->node);
     yf_mesh_deinit(labl->mesh);
-    /* TODO: Yield texture. */
+
+    if (labl->font != NULL)
+      yf_font_yieldrz(labl->font, &labl->rz);
+
     free(labl->str);
     free(labl);
   }
