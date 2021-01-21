@@ -2,7 +2,7 @@
  * YF
  * yf-node.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_NODE_H
@@ -88,7 +88,7 @@ int yf_node_isleaf(YF_node node);
  * Gets the length of a node's subgraph.
  *
  * @param: The node.
- * @return: The lenght of the subgraph. This value will be at least one.
+ * @return: The length of the subgraph. This value will be at least one.
  */
 size_t yf_node_getlen(YF_node node);
 
