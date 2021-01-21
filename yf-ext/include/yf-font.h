@@ -1,8 +1,8 @@
 /*
  * YF
- * yf-font.h.
+ * yf-font.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_FONT_H
