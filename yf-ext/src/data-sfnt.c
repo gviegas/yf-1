@@ -1653,7 +1653,6 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
   }
 
   const uint32_t off = font->ttf.loca[id];
-  /*const uint32_t len = font->ttf.loca[id+1] - off;*/
   assert((off % _Alignof(L_glyfd)) == 0);
   const L_glyfd *gd = (L_glyfd *)(font->ttf.glyf+off);
 
@@ -1662,7 +1661,12 @@ static int fetch_glyph(L_font *font, wchar_t code, L_outline *outln) {
   outln->x_max = (int16_t)be16toh(gd->x_max);
   outln->y_max = (int16_t)be16toh(gd->y_max);
 
-  if (YF_SFNT_ISCOMPND(font, id)) {
+  const uint32_t len = font->ttf.loca[id+1] - off;
+  if (len == 0) {
+    /* glyph has no outline */
+    outln->comp_n = 0;
+    outln->comps = NULL;
+  } else if (YF_SFNT_ISCOMPND(font, id)) {
     /* allocate max. components and let callee update the count */
     outln->comp_n = 0;
     outln->comps = calloc(font->comp_elem_max, sizeof *outln->comps);
@@ -1924,7 +1928,6 @@ static void deinit_outline(L_outline *outln) {
 
 static int scale_outline(L_outline *outln) {
   assert(outln != NULL);
-  assert(outln->comps != NULL);
 
   const float fac = outln->scale;
 
@@ -2101,8 +2104,19 @@ typedef struct {
 
 static int rasterize(L_outline *outln, YF_glyph *glyph) {
   assert(outln != NULL);
-  assert(outln->comps != NULL);
   assert(glyph != NULL);
+
+  if (outln->comps == 0) {
+    /* no contours to rasterize */
+    glyph->width = YF_SFNT_FIXTOINT(outln->x_max - outln->x_min);
+    glyph->height = YF_SFNT_FIXTOINT(outln->y_max - outln->y_min);
+    glyph->bpp = 0;
+    glyph->bitmap.u8 = NULL;
+    glyph->base_h = YF_SFNT_FIXTOINT(outln->y_min);
+    glyph->adv_wdt = round(outln->scale*outln->adv_wdt);
+    glyph->lsb = round(outln->scale*outln->lsb);
+    return 0;
+  }
 
 #undef YF_NEWSEG
 #define YF_NEWSEG(seg, comp, i, j) do { \
