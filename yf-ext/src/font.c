@@ -38,22 +38,25 @@ static int deinit_glyph(void *val, void *arg);
 
 YF_font yf_font_init(int filetype, const char *pathname) {
   YF_fontdt data = {0};
+
   switch (filetype) {
     case YF_FILETYPE_INTERNAL:
       /* TODO */
       assert(0);
+      return NULL;
     case YF_FILETYPE_TTF:
-      if (yf_loadsfnt(pathname, &data) != 0) {
+      if (yf_loadsfnt(pathname, &data) != 0)
         return NULL;
-      }
       break;
     default:
       yf_seterr(YF_ERR_INVARG, __func__);
       return NULL;
   }
+
   YF_font font = yf_font_initdt(&data);
   if (font == NULL && data.deinit != NULL)
     data.deinit(data.font);
+
   return font;
 }
 

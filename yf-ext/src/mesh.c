@@ -67,6 +67,7 @@ static size_t resize_blks(size_t new_cap);
 
 YF_mesh yf_mesh_init(int filetype, const char *pathname) {
   YF_meshdt data = {0};
+
   switch (filetype) {
     case YF_FILETYPE_INTERNAL:
     case YF_FILETYPE_COLLADA:
@@ -82,6 +83,7 @@ YF_mesh yf_mesh_init(int filetype, const char *pathname) {
       yf_seterr(YF_ERR_INVARG, __func__);
       return NULL;
   }
+
   YF_mesh mesh = yf_mesh_initdt(&data);
   free(data.v.data);
   free(data.i.data);

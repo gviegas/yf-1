@@ -58,13 +58,13 @@ static int cmp_kv(const void *a, const void *b);
 
 YF_texture yf_texture_init(int filetype, const char *pathname) {
   YF_texdt data = {0};
+
   switch (filetype) {
     case YF_FILETYPE_INTERNAL:
-      /* TODO */
-      assert(0);
     case YF_FILETYPE_PNG:
       /* TODO */
       assert(0);
+      return NULL;
     case YF_FILETYPE_BMP:
       if (yf_loadbmp(pathname, &data) != 0)
         return NULL;
@@ -73,6 +73,7 @@ YF_texture yf_texture_init(int filetype, const char *pathname) {
       yf_seterr(YF_ERR_INVARG, __func__);
       return NULL;
   }
+
   YF_texture tex = yf_texture_initdt(&data);
   free(data.data);
   return tex;
