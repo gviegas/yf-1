@@ -2110,7 +2110,7 @@ static int rasterize(L_outline *outln, YF_glyph *glyph) {
     /* no contours to rasterize */
     glyph->width = YF_SFNT_FIXTOINT(outln->x_max - outln->x_min);
     glyph->height = YF_SFNT_FIXTOINT(outln->y_max - outln->y_min);
-    glyph->bpp = 0;
+    glyph->bpp = 8;
     glyph->bitmap.u8 = NULL;
     glyph->base_h = YF_SFNT_FIXTOINT(outln->y_min);
     glyph->adv_wdt = round(outln->scale*outln->adv_wdt);
