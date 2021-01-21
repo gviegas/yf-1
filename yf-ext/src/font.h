@@ -59,8 +59,13 @@ typedef struct {
   YF_dim2 dim;
 } YF_fontrz;
 
-/* Rasterizes font glyphs. */
+/* Rasterizes font glyphs.
+   The 'rz' structure will contain the texture range for a bitmap 'str'. */
 int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
     YF_fontrz *rz);
+
+/* Yields a texture range obtained from a call to 'yf_font_rasterize'.
+   Calls to 'rasterize' and 'yieldrz' must be paired to avoid leaks. */
+void yf_font_yieldrz(YF_font font, YF_fontrz *rz);
 
 #endif /* YF_FONT_H */
