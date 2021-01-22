@@ -154,10 +154,14 @@ int yf_resmgr_setallocn(int resrq, unsigned n) {
 int yf_resmgr_prealloc(int resrq) {
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
 
-  if (l_allocn[resrq] == 0 || l_entries[resrq].gst != NULL) {
+  if (l_allocn[resrq] == 0)
+    return 0;
+
+  if (l_entries[resrq].gst != NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
   }
+
   return init_entry(resrq);
 }
 
