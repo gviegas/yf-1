@@ -72,22 +72,22 @@ void yf_printerr(void) {
       s = "Queue full";
       break;
     case YF_ERR_NOTFND:
-      s = "Value not found";
+      s = "Not found";
       break;
     case YF_ERR_EXIST:
-      s = "Value exists";
+      s = "Exist";
       break;
     case YF_ERR_INVWIN:
       s = "Invalid window";
       break;
     case YF_ERR_UNSUP:
-      s = "Operation not supported";
+      s = "Unsupported";
       break;
     case YF_ERR_OFLOW:
       s = "Overflow";
       break;
     case YF_ERR_LIMIT:
-      s = "Limit reached";
+      s = "Limit";
       break;
     case YF_ERR_DEVGEN:
       s = "Device-specific";
