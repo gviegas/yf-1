@@ -2,7 +2,7 @@
  * YF
  * error.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -18,7 +18,7 @@ static _Thread_local char l_info[YF_STR_MAXLEN] = {'\0'};
 
 void yf_seterr(int err, YF_UNUSED const char *info) {
   l_err = err;
-#ifdef YF_DEBUG
+#ifdef YF_DEVEL
   if (info != NULL)
     strncpy(l_info, info, YF_STR_MAXLEN-1)[YF_STR_MAXLEN-1] = '\0';
   else
