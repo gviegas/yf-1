@@ -2,7 +2,7 @@
  * YF
  * platform-xcb.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <string.h>
@@ -657,7 +657,7 @@ static void getsize_win(void *win, unsigned *width, unsigned *height) {
 
 static void deinit_win(void *win) {
   if (l_handle != NULL && yf_g_varsxcb.conn != NULL) {
-    xcb_void_cookie_t unused;
+    YF_UNUSED xcb_void_cookie_t unused;
     YF_XCB_DESTROY_WINDOW(unused, yf_g_varsxcb.conn, ((L_win *)win)->win_id);
   }
 
@@ -901,6 +901,6 @@ static int poll_evt(unsigned evt_mask) {
   return 0;
 }
 
-static void changed_evt(int evt) {
+static void changed_evt(YF_UNUSED int evt) {
   /* TODO */
 }
