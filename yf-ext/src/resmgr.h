@@ -2,7 +2,7 @@
  * YF
  * resmgr.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_RESMGR_H
@@ -10,14 +10,14 @@
 
 #include <yf/core/yf-gstate.h>
 
-/* Resource requirements for model objects. */
-/* TODO */
-#define YF_RESRQ_MDL    0
-#define YF_RESRQ_MDL4   1
-#define YF_RESRQ_MDL16  2
-#define YF_RESRQ_MDL64  3
+/* Resource requirements for node objects. */
+#define YF_RESRQ_MDL   0
+#define YF_RESRQ_MDL4  1
+#define YF_RESRQ_MDL16 2
+#define YF_RESRQ_MDL64 3
+#define YF_RESRQ_TERR  4
 
-#define YF_RESRQ_N 4
+#define YF_RESRQ_N 5
 
 /* Obtains a resource that satisfies the given requirements. */
 YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc);
@@ -45,18 +45,16 @@ void yf_resmgr_clear(void);
  */
 
 /* Index numbers used for dtable resources. */
-/* TODO */
 #define YF_RESIDX_GLOB 0
 #define YF_RESIDX_INST 1
 
 /* Binding numbers used for dtable resources. */
-/* TODO */
-#define YF_RESBIND_UGLOB 0
-#define YF_RESBIND_UINST 0
-#define YF_RESBIND_ISTEX 1
+#define YF_RESBIND_UGLOB  0
+#define YF_RESBIND_UINST  0
+#define YF_RESBIND_ISTEX  1
+#define YF_RESBIND_ISHMAP 3
 
 /* Location numbers used for vinput resources. */
-/* TODO */
 #define YF_RESLOC_POS  0
 #define YF_RESLOC_TC   1
 #define YF_RESLOC_NORM 2
