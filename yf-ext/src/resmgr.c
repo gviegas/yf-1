@@ -24,10 +24,12 @@
 # define YF_SHD_FILEEXT ".spv"
 #endif
 
+/* XXX: This arbitrary defaults are expected to be replaced by 'setallocn'. */
 #define YF_ALLOCN_MDL   64
 #define YF_ALLOCN_MDL4  16
 #define YF_ALLOCN_MDL16 16
 #define YF_ALLOCN_MDL64 4
+#define YF_ALLOCN_TERR  8
 
 /* Type defining an entry in the resource list. */
 typedef struct {
@@ -45,7 +47,8 @@ static unsigned l_allocn[YF_RESRQ_N] = {
   [YF_RESRQ_MDL]   = YF_ALLOCN_MDL,
   [YF_RESRQ_MDL4]  = YF_ALLOCN_MDL4,
   [YF_RESRQ_MDL16] = YF_ALLOCN_MDL16,
-  [YF_RESRQ_MDL64] = YF_ALLOCN_MDL64
+  [YF_RESRQ_MDL64] = YF_ALLOCN_MDL64,
+  [YF_RESRQ_TERR]  = YF_ALLOCN_TERR
 };
 
 /* Initializes the entry of a given 'resrq' value. */
@@ -56,6 +59,9 @@ static void deinit_entry(int resrq);
 
 /* Initializes the entry of a model resource. */
 static int init_mdl(L_entry *entry, unsigned elements);
+
+/* Initializes the entry of a terrain resource. */
+static int init_terr(L_entry *entry);
 
 /* Makes a string to use as the pathname of a shader module.
    The caller is responsible for deallocating the returned string. */
@@ -172,9 +178,9 @@ void yf_resmgr_clear(void) {
 
 static int init_entry(int resrq) {
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
+  assert(l_allocn[resrq] > 0);
 
   const unsigned n = l_allocn[resrq];
-  assert(n > 0);
   l_entries[resrq].obtained = calloc(n, sizeof *l_entries[resrq].obtained);
   if (l_entries[resrq].obtained == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -193,6 +199,8 @@ static int init_entry(int resrq) {
       return init_mdl(l_entries+resrq, 16);
     case YF_RESRQ_MDL64:
       return init_mdl(l_entries+resrq, 64);
+    case YF_RESRQ_TERR:
+      return init_terr(l_entries+resrq);
     default:
       assert(0);
       return -1;
@@ -308,6 +316,11 @@ static int init_mdl(L_entry *entry, unsigned elements) {
     return -1;
   }
   return 0;
+}
+
+static int init_terr(L_entry *entry) {
+  /* TODO */
+  assert(0);
 }
 
 static char *make_shdpath(int nodeobj, int stage, unsigned elements) {
