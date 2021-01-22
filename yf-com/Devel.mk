@@ -4,7 +4,7 @@
 # YF
 # Devel.mk
 #
-# Copyright © 2020 Gustavo C. Viegas.
+# Copyright © 2020-2021 Gustavo C. Viegas.
 #
 
 SHELL := /bin/sh
@@ -35,7 +35,7 @@ LD_LIBS := -lm
 LD_FLAGS := -iquote $(INCLUDE_DIR) -iquote $(SRC_DIR)
 
 PP := $(CC) -E
-PP_FLAGS := -D YF_COM -D YF_DEVEL -D YF_DEBUG
+PP_FLAGS := -D YF_COM -D YF_DEVEL
 
 OUT := $(BIN_DIR)devel
 

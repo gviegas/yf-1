@@ -4,7 +4,7 @@
 # YF
 # Lib.mk
 #
-# Copyright © 2020 Gustavo C. Viegas.
+# Copyright © 2020-2021 Gustavo C. Viegas.
 #
 
 SHELL := /bin/sh
@@ -42,8 +42,8 @@ LD_FLAGS := -iquote $(INCLUDE_DIR) -iquote $(SRC_DIR)
 
 PP := $(CC) -E
 #PP_FLAGS := -D YF_COM
-# XXX: Enabling debug flag here for now.
-PP_FLAGS := -D YF_COM -D YF_DEBUG
+# XXX: Enabling devel. flag here for now.
+PP_FLAGS := -D YF_COM -D YF_DEVEL
 
 all:
 
