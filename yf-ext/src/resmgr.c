@@ -123,7 +123,6 @@ int yf_resmgr_setallocn(int resrq, unsigned n) {
 
   if (l_entries[resrq].gst != NULL) {
     YF_dtable dtb = yf_gstate_getdtb(l_entries[resrq].gst, YF_RESIDX_INST);
-    /* this does the right thing when 'n' is zero */
     if (yf_dtable_alloc(dtb, n) != 0) {
       l_entries[resrq].n = 0;
       return -1;
@@ -233,19 +232,21 @@ static int init_mdl(L_entry *entry, unsigned elements) {
     free(frag_path);
     return -1;
   }
-  YF_modid vert_mod, frag_mod;
+
+  YF_modid vert_mod;
   if (yf_loadmod(ctx, vert_path, &vert_mod) != 0) {
     free(vert_path);
     free(frag_path);
     return -1;
   }
+  free(vert_path);
+
+  YF_modid frag_mod;
   if (yf_loadmod(ctx, frag_path, &frag_mod) != 0) {
     yf_unldmod(ctx, vert_mod);
-    free(vert_path);
     free(frag_path);
     return -1;
   }
-  free(vert_path);
   free(frag_path);
 
   const YF_stage stgs[] = {
@@ -262,23 +263,23 @@ static int init_mdl(L_entry *entry, unsigned elements) {
     {YF_RESBIND_UINST, YF_DTYPE_UNIFORM, 1, NULL},
     {YF_RESBIND_ISTEX, YF_DTYPE_ISAMPLER, 1, NULL}
   };
-  unsigned ent_sz;
 
-  ent_sz = sizeof glob_ents / sizeof glob_ents[0];
-  YF_dtable glob_dtb = yf_dtable_init(ctx, glob_ents, ent_sz);
-  ent_sz = sizeof inst_ents / sizeof inst_ents[0];
-  YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents, ent_sz);
+  YF_dtable glob_dtb = yf_dtable_init(ctx, glob_ents,
+      sizeof glob_ents / sizeof glob_ents[0]);
+  YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
+      sizeof inst_ents / sizeof inst_ents[0]);
 
   if (glob_dtb == NULL || inst_dtb == NULL ||
       yf_dtable_alloc(glob_dtb, 1) != 0 ||
       yf_dtable_alloc(inst_dtb, entry->n) != 0)
   {
-    yf_dtable_deinit(glob_dtb);
-    yf_dtable_deinit(inst_dtb);
     yf_unldmod(ctx, vert_mod);
     yf_unldmod(ctx, frag_mod);
+    yf_dtable_deinit(glob_dtb);
+    yf_dtable_deinit(inst_dtb);
     return -1;
   }
+
   const YF_dtable dtbs[] = {glob_dtb, inst_dtb};
   const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
@@ -307,6 +308,7 @@ static int init_mdl(L_entry *entry, unsigned elements) {
     YF_CULLMODE_BACK,
     YF_WINDING_CCW
   };
+
   entry->gst = yf_gstate_init(ctx, &conf);
   if (entry->gst == NULL) {
     for (unsigned i = 0; i < stg_n; ++i)
@@ -315,12 +317,112 @@ static int init_mdl(L_entry *entry, unsigned elements) {
       yf_dtable_deinit(dtbs[i]);
     return -1;
   }
+
   return 0;
 }
 
 static int init_terr(L_entry *entry) {
-  /* TODO */
-  assert(0);
+  YF_context ctx = yf_getctx();
+  YF_pass pass = yf_getpass();
+  if (ctx == NULL || pass == NULL)
+    return -1;
+
+  /* stages */
+  char *vert_path = make_shdpath(YF_NODEOBJ_TERRAIN, YF_STAGE_VERT, 1);
+  char *frag_path = make_shdpath(YF_NODEOBJ_TERRAIN, YF_STAGE_FRAG, 1);
+  if (vert_path == NULL || frag_path == NULL) {
+    free(vert_path);
+    free(frag_path);
+    return -1;
+  }
+
+  YF_modid vert_mod;
+  if (yf_loadmod(ctx, vert_path, &vert_mod) != 0) {
+    free(vert_path);
+    free(frag_path);
+    return -1;
+  }
+  free(vert_path);
+
+  YF_modid frag_mod;
+  if (yf_loadmod(ctx, frag_path, &frag_mod) != 0) {
+    yf_unldmod(ctx, vert_mod);
+    free(frag_path);
+    return -1;
+  }
+  free(frag_path);
+
+  const YF_stage stgs[] = {
+    {YF_STAGE_VERT, vert_mod, "main"},
+    {YF_STAGE_FRAG, frag_mod, "main"}
+  };
+  const unsigned stg_n = sizeof stgs / sizeof stgs[0];
+
+  /* dtables */
+  const YF_dentry glob_ents[] = {
+    {YF_RESBIND_UGLOB, YF_DTYPE_UNIFORM, 1, NULL}
+  };
+  const YF_dentry inst_ents[] = {
+    {YF_RESBIND_UINST, YF_DTYPE_UNIFORM, 1, NULL},
+    {YF_RESBIND_ISTEX, YF_DTYPE_ISAMPLER, 1, NULL},
+    {YF_RESBIND_ISHMAP, YF_DTYPE_ISAMPLER, 1, NULL}
+  };
+
+  YF_dtable glob_dtb = yf_dtable_init(ctx, glob_ents,
+      sizeof glob_ents / sizeof glob_ents[0]);
+  YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
+      sizeof inst_ents / sizeof inst_ents[0]);
+
+  if (glob_dtb == NULL || inst_dtb == NULL ||
+      yf_dtable_alloc(glob_dtb, 1) != 0 ||
+      yf_dtable_alloc(inst_dtb, entry->n) != 0)
+  {
+    yf_unldmod(ctx, vert_mod);
+    yf_unldmod(ctx, frag_mod);
+    yf_dtable_deinit(glob_dtb);
+    yf_dtable_deinit(inst_dtb);
+    return -1;
+  }
+
+  const YF_dtable dtbs[] = {glob_dtb, inst_dtb};
+  const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
+
+  /* vinputs */
+  const YF_vattr attrs[] = {
+    {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
+    {YF_RESLOC_TC, YF_TYPEFMT_FLOAT2, offsetof(YF_vterr, tc)},
+    {YF_RESLOC_NORM, YF_TYPEFMT_FLOAT3, offsetof(YF_vterr, norm)}
+  };
+  const YF_vinput vins[] = {
+    {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vterr), YF_VRATE_VERT}
+  };
+  const unsigned vin_n = sizeof vins / sizeof vins[0];
+
+  /* gstate */
+  const YF_gconf conf = {
+    pass,
+    stgs,
+    stg_n,
+    dtbs,
+    dtb_n,
+    vins,
+    vin_n,
+    YF_PRIMITIVE_TRIANGLE,
+    YF_POLYMODE_FILL,
+    YF_CULLMODE_BACK,
+    YF_WINDING_CCW
+  };
+
+  entry->gst = yf_gstate_init(ctx, &conf);
+  if (entry->gst == NULL) {
+    for (unsigned i = 0; i < stg_n; ++i)
+      yf_unldmod(ctx, stgs[i].mod);
+    for (unsigned i = 0; i < dtb_n; ++i)
+      yf_dtable_deinit(dtbs[i]);
+    return -1;
+  }
+
+  return 0;
 }
 
 static char *make_shdpath(int nodeobj, int stage, unsigned elements) {
