@@ -2,7 +2,7 @@
  * YF
  * test.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -20,6 +20,9 @@ int main(int argc, char *argv[]) {
   if (argc == 1) {
     printf("[YF][%s] - Test\n! Error: missing test ID\n", yf_g_test.name);
     printf("! Usage: %s TEST_ID [parameters]\n", argv[0]);
+    printf("TEST_ID must be one of the following:\n");
+    for (size_t i = 0; i < yf_g_test.id_n; ++i)
+      printf(" %s\n", yf_g_test.ids[i]);
     return -1;
   }
 

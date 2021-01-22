@@ -2,7 +2,7 @@
  * YF
  * com-test.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -578,6 +578,14 @@ static int test_hashset(void) {
   return 0;
 }
 
+static const char *l_ids[] = {
+  YF_TEST_ERROR,
+  YF_TEST_CLOCK,
+  YF_TEST_LIST,
+  YF_TEST_HASHSET,
+  YF_TEST_ALL
+};
+
 /* Test function. */
 static int test(int argc, char *argv[]) {
   assert(argc > 0);
@@ -609,15 +617,9 @@ static int test(int argc, char *argv[]) {
     for (size_t i = 0; i < test_n; ++i)
       results += tests[i]() == 0;
   } else {
-    fprintf(
-      stderr,
-      "! No test named '%s'. Try:\n%s\n%s\n%s\n%s\n%s\n",
-      argv[0],
-      YF_TEST_ERROR,
-      YF_TEST_CLOCK,
-      YF_TEST_LIST,
-      YF_TEST_HASHSET,
-      YF_TEST_ALL);
+    fprintf(stderr, "! No test named '%s'. Try:\n", argv[0]);
+    for (size_t i = 0; i < (sizeof l_ids / sizeof l_ids[0]); ++i)
+      fprintf("%s\n", l_ids[i]);
     return -1;
   }
 
@@ -629,4 +631,4 @@ static int test(int argc, char *argv[]) {
   return 0;
 }
 
-const YF_test yf_g_test = {"com", test};
+const YF_test yf_g_test = {"com", test, l_ids, sizeof l_ids / sizeof l_ids[0]};
