@@ -273,7 +273,9 @@ static int init_vars(void) {
     [YF_RESRQ_MDL] = 128,
     [YF_RESRQ_MDL4] = 48,
     [YF_RESRQ_MDL16] = 48,
-    [YF_RESRQ_MDL64] = 16
+    [YF_RESRQ_MDL64] = 16,
+    /* TODO */
+    [YF_RESRQ_TERR] = 0
   };
   size_t inst_min = 0;
   size_t inst_sum = 0;
@@ -305,6 +307,10 @@ static int init_vars(void) {
           break;
         case YF_RESRQ_MDL64:
           buf_sz += insts[i] * 64 * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          break;
+        case YF_RESRQ_TERR:
+          /* TODO */
+          buf_sz += 0;
           break;
         /* TODO: Other objects. */
         default:
