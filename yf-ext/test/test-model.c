@@ -2,7 +2,7 @@
  * YF
  * test-model.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -10,6 +10,7 @@
 #include <time.h>
 #include <assert.h>
 
+#include <yf/com/yf-util.h>
 #include <yf/wsys/yf-event.h>
 #include <yf/wsys/yf-keyboard.h>
 
@@ -19,10 +20,6 @@
 #define YF_WINH 600
 #define YF_WINT "Model"
 #define YF_FPS 60
-
-#ifndef YF_MIN
-# define YF_MIN(a, b) (a < b ? a : b)
-#endif
 
 /* Local variables. */
 struct L_vars {
