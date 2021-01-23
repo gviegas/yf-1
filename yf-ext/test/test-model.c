@@ -29,10 +29,11 @@ struct L_vars {
 #define YF_SCNN 2
   YF_scene scn[YF_SCNN];
 
-#define YF_MDLN 12
+#define YF_MDLN 2 /*12*/
   YF_model mdl[YF_MDLN];
   YF_mesh mesh[YF_MDLN];
   YF_texture tex[YF_MDLN];
+  size_t uniq_res_n;
 
   struct {
     int quit;
@@ -197,6 +198,8 @@ int yf_test_model(void) {
   }
 
   if (instanced) {
+    l_vars.uniq_res_n = 2;
+
     /* Create mesh */
     l_vars.mesh[0] = yf_mesh_init(YF_FILETYPE_OBJ, "tmp/cube.obj");
     l_vars.mesh[1] = yf_mesh_init(YF_FILETYPE_OBJ, "tmp/cone.obj");
@@ -214,16 +217,18 @@ int yf_test_model(void) {
       l_vars.mdl[i] = yf_model_init();
       assert(l_vars.mdl[i] != NULL);
 
-      yf_model_setmesh(l_vars.mdl[i], l_vars.mesh[i % 2]);
-      yf_model_settex(l_vars.mdl[i], l_vars.tex[i % 2]);
+      yf_model_setmesh(l_vars.mdl[i], l_vars.mesh[i&1]);
+      yf_model_settex(l_vars.mdl[i], l_vars.tex[i&1]);
 
       yf_node_insert(yf_scene_getnode(l_vars.scn[YF_MIN(i, YF_SCNN-1)]),
           yf_model_getnode(l_vars.mdl[i]));
     }
   } else {
+    l_vars.uniq_res_n = YF_MDLN;
+
     /* Create mesh */
     for (unsigned i = 0; i < YF_MDLN; ++i) {
-      if (i % 2 != 0)
+      if (i&1)
         l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_OBJ, "tmp/cube.obj");
       else
         l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_OBJ, "tmp/cone.obj");
@@ -232,7 +237,7 @@ int yf_test_model(void) {
 
     /* Create texture */
     for (unsigned i = 0; i < YF_MDLN; ++i) {
-      if (i % 2 != 0)
+      if (i&1)
         l_vars.tex[i] = yf_texture_init(YF_FILETYPE_BMP, "tmp/cube.bmp");
       else
         l_vars.tex[i] = yf_texture_init(YF_FILETYPE_BMP, "tmp/cone.bmp");
@@ -259,7 +264,17 @@ int yf_test_model(void) {
   if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
     assert(0);
 
-  /* TODO: Deinitialization. */
+  /* Deinitialize. */
+  yf_view_deinit(l_vars.view);
+  for (size_t i = 0; i < YF_SCNN; ++i)
+    yf_scene_deinit(l_vars.scn[i]);
+  for (size_t i = 0; i < YF_MDLN; ++i)
+    yf_model_deinit(l_vars.mdl[i]);
+  for (size_t i = 0; i < l_vars.uniq_res_n; ++i) {
+    yf_mesh_deinit(l_vars.mesh[i]);
+    yf_texture_deinit(l_vars.tex[i]);
+  }
+  yf_window_deinit(l_vars.win);
 
   return 0;
 }
