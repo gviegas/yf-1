@@ -2,7 +2,7 @@
  * YF
  * image.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -281,16 +281,12 @@ void yf_image_deinit(YF_image img) {
   if (img == NULL)
     return;
 
-  YF_iter it = YF_NILIT;
   YF_iview *iv;
-  do {
-    iv = yf_hashset_next(img->iviews, &it);
-    if (YF_IT_ISNIL(it))
-      break;
+  while ((iv = yf_hashset_extract(img->iviews, NULL)) != NULL) {
     vkDestroyImageView(img->ctx->device, iv->view, NULL);
     free(iv->priv);
     free(iv);
-  } while (1);
+  }
   yf_hashset_deinit(img->iviews);
 
   if (!img->wrapped) {
