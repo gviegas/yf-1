@@ -2,7 +2,7 @@
  * YF
  * mdl.frag.glsl
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #version 460 core
@@ -14,8 +14,8 @@ in IO_vtx {
   layout(location=2) vec3 norm;
 } in_vtx;
 
-layout(location=0) out vec4 color;
+layout(location=0) out vec4 clr0;
 
 void main() {
-  color = textureLod(u_tex, in_vtx.tc, 0.0);
+  clr0 = textureLod(u_tex, in_vtx.tc, 0.0);
 }
