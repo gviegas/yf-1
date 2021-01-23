@@ -211,9 +211,15 @@ void yf_view_deinit(YF_view view) {
   if (view == NULL)
     return;
 
+  for (unsigned i = 0; i < view->tgt_n; ++i)
+    yf_pass_unmktarget(view->pass, view->tgts[i]);
   free(view->tgts);
-  yf_pass_deinit(view->pass);
+
+  /* XXX: Pass deinitialization handled on 'coreobj'. */
+  /*yf_pass_deinit(view->pass);*/
+
   yf_image_deinit(view->depth_img);
   yf_wsi_deinit(view->wsi);
+
   free(view);
 }
