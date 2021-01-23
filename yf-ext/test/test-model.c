@@ -52,16 +52,16 @@ static const YF_mat4 l_xforms[] = {
     0.0, 0.0, 0.0, 1.0
   },
   {
-    2.0, 0.0, 0.0, 0.0,
-    0.0, 2.0, 0.0, 0.0,
-    0.0, 0.0, 2.0, 0.0,
-    -6.0, -2.0, 4.0, 1.0
-  },
-  {
     1.5, 0.0, 0.0, 0.0,
     0.0, 1.5, 0.0, 0.0,
     0.0, 0.0, 1.5, 0.0,
     3.0, -3.0, 2.0, 1.0
+  },
+  {
+    2.0, 0.0, 0.0, 0.0,
+    0.0, 2.0, 0.0, 0.0,
+    0.0, 0.0, 2.0, 0.0,
+    -6.0, -2.0, 4.0, 1.0
   },
   {
     0.7, 0.0, 0.0, 0.0,
@@ -119,7 +119,7 @@ static const YF_mat4 l_xforms[] = {
   }
 };
 
-/* Handle key events. */
+/* Handles key events. */
 static void on_key(int key, int state,
     YF_UNUSED unsigned mod_mask, YF_UNUSED void *arg)
 {
@@ -176,7 +176,8 @@ static void update(double elapsed_time) {
 int yf_test_model(void) {
   srand(time(NULL));
   const int instanced = rand() & 1;
-  printf("## %s rendering ##\n\n", instanced ? "Instanced" : "Non-instanced");
+  printf("(%s rendering, %u models)\n\n",
+      instanced ? "Instanced" : "Non-instanced", YF_MDLN);
 
   YF_evtfn evtfn = {.key_kb = on_key};
   yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
