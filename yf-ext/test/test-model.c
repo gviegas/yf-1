@@ -29,7 +29,7 @@ struct L_vars {
 #define YF_SCNN 2
   YF_scene scn[YF_SCNN];
 
-#define YF_MDLN 2 /*12*/
+#define YF_MDLN 12
   YF_model mdl[YF_MDLN];
   YF_mesh mesh[YF_MDLN];
   YF_texture tex[YF_MDLN];
