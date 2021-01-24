@@ -357,7 +357,7 @@ static int init_vars(void) {
 
 static int traverse_scn(YF_node node, void *arg) {
   void *obj = NULL;
-  int nodeobj = yf_node_getobj(node, &obj);
+  const int nodeobj = yf_node_getobj(node, &obj);
 
   switch (nodeobj) {
     case YF_NODEOBJ_MODEL: {
@@ -418,8 +418,11 @@ static int traverse_scn(YF_node node, void *arg) {
     } break;
 
     case YF_NODEOBJ_TERRAIN:
-      /* TODO */
-      assert(0);
+      if (yf_list_insert(l_vars.terrs, obj) != 0) {
+        *(int *)arg = -1;
+        return -1;
+      }
+      break;
 
     case YF_NODEOBJ_PARTICLE:
       /* TODO */
