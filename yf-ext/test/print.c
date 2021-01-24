@@ -10,6 +10,7 @@
 
 #include "print.h"
 #include "model.h"
+#include "terrain.h"
 #include "vertex.h"
 
 #undef YF_PTITLE
@@ -26,11 +27,13 @@ void yf_print_nodeobj(YF_node node) {
     case YF_NODEOBJ_MODEL:
       printf("\nnodeobj is a model (%p)", obj);
       printf("\n mesh: %p", (void *)yf_model_getmesh((YF_model)obj));
-      printf("\n tex: %p", (void *)yf_model_gettex((YF_model)node));
+      printf("\n tex:  %p", (void *)yf_model_gettex((YF_model)obj));
       break;
     case YF_NODEOBJ_TERRAIN:
-      /* TODO */
-      assert(0);
+      printf("\nnodeobj is a terrain (%p)", obj);
+      printf("\n mesh: %p", (void *)yf_terrain_getmesh((YF_terrain)obj));
+      printf("\n tex:  %p", (void *)yf_terrain_gettex((YF_terrain)obj));
+      printf("\n hmap: %p", (void *)yf_terrain_gethmap((YF_terrain)obj));
       break;
     case YF_NODEOBJ_PARTICLE:
       /* TODO */
