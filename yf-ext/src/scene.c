@@ -649,6 +649,7 @@ static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst) {
     case YF_RESRQ_MDL4:
     case YF_RESRQ_MDL16:
     case YF_RESRQ_MDL64:
+    case YF_RESRQ_TERR: /* TODO */
       off = l_vars.buf_off;
       sz = YF_UGLOBSZ_MDL;
       /* view matrix */
@@ -718,6 +719,31 @@ static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
             &l_vars.buf, &off, &sz) != 0)
       {
         return -1;
+      }
+      break;
+
+    case YF_RESRQ_TERR:
+      assert(obj_n == 1);
+      off = l_vars.buf_off;
+      sz = obj_n * YF_UINSTSZ_TERR;
+      {
+        YF_terrain terr = ((YF_terrain *)objs)[0];
+        yf_mat4_mul(*yf_terrain_getmvp(terr), *yf_camera_getxform(scn->cam),
+            *yf_terrain_getxform(terr));
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+              *yf_terrain_getxform(terr), sizeof(YF_mat4)) != 0)
+          return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+        /* model-view-projection matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+              *yf_terrain_getmvp(terr), sizeof(YF_mat4)) != 0)
+          return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+        /* copy */
+        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_UINST, elems,
+              &l_vars.buf, &off, &sz) != 0)
+          return -1;
       }
       break;
 
