@@ -20,6 +20,7 @@
 #include "texture.h"
 #include "mesh.h"
 #include "model.h"
+#include "terrain.h"
 
 #ifdef YF_DEVEL
 # include <stdio.h>
@@ -42,8 +43,11 @@
 #undef YF_BUFLEN
 #define YF_BUFLEN 131072
 
-#define YF_UGLOBSZ_MDL (2 * sizeof(YF_mat4))
-#define YF_UINSTSZ_MDL (2 * sizeof(YF_mat4))
+#define YF_UGLOBSZ_MDL (sizeof(YF_mat4) << 1)
+#define YF_UINSTSZ_MDL (sizeof(YF_mat4) << 1)
+
+#define YF_UGLOBSZ_TERR YF_UGLOBSZ_MDL
+#define YF_UINSTSZ_TERR YF_UINSTSZ_MDL
 
 struct YF_scene_o {
   YF_node node;
@@ -62,6 +66,7 @@ typedef struct {
   YF_cmdbuf cb;
   YF_hashset mdls;
   YF_hashset mdls_inst;
+  YF_list terrs;
 } L_vars;
 
 /* Type defining an entry in the list of obtained resources. */
@@ -98,6 +103,9 @@ static int render_mdl(YF_scene scn);
 
 /* Renders model objects using instanced drawing. */
 static int render_mdl_inst(YF_scene scn);
+
+/* Renders terrain objects. */
+static int render_terr(YF_scene scn);
 
 /* Copies uniform global data to buffer and updates dtable contents. */
 static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst);
@@ -160,6 +168,7 @@ void yf_scene_setcolor(YF_scene scn, YF_color color) {
 }
 
 void yf_scene_deinit(YF_scene scn) {
+  /* TODO: Deinitialize shared vars. on exit. */
   if (scn != NULL) {
     yf_camera_deinit(scn->cam);
     yf_node_deinit(scn->node);
@@ -171,6 +180,8 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
   assert(scn != NULL);
   assert(pass != NULL);
   assert(tgt != NULL);
+
+  /* TODO: Clear other data structures, not only hashsets. */
 
   yf_camera_adjust(scn->cam, (YF_float)dim.width / (YF_float)dim.height);
   YF_VIEWPORT_FROMDIM2(dim, scn->vport);
@@ -184,6 +195,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
   }
   int mdl_pend = yf_hashset_getlen(l_vars.mdls) != 0;
   int mdli_pend = yf_hashset_getlen(l_vars.mdls_inst) != 0;
+  int terr_pend = yf_list_getlen(l_vars.terrs) != 0;
 
   l_vars.buf_off = 0;
   if ((l_vars.cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH)) == NULL) {
@@ -224,6 +236,17 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
       mdli_pend = yf_hashset_getlen(l_vars.mdls_inst) != 0;
     }
 
+    if (terr_pend) {
+      if (render_terr(scn) != 0) {
+        yf_cmdbuf_end(l_vars.cb);
+        yf_cmdbuf_reset(l_vars.ctx);
+        yield_res();
+        clear_hset();
+        return -1;
+      }
+      terr_pend = yf_list_getlen(l_vars.terrs) != 0;
+    }
+
     if (yf_cmdbuf_end(l_vars.cb) == 0) {
       if (yf_cmdbuf_exec(l_vars.ctx) != 0) {
         yield_res();
@@ -243,7 +266,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
 
     yield_res();
 
-    if (mdl_pend || mdli_pend) {
+    if (mdl_pend || mdli_pend || terr_pend) {
       if ((l_vars.cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH)) == NULL) {
         clear_hset();
         return -1;
@@ -274,8 +297,7 @@ static int init_vars(void) {
     [YF_RESRQ_MDL4] = 48,
     [YF_RESRQ_MDL16] = 48,
     [YF_RESRQ_MDL64] = 16,
-    /* TODO */
-    [YF_RESRQ_TERR] = 0
+    [YF_RESRQ_TERR] = 24
   };
   size_t inst_min = 0;
   size_t inst_sum = 0;
@@ -297,20 +319,19 @@ static int init_vars(void) {
       }
       switch (i) {
         case YF_RESRQ_MDL:
-          buf_sz += insts[i] * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i]*YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
           break;
         case YF_RESRQ_MDL4:
-          buf_sz += insts[i] * 4 * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i]*(YF_UINSTSZ_MDL<<2) + YF_UGLOBSZ_MDL;
           break;
         case YF_RESRQ_MDL16:
-          buf_sz += insts[i] * 16 * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i]*(YF_UINSTSZ_MDL<<4) + YF_UGLOBSZ_MDL;
           break;
         case YF_RESRQ_MDL64:
-          buf_sz += insts[i] * 64 * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i]*(YF_UINSTSZ_MDL<<6) + YF_UGLOBSZ_MDL;
           break;
         case YF_RESRQ_TERR:
-          /* TODO */
-          buf_sz += 0;
+          buf_sz += insts[i]*YF_UINSTSZ_TERR + YF_UGLOBSZ_TERR;
           break;
         /* TODO: Other objects. */
         default:
@@ -336,13 +357,15 @@ static int init_vars(void) {
   if ((l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz)) == NULL ||
       (l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
       (l_vars.mdls = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
-      (l_vars.mdls_inst = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL)
+      (l_vars.mdls_inst = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
+      (l_vars.terrs = yf_list_init(NULL)) == NULL)
   {
     yf_resmgr_clear();
     yf_buffer_deinit(l_vars.buf);
     yf_list_deinit(l_vars.res_obtd);
     yf_hashset_deinit(l_vars.mdls);
     yf_hashset_deinit(l_vars.mdls_inst);
+    yf_list_deinit(l_vars.terrs);
     memset(&l_vars, 0, sizeof l_vars);
     return -1;
   }
@@ -351,7 +374,7 @@ static int init_vars(void) {
 
 static int traverse_scn(YF_node node, void *arg) {
   void *obj = NULL;
-  int nodeobj = yf_node_getobj(node, &obj);
+  const int nodeobj = yf_node_getobj(node, &obj);
 
   switch (nodeobj) {
     case YF_NODEOBJ_MODEL: {
@@ -412,8 +435,11 @@ static int traverse_scn(YF_node node, void *arg) {
     } break;
 
     case YF_NODEOBJ_TERRAIN:
-      /* TODO */
-      assert(0);
+      if (yf_list_insert(l_vars.terrs, obj) != 0) {
+        *(int *)arg = -1;
+        return -1;
+      }
+      break;
 
     case YF_NODEOBJ_PARTICLE:
       /* TODO */
@@ -630,6 +656,76 @@ static int render_mdl_inst(YF_scene scn) {
   return 0;
 }
 
+static int render_terr(YF_scene scn) {
+  YF_gstate gst = NULL;
+  unsigned inst_alloc = 0;
+  L_reso *reso = NULL;
+  YF_dtable dtb = NULL;
+  YF_texture hmap = NULL;
+  YF_texture tex = NULL;
+  YF_mesh mesh = NULL;
+  YF_iter it = YF_NILIT;
+  YF_terrain terr = NULL;
+
+  do {
+    terr = yf_list_next(l_vars.terrs, &it);
+    if (YF_IT_ISNIL(it))
+      break;
+
+    if ((gst = yf_resmgr_obtain(YF_RESRQ_TERR, &inst_alloc)) == NULL) {
+      switch (yf_geterr()) {
+        case YF_ERR_INUSE:
+          /* out of resources, need to execute pending work */
+          return 0;
+        default:
+          return -1;
+      }
+    }
+    dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+
+    if ((reso = malloc(sizeof *reso)) == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+    reso->resrq = YF_RESRQ_TERR;
+    reso->inst_alloc = inst_alloc;
+    if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
+      free(reso);
+      return -1;
+    }
+
+    yf_cmdbuf_setgstate(l_vars.cb, gst);
+
+    /* TODO: Copy uniform global data once. */
+    if (copy_uglob(scn, YF_RESRQ_TERR, gst) != 0 ||
+        copy_uinst(scn, YF_RESRQ_TERR, &terr, 1, gst, inst_alloc) != 0)
+      return -1;
+
+    if ((hmap = yf_terrain_gethmap(terr)) != NULL)
+      yf_texture_copyres(hmap, dtb, inst_alloc, YF_RESBIND_ISHMAP, 0);
+    else
+      /* TODO: Handle terrains lacking height map. */
+      assert(0);
+
+    if ((tex = yf_terrain_gettex(terr)) != NULL)
+      yf_texture_copyres(tex, dtb, inst_alloc, YF_RESBIND_ISTEX, 0);
+    else
+      /* TODO: Handle terrains lacking texture. */
+      assert(0);
+
+    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOB, 0);
+    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
+
+    mesh = yf_terrain_getmesh(terr);
+    yf_mesh_draw(mesh, l_vars.cb, 1, 0);
+
+    yf_list_removeat(l_vars.terrs, &it);
+    it = YF_NILIT;
+  } while (1);
+
+  return 0;
+}
+
 static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst) {
   YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_GLOB);
   const YF_slice elems = {0, 1};
@@ -640,6 +736,7 @@ static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst) {
     case YF_RESRQ_MDL4:
     case YF_RESRQ_MDL16:
     case YF_RESRQ_MDL64:
+    case YF_RESRQ_TERR: /* TODO */
       off = l_vars.buf_off;
       sz = YF_UGLOBSZ_MDL;
       /* view matrix */
@@ -709,6 +806,31 @@ static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
             &l_vars.buf, &off, &sz) != 0)
       {
         return -1;
+      }
+      break;
+
+    case YF_RESRQ_TERR:
+      assert(obj_n == 1);
+      off = l_vars.buf_off;
+      sz = obj_n * YF_UINSTSZ_TERR;
+      {
+        YF_terrain terr = ((YF_terrain *)objs)[0];
+        yf_mat4_mul(*yf_terrain_getmvp(terr), *yf_camera_getxform(scn->cam),
+            *yf_terrain_getxform(terr));
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+              *yf_terrain_getxform(terr), sizeof(YF_mat4)) != 0)
+          return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+        /* model-view-projection matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+              *yf_terrain_getmvp(terr), sizeof(YF_mat4)) != 0)
+          return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+        /* copy */
+        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_UINST, elems,
+              &l_vars.buf, &off, &sz) != 0)
+          return -1;
       }
       break;
 
