@@ -20,6 +20,7 @@
 #include "texture.h"
 #include "mesh.h"
 #include "model.h"
+#include "terrain.h"
 
 #ifdef YF_DEVEL
 # include <stdio.h>
@@ -42,8 +43,11 @@
 #undef YF_BUFLEN
 #define YF_BUFLEN 131072
 
-#define YF_UGLOBSZ_MDL (2 * sizeof(YF_mat4))
-#define YF_UINSTSZ_MDL (2 * sizeof(YF_mat4))
+#define YF_UGLOBSZ_MDL (sizeof(YF_mat4) << 1)
+#define YF_UINSTSZ_MDL (sizeof(YF_mat4) << 1)
+
+#define YF_UGLOBSZ_TERR YF_UGLOBSZ_MDL
+#define YF_UINSTSZ_TERR YF_UINSTSZ_MDL
 
 struct YF_scene_o {
   YF_node node;
@@ -62,6 +66,7 @@ typedef struct {
   YF_cmdbuf cb;
   YF_hashset mdls;
   YF_hashset mdls_inst;
+  YF_list terrs;
 } L_vars;
 
 /* Type defining an entry in the list of obtained resources. */
@@ -160,6 +165,7 @@ void yf_scene_setcolor(YF_scene scn, YF_color color) {
 }
 
 void yf_scene_deinit(YF_scene scn) {
+  /* TODO: Deinitialize shared vars. on exit. */
   if (scn != NULL) {
     yf_camera_deinit(scn->cam);
     yf_node_deinit(scn->node);
@@ -274,8 +280,7 @@ static int init_vars(void) {
     [YF_RESRQ_MDL4] = 48,
     [YF_RESRQ_MDL16] = 48,
     [YF_RESRQ_MDL64] = 16,
-    /* TODO */
-    [YF_RESRQ_TERR] = 0
+    [YF_RESRQ_TERR] = 24
   };
   size_t inst_min = 0;
   size_t inst_sum = 0;
@@ -297,20 +302,19 @@ static int init_vars(void) {
       }
       switch (i) {
         case YF_RESRQ_MDL:
-          buf_sz += insts[i] * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i]*YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
           break;
         case YF_RESRQ_MDL4:
-          buf_sz += insts[i] * 4 * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i]*(YF_UINSTSZ_MDL<<2) + YF_UGLOBSZ_MDL;
           break;
         case YF_RESRQ_MDL16:
-          buf_sz += insts[i] * 16 * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i]*(YF_UINSTSZ_MDL<<4) + YF_UGLOBSZ_MDL;
           break;
         case YF_RESRQ_MDL64:
-          buf_sz += insts[i] * 64 * YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i]*(YF_UINSTSZ_MDL<<6) + YF_UGLOBSZ_MDL;
           break;
         case YF_RESRQ_TERR:
-          /* TODO */
-          buf_sz += 0;
+          buf_sz += insts[i]*YF_UINSTSZ_TERR + YF_UGLOBSZ_TERR;
           break;
         /* TODO: Other objects. */
         default:
@@ -336,13 +340,15 @@ static int init_vars(void) {
   if ((l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz)) == NULL ||
       (l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
       (l_vars.mdls = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
-      (l_vars.mdls_inst = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL)
+      (l_vars.mdls_inst = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
+      (l_vars.terrs = yf_list_init(NULL)) == NULL)
   {
     yf_resmgr_clear();
     yf_buffer_deinit(l_vars.buf);
     yf_list_deinit(l_vars.res_obtd);
     yf_hashset_deinit(l_vars.mdls);
     yf_hashset_deinit(l_vars.mdls_inst);
+    yf_list_deinit(l_vars.terrs);
     memset(&l_vars, 0, sizeof l_vars);
     return -1;
   }
