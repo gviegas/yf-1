@@ -701,7 +701,7 @@ static int render_terr(YF_scene scn) {
         copy_uinst(scn, YF_RESRQ_TERR, &terr, 1, gst, inst_alloc) != 0)
       return -1;
 
-    if ((hmap = yf_terrain_gettex(terr)) != NULL)
+    if ((hmap = yf_terrain_gethmap(terr)) != NULL)
       yf_texture_copyres(hmap, dtb, inst_alloc, YF_RESBIND_ISHMAP, 0);
     else
       /* TODO: Handle terrains lacking height map. */
@@ -710,8 +710,11 @@ static int render_terr(YF_scene scn) {
     if ((tex = yf_terrain_gettex(terr)) != NULL)
       yf_texture_copyres(tex, dtb, inst_alloc, YF_RESBIND_ISTEX, 0);
     else
-      /* Handle terrains lacking texture. */
+      /* TODO: Handle terrains lacking texture. */
       assert(0);
+
+    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOB, 0);
+    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
     mesh = yf_terrain_getmesh(terr);
     yf_mesh_draw(mesh, l_vars.cb, 1, 0);
