@@ -49,6 +49,17 @@ static int test_model(void) {
   return r;
 }
 
+/* Terrain test. */
+#define YF_TEST_TERRAIN "terrain"
+int yf_test_terrain(void);
+static int test_terrain(void) {
+  YF_TEST_SUBT;
+  puts("");
+  int r = yf_test_terrain();
+  puts("");
+  return r;
+}
+
 /* Miscellaneous test. */
 #define YF_TEST_MISC "misc"
 int yf_test_misc(void);
@@ -64,6 +75,7 @@ static const char *l_ids[] = {
   YF_TEST_NODE,
   YF_TEST_VECMAT,
   YF_TEST_MODEL,
+  YF_TEST_TERRAIN,
   YF_TEST_MISC,
   YF_TEST_ALL
 };
@@ -83,6 +95,9 @@ static int test(int argc, char *argv[]) {
   } else if (strcmp(argv[0], YF_TEST_MODEL) == 0) {
     test_n = 1;
     results = test_model() == 0;
+  } else if (strcmp(argv[0], YF_TEST_TERRAIN) == 0) {
+    test_n = 1;
+    results = test_terrain() == 0;
   } else if (strcmp(argv[0], YF_TEST_MISC) == 0) {
     test_n = 1;
     results = test_misc() == 0;
@@ -91,6 +106,7 @@ static int test(int argc, char *argv[]) {
       test_node,
       test_vecmat,
       test_model,
+      test_terrain,
       test_misc
     };
     test_n = sizeof tests / sizeof tests[0];
