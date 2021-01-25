@@ -117,8 +117,8 @@ static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
 /* Yields all previously obtained resources. */
 static void yield_res(void);
 
-/* Clears the contents of all object's hashsets. */
-static void clear_hset(void);
+/* Clears data structures of all objects. */
+static void clear_obj(void);
 
 /* Functions used by the model sets. */
 static size_t hash_mdl(const void *x);
@@ -190,7 +190,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
   int r = 0;
   yf_node_traverse(scn->node, traverse_scn, &r);
   if (r != 0) {
-    clear_hset();
+    clear_obj();
     return -1;
   }
   int mdl_pend = yf_hashset_getlen(l_vars.mdls) != 0;
@@ -199,7 +199,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
 
   l_vars.buf_off = 0;
   if ((l_vars.cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH)) == NULL) {
-    clear_hset();
+    clear_obj();
     return -1;
   }
   yf_cmdbuf_clearcolor(l_vars.cb, 0, scn->color);
@@ -219,7 +219,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
         yf_cmdbuf_end(l_vars.cb);
         yf_cmdbuf_reset(l_vars.ctx);
         yield_res();
-        clear_hset();
+        clear_obj();
         return -1;
       }
       mdl_pend = yf_hashset_getlen(l_vars.mdls) != 0;
@@ -230,7 +230,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
         yf_cmdbuf_end(l_vars.cb);
         yf_cmdbuf_reset(l_vars.ctx);
         yield_res();
-        clear_hset();
+        clear_obj();
         return -1;
       }
       mdli_pend = yf_hashset_getlen(l_vars.mdls_inst) != 0;
@@ -241,7 +241,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
         yf_cmdbuf_end(l_vars.cb);
         yf_cmdbuf_reset(l_vars.ctx);
         yield_res();
-        clear_hset();
+        clear_obj();
         return -1;
       }
       terr_pend = yf_list_getlen(l_vars.terrs) != 0;
@@ -250,13 +250,13 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
     if (yf_cmdbuf_end(l_vars.cb) == 0) {
       if (yf_cmdbuf_exec(l_vars.ctx) != 0) {
         yield_res();
-        clear_hset();
+        clear_obj();
         return -1;
       }
     } else {
       yf_cmdbuf_reset(l_vars.ctx);
       yield_res();
-      clear_hset();
+      clear_obj();
       return -1;
     }
 
@@ -268,7 +268,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
 
     if (mdl_pend || mdli_pend || terr_pend) {
       if ((l_vars.cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH)) == NULL) {
-        clear_hset();
+        clear_obj();
         return -1;
       }
     } else {
@@ -281,7 +281,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
       __func__, exec_n);
 #endif
 
-  clear_hset();
+  clear_obj();
   return 0;
 }
 
@@ -854,7 +854,7 @@ static void yield_res(void) {
   yf_list_clear(l_vars.res_obtd);
 }
 
-static void clear_hset(void) {
+static void clear_obj(void) {
   if (yf_hashset_getlen(l_vars.mdls) != 0) {
     yf_hashset_each(l_vars.mdls, dealloc_mdl, NULL);
     yf_hashset_clear(l_vars.mdls);
@@ -863,6 +863,7 @@ static void clear_hset(void) {
     yf_hashset_each(l_vars.mdls_inst, dealloc_mdl, NULL);
     yf_hashset_clear(l_vars.mdls_inst);
   }
+  yf_list_clear(l_vars.terrs);
 }
 
 static size_t hash_mdl(const void *x) {
