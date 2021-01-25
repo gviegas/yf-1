@@ -25,6 +25,9 @@ YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc);
 /* Yields a previously obtained resource. */
 void yf_resmgr_yield(int resrq, unsigned inst_alloc);
 
+/* Gets the global dtable. */
+YF_dtable yf_resmgr_getglob(void);
+
 /* Gets the number of instance allocations for a given 'resrq' value. */
 unsigned yf_resmgr_getallocn(int resrq);
 
