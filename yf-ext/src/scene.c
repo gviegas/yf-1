@@ -512,13 +512,11 @@ static int render_mdl(YF_scene scn) {
     /* TODO: Copy uniform global data once. */
     if (copy_uglob(scn, YF_RESRQ_MDL, gst) != 0 ||
         copy_uinst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
-    {
       return -1;
-    }
 
     if ((tex = yf_model_gettex(val->mdl)) != NULL)
       yf_texture_copyres(tex, yf_gstate_getdtb(gst, YF_RESIDX_INST), inst_alloc,
-          YF_RESBIND_ISTEX, 0);
+          YF_RESBIND_TEX, 0);
     else
       /* TODO: Handle models lacking texture. */
       assert(0);
@@ -619,7 +617,7 @@ static int render_mdl_inst(YF_scene scn) {
 
       if ((tex = yf_model_gettex(val->mdls[rem])) != NULL)
         yf_texture_copyres(tex, yf_gstate_getdtb(gst, YF_RESIDX_INST),
-            inst_alloc, YF_RESBIND_ISTEX, 0);
+            inst_alloc, YF_RESBIND_TEX, 0);
       else
         /* TODO: Handle models lacking texture. */
         assert(0);
@@ -702,13 +700,13 @@ static int render_terr(YF_scene scn) {
       return -1;
 
     if ((hmap = yf_terrain_gethmap(terr)) != NULL)
-      yf_texture_copyres(hmap, dtb, inst_alloc, YF_RESBIND_ISHMAP, 0);
+      yf_texture_copyres(hmap, dtb, inst_alloc, YF_RESBIND_HMAP, 0);
     else
       /* TODO: Handle terrains lacking height map. */
       assert(0);
 
     if ((tex = yf_terrain_gettex(terr)) != NULL)
-      yf_texture_copyres(tex, dtb, inst_alloc, YF_RESBIND_ISTEX, 0);
+      yf_texture_copyres(tex, dtb, inst_alloc, YF_RESBIND_TEX, 0);
     else
       /* TODO: Handle terrains lacking texture. */
       assert(0);
@@ -754,7 +752,7 @@ static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst) {
       }
       l_vars.buf_off += sizeof(YF_mat4);
       /* copy */
-      if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_UGLOB, elems,
+      if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_GLOB, elems,
             &l_vars.buf, &off, &sz) != 0)
       {
         return -1;
@@ -789,24 +787,18 @@ static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
         /* model matrix */
         if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
               *yf_model_getxform(mdl), sizeof(YF_mat4)) != 0)
-        {
           return -1;
-        }
         l_vars.buf_off += sizeof(YF_mat4);
         /* model-view-projection matrix */
         if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
               *yf_model_getmvp(mdl), sizeof(YF_mat4)) != 0)
-        {
           return -1;
-        }
         l_vars.buf_off += sizeof(YF_mat4);
       }
       /* copy */
-      if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_UINST, elems,
+      if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
             &l_vars.buf, &off, &sz) != 0)
-      {
         return -1;
-      }
       break;
 
     case YF_RESRQ_TERR:
@@ -828,7 +820,7 @@ static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* copy */
-        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_UINST, elems,
+        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
               &l_vars.buf, &off, &sz) != 0)
           return -1;
       }

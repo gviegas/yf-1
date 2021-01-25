@@ -49,10 +49,10 @@ void yf_resmgr_clear(void);
 #define YF_RESIDX_INST 1
 
 /* Binding numbers used for dtable resources. */
-#define YF_RESBIND_UGLOB  0
-#define YF_RESBIND_UINST  0
-#define YF_RESBIND_ISTEX  1
-#define YF_RESBIND_ISHMAP 3
+#define YF_RESBIND_GLOB 0
+#define YF_RESBIND_INST 0
+#define YF_RESBIND_TEX  1
+#define YF_RESBIND_HMAP 3
 
 /* Location numbers used for vinput resources. */
 #define YF_RESLOC_POS  0

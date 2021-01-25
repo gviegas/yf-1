@@ -261,11 +261,11 @@ static int init_mdl(L_entry *entry, unsigned elements) {
 
   /* dtables */
   const YF_dentry glob_ents[] = {
-    {YF_RESBIND_UGLOB, YF_DTYPE_UNIFORM, 1, NULL}
+    {YF_RESBIND_GLOB, YF_DTYPE_UNIFORM, 1, NULL}
   };
   const YF_dentry inst_ents[] = {
-    {YF_RESBIND_UINST, YF_DTYPE_UNIFORM, 1, NULL},
-    {YF_RESBIND_ISTEX, YF_DTYPE_ISAMPLER, 1, NULL}
+    {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
+    {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL}
   };
 
   YF_dtable glob_dtb = yf_dtable_init(ctx, glob_ents,
@@ -364,12 +364,12 @@ static int init_terr(L_entry *entry) {
 
   /* dtables */
   const YF_dentry glob_ents[] = {
-    {YF_RESBIND_UGLOB, YF_DTYPE_UNIFORM, 1, NULL}
+    {YF_RESBIND_GLOB, YF_DTYPE_UNIFORM, 1, NULL}
   };
   const YF_dentry inst_ents[] = {
-    {YF_RESBIND_UINST, YF_DTYPE_UNIFORM, 1, NULL},
-    {YF_RESBIND_ISTEX, YF_DTYPE_ISAMPLER, 1, NULL},
-    {YF_RESBIND_ISHMAP, YF_DTYPE_ISAMPLER, 1, NULL}
+    {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
+    {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL},
+    {YF_RESBIND_HMAP, YF_DTYPE_ISAMPLER, 1, NULL}
   };
 
   YF_dtable glob_dtb = yf_dtable_init(ctx, glob_ents,
