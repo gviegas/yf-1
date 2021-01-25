@@ -238,8 +238,8 @@ static void deinit_entry(int resrq) {
 static int init_mdl(L_entry *entry, unsigned elements) {
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
-  if (ctx == NULL || pass == NULL)
-    return -1;
+
+  assert(ctx != NULL && pass != NULL);
 
   /* stages */
   char *vert_path = make_shdpath(YF_NODEOBJ_MODEL, YF_STAGE_VERT, elements);
@@ -273,31 +273,22 @@ static int init_mdl(L_entry *entry, unsigned elements) {
   const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
   /* dtables */
-  const YF_dentry glob_ents[] = {
-    {YF_RESBIND_GLOB, YF_DTYPE_UNIFORM, 1, NULL}
-  };
   const YF_dentry inst_ents[] = {
     {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
     {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL}
   };
 
-  YF_dtable glob_dtb = yf_dtable_init(ctx, glob_ents,
-      sizeof glob_ents / sizeof glob_ents[0]);
   YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
       sizeof inst_ents / sizeof inst_ents[0]);
 
-  if (glob_dtb == NULL || inst_dtb == NULL ||
-      yf_dtable_alloc(glob_dtb, 1) != 0 ||
-      yf_dtable_alloc(inst_dtb, entry->n) != 0)
-  {
+  if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
     yf_unldmod(ctx, vert_mod);
     yf_unldmod(ctx, frag_mod);
-    yf_dtable_deinit(glob_dtb);
     yf_dtable_deinit(inst_dtb);
     return -1;
   }
 
-  const YF_dtable dtbs[] = {glob_dtb, inst_dtb};
+  const YF_dtable dtbs[] = {l_glob, inst_dtb};
   const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
   /* vinputs */
@@ -328,10 +319,9 @@ static int init_mdl(L_entry *entry, unsigned elements) {
 
   entry->gst = yf_gstate_init(ctx, &conf);
   if (entry->gst == NULL) {
-    for (unsigned i = 0; i < stg_n; ++i)
-      yf_unldmod(ctx, stgs[i].mod);
-    for (unsigned i = 0; i < dtb_n; ++i)
-      yf_dtable_deinit(dtbs[i]);
+    yf_unldmod(ctx, vert_mod);
+    yf_unldmod(ctx, frag_mod);
+    yf_dtable_deinit(inst_dtb);
     return -1;
   }
 
@@ -341,8 +331,8 @@ static int init_mdl(L_entry *entry, unsigned elements) {
 static int init_terr(L_entry *entry) {
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
-  if (ctx == NULL || pass == NULL)
-    return -1;
+
+  assert(ctx != NULL && pass != NULL);
 
   /* stages */
   char *vert_path = make_shdpath(YF_NODEOBJ_TERRAIN, YF_STAGE_VERT, 1);
@@ -376,32 +366,23 @@ static int init_terr(L_entry *entry) {
   const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
   /* dtables */
-  const YF_dentry glob_ents[] = {
-    {YF_RESBIND_GLOB, YF_DTYPE_UNIFORM, 1, NULL}
-  };
   const YF_dentry inst_ents[] = {
     {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
     {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL},
     {YF_RESBIND_HMAP, YF_DTYPE_ISAMPLER, 1, NULL}
   };
 
-  YF_dtable glob_dtb = yf_dtable_init(ctx, glob_ents,
-      sizeof glob_ents / sizeof glob_ents[0]);
   YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
       sizeof inst_ents / sizeof inst_ents[0]);
 
-  if (glob_dtb == NULL || inst_dtb == NULL ||
-      yf_dtable_alloc(glob_dtb, 1) != 0 ||
-      yf_dtable_alloc(inst_dtb, entry->n) != 0)
-  {
+  if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
     yf_unldmod(ctx, vert_mod);
     yf_unldmod(ctx, frag_mod);
-    yf_dtable_deinit(glob_dtb);
     yf_dtable_deinit(inst_dtb);
     return -1;
   }
 
-  const YF_dtable dtbs[] = {glob_dtb, inst_dtb};
+  const YF_dtable dtbs[] = {l_glob, inst_dtb};
   const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
   /* vinputs */
@@ -432,10 +413,9 @@ static int init_terr(L_entry *entry) {
 
   entry->gst = yf_gstate_init(ctx, &conf);
   if (entry->gst == NULL) {
-    for (unsigned i = 0; i < stg_n; ++i)
-      yf_unldmod(ctx, stgs[i].mod);
-    for (unsigned i = 0; i < dtb_n; ++i)
-      yf_dtable_deinit(dtbs[i]);
+    yf_unldmod(ctx, vert_mod);
+    yf_unldmod(ctx, frag_mod);
+    yf_dtable_deinit(inst_dtb);
     return -1;
   }
 
