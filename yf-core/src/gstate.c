@@ -2,7 +2,7 @@
  * YF
  * gstate.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -36,14 +36,24 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf) {
   gst->ctx = ctx;
   gst->pass = conf->pass;
 
-  const size_t sz = conf->dtb_n * sizeof *conf->dtbs;
-  gst->dtbs = malloc(sz);
-  if (gst->dtbs == NULL) {
+  const size_t stg_sz = conf->stg_n * sizeof *conf->stgs;
+  gst->stgs = malloc(stg_sz);
+  if (gst->stgs == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    free(gst);
+    yf_gstate_deinit(gst);
     return NULL;
   }
-  memcpy(gst->dtbs, conf->dtbs, sz);
+  memcpy(gst->stgs, conf->stgs, stg_sz);
+  gst->stg_n = conf->stg_n;
+
+  const size_t dtb_sz = conf->dtb_n * sizeof *conf->dtbs;
+  gst->dtbs = malloc(dtb_sz);
+  if (gst->dtbs == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    yf_gstate_deinit(gst);
+    return NULL;
+  }
+  memcpy(gst->dtbs, conf->dtbs, dtb_sz);
   gst->dtb_n = conf->dtb_n;
 
   VkPrimitiveTopology topol;
@@ -345,6 +355,16 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf) {
   free(ss);
   free(cb_atts);
   return gst;
+}
+
+const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage) {
+  assert(gst != NULL);
+
+  for (unsigned i = 0; i < gst->stg_n; ++i) {
+    if (gst->stgs[i].stage == stage)
+      return gst->stgs+i;
+  }
+  return NULL;
 }
 
 YF_dtable yf_gstate_getdtb(YF_gstate gst, unsigned index) {
