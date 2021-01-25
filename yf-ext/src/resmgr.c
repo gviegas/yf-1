@@ -42,6 +42,9 @@ typedef struct {
 /* List of resources, indexed by 'resrq' values. */
 static L_entry l_entries[YF_RESRQ_N] = {0};
 
+/* Global dtable. */
+static YF_dtable l_glob = NULL;
+
 /* Sizes used for instance allocations, indexed by 'resrq' values. */
 static unsigned l_allocn[YF_RESRQ_N] = {
   [YF_RESRQ_MDL]   = YF_ALLOCN_MDL,
@@ -182,6 +185,16 @@ void yf_resmgr_clear(void) {
 static int init_entry(int resrq) {
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
   assert(l_allocn[resrq] > 0);
+
+  if (l_glob == NULL) {
+    const YF_dentry ents[] = {{YF_RESIDX_GLOB, YF_DTYPE_UNIFORM, 1, NULL}};
+    l_glob = yf_dtable_init(yf_getctx(), ents, sizeof ents / sizeof ents[0]);
+    if (l_glob == NULL || yf_dtable_alloc(l_glob, 1) != 0) {
+      yf_dtable_deinit(l_glob);
+      l_glob = NULL;
+      return -1;
+    }
+  }
 
   const unsigned n = l_allocn[resrq];
   l_entries[resrq].obtained = calloc(n, sizeof *l_entries[resrq].obtained);
