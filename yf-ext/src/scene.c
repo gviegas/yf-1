@@ -43,11 +43,9 @@
 #undef YF_BUFLEN
 #define YF_BUFLEN 131072
 
-#define YF_UGLOBSZ_MDL (sizeof(YF_mat4) << 1)
-#define YF_UINSTSZ_MDL (sizeof(YF_mat4) << 1)
-
-#define YF_UGLOBSZ_TERR YF_UGLOBSZ_MDL
-#define YF_UINSTSZ_TERR YF_UINSTSZ_MDL
+#define YF_GLOBSZ      (sizeof(YF_mat4) << 1)
+#define YF_INSTSZ_MDL  (sizeof(YF_mat4) << 1)
+#define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
 
 struct YF_scene_o {
   YF_node node;
@@ -108,10 +106,10 @@ static int render_mdl_inst(YF_scene scn);
 static int render_terr(YF_scene scn);
 
 /* Copies uniform global data to buffer and updates dtable contents. */
-static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst);
+static int copy_glob(YF_scene scn, int resrq, YF_gstate gst);
 
 /* Copies uniform instance data to buffer and updates dtable contents. */
-static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
+static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
     YF_gstate gst, unsigned inst_alloc);
 
 /* Yields all previously obtained resources. */
@@ -317,19 +315,19 @@ static int init_vars(void) {
       }
       switch (i) {
         case YF_RESRQ_MDL:
-          buf_sz += insts[i]*YF_UINSTSZ_MDL + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i] * YF_INSTSZ_MDL + YF_GLOBSZ;
           break;
         case YF_RESRQ_MDL4:
-          buf_sz += insts[i]*(YF_UINSTSZ_MDL<<2) + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i] * (YF_INSTSZ_MDL<<2) + YF_GLOBSZ;
           break;
         case YF_RESRQ_MDL16:
-          buf_sz += insts[i]*(YF_UINSTSZ_MDL<<4) + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i] * (YF_INSTSZ_MDL<<4) + YF_GLOBSZ;
           break;
         case YF_RESRQ_MDL64:
-          buf_sz += insts[i]*(YF_UINSTSZ_MDL<<6) + YF_UGLOBSZ_MDL;
+          buf_sz += insts[i] * (YF_INSTSZ_MDL<<6) + YF_GLOBSZ;
           break;
         case YF_RESRQ_TERR:
-          buf_sz += insts[i]*YF_UINSTSZ_TERR + YF_UGLOBSZ_TERR;
+          buf_sz += insts[i] * YF_INSTSZ_TERR + YF_GLOBSZ;
           break;
         /* TODO: Other objects. */
         default:
@@ -508,8 +506,8 @@ static int render_mdl(YF_scene scn) {
     yf_cmdbuf_setgstate(l_vars.cb, gst);
 
     /* TODO: Copy uniform global data once. */
-    if (copy_uglob(scn, YF_RESRQ_MDL, gst) != 0 ||
-        copy_uinst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
+    if (copy_glob(scn, YF_RESRQ_MDL, gst) != 0 ||
+        copy_inst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
       return -1;
 
     if ((tex = yf_model_gettex(val->mdl)) != NULL)
@@ -606,8 +604,8 @@ static int render_mdl_inst(YF_scene scn) {
       yf_cmdbuf_setgstate(l_vars.cb, gst);
 
       /* TODO: Copy uniform global data only once for each state. */
-      if (copy_uglob(scn, resrq[rq_i], gst) != 0 ||
-          copy_uinst(scn, resrq[rq_i], val->mdls+rem, n, gst, inst_alloc) != 0)
+      if (copy_glob(scn, resrq[rq_i], gst) != 0 ||
+          copy_inst(scn, resrq[rq_i], val->mdls+rem, n, gst, inst_alloc) != 0)
       {
         yf_list_deinit(done);
         return -1;
@@ -688,8 +686,8 @@ static int render_terr(YF_scene scn) {
     yf_cmdbuf_setgstate(l_vars.cb, gst);
 
     /* TODO: Copy uniform global data once. */
-    if (copy_uglob(scn, YF_RESRQ_TERR, gst) != 0 ||
-        copy_uinst(scn, YF_RESRQ_TERR, &terr, 1, gst, inst_alloc) != 0)
+    if (copy_glob(scn, YF_RESRQ_TERR, gst) != 0 ||
+        copy_inst(scn, YF_RESRQ_TERR, &terr, 1, gst, inst_alloc) != 0)
       return -1;
 
     if ((hmap = yf_terrain_gethmap(terr)) != NULL)
@@ -717,7 +715,7 @@ static int render_terr(YF_scene scn) {
   return 0;
 }
 
-static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst) {
+static int copy_glob(YF_scene scn, int resrq, YF_gstate gst) {
   YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_GLOB);
   const YF_slice elems = {0, 1};
   size_t off, sz;
@@ -729,7 +727,7 @@ static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst) {
     case YF_RESRQ_MDL64:
     case YF_RESRQ_TERR: /* TODO */
       off = l_vars.buf_off;
-      sz = YF_UGLOBSZ_MDL;
+      sz = YF_GLOBSZ;
       /* view matrix */
       if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
             *yf_camera_getview(scn->cam), sizeof(YF_mat4)) != 0)
@@ -759,7 +757,7 @@ static int copy_uglob(YF_scene scn, int resrq, YF_gstate gst) {
   return 0;
 }
 
-static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
+static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
     YF_gstate gst, unsigned inst_alloc)
 {
   YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
@@ -772,7 +770,7 @@ static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
     case YF_RESRQ_MDL16:
     case YF_RESRQ_MDL64:
       off = l_vars.buf_off;
-      sz = obj_n * YF_UINSTSZ_MDL;
+      sz = obj_n * YF_INSTSZ_MDL;
       for (unsigned i = 0; i < obj_n; ++i) {
         YF_model mdl = ((YF_model *)objs)[i];
         yf_mat4_mul(*yf_model_getmvp(mdl), *yf_camera_getxform(scn->cam),
@@ -797,7 +795,7 @@ static int copy_uinst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
     case YF_RESRQ_TERR:
       assert(obj_n == 1);
       off = l_vars.buf_off;
-      sz = obj_n * YF_UINSTSZ_TERR;
+      sz = obj_n * YF_INSTSZ_TERR;
       {
         YF_terrain terr = ((YF_terrain *)objs)[0];
         yf_mat4_mul(*yf_terrain_getmvp(terr), *yf_camera_getxform(scn->cam),
