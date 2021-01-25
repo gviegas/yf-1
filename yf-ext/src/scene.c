@@ -181,8 +181,6 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
   assert(pass != NULL);
   assert(tgt != NULL);
 
-  /* TODO: Clear other data structures, not only hashsets. */
-
   yf_camera_adjust(scn->cam, (YF_float)dim.width / (YF_float)dim.height);
   YF_VIEWPORT_FROMDIM2(dim, scn->vport);
   YF_VIEWPORT_SCISSOR(scn->vport, scn->sciss);
@@ -552,8 +550,8 @@ static int render_mdl_inst(YF_scene scn) {
   YF_mesh mesh = NULL;
   YF_iter it = YF_NILIT;
   L_kv_mdl *val = NULL;
-  YF_list vals_done = yf_list_init(NULL);
-  if (vals_done == NULL)
+  YF_list done = yf_list_init(NULL);
+  if (done == NULL)
     return -1;
 
   do {
@@ -587,21 +585,21 @@ static int render_mdl_inst(YF_scene scn) {
           val->mdl_n = rem;
           break;
         } else {
-          yf_list_deinit(vals_done);
+          yf_list_deinit(done);
           return -1;
         }
       }
 
       if ((reso = malloc(sizeof *reso)) == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        yf_list_deinit(vals_done);
+        yf_list_deinit(done);
         return -1;
       }
       reso->resrq = resrq[rq_i];
       reso->inst_alloc = inst_alloc;
       if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
         free(reso);
-        yf_list_deinit(vals_done);
+        yf_list_deinit(done);
         return -1;
       }
 
@@ -611,7 +609,7 @@ static int render_mdl_inst(YF_scene scn) {
       if (copy_uglob(scn, resrq[rq_i], gst) != 0 ||
           copy_uinst(scn, resrq[rq_i], val->mdls+rem, n, gst, inst_alloc) != 0)
       {
-        yf_list_deinit(vals_done);
+        yf_list_deinit(done);
         return -1;
       }
 
@@ -633,23 +631,18 @@ static int render_mdl_inst(YF_scene scn) {
 
       if (rem == 0) {
         /* cannot invalidate the set iterator */
-        if (yf_list_insert(vals_done, val) == 0)
+        if (yf_list_insert(done, val) == 0)
           break;
-        yf_list_deinit(vals_done);
+        yf_list_deinit(done);
         return -1;
       }
     } while (1);
 
   } while (1);
 
-  it = YF_NILIT;
-  do {
-    val = yf_list_next(vals_done, &it);
-    if (YF_IT_ISNIL(it))
-      break;
+  while ((val = yf_list_removeat(done, NULL)) != NULL)
     yf_hashset_remove(l_vars.mdls_inst, val);
-  } while (1);
-  yf_list_deinit(vals_done);
+  yf_list_deinit(done);
 
   return 0;
 }
