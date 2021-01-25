@@ -113,6 +113,19 @@ void yf_resmgr_yield(int resrq, unsigned inst_alloc) {
   l_entries[resrq].i = inst_alloc;
 }
 
+YF_dtable yf_resmgr_getglob(void) {
+  if (l_glob != NULL)
+    return l_glob;
+
+  const YF_dentry ents[] = {{YF_RESIDX_GLOB, YF_DTYPE_UNIFORM, 1, NULL}};
+  l_glob = yf_dtable_init(yf_getctx(), ents, sizeof ents / sizeof ents[0]);
+  if (l_glob == NULL || yf_dtable_alloc(l_glob, 1) != 0) {
+    yf_dtable_deinit(l_glob);
+    l_glob = NULL;
+  }
+  return l_glob;
+}
+
 unsigned yf_resmgr_getallocn(int resrq) {
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
   return l_entries[resrq].n;
@@ -186,16 +199,6 @@ void yf_resmgr_clear(void) {
 static int init_entry(int resrq) {
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
   assert(l_allocn[resrq] > 0);
-
-  if (l_glob == NULL) {
-    const YF_dentry ents[] = {{YF_RESIDX_GLOB, YF_DTYPE_UNIFORM, 1, NULL}};
-    l_glob = yf_dtable_init(yf_getctx(), ents, sizeof ents / sizeof ents[0]);
-    if (l_glob == NULL || yf_dtable_alloc(l_glob, 1) != 0) {
-      yf_dtable_deinit(l_glob);
-      l_glob = NULL;
-      return -1;
-    }
-  }
 
   const unsigned n = l_allocn[resrq];
   l_entries[resrq].obtained = calloc(n, sizeof *l_entries[resrq].obtained);
