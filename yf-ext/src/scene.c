@@ -106,7 +106,7 @@ static int render_mdl_inst(YF_scene scn);
 static int render_terr(YF_scene scn);
 
 /* Copies uniform global data to buffer and updates dtable contents. */
-static int copy_glob(YF_scene scn, YF_gstate gst);
+static int copy_glob(YF_scene scn);
 
 /* Copies uniform instance data to buffer and updates dtable contents. */
 static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
@@ -506,7 +506,7 @@ static int render_mdl(YF_scene scn) {
     yf_cmdbuf_setgstate(l_vars.cb, gst);
 
     /* TODO: Copy uniform global data once. */
-    if (copy_glob(scn, gst) != 0 ||
+    if (copy_glob(scn) != 0 ||
         copy_inst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
       return -1;
 
@@ -604,7 +604,7 @@ static int render_mdl_inst(YF_scene scn) {
       yf_cmdbuf_setgstate(l_vars.cb, gst);
 
       /* TODO: Copy uniform global data only once for each state. */
-      if (copy_glob(scn, gst) != 0 ||
+      if (copy_glob(scn) != 0 ||
           copy_inst(scn, resrq[rq_i], val->mdls+rem, n, gst, inst_alloc) != 0)
       {
         yf_list_deinit(done);
@@ -686,7 +686,7 @@ static int render_terr(YF_scene scn) {
     yf_cmdbuf_setgstate(l_vars.cb, gst);
 
     /* TODO: Copy uniform global data once. */
-    if (copy_glob(scn, gst) != 0 ||
+    if (copy_glob(scn) != 0 ||
         copy_inst(scn, YF_RESRQ_TERR, &terr, 1, gst, inst_alloc) != 0)
       return -1;
 
@@ -715,8 +715,11 @@ static int render_terr(YF_scene scn) {
   return 0;
 }
 
-static int copy_glob(YF_scene scn, YF_gstate gst) {
-  YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_GLOB);
+static int copy_glob(YF_scene scn) {
+  YF_dtable dtb = yf_resmgr_getglob();
+  if (dtb == NULL)
+    return -1;
+
   const YF_slice elems = {0, 1};
   size_t off = l_vars.buf_off;
   size_t sz = YF_GLOBSZ;
