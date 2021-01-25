@@ -180,6 +180,7 @@ void yf_resmgr_clear(void) {
     if (l_entries[i].gst != NULL)
       deinit_entry(i);
   }
+  yf_dtable_deinit(l_glob);
 }
 
 static int init_entry(int resrq) {
@@ -227,8 +228,8 @@ static void deinit_entry(int resrq) {
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
   assert(l_entries[resrq].gst != NULL);
 
-  /* TODO: May want to unload shader modules here. */
-  yf_dtable_deinit(yf_gstate_getdtb(l_entries[resrq].gst, YF_RESIDX_GLOB));
+  /* TODO: Unload shader modules. */
+
   yf_dtable_deinit(yf_gstate_getdtb(l_entries[resrq].gst, YF_RESIDX_INST));
   yf_gstate_deinit(l_entries[resrq].gst);
   free(l_entries[resrq].obtained);
