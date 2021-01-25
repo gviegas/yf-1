@@ -106,7 +106,7 @@ static int render_mdl_inst(YF_scene scn);
 static int render_terr(YF_scene scn);
 
 /* Copies uniform global data to buffer and updates dtable contents. */
-static int copy_glob(YF_scene scn, int resrq, YF_gstate gst);
+static int copy_glob(YF_scene scn, YF_gstate gst);
 
 /* Copies uniform instance data to buffer and updates dtable contents. */
 static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
@@ -506,7 +506,7 @@ static int render_mdl(YF_scene scn) {
     yf_cmdbuf_setgstate(l_vars.cb, gst);
 
     /* TODO: Copy uniform global data once. */
-    if (copy_glob(scn, YF_RESRQ_MDL, gst) != 0 ||
+    if (copy_glob(scn, gst) != 0 ||
         copy_inst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
       return -1;
 
@@ -604,7 +604,7 @@ static int render_mdl_inst(YF_scene scn) {
       yf_cmdbuf_setgstate(l_vars.cb, gst);
 
       /* TODO: Copy uniform global data only once for each state. */
-      if (copy_glob(scn, resrq[rq_i], gst) != 0 ||
+      if (copy_glob(scn, gst) != 0 ||
           copy_inst(scn, resrq[rq_i], val->mdls+rem, n, gst, inst_alloc) != 0)
       {
         yf_list_deinit(done);
@@ -686,7 +686,7 @@ static int render_terr(YF_scene scn) {
     yf_cmdbuf_setgstate(l_vars.cb, gst);
 
     /* TODO: Copy uniform global data once. */
-    if (copy_glob(scn, YF_RESRQ_TERR, gst) != 0 ||
+    if (copy_glob(scn, gst) != 0 ||
         copy_inst(scn, YF_RESRQ_TERR, &terr, 1, gst, inst_alloc) != 0)
       return -1;
 
@@ -715,44 +715,28 @@ static int render_terr(YF_scene scn) {
   return 0;
 }
 
-static int copy_glob(YF_scene scn, int resrq, YF_gstate gst) {
+static int copy_glob(YF_scene scn, YF_gstate gst) {
   YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_GLOB);
   const YF_slice elems = {0, 1};
-  size_t off, sz;
+  size_t off = l_vars.buf_off;
+  size_t sz = YF_GLOBSZ;
 
-  switch (resrq) {
-    case YF_RESRQ_MDL:
-    case YF_RESRQ_MDL4:
-    case YF_RESRQ_MDL16:
-    case YF_RESRQ_MDL64:
-    case YF_RESRQ_TERR: /* TODO */
-      off = l_vars.buf_off;
-      sz = YF_GLOBSZ;
-      /* view matrix */
-      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-            *yf_camera_getview(scn->cam), sizeof(YF_mat4)) != 0)
-      {
-        return -1;
-      }
-      l_vars.buf_off += sizeof(YF_mat4);
-      /* projection matrix */
-      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-            *yf_camera_getproj(scn->cam), sizeof(YF_mat4)) != 0)
-      {
-        return -1;
-      }
-      l_vars.buf_off += sizeof(YF_mat4);
-      /* copy */
-      if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_GLOB, elems,
-            &l_vars.buf, &off, &sz) != 0)
-      {
-        return -1;
-      }
-      break;
+  /* view matrix */
+  if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+        *yf_camera_getview(scn->cam), sizeof(YF_mat4)) != 0)
+    return -1;
+  l_vars.buf_off += sizeof(YF_mat4);
 
-    default:
-      assert(0);
-  }
+  /* projection matrix */
+  if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+        *yf_camera_getproj(scn->cam), sizeof(YF_mat4)) != 0)
+    return -1;
+  l_vars.buf_off += sizeof(YF_mat4);
+
+  /* copy */
+  if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_GLOB, elems,
+        &l_vars.buf, &off, &sz) != 0)
+    return -1;
 
   return 0;
 }
