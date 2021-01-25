@@ -2,7 +2,7 @@
  * YF
  * yf-gstate.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_GSTATE_H
@@ -76,6 +76,16 @@ typedef struct {
  *  and the global error is set to indicate the cause.
  */
 YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf);
+
+/**
+ * Gets the graphics state's shader stage for the given type.
+ *
+ * @param gst: The state.
+ * @param stage: The 'YF_STAGE' value indicating the type of the stage.
+ * @return: The stage, or 'NULL' if 'gst' does not have a shader stage of
+ *  the given type.
+ */
+const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage);
 
 /**
  * Gets the graphics state's dtable for the given index.

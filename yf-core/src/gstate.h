@@ -2,7 +2,7 @@
  * YF
  * gstate.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_GSTATE_H
@@ -14,6 +14,8 @@
 typedef struct YF_gstate_o {
   YF_context ctx;
   YF_pass pass;
+  YF_stage *stgs;
+  unsigned stg_n;
   YF_dtable *dtbs;
   unsigned dtb_n;
 
