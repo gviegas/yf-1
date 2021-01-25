@@ -106,7 +106,7 @@ static int render_mdl_inst(YF_scene scn);
 static int render_terr(YF_scene scn);
 
 /* Copies uniform global data to buffer and updates dtable contents. */
-static int copy_glob(YF_scene scn, YF_gstate gst);
+static int copy_glob(YF_scene scn);
 
 /* Copies uniform instance data to buffer and updates dtable contents. */
 static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
@@ -200,6 +200,12 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
   }
   yf_cmdbuf_clearcolor(l_vars.cb, 0, scn->color);
   yf_cmdbuf_cleardepth(l_vars.cb, 1.0f);
+
+  if (copy_glob(scn) != 0) {
+    clear_obj();
+    return -1;
+  }
+  yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOB, 0);
 
 #ifdef YF_DEVEL
   unsigned exec_n = 0;
@@ -505,9 +511,7 @@ static int render_mdl(YF_scene scn) {
 
     yf_cmdbuf_setgstate(l_vars.cb, gst);
 
-    /* TODO: Copy uniform global data once. */
-    if (copy_glob(scn, gst) != 0 ||
-        copy_inst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
+    if (copy_inst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
       return -1;
 
     if ((tex = yf_model_gettex(val->mdl)) != NULL)
@@ -517,7 +521,6 @@ static int render_mdl(YF_scene scn) {
       /* TODO: Handle models lacking texture. */
       assert(0);
 
-    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOB, 0);
     yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
     if ((mesh = yf_model_getmesh(val->mdl)) != NULL)
@@ -603,10 +606,7 @@ static int render_mdl_inst(YF_scene scn) {
 
       yf_cmdbuf_setgstate(l_vars.cb, gst);
 
-      /* TODO: Copy uniform global data only once for each state. */
-      if (copy_glob(scn, gst) != 0 ||
-          copy_inst(scn, resrq[rq_i], val->mdls+rem, n, gst, inst_alloc) != 0)
-      {
+      if (copy_inst(scn, resrq[rq_i], val->mdls+rem, n, gst, inst_alloc) != 0) {
         yf_list_deinit(done);
         return -1;
       }
@@ -618,7 +618,6 @@ static int render_mdl_inst(YF_scene scn) {
         /* TODO: Handle models lacking texture. */
         assert(0);
 
-      yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOB, 0);
       yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
       if ((mesh = yf_model_getmesh(val->mdls[rem])) != NULL)
@@ -685,9 +684,7 @@ static int render_terr(YF_scene scn) {
 
     yf_cmdbuf_setgstate(l_vars.cb, gst);
 
-    /* TODO: Copy uniform global data once. */
-    if (copy_glob(scn, gst) != 0 ||
-        copy_inst(scn, YF_RESRQ_TERR, &terr, 1, gst, inst_alloc) != 0)
+    if (copy_inst(scn, YF_RESRQ_TERR, &terr, 1, gst, inst_alloc) != 0)
       return -1;
 
     if ((hmap = yf_terrain_gethmap(terr)) != NULL)
@@ -702,7 +699,6 @@ static int render_terr(YF_scene scn) {
       /* TODO: Handle terrains lacking texture. */
       assert(0);
 
-    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOB, 0);
     yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
     mesh = yf_terrain_getmesh(terr);
@@ -715,8 +711,11 @@ static int render_terr(YF_scene scn) {
   return 0;
 }
 
-static int copy_glob(YF_scene scn, YF_gstate gst) {
-  YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_GLOB);
+static int copy_glob(YF_scene scn) {
+  YF_dtable dtb = yf_resmgr_getglob();
+  if (dtb == NULL)
+    return -1;
+
   const YF_slice elems = {0, 1};
   size_t off = l_vars.buf_off;
   size_t sz = YF_GLOBSZ;
