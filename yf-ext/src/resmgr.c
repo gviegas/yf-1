@@ -237,9 +237,21 @@ static int init_entry(int resrq) {
 static void deinit_entry(int resrq) {
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
   assert(l_entries[resrq].gst != NULL);
+  assert(yf_getctx() != NULL);
 
-  /* TODO: Unload shader modules. */
-
+  const int stages[] = {
+    YF_STAGE_VERT,
+    YF_STAGE_TESC,
+    YF_STAGE_TESE,
+    YF_STAGE_GEOM,
+    YF_STAGE_FRAG,
+    YF_STAGE_COMP
+  };
+  for (size_t i = 0; i < (sizeof stages / sizeof stages[0]); ++i) {
+    const YF_stage *stg = yf_gstate_getstg(l_entries[resrq].gst, stages[i]);
+    if (stg != NULL)
+      yf_unldmod(yf_getctx(), stg->mod);
+  }
   yf_dtable_deinit(yf_gstate_getdtb(l_entries[resrq].gst, YF_RESIDX_INST));
   yf_gstate_deinit(l_entries[resrq].gst);
   free(l_entries[resrq].obtained);
