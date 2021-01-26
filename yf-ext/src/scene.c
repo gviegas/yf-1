@@ -838,6 +838,7 @@ static void clear_obj(void) {
     yf_hashset_clear(l_vars.mdls_inst);
   }
   yf_list_clear(l_vars.terrs);
+  yf_list_clear(l_vars.parts);
 }
 
 static size_t hash_mdl(const void *x) {
