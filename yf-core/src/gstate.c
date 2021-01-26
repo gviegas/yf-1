@@ -46,15 +46,17 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf) {
   memcpy(gst->stgs, conf->stgs, stg_sz);
   gst->stg_n = conf->stg_n;
 
-  const size_t dtb_sz = conf->dtb_n * sizeof *conf->dtbs;
-  gst->dtbs = malloc(dtb_sz);
-  if (gst->dtbs == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    yf_gstate_deinit(gst);
-    return NULL;
-  }
-  memcpy(gst->dtbs, conf->dtbs, dtb_sz);
   gst->dtb_n = conf->dtb_n;
+  if (gst->dtb_n > 0) {
+    const size_t dtb_sz = conf->dtb_n * sizeof *conf->dtbs;
+    gst->dtbs = malloc(dtb_sz);
+    if (gst->dtbs == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      yf_gstate_deinit(gst);
+      return NULL;
+    }
+    memcpy(gst->dtbs, conf->dtbs, dtb_sz);
+  }
 
   VkPrimitiveTopology topol;
   VkPolygonMode polym;
