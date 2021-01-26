@@ -21,6 +21,7 @@
 #include "mesh.h"
 #include "model.h"
 #include "terrain.h"
+#include "particle.h"
 
 #ifdef YF_DEVEL
 # include <stdio.h>
@@ -802,6 +803,31 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
         /* model-view-projection matrix */
         if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
               *yf_terrain_getmvp(terr), sizeof(YF_mat4)) != 0)
+          return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+        /* copy */
+        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+              &l_vars.buf, &off, &sz) != 0)
+          return -1;
+      }
+      break;
+
+    case YF_RESRQ_PART:
+      assert(obj_n == 1);
+      off = l_vars.buf_off;
+      sz = obj_n * YF_INSTSZ_PART;
+      {
+        YF_particle part = ((YF_particle *)objs)[0];
+        yf_mat4_mul(*yf_particle_getmvp(part), *yf_camera_getxform(scn->cam),
+            *yf_particle_getxform(part));
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+              *yf_particle_getxform(part), sizeof(YF_mat4)) != 0)
+          return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+        /* model-view-projection matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+              *yf_particle_getmvp(part), sizeof(YF_mat4)) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* copy */
