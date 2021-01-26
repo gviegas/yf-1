@@ -46,6 +46,7 @@
 #define YF_GLOBSZ      (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_MDL  (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
+#define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
 
 struct YF_scene_o {
   YF_node node;
@@ -65,6 +66,7 @@ typedef struct {
   YF_hashset mdls;
   YF_hashset mdls_inst;
   YF_list terrs;
+  YF_list parts;
 } L_vars;
 
 /* Type defining an entry in the list of obtained resources. */
@@ -295,11 +297,12 @@ static int init_vars(void) {
 
   /* TODO: Check limits. */
   unsigned insts[YF_RESRQ_N] = {
-    [YF_RESRQ_MDL] = 128,
-    [YF_RESRQ_MDL4] = 48,
+    [YF_RESRQ_MDL]   = 128,
+    [YF_RESRQ_MDL4]  = 48,
     [YF_RESRQ_MDL16] = 48,
     [YF_RESRQ_MDL64] = 16,
-    [YF_RESRQ_TERR] = 24
+    [YF_RESRQ_TERR]  = 24,
+    [YF_RESRQ_PART]  = 64
   };
   size_t inst_min = 0;
   size_t inst_sum = 0;
@@ -335,6 +338,9 @@ static int init_vars(void) {
         case YF_RESRQ_TERR:
           buf_sz += insts[i] * YF_INSTSZ_TERR + YF_GLOBSZ;
           break;
+        case YF_RESRQ_PART:
+          buf_sz += insts[i] * YF_INSTSZ_PART + YF_GLOBSZ;
+          break;
         /* TODO: Other objects. */
         default:
           assert(0);
@@ -360,7 +366,8 @@ static int init_vars(void) {
       (l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
       (l_vars.mdls = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
       (l_vars.mdls_inst = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
-      (l_vars.terrs = yf_list_init(NULL)) == NULL)
+      (l_vars.terrs = yf_list_init(NULL)) == NULL ||
+      (l_vars.parts = yf_list_init(NULL)) == NULL)
   {
     yf_resmgr_clear();
     yf_buffer_deinit(l_vars.buf);
@@ -368,6 +375,7 @@ static int init_vars(void) {
     yf_hashset_deinit(l_vars.mdls);
     yf_hashset_deinit(l_vars.mdls_inst);
     yf_list_deinit(l_vars.terrs);
+    yf_list_deinit(l_vars.parts);
     memset(&l_vars, 0, sizeof l_vars);
     return -1;
   }
