@@ -30,6 +30,7 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf) {
     return NULL;
   }
   cst->ctx = ctx;
+  memcpy(&cst->stg, &conf->stg, sizeof conf->stg);
 
   cst->dtb_n = conf->dtb_n;
   if (cst->dtb_n > 0) {
@@ -107,6 +108,11 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf) {
   }
 
   return cst;
+}
+
+const YF_stage *yf_cstate_getstg(YF_cstate cst) {
+  assert(cst != NULL);
+  return &cst->stg;
 }
 
 YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index) {
