@@ -146,29 +146,25 @@ int yf_resmgr_setallocn(int resrq, unsigned n) {
     return 0;
 
   if (l_entries[resrq].gst != NULL) {
-    YF_dtable dtb = yf_gstate_getdtb(l_entries[resrq].gst, YF_RESIDX_INST);
-    if (yf_dtable_alloc(dtb, n) != 0) {
-      l_entries[resrq].n = 0;
-      return -1;
-    }
     if (n > 0) {
+      YF_dtable dtb = yf_gstate_getdtb(l_entries[resrq].gst, YF_RESIDX_INST);
+      if (yf_dtable_alloc(dtb, n) != 0) {
+        deinit_entry(resrq);
+        return -1;
+      }
       char *tmp = realloc(l_entries[resrq].obtained, n);
       if (tmp == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        yf_dtable_dealloc(dtb);
-        l_entries[resrq].n = 0;
+        deinit_entry(resrq);
         return -1;
       }
       memset(tmp, 0, n);
       l_entries[resrq].obtained = tmp;
+      l_entries[resrq].n = n;
+      l_entries[resrq].i = 0;
     } else {
-      /* XXX: The state object and global resource are intentionally left
-         untouched here. */
-      free(l_entries[resrq].obtained);
-      l_entries[resrq].obtained = NULL;
+      deinit_entry(resrq);
     }
-    l_entries[resrq].n = n;
-    l_entries[resrq].i = 0;
   }
 
   l_allocn[resrq] = n;
