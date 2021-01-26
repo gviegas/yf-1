@@ -16,8 +16,9 @@
 #define YF_RESRQ_MDL16 2
 #define YF_RESRQ_MDL64 3
 #define YF_RESRQ_TERR  4
+#define YF_RESRQ_PART  5
 
-#define YF_RESRQ_N 5
+#define YF_RESRQ_N 6
 
 /* Obtains a resource that satisfies the given requirements. */
 YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc);
@@ -61,5 +62,6 @@ void yf_resmgr_clear(void);
 #define YF_RESLOC_POS  0
 #define YF_RESLOC_TC   1
 #define YF_RESLOC_NORM 2
+#define YF_RESLOC_CLR  3
 
 #endif /* YF_RESMGR_H */
