@@ -331,7 +331,7 @@ static int init_vars(void) {
 
   do {
     int failed = 0;
-    buf_sz = 0;
+    buf_sz = YF_GLOBSZ;
     for (unsigned i = 0; i < YF_RESRQ_N; ++i) {
       if (yf_resmgr_setallocn(i, insts[i]) != 0 || yf_resmgr_prealloc(i) != 0) {
         yf_resmgr_clear();
@@ -340,22 +340,22 @@ static int init_vars(void) {
       }
       switch (i) {
         case YF_RESRQ_MDL:
-          buf_sz += insts[i] * YF_INSTSZ_MDL + YF_GLOBSZ;
+          buf_sz += insts[i] * YF_INSTSZ_MDL;
           break;
         case YF_RESRQ_MDL4:
-          buf_sz += insts[i] * (YF_INSTSZ_MDL<<2) + YF_GLOBSZ;
+          buf_sz += insts[i] * (YF_INSTSZ_MDL<<2);
           break;
         case YF_RESRQ_MDL16:
-          buf_sz += insts[i] * (YF_INSTSZ_MDL<<4) + YF_GLOBSZ;
+          buf_sz += insts[i] * (YF_INSTSZ_MDL<<4);
           break;
         case YF_RESRQ_MDL64:
-          buf_sz += insts[i] * (YF_INSTSZ_MDL<<6) + YF_GLOBSZ;
+          buf_sz += insts[i] * (YF_INSTSZ_MDL<<6);
           break;
         case YF_RESRQ_TERR:
-          buf_sz += insts[i] * YF_INSTSZ_TERR + YF_GLOBSZ;
+          buf_sz += insts[i] * YF_INSTSZ_TERR;
           break;
         case YF_RESRQ_PART:
-          buf_sz += insts[i] * YF_INSTSZ_PART + YF_GLOBSZ;
+          buf_sz += insts[i] * YF_INSTSZ_PART;
           break;
         /* TODO: Other objects. */
         default:
