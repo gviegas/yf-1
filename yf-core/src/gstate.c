@@ -359,6 +359,11 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf) {
   return gst;
 }
 
+YF_pass yf_gstate_getpass(YF_gstate gst) {
+  assert(gst != NULL);
+  return gst->pass;
+}
+
 const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage) {
   assert(gst != NULL);
 
