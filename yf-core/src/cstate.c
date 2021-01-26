@@ -2,7 +2,7 @@
  * YF
  * cstate.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -30,8 +30,18 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf) {
     return NULL;
   }
   cst->ctx = ctx;
-  cst->dtbs = conf->dtbs;
+
   cst->dtb_n = conf->dtb_n;
+  if (cst->dtb_n > 0) {
+    const size_t dtb_sz = cst->dtb_n * sizeof *conf->dtbs;
+    cst->dtbs = malloc(dtb_sz);
+    if (cst->dtbs == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      yf_cstate_deinit(cst);
+      return NULL;
+    }
+    memcpy(cst->dtbs, conf->dtbs, dtb_sz);
+  }
 
   VkResult res;
 
@@ -111,6 +121,7 @@ YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index) {
 
 void yf_cstate_deinit(YF_cstate cst) {
   if (cst != NULL) {
+    free(cst->dtbs);
     vkDestroyPipelineLayout(cst->ctx->device, cst->layout, NULL);
     vkDestroyPipeline(cst->ctx->device, cst->pipeline, NULL);
     free(cst);
