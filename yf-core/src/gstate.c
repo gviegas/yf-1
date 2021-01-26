@@ -381,6 +381,8 @@ YF_dtable yf_gstate_getdtb(YF_gstate gst, unsigned index) {
 
 void yf_gstate_deinit(YF_gstate gst) {
   if (gst != NULL) {
+    free(gst->stgs);
+    free(gst->dtbs);
     vkDestroyPipelineLayout(gst->ctx->device, gst->layout, NULL);
     vkDestroyPipeline(gst->ctx->device, gst->pipeline, NULL);
     free(gst);
