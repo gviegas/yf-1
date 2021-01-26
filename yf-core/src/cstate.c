@@ -121,6 +121,7 @@ YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index) {
 
 void yf_cstate_deinit(YF_cstate cst) {
   if (cst != NULL) {
+    free(cst->dtbs);
     vkDestroyPipelineLayout(cst->ctx->device, cst->layout, NULL);
     vkDestroyPipeline(cst->ctx->device, cst->pipeline, NULL);
     free(cst);
