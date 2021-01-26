@@ -2,7 +2,7 @@
  * YF
  * yf-cstate.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_CSTATE_H
@@ -40,7 +40,15 @@ typedef struct {
 YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf);
 
 /**
- * Gets the compute state's dtable for the given index.
+ * Gets a compute state's stage.
+ *
+ * @param cst: The state.
+ * @return: The stage.
+ */
+const YF_stage *yf_cstate_getstg(YF_cstate cst);
+
+/**
+ * Gets a compute state's dtable.
  *
  * @param cst: The state.
  * @param index: The index of the table to retrieve.
