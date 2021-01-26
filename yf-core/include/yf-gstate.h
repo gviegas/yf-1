@@ -78,17 +78,25 @@ typedef struct {
 YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf);
 
 /**
- * Gets the graphics state's shader stage for the given type.
+ * Gets a graphics state's pass.
  *
  * @param gst: The state.
- * @param stage: The 'YF_STAGE' value indicating the type of the stage.
+ * @return: The pass.
+ */
+YF_pass yf_gstate_getpass(YF_gstate gst);
+
+/**
+ * Gets a graphics state's stage.
+ *
+ * @param gst: The state.
+ * @param stage: The 'YF_STAGE' value indicating the stage type to retrieve.
  * @return: The stage, or 'NULL' if 'gst' does not have a shader stage of
  *  the given type.
  */
 const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage);
 
 /**
- * Gets the graphics state's dtable for the given index.
+ * Gets a graphics state's dtable.
  *
  * @param gst: The state.
  * @param index: The index of the table to retrieve.
