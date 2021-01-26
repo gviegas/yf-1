@@ -11,6 +11,7 @@
 #include "print.h"
 #include "model.h"
 #include "terrain.h"
+#include "particle.h"
 #include "vertex.h"
 
 #undef YF_PTITLE
@@ -36,8 +37,10 @@ void yf_print_nodeobj(YF_node node) {
       printf("\n hmap: %p", (void *)yf_terrain_gethmap((YF_terrain)obj));
       break;
     case YF_NODEOBJ_PARTICLE:
-      /* TODO */
-      assert(0);
+      printf("\nnodeobj is a particle (%p)", obj);
+      printf("\n mesh: %p", (void *)yf_particle_getmesh((YF_particle)obj));
+      printf("\n tex:  %p", (void *)yf_particle_gettex((YF_particle)obj));
+      /* TODO: Print the 'psys' parameters. */
       break;
     case YF_NODEOBJ_QUAD:
       /* TODO */
