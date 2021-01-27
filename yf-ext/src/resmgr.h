@@ -18,8 +18,9 @@
 #define YF_RESRQ_TERR  4
 #define YF_RESRQ_PART  5
 #define YF_RESRQ_QUAD  6
+#define YF_RESRQ_LABL  7
 
-#define YF_RESRQ_N 7
+#define YF_RESRQ_N 8
 
 /* Obtains a resource that satisfies the given requirements. */
 YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc);

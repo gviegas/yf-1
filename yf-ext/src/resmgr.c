@@ -29,9 +29,10 @@
 #define YF_ALLOCN_MDL4  16
 #define YF_ALLOCN_MDL16 16
 #define YF_ALLOCN_MDL64 4
-#define YF_ALLOCN_TERR  8
-#define YF_ALLOCN_PART  32
-#define YF_ALLOCN_QUAD  64
+#define YF_ALLOCN_TERR  4
+#define YF_ALLOCN_PART  8
+#define YF_ALLOCN_QUAD  24
+#define YF_ALLOCN_LABL  24
 
 /* Type defining an entry in the resource list. */
 typedef struct {
@@ -55,7 +56,8 @@ static unsigned l_allocn[YF_RESRQ_N] = {
   [YF_RESRQ_MDL64] = YF_ALLOCN_MDL64,
   [YF_RESRQ_TERR]  = YF_ALLOCN_TERR,
   [YF_RESRQ_PART]  = YF_ALLOCN_PART,
-  [YF_RESRQ_QUAD]  = YF_ALLOCN_QUAD
+  [YF_RESRQ_QUAD]  = YF_ALLOCN_QUAD,
+  [YF_RESRQ_LABL]  = YF_ALLOCN_LABL
 };
 
 /* Initializes the entry of a given 'resrq' value. */
@@ -75,6 +77,9 @@ static int init_part(L_entry *entry);
 
 /* Initializes the entry of a quad resource. */
 static int init_quad(L_entry *entry);
+
+/* Initializes the entry of a label resource. */
+static int init_labl(L_entry *entry);
 
 /* Makes a string to use as the pathname of a shader module.
    The caller is responsible for deallocating the returned string. */
@@ -238,6 +243,8 @@ static int init_entry(int resrq) {
       return init_part(l_entries+resrq);
     case YF_RESRQ_QUAD:
       return init_quad(l_entries+resrq);
+    case YF_RESRQ_LABL:
+      return init_labl(l_entries+resrq);
     default:
       assert(0);
       return -1;
@@ -638,6 +645,11 @@ static int init_quad(L_entry *entry) {
   }
 
   return 0;
+}
+
+static int init_labl(L_entry *entry) {
+  /* TODO */
+  assert(0);
 }
 
 static char *make_shdpath(int nodeobj, int stage, unsigned elements) {
