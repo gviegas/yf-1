@@ -122,6 +122,9 @@ static int render_terr(YF_scene scn);
 /* Renders particle system objects. */
 static int render_part(YF_scene scn);
 
+/* Renders quad objects. */
+static int render_quad(YF_scene scn);
+
 /* Copies uniform global data to buffer and updates dtable contents. */
 static int copy_glob(YF_scene scn);
 
@@ -820,6 +823,65 @@ static int render_part(YF_scene scn) {
     yf_mesh_draw(mesh, l_vars.cb, 1, 0);
 
     yf_list_removeat(l_vars.parts, &it);
+    it = YF_NILIT;
+  } while (1);
+
+  return 0;
+}
+
+static int render_quad(YF_scene scn) {
+  YF_gstate gst = NULL;
+  unsigned inst_alloc = 0;
+  L_reso* reso = NULL;
+  YF_texture tex = NULL;
+  YF_mesh mesh = NULL;
+  YF_iter it = YF_NILIT;
+  YF_quad quad = NULL;
+
+  do {
+    quad = yf_list_next(l_vars.quads, &it);
+    if (YF_IT_ISNIL(it))
+      break;
+
+    if ((gst = yf_resmgr_obtain(YF_RESRQ_QUAD, &inst_alloc)) == NULL) {
+      switch (yf_geterr()) {
+        case YF_ERR_INUSE:
+          /* out of resources, need to execute pending work */
+          return 0;
+        default:
+          return -1;
+      }
+    }
+
+    if ((reso = malloc(sizeof *reso)) == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+    reso->resrq = YF_RESRQ_QUAD;
+    reso->inst_alloc = inst_alloc;
+    if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
+      free(reso);
+      return -1;
+    }
+
+    yf_cmdbuf_setgstate(l_vars.cb, gst);
+
+    if (copy_inst(scn, YF_RESRQ_QUAD, &quad, 1, gst, inst_alloc) != 0)
+      return -1;
+
+    if ((tex = yf_quad_gettex(quad)) != NULL)
+      yf_texture_copyres(tex, yf_gstate_getdtb(gst, YF_RESIDX_INST), inst_alloc,
+          YF_RESBIND_TEX, 0);
+    else
+      /* TODO: Handle quads lacking texture. */
+      assert(0);
+
+    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
+
+    mesh = yf_quad_getmesh(quad);
+    yf_mesh_draw(mesh, l_vars.cb, 1, 0);
+
+    yf_list_removeat(l_vars.quads, &it);
     it = YF_NILIT;
   } while (1);
 
