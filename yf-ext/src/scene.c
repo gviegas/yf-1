@@ -17,12 +17,11 @@
 #include "scene.h"
 #include "coreobj.h"
 #include "resmgr.h"
-#include "texture.h"
-#include "mesh.h"
 #include "model.h"
 #include "terrain.h"
 #include "particle.h"
 #include "quad.h"
+#include "label.h"
 
 #ifdef YF_DEVEL
 # include <stdio.h>
@@ -51,6 +50,7 @@
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_QUAD (sizeof(YF_mat4) << 1)
+#define YF_INSTSZ_LABL (sizeof(YF_mat4) << 1)
 
 #define YF_PEND_NONE 0
 #define YF_PEND_MDL  0x01
@@ -58,6 +58,7 @@
 #define YF_PEND_TERR 0x04
 #define YF_PEND_PART 0x08
 #define YF_PEND_QUAD 0x10
+#define YF_PEND_LABL 0x20
 
 struct YF_scene_o {
   YF_node node;
@@ -79,6 +80,7 @@ typedef struct {
   YF_list terrs;
   YF_list parts;
   YF_list quads;
+  YF_list labls;
 } L_vars;
 
 /* Type defining an entry in the list of obtained resources. */
@@ -357,6 +359,7 @@ static int init_vars(void) {
     [YF_RESRQ_TERR]  = 16,
     [YF_RESRQ_PART]  = 24,
     [YF_RESRQ_QUAD]  = 48,
+    [YF_RESRQ_LABL]  = 64
   };
   size_t inst_min = 0;
   size_t inst_sum = 0;
@@ -398,7 +401,9 @@ static int init_vars(void) {
         case YF_RESRQ_QUAD:
           buf_sz += insts[i] * YF_INSTSZ_QUAD;
           break;
-        /* TODO: Other objects. */
+        case YF_RESRQ_LABL:
+          buf_sz += insts[i] * YF_INSTSZ_LABL;
+          break;
         default:
           assert(0);
       }
@@ -425,7 +430,8 @@ static int init_vars(void) {
       (l_vars.mdls_inst = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
       (l_vars.terrs = yf_list_init(NULL)) == NULL ||
       (l_vars.parts = yf_list_init(NULL)) == NULL ||
-      (l_vars.quads = yf_list_init(NULL)) == NULL)
+      (l_vars.quads = yf_list_init(NULL)) == NULL ||
+      (l_vars.labls = yf_list_init(NULL)) == NULL)
   {
     yf_resmgr_clear();
     yf_buffer_deinit(l_vars.buf);
@@ -435,6 +441,7 @@ static int init_vars(void) {
     yf_list_deinit(l_vars.terrs);
     yf_list_deinit(l_vars.parts);
     yf_list_deinit(l_vars.quads);
+    yf_list_deinit(l_vars.labls);
     memset(&l_vars, 0, sizeof l_vars);
     return -1;
   }
@@ -1073,6 +1080,7 @@ static void clear_obj(void) {
   yf_list_clear(l_vars.terrs);
   yf_list_clear(l_vars.parts);
   yf_list_clear(l_vars.quads);
+  yf_list_clear(l_vars.labls);
 }
 
 static size_t hash_mdl(const void *x) {
