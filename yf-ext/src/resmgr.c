@@ -31,6 +31,7 @@
 #define YF_ALLOCN_MDL64 4
 #define YF_ALLOCN_TERR  8
 #define YF_ALLOCN_PART  32
+#define YF_ALLOCN_QUAD  64
 
 /* Type defining an entry in the resource list. */
 typedef struct {
@@ -53,7 +54,8 @@ static unsigned l_allocn[YF_RESRQ_N] = {
   [YF_RESRQ_MDL16] = YF_ALLOCN_MDL16,
   [YF_RESRQ_MDL64] = YF_ALLOCN_MDL64,
   [YF_RESRQ_TERR]  = YF_ALLOCN_TERR,
-  [YF_RESRQ_PART]  = YF_ALLOCN_PART
+  [YF_RESRQ_PART]  = YF_ALLOCN_PART,
+  [YF_RESRQ_QUAD]  = YF_ALLOCN_QUAD
 };
 
 /* Initializes the entry of a given 'resrq' value. */
@@ -70,6 +72,9 @@ static int init_terr(L_entry *entry);
 
 /* Initializes the entry of a particle system resource. */
 static int init_part(L_entry *entry);
+
+/* Initializes the entry of a quad resource. */
+static int init_quad(L_entry *entry);
 
 /* Makes a string to use as the pathname of a shader module.
    The caller is responsible for deallocating the returned string. */
@@ -231,6 +236,8 @@ static int init_entry(int resrq) {
       return init_terr(l_entries+resrq);
     case YF_RESRQ_PART:
       return init_part(l_entries+resrq);
+    case YF_RESRQ_QUAD:
+      return init_quad(l_entries+resrq);
     default:
       assert(0);
       return -1;
@@ -524,6 +531,99 @@ static int init_part(L_entry *entry) {
     vins,
     vin_n,
     YF_PRIMITIVE_POINT,
+    YF_POLYMODE_FILL,
+    YF_CULLMODE_BACK,
+    YF_WINDING_CCW
+  };
+
+  entry->gst = yf_gstate_init(ctx, &conf);
+  if (entry->gst == NULL) {
+    yf_unldmod(ctx, vert_mod);
+    yf_unldmod(ctx, frag_mod);
+    yf_dtable_deinit(inst_dtb);
+    return -1;
+  }
+
+  return 0;
+}
+
+static int init_quad(L_entry *entry) {
+  YF_context ctx = yf_getctx();
+  YF_pass pass = yf_getpass();
+
+  assert(ctx != NULL && pass != NULL);
+
+  /* stages */
+  char *vert_path = make_shdpath(YF_NODEOBJ_QUAD, YF_STAGE_VERT, 1);
+  char *frag_path = make_shdpath(YF_NODEOBJ_QUAD, YF_STAGE_FRAG, 1);
+  if (vert_path == NULL || frag_path == NULL) {
+    free(vert_path);
+    free(frag_path);
+    return -1;
+  }
+
+  YF_modid vert_mod;
+  if (yf_loadmod(ctx, vert_path, &vert_mod) != 0) {
+    free(vert_path);
+    free(frag_path);
+    return -1;
+  }
+  free(vert_path);
+
+  YF_modid frag_mod;
+  if (yf_loadmod(ctx, frag_path, &frag_mod) != 0) {
+    yf_unldmod(ctx, vert_mod);
+    free(frag_path);
+    return -1;
+  }
+  free(frag_path);
+
+  const YF_stage stgs[] = {
+    {YF_STAGE_VERT, vert_mod, "main"},
+    {YF_STAGE_FRAG, frag_mod, "main"}
+  };
+  const unsigned stg_n = sizeof stgs / sizeof stgs[0];
+
+  /* dtables */
+  const YF_dentry inst_ents[] = {
+    {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
+    {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL}
+  };
+
+  YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
+      sizeof inst_ents / sizeof inst_ents[0]);
+
+  if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
+    yf_unldmod(ctx, vert_mod);
+    yf_unldmod(ctx, frag_mod);
+    yf_dtable_deinit(inst_dtb);
+    return -1;
+  }
+
+  const YF_dtable dtbs[] = {l_glob, inst_dtb};
+  const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
+
+  /* vinputs */
+  const YF_vattr attrs[] = {
+    {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
+    {YF_RESLOC_TC, YF_TYPEFMT_FLOAT2, offsetof(YF_vquad, tc)},
+    {YF_RESLOC_CLR, YF_TYPEFMT_FLOAT4, offsetof(YF_vquad, clr)}
+  };
+  const YF_vinput vins[] = {
+    {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vquad), YF_VRATE_VERT}
+  };
+  const unsigned vin_n = sizeof vins / sizeof vins[0];
+
+  /* gstate */
+  const YF_gconf conf = {
+    pass,
+    stgs,
+    stg_n,
+    dtbs,
+    dtb_n,
+    vins,
+    vin_n,
+    YF_PRIMITIVE_TRIANGLE,
     YF_POLYMODE_FILL,
     YF_CULLMODE_BACK,
     YF_WINDING_CCW
