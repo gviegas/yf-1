@@ -12,6 +12,7 @@
 #include "model.h"
 #include "terrain.h"
 #include "particle.h"
+#include "quad.h"
 #include "vertex.h"
 
 #undef YF_PTITLE
@@ -43,8 +44,9 @@ void yf_print_nodeobj(YF_node node) {
       /* TODO: Print the 'psys' parameters. */
       break;
     case YF_NODEOBJ_QUAD:
-      /* TODO */
-      assert(0);
+      printf("\nnodeobj is a quad (%p)", obj);
+      printf("\n mesh: %p", (void *)yf_quad_getmesh((YF_quad)obj));
+      printf("\n tex:  %p", (void *)yf_quad_gettex((YF_quad)obj));
       break;
     case YF_NODEOBJ_LABEL:
       /* TODO */
