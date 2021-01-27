@@ -76,6 +76,8 @@ int yf_test_label(void) {
   assert(l_vars.font != NULL);
 
   yf_label_setfont(l_vars.labl, l_vars.font);
+  yf_label_setstr(l_vars.labl, L"Label");
+  yf_label_setpt(l_vars.labl, 72);
 
   yf_node_insert(yf_scene_getnode(l_vars.scn), yf_label_getnode(l_vars.labl));
 
