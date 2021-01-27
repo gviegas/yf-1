@@ -13,6 +13,7 @@
 #include "terrain.h"
 #include "particle.h"
 #include "quad.h"
+#include "label.h"
 #include "vertex.h"
 
 #undef YF_PTITLE
@@ -49,8 +50,15 @@ void yf_print_nodeobj(YF_node node) {
       printf("\n tex:  %p", (void *)yf_quad_gettex((YF_quad)obj));
       break;
     case YF_NODEOBJ_LABEL:
-      /* TODO */
-      assert(0);
+      printf("\nnodeobj is a label (%p)", obj);
+      printf("\n mesh: %p", (void *)yf_label_getmesh((YF_label)obj));
+      printf("\n tex:  %p", (void *)yf_label_gettex((YF_label)obj));
+      printf("\n font: %p", (void *)yf_label_getfont((YF_label)obj));
+      printf("\n pt:   %hu", yf_label_getpt((YF_label)obj));
+      {
+        wchar_t str[256];
+        printf("\n str:  %ls", yf_label_getstr((YF_label)obj, str, 256));
+      }
       break;
     case YF_NODEOBJ_LIGHT:
       /* TODO */
