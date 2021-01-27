@@ -532,8 +532,11 @@ static int traverse_scn(YF_node node, void *arg) {
       break;
 
     case YF_NODEOBJ_LABEL:
-      /* TODO */
-      assert(0);
+      if (yf_list_insert(l_vars.labls, obj) != 0) {
+        *(int *)arg = -1;
+        return -1;
+      }
+      break;
 
     case YF_NODEOBJ_LIGHT:
       /* TODO */
