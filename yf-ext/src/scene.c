@@ -22,6 +22,7 @@
 #include "model.h"
 #include "terrain.h"
 #include "particle.h"
+#include "quad.h"
 
 #ifdef YF_DEVEL
 # include <stdio.h>
@@ -41,6 +42,7 @@
 #undef YF_INSTCAP
 #define YF_INSTCAP 4
 
+/* XXX: Unused. */
 #undef YF_BUFLEN
 #define YF_BUFLEN 131072
 
@@ -48,12 +50,14 @@
 #define YF_INSTSZ_MDL  (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
+#define YF_INSTSZ_QUAD (sizeof(YF_mat4) << 1)
 
 #define YF_PEND_NONE 0
 #define YF_PEND_MDL  0x01
 #define YF_PEND_MDLI 0x02
 #define YF_PEND_TERR 0x04
 #define YF_PEND_PART 0x08
+#define YF_PEND_QUAD 0x10
 
 struct YF_scene_o {
   YF_node node;
@@ -74,6 +78,7 @@ typedef struct {
   YF_hashset mdls_inst;
   YF_list terrs;
   YF_list parts;
+  YF_list quads;
 } L_vars;
 
 /* Type defining an entry in the list of obtained resources. */
@@ -116,6 +121,9 @@ static int render_terr(YF_scene scn);
 
 /* Renders particle system objects. */
 static int render_part(YF_scene scn);
+
+/* Renders quad objects. */
+static int render_quad(YF_scene scn);
 
 /* Copies uniform global data to buffer and updates dtable contents. */
 static int copy_glob(YF_scene scn);
@@ -210,6 +218,8 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
     pend |= YF_PEND_TERR;
   if (yf_list_getlen(l_vars.parts) != 0)
     pend |= YF_PEND_PART;
+  if (yf_list_getlen(l_vars.quads) != 0)
+    pend |= YF_PEND_QUAD;
 
   l_vars.buf_off = 0;
   if ((l_vars.cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH)) == NULL) {
@@ -282,6 +292,18 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
         pend &= ~YF_PEND_PART;
     }
 
+    if (pend & YF_PEND_QUAD) {
+      if (render_quad(scn) != 0) {
+        yf_cmdbuf_end(l_vars.cb);
+        yf_cmdbuf_reset(l_vars.ctx);
+        yield_res();
+        clear_obj();
+        return -1;
+      }
+      if (yf_list_getlen(l_vars.quads) == 0)
+        pend &= ~YF_PEND_QUAD;
+    }
+
     if (yf_cmdbuf_end(l_vars.cb) == 0) {
       if (yf_cmdbuf_exec(l_vars.ctx) != 0) {
         yield_res();
@@ -332,8 +354,9 @@ static int init_vars(void) {
     [YF_RESRQ_MDL4]  = 48,
     [YF_RESRQ_MDL16] = 48,
     [YF_RESRQ_MDL64] = 16,
-    [YF_RESRQ_TERR]  = 24,
-    [YF_RESRQ_PART]  = 64
+    [YF_RESRQ_TERR]  = 16,
+    [YF_RESRQ_PART]  = 24,
+    [YF_RESRQ_QUAD]  = 48,
   };
   size_t inst_min = 0;
   size_t inst_sum = 0;
@@ -372,6 +395,9 @@ static int init_vars(void) {
         case YF_RESRQ_PART:
           buf_sz += insts[i] * YF_INSTSZ_PART;
           break;
+        case YF_RESRQ_QUAD:
+          buf_sz += insts[i] * YF_INSTSZ_QUAD;
+          break;
         /* TODO: Other objects. */
         default:
           assert(0);
@@ -398,7 +424,8 @@ static int init_vars(void) {
       (l_vars.mdls = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
       (l_vars.mdls_inst = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
       (l_vars.terrs = yf_list_init(NULL)) == NULL ||
-      (l_vars.parts = yf_list_init(NULL)) == NULL)
+      (l_vars.parts = yf_list_init(NULL)) == NULL ||
+      (l_vars.quads = yf_list_init(NULL)) == NULL)
   {
     yf_resmgr_clear();
     yf_buffer_deinit(l_vars.buf);
@@ -407,6 +434,7 @@ static int init_vars(void) {
     yf_hashset_deinit(l_vars.mdls_inst);
     yf_list_deinit(l_vars.terrs);
     yf_list_deinit(l_vars.parts);
+    yf_list_deinit(l_vars.quads);
     memset(&l_vars, 0, sizeof l_vars);
     return -1;
   }
@@ -490,8 +518,11 @@ static int traverse_scn(YF_node node, void *arg) {
       break;
 
     case YF_NODEOBJ_QUAD:
-      /* TODO */
-      assert(0);
+      if (yf_list_insert(l_vars.quads, obj) != 0) {
+        *(int *)arg = -1;
+        return -1;
+      }
+      break;
 
     case YF_NODEOBJ_LABEL:
       /* TODO */
@@ -812,6 +843,65 @@ static int render_part(YF_scene scn) {
   return 0;
 }
 
+static int render_quad(YF_scene scn) {
+  YF_gstate gst = NULL;
+  unsigned inst_alloc = 0;
+  L_reso* reso = NULL;
+  YF_texture tex = NULL;
+  YF_mesh mesh = NULL;
+  YF_iter it = YF_NILIT;
+  YF_quad quad = NULL;
+
+  do {
+    quad = yf_list_next(l_vars.quads, &it);
+    if (YF_IT_ISNIL(it))
+      break;
+
+    if ((gst = yf_resmgr_obtain(YF_RESRQ_QUAD, &inst_alloc)) == NULL) {
+      switch (yf_geterr()) {
+        case YF_ERR_INUSE:
+          /* out of resources, need to execute pending work */
+          return 0;
+        default:
+          return -1;
+      }
+    }
+
+    if ((reso = malloc(sizeof *reso)) == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+    reso->resrq = YF_RESRQ_QUAD;
+    reso->inst_alloc = inst_alloc;
+    if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
+      free(reso);
+      return -1;
+    }
+
+    yf_cmdbuf_setgstate(l_vars.cb, gst);
+
+    if (copy_inst(scn, YF_RESRQ_QUAD, &quad, 1, gst, inst_alloc) != 0)
+      return -1;
+
+    if ((tex = yf_quad_gettex(quad)) != NULL)
+      yf_texture_copyres(tex, yf_gstate_getdtb(gst, YF_RESIDX_INST), inst_alloc,
+          YF_RESBIND_TEX, 0);
+    else
+      /* TODO: Handle quads lacking texture. */
+      assert(0);
+
+    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
+
+    mesh = yf_quad_getmesh(quad);
+    yf_mesh_draw(mesh, l_vars.cb, 1, 0);
+
+    yf_list_removeat(l_vars.quads, &it);
+    it = YF_NILIT;
+  } while (1);
+
+  return 0;
+}
+
 static int copy_glob(YF_scene scn) {
   YF_dtable dtb = yf_resmgr_getglob();
   if (dtb == NULL)
@@ -926,6 +1016,31 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       }
       break;
 
+    case YF_RESRQ_QUAD:
+      assert(obj_n == 1);
+      off = l_vars.buf_off;
+      sz = obj_n * YF_INSTSZ_QUAD;
+      {
+        YF_quad quad = ((YF_quad *)objs)[0];
+        yf_mat4_mul(*yf_quad_getmvp(quad), *yf_camera_getxform(scn->cam),
+            *yf_quad_getxform(quad));
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+              *yf_quad_getxform(quad), sizeof(YF_mat4)) != 0)
+          return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+        /* model-view-projection matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+              *yf_quad_getmvp(quad), sizeof(YF_mat4)) != 0)
+          return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+        /* copy */
+        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+              &l_vars.buf, &off, &sz) != 0)
+          return -1;
+      }
+      break;
+
     default:
       assert(0);
   }
@@ -957,6 +1072,7 @@ static void clear_obj(void) {
   }
   yf_list_clear(l_vars.terrs);
   yf_list_clear(l_vars.parts);
+  yf_list_clear(l_vars.quads);
 }
 
 static size_t hash_mdl(const void *x) {
