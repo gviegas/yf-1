@@ -71,6 +71,17 @@ static int test_particle(void) {
   return r;
 }
 
+/* Quad test. */
+#define YF_TEST_QUAD "quad"
+int yf_test_quad(void);
+static int test_quad(void) {
+  YF_TEST_SUBT;
+  puts("");
+  int r = yf_test_quad();
+  puts("");
+  return r;
+}
+
 /* Miscellaneous test. */
 #define YF_TEST_MISC "misc"
 int yf_test_misc(void);
@@ -88,6 +99,7 @@ static const char *l_ids[] = {
   YF_TEST_MODEL,
   YF_TEST_TERRAIN,
   YF_TEST_PARTICLE,
+  YF_TEST_QUAD,
   YF_TEST_MISC,
   YF_TEST_ALL
 };
@@ -113,6 +125,9 @@ static int test(int argc, char *argv[]) {
   } else if (strcmp(argv[0], YF_TEST_PARTICLE) == 0) {
     test_n = 1;
     results = test_particle() == 0;
+  } else if (strcmp(argv[0], YF_TEST_QUAD) == 0) {
+    test_n = 1;
+    results = test_quad() == 0;
   } else if (strcmp(argv[0], YF_TEST_MISC) == 0) {
     test_n = 1;
     results = test_misc() == 0;
@@ -123,6 +138,7 @@ static int test(int argc, char *argv[]) {
       test_model,
       test_terrain,
       test_particle,
+      test_quad,
       test_misc
     };
     test_n = sizeof tests / sizeof tests[0];
