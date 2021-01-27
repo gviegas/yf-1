@@ -225,6 +225,8 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
     pend |= YF_PEND_PART;
   if (yf_list_getlen(l_vars.quads) != 0)
     pend |= YF_PEND_QUAD;
+  if (yf_list_getlen(l_vars.labls) != 0)
+    pend |= YF_PEND_LABL;
 
   l_vars.buf_off = 0;
   if ((l_vars.cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH)) == NULL) {
@@ -307,6 +309,18 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
       }
       if (yf_list_getlen(l_vars.quads) == 0)
         pend &= ~YF_PEND_QUAD;
+    }
+
+    if (pend & YF_PEND_LABL) {
+      if (render_labl(scn) != 0) {
+        yf_cmdbuf_end(l_vars.cb);
+        yf_cmdbuf_reset(l_vars.ctx);
+        yield_res();
+        clear_obj();
+        return -1;
+      }
+      if (yf_list_getlen(l_vars.labls) == 0)
+        pend &= ~YF_PEND_LABL;
     }
 
     if (yf_cmdbuf_end(l_vars.cb) == 0) {
