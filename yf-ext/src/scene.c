@@ -940,6 +940,31 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       }
       break;
 
+    case YF_RESRQ_QUAD:
+      assert(obj_n == 1);
+      off = l_vars.buf_off;
+      sz = obj_n * YF_INSTSZ_QUAD;
+      {
+        YF_quad quad = ((YF_quad *)objs)[0];
+        yf_mat4_mul(*yf_quad_getmvp(quad), *yf_camera_getxform(scn->cam),
+            *yf_quad_getxform(quad));
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+              *yf_quad_getxform(quad), sizeof(YF_mat4)) != 0)
+          return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+        /* model-view-projection matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+              *yf_quad_getmvp(quad), sizeof(YF_mat4)) != 0)
+          return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+        /* copy */
+        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+              &l_vars.buf, &off, &sz) != 0)
+          return -1;
+      }
+      break;
+
     default:
       assert(0);
   }
