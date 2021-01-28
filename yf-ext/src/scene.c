@@ -577,6 +577,7 @@ static int traverse_scn(YF_node node, void *arg) {
 static int render_mdl(YF_scene scn) {
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
+  YF_dtable inst_dtb = NULL;
   L_reso *reso = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
@@ -597,6 +598,7 @@ static int render_mdl(YF_scene scn) {
           return -1;
       }
     }
+    inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
 
     if ((reso = malloc(sizeof *reso)) == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
@@ -609,18 +611,16 @@ static int render_mdl(YF_scene scn) {
       return -1;
     }
 
-    yf_cmdbuf_setgstate(l_vars.cb, gst);
-
     if (copy_inst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
       return -1;
 
     if ((tex = yf_model_gettex(val->mdl)) != NULL)
-      yf_texture_copyres(tex, yf_gstate_getdtb(gst, YF_RESIDX_INST), inst_alloc,
-          YF_RESBIND_TEX, 0);
+      yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
     else
       /* TODO: Handle models lacking texture. */
       assert(0);
 
+    yf_cmdbuf_setgstate(l_vars.cb, gst);
     yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
     if ((mesh = yf_model_getmesh(val->mdl)) != NULL)
@@ -646,6 +646,7 @@ static int render_mdl_inst(YF_scene scn) {
 
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
+  YF_dtable inst_dtb = NULL;
   L_reso *reso = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
@@ -690,6 +691,7 @@ static int render_mdl_inst(YF_scene scn) {
           return -1;
         }
       }
+      inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
 
       if ((reso = malloc(sizeof *reso)) == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
@@ -704,20 +706,18 @@ static int render_mdl_inst(YF_scene scn) {
         return -1;
       }
 
-      yf_cmdbuf_setgstate(l_vars.cb, gst);
-
       if (copy_inst(scn, resrq[rq_i], val->mdls+rem, n, gst, inst_alloc) != 0) {
         yf_list_deinit(done);
         return -1;
       }
 
       if ((tex = yf_model_gettex(val->mdls[rem])) != NULL)
-        yf_texture_copyres(tex, yf_gstate_getdtb(gst, YF_RESIDX_INST),
-            inst_alloc, YF_RESBIND_TEX, 0);
+        yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
       else
         /* TODO: Handle models lacking texture. */
         assert(0);
 
+      yf_cmdbuf_setgstate(l_vars.cb, gst);
       yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
       if ((mesh = yf_model_getmesh(val->mdls[rem])) != NULL)
@@ -747,8 +747,8 @@ static int render_mdl_inst(YF_scene scn) {
 static int render_terr(YF_scene scn) {
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
+  YF_dtable inst_dtb = NULL;
   L_reso *reso = NULL;
-  YF_dtable dtb = NULL;
   YF_texture hmap = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
@@ -769,7 +769,7 @@ static int render_terr(YF_scene scn) {
           return -1;
       }
     }
-    dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+    inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
 
     if ((reso = malloc(sizeof *reso)) == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
@@ -782,23 +782,22 @@ static int render_terr(YF_scene scn) {
       return -1;
     }
 
-    yf_cmdbuf_setgstate(l_vars.cb, gst);
-
     if (copy_inst(scn, YF_RESRQ_TERR, &terr, 1, gst, inst_alloc) != 0)
       return -1;
 
     if ((hmap = yf_terrain_gethmap(terr)) != NULL)
-      yf_texture_copyres(hmap, dtb, inst_alloc, YF_RESBIND_HMAP, 0);
+      yf_texture_copyres(hmap, inst_dtb, inst_alloc, YF_RESBIND_HMAP, 0);
     else
       /* TODO: Handle terrains lacking height map. */
       assert(0);
 
     if ((tex = yf_terrain_gettex(terr)) != NULL)
-      yf_texture_copyres(tex, dtb, inst_alloc, YF_RESBIND_TEX, 0);
+      yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
     else
       /* TODO: Handle terrains lacking texture. */
       assert(0);
 
+    yf_cmdbuf_setgstate(l_vars.cb, gst);
     yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
     mesh = yf_terrain_getmesh(terr);
@@ -814,6 +813,7 @@ static int render_terr(YF_scene scn) {
 static int render_part(YF_scene scn) {
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
+  YF_dtable inst_dtb = NULL;
   L_reso *reso = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
@@ -834,6 +834,7 @@ static int render_part(YF_scene scn) {
           return -1;
       }
     }
+    inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
 
     if ((reso = malloc(sizeof *reso)) == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
@@ -846,18 +847,16 @@ static int render_part(YF_scene scn) {
       return -1;
     }
 
-    yf_cmdbuf_setgstate(l_vars.cb, gst);
-
     if (copy_inst(scn, YF_RESRQ_PART, &part, 1, gst, inst_alloc) != 0)
       return -1;
 
     if ((tex = yf_particle_gettex(part)) != NULL)
-      yf_texture_copyres(tex, yf_gstate_getdtb(gst, YF_RESIDX_INST), inst_alloc,
-          YF_RESBIND_TEX, 0);
+      yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
     else
       /* TODO: Handle particle systems lacking texture. */
       assert(0);
 
+    yf_cmdbuf_setgstate(l_vars.cb, gst);
     yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
     mesh = yf_particle_getmesh(part);
@@ -873,6 +872,7 @@ static int render_part(YF_scene scn) {
 static int render_quad(YF_scene scn) {
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
+  YF_dtable inst_dtb = NULL;
   L_reso* reso = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
@@ -893,6 +893,7 @@ static int render_quad(YF_scene scn) {
           return -1;
       }
     }
+    inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
 
     if ((reso = malloc(sizeof *reso)) == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
@@ -905,18 +906,16 @@ static int render_quad(YF_scene scn) {
       return -1;
     }
 
-    yf_cmdbuf_setgstate(l_vars.cb, gst);
-
     if (copy_inst(scn, YF_RESRQ_QUAD, &quad, 1, gst, inst_alloc) != 0)
       return -1;
 
     if ((tex = yf_quad_gettex(quad)) != NULL)
-      yf_texture_copyres(tex, yf_gstate_getdtb(gst, YF_RESIDX_INST), inst_alloc,
-          YF_RESBIND_TEX, 0);
+      yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
     else
       /* TODO: Handle quads lacking texture. */
       assert(0);
 
+    yf_cmdbuf_setgstate(l_vars.cb, gst);
     yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
     mesh = yf_quad_getmesh(quad);
@@ -932,6 +931,7 @@ static int render_quad(YF_scene scn) {
 static int render_labl(YF_scene scn) {
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
+  YF_dtable inst_dtb = NULL;
   L_reso *reso = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
@@ -952,6 +952,7 @@ static int render_labl(YF_scene scn) {
           return -1;
       }
     }
+    inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
 
     if ((reso = malloc(sizeof *reso)) == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
@@ -964,16 +965,14 @@ static int render_labl(YF_scene scn) {
       return -1;
     }
 
-    yf_cmdbuf_setgstate(l_vars.cb, gst);
-
     if (copy_inst(scn, YF_RESRQ_LABL, &labl, 1, gst, inst_alloc) != 0)
       return -1;
 
     /* FIXME: Texture may be invalid. */
     tex = yf_label_gettex(labl);
-    yf_texture_copyres(tex, yf_gstate_getdtb(gst, YF_RESIDX_INST), inst_alloc,
-        YF_RESBIND_TEX, 0);
+    yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
 
+    yf_cmdbuf_setgstate(l_vars.cb, gst);
     yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
     mesh = yf_label_getmesh(labl);
