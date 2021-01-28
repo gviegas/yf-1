@@ -6,296 +6,96 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #include <assert.h>
 
 #include <yf/wsys/yf-wsys.h>
-#include <yf/core/yf-core.h>
 
-#include "yf-matrix.h"
-#include "yf-label.h"
-#include "coreobj.h"
-#include "texture.h"
-#include "mesh.h"
-#include "vertex.h"
+#include "yf-ext.h"
 
-#define YF_WINW 1080
-#define YF_WINH 72
+#define YF_WINW 800
+#define YF_WINH 600
 #define YF_WINT "Misc"
+#define YF_FPS  30
 
-/* Shared variables. */
+/* Local variables. */
 struct L_vars {
-  YF_context ctx;
-  YF_wsi wsi;
-  YF_buffer buf;
-  YF_image img;
-  YF_dtable dtb;
-  YF_pass pass;
-  YF_target *tgts;
-  YF_gstate gst;
-
-  YF_label labl;
-
   YF_window win;
-  int key;
+  YF_view view;
+  YF_scene scn;
+  YF_quad quads[3];
+  YF_label labls[10];
+
+  struct {
+    int quit;
+  } input;
 };
 static struct L_vars l_vars = {0};
 
-/* Key event function. */
-static void key_kb(int key, int state,
-    YF_UNUSED unsigned mod_mask, YF_UNUSED void *data)
+/* Handles key events. */
+static void on_key(int key, int state,
+    YF_UNUSED unsigned mod_mask, YF_UNUSED void *arg)
 {
-  if (state == YF_KEYSTATE_PRESSED)
-    l_vars.key = key;
-}
+  if (state == YF_KEYSTATE_RELEASED)
+    return;
 
-/* Initializes content. */
-static void init(void) {
-  /* Context */
-  YF_context ctx = yf_getctx();
-  assert(ctx != NULL);
-
-  /* Buffer */
-  YF_buffer buf = yf_buffer_init(ctx, 2048);
-  assert(buf != NULL);
-
-  /* Stages */
-  YF_modid vmod, fmod;
-
-  if (yf_loadmod(ctx, "tmp/vert", &vmod) != 0)
-    assert(0);
-  if (yf_loadmod(ctx, "tmp/frag", &fmod) != 0)
-    assert(0);
-
-  const YF_stage stgs[] = {
-    {YF_STAGE_VERT, vmod, "main"},
-    {YF_STAGE_FRAG, fmod, "main"}
-  };
-
-  /* DTable */
-  const YF_dentry entries[2] = {
-    {0, YF_DTYPE_UNIFORM, 1, NULL},
-    {1, YF_DTYPE_ISAMPLER, 1, NULL}
-  };
-  YF_dtable dtb = yf_dtable_init(ctx, entries, 2);
-  assert(dtb != NULL);
-
-  const unsigned alloc_n = 1;
-  if (yf_dtable_alloc(dtb, alloc_n) != 0)
-    assert(0);
-
-  /* VInput */
-  const YF_vattr attrs[3] = {
-    {0, YF_TYPEFMT_FLOAT3, 0},
-    {1, YF_TYPEFMT_FLOAT2, offsetof(YF_vlabl, tc)},
-    {2, YF_TYPEFMT_FLOAT4, offsetof(YF_vlabl, clr)}
-  };
-  const YF_vinput vin = {attrs, 3, sizeof(YF_vlabl), YF_VRATE_VERT};
-
-  /* Wsi */
-  YF_window win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
-  assert(win != NULL);
-
-  YF_wsi wsi = yf_wsi_init(ctx, win);
-  assert(wsi != NULL);
-
-  unsigned pres_img_n;
-  const YF_image *pres_imgs = yf_wsi_getimages(wsi, &pres_img_n);
-  assert(pres_imgs != NULL && pres_img_n != 0);
-
-  /* Image */
-  const YF_dim3 img_dim = {YF_WINW, YF_WINH, 1};
-  YF_image img = yf_image_init(ctx, YF_PIXFMT_D16UNORM, img_dim, 1, 1, 1);
-  assert(img != NULL);
-
-  /* Pass */
-  int pres_fmt;
-  unsigned pres_spl;
-  yf_image_getval(pres_imgs[0], &pres_fmt, NULL, NULL, NULL, &pres_spl);
-
-  const YF_colordsc clr_dsc = {
-    pres_fmt,
-    pres_spl,
-    YF_LOADOP_UNDEF,
-    YF_STOREOP_UNDEF
-  };
-
-  const YF_depthdsc dep_dsc = {
-    YF_PIXFMT_D16UNORM,
-    1,
-    YF_LOADOP_UNDEF,
-    YF_STOREOP_UNDEF,
-    YF_LOADOP_UNDEF,
-    YF_STOREOP_UNDEF
-  };
-
-  YF_pass pass = yf_pass_init(ctx, &clr_dsc, 1, NULL, &dep_dsc);
-  assert(pass != NULL);
-
-  /* Targets */
-  const YF_dim2 tgt_dim = {YF_WINW, YF_WINH};
-  const YF_attach dep_att = {img, 0};
-
-  YF_attach *clr_atts = malloc(pres_img_n * sizeof(YF_attach));
-  YF_target *tgts = malloc(pres_img_n * sizeof(YF_target));
-  assert(clr_atts != NULL && tgts != NULL);
-
-  for (size_t i = 0; i < pres_img_n; ++i) {
-    clr_atts[i] = (YF_attach){pres_imgs[i], 0};
-    tgts[i] = yf_pass_maketarget(pass, tgt_dim, 1, clr_atts+i, 1, NULL,
-        &dep_att);
-    assert(tgts[i] != NULL);
+  switch (key) {
+    default:
+      l_vars.input.quit = 1;
   }
-  free(clr_atts);
-
-  /* Graphics state */
-  const YF_gconf conf = {
-    pass,
-    stgs,
-    sizeof stgs / sizeof stgs[0],
-    &dtb,
-    1,
-    &vin,
-    1,
-    YF_PRIMITIVE_TRIANGLE,
-    YF_POLYMODE_FILL,
-    YF_CULLMODE_NONE,
-    YF_WINDING_CCW
-  };
-
-  YF_gstate gst = yf_gstate_init(ctx, &conf);
-  assert(gst != NULL);
-
-  /* Font/Label */
-  YF_font font = yf_font_init(YF_FILETYPE_TTF, "tmp/font.ttf");
-  assert(font != NULL);
-  YF_label labl = yf_label_init();
-  assert(labl != NULL);
-  yf_label_setfont(labl, font);
-  const wchar_t str[] = L"The quick brown fox jumps over the lazy dog.";
-/*
-    L"abcdefghijklmnopqrstuvwxyz\n"
-    L"ABCDEFGHIJKLMNOPQRSTUVWXYZ\n"
-    L"_1234567890`!@#$%^&*()-=+{}[]?!<>:;\"'|\\/,._\n";
-*/
-  assert(yf_label_setstr(labl, str) == 0);
-  assert(yf_label_setpt(labl, 144) == 0);
-
-  /* Data copy */
-  YF_mat4 m;
-  yf_mat4_ortho(m, -1.0, 1.0, -1.0, 1.0, 0.0, -1.0);
-
-  if (yf_buffer_copy(buf, 0, m, sizeof m) != 0)
-    assert(0);
-
-  const YF_slice elems = {0, 1};
-  const size_t buf_off = 0;
-  const size_t buf_sz = sizeof m;
-
-  if (yf_dtable_copybuf(dtb, 0, 0, elems, &buf, &buf_off, &buf_sz) != 0)
-    assert(0);
-
-  YF_texture tex = yf_label_gettex(labl);
-  assert(tex != NULL);
-
-  if (yf_texture_copyres(tex, dtb, 0, 1, 0) != 0)
-    assert(0);
-
-  l_vars.ctx = ctx;
-  l_vars.wsi = wsi;
-  l_vars.buf = buf;
-  l_vars.img = img;
-  l_vars.dtb = dtb;
-  l_vars.pass = pass;
-  l_vars.tgts = tgts;
-  l_vars.gst = gst;
-
-  l_vars.labl = labl;
-
-  l_vars.win = win;
-  l_vars.key = YF_KEY_UNKNOWN;
-
-  YF_evtfn fn = {.key_kb = key_kb};
-  yf_setevtfn(YF_EVT_KEYKB, fn, NULL);
 }
 
-/* Updates content. */
-static void update(void) {
-  /* Event polling */
-  yf_pollevt(YF_EVT_KEYKB);
+/* Updates content */
+static void update(double elapsed_time) {
+  printf("update (%.4f)\n", elapsed_time);
 
-  /* Command buffer */
-  static const YF_viewport vp = {0.0f, 0.0f, YF_WINW, YF_WINH, 0.0f, 1.0f};
-  static const YF_rect sciss = {{0, 0}, {YF_WINW, YF_WINH}};
-
-  int tgt_i = yf_wsi_next(l_vars.wsi, 0);
-  assert(tgt_i >= 0);
-
-  YF_cmdbuf cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH);
-  assert(cb != NULL);
-
-  yf_cmdbuf_setgstate(cb, l_vars.gst);
-  yf_cmdbuf_settarget(cb, l_vars.tgts[tgt_i]);
-  yf_cmdbuf_setvport(cb, 0, &vp);
-  yf_cmdbuf_setsciss(cb, 0, sciss);
-  yf_cmdbuf_setdtable(cb, 0, 0);
-  yf_cmdbuf_clearcolor(cb, 0, YF_COLOR_DARKGREY);
-  yf_cmdbuf_cleardepth(cb, 1.0f);
-
-  YF_mesh mesh = yf_label_getmesh(l_vars.labl);
-  assert(mesh != NULL);
-  yf_mesh_draw(mesh, cb, 1, 0);
-
-  if (yf_cmdbuf_end(cb) != 0)
-    assert(0);
-  if (yf_cmdbuf_exec(l_vars.ctx) != 0)
-    assert(0);
-  if (yf_wsi_present(l_vars.wsi, tgt_i) != 0)
-    assert(0);
+  if (l_vars.input.quit) {
+    puts("quit");
+    yf_view_stop(l_vars.view);
+  }
 }
 
-/* Runs the main loop. */
-static int run(void) {
-  const long frame_tm = 1.0 / 60.0 * 1000000000.0;
-  long dt;
-  time_t sec;
-  struct timespec before, now, idle;
-  clock_gettime(CLOCK_MONOTONIC, &before);
+/* Tests miscellany. */
+int yf_test_misc(void) {
+  YF_evtfn evtfn = {.key_kb = on_key};
+  yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
-  do {
-    update();
+  l_vars.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
+  assert(l_vars.win != NULL);
 
-    clock_gettime(CLOCK_MONOTONIC, &now);
-    sec = now.tv_sec - before.tv_sec;
-    dt = sec > 0 ? ((long)999999999 * sec) : 0;
-    dt = dt - before.tv_nsec + now.tv_nsec;
+  l_vars.view = yf_view_init(l_vars.win);
+  assert(l_vars.view != NULL);
 
-    if (dt < frame_tm) {
-      idle.tv_sec = 0;
-      idle.tv_nsec = frame_tm - dt;
-      clock_nanosleep(CLOCK_MONOTONIC, 0, &idle, NULL);
-      clock_gettime(CLOCK_MONOTONIC, &now);
-      dt = frame_tm;
-    }
+  l_vars.scn = yf_scene_init();
+  assert(l_vars.scn != NULL);
 
-    before = now;
-/*
-    printf("\n[time] %lds %ldns (%.0f fps)", now.tv_sec, now.tv_nsec,
-        (double)999999999 / (double)dt);
-*/
-  } while (l_vars.key == YF_KEY_UNKNOWN);
+  YF_texture texs[] = {yf_texture_init(YF_FILETYPE_BMP, "tmp/quad.bmp")};
+  const size_t tex_n = sizeof texs / sizeof texs[0];
+  for (size_t i = 0; i < tex_n; ++i)
+    assert(texs[i] != NULL);
 
-  /* TODO: Deinitialization. */
-  idle.tv_sec = 0;
-  idle.tv_nsec = 100000000;
-  clock_nanosleep(CLOCK_MONOTONIC, 0, &idle, NULL);
+  YF_font fonts[] = {yf_font_init(YF_FILETYPE_TTF, "tmp/font.ttf")};
+  const size_t font_n = sizeof fonts / sizeof fonts[0];
+  for (size_t i = 0; i < font_n; ++i)
+    assert(fonts[i] != NULL);
+
+  const size_t quad_n = sizeof l_vars.quads / sizeof l_vars.quads[0];
+  for (size_t i = 0; i < quad_n; ++i) {
+    l_vars.quads[i] = yf_quad_init();
+    assert(l_vars.quads[i] != NULL);
+
+    yf_quad_settex(l_vars.quads[i], texs[i%tex_n]);
+
+    YF_mat4 *m = yf_quad_getxform(l_vars.quads[i]);
+    (*m)[12] = i<<1;
+
+    yf_node_insert(yf_scene_getnode(l_vars.scn),
+        yf_quad_getnode(l_vars.quads[i]));
+  }
+
+  yf_view_setscene(l_vars.view, l_vars.scn);
+
+  if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
+    assert(0);
 
   return 0;
-}
-
-/* Called by the main test. */
-int yf_test_misc(void) {
-  init();
-  return run();
 }
