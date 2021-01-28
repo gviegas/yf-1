@@ -2,7 +2,7 @@
  * YF
  * dtable.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -357,6 +357,7 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
       return -1;
     }
     if (kv->imgs[i] != NULL)
+      /* FIXME: Crashes here too if 'kv->imgs[i]' is no more. */
       yf_image_ungetiview(kv->imgs[i], kv->iviews+i);
     kv->iviews[i] = iview;
     kv->imgs[i] = imgs[i];
