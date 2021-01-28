@@ -67,7 +67,7 @@ static void on_key(int key, int state,
       l_vars.input.turn[3] = state;
       break;
     default:
-      l_vars.input.quit = 1;
+      l_vars.input.quit |= state;
   }
 }
 
