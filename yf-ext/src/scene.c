@@ -41,10 +41,6 @@
 #undef YF_INSTCAP
 #define YF_INSTCAP 4
 
-/* XXX: Unused. */
-#undef YF_BUFLEN
-#define YF_BUFLEN 131072
-
 #define YF_GLOBSZ      (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_MDL  (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
