@@ -132,7 +132,11 @@ int yf_test_particle(void) {
   if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
     assert(0);
 
-  /* TODO: Deinitialization. */
+  yf_view_deinit(l_vars.view);
+  yf_scene_deinit(l_vars.scn);
+  yf_particle_deinit(l_vars.part);
+  yf_texture_deinit(l_vars.tex);
+  yf_window_deinit(l_vars.win);
 
   return 0;
 }
