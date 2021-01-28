@@ -45,7 +45,7 @@ struct L_vertex {
 static void key_kb(int key, int state,
     YF_UNUSED unsigned mod_mask, YF_UNUSED void *data)
 {
-  if (state == YF_KEYSTATE_RELEASED)
+  if (state == YF_KEYSTATE_PRESSED)
     l_vars.key = key;
 }
 
@@ -161,7 +161,7 @@ static void init(void) {
     1,
     YF_PRIMITIVE_TRIANGLE,
     YF_POLYMODE_FILL,
-    YF_CULLMODE_NONE,
+    YF_CULLMODE_BACK,
     YF_WINDING_CCW
   };
 
@@ -284,7 +284,7 @@ static int run(void) {
   return 0;
 }
 
-/* Called by the main test. */
+/* Tests drawing. */
 int yf_test_draw(void) {
   init();
   return run();
