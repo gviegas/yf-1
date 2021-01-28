@@ -86,7 +86,11 @@ int yf_test_label(void) {
   if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
     assert(0);
 
-  /* TODO: Deinitialization. */
+  yf_view_deinit(l_vars.view);
+  yf_scene_deinit(l_vars.scn);
+  yf_label_deinit(l_vars.labl);
+  yf_font_deinit(l_vars.font);
+  yf_window_deinit(l_vars.win);
 
   return 0;
 }
