@@ -1158,16 +1158,11 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
 }
 
 static void yield_res(void) {
-  YF_iter it = YF_NILIT;
   L_reso *val;
-  do {
-    val = yf_list_next(l_vars.res_obtd, &it);
-    if (YF_IT_ISNIL(it))
-      break;
+  while ((val = yf_list_removeat(l_vars.res_obtd, NULL)) != NULL) {
     yf_resmgr_yield(val->resrq, val->inst_alloc);
     free(val);
-  } while (1);
-  yf_list_clear(l_vars.res_obtd);
+  }
 }
 
 static void clear_obj(void) {
