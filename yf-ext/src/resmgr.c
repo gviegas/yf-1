@@ -45,7 +45,7 @@ typedef struct {
 /* List of resources, indexed by 'resrq' values. */
 static L_entry l_entries[YF_RESRQ_N] = {0};
 
-/* Global dtable. */
+/* Global descriptor table. */
 static YF_dtable l_glob = NULL;
 
 /* Sizes used for instance allocations, indexed by 'resrq' values. */
@@ -281,7 +281,7 @@ static int init_mdl(L_entry *entry, unsigned elements) {
 
   assert(ctx != NULL && pass != NULL);
 
-  /* stages */
+  /* shader stage */
   char *vert_path = make_shdpath(YF_NODEOBJ_MODEL, YF_STAGE_VERT, elements);
   char *frag_path = make_shdpath(YF_NODEOBJ_MODEL, YF_STAGE_FRAG, elements);
   if (vert_path == NULL || frag_path == NULL) {
@@ -312,7 +312,7 @@ static int init_mdl(L_entry *entry, unsigned elements) {
   };
   const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
-  /* dtables */
+  /* descriptor table */
   const YF_dentry inst_ents[] = {
     {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
     {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL}
@@ -331,7 +331,7 @@ static int init_mdl(L_entry *entry, unsigned elements) {
   const YF_dtable dtbs[] = {l_glob, inst_dtb};
   const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
-  /* vinputs */
+  /* vertex input */
   const YF_vattr attrs[] = {
     {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
     {YF_RESLOC_TC, YF_TYPEFMT_FLOAT2, offsetof(YF_vmdl, tc)},
@@ -342,7 +342,7 @@ static int init_mdl(L_entry *entry, unsigned elements) {
   };
   const unsigned vin_n = sizeof vins / sizeof vins[0];
 
-  /* gstate */
+  /* graphics state */
   const YF_gconf conf = {
     pass,
     stgs,
@@ -374,7 +374,7 @@ static int init_terr(L_entry *entry) {
 
   assert(ctx != NULL && pass != NULL);
 
-  /* stages */
+  /* shader stage */
   char *vert_path = make_shdpath(YF_NODEOBJ_TERRAIN, YF_STAGE_VERT, 1);
   char *frag_path = make_shdpath(YF_NODEOBJ_TERRAIN, YF_STAGE_FRAG, 1);
   if (vert_path == NULL || frag_path == NULL) {
@@ -405,7 +405,7 @@ static int init_terr(L_entry *entry) {
   };
   const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
-  /* dtables */
+  /* descriptor table */
   const YF_dentry inst_ents[] = {
     {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
     {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL},
@@ -425,7 +425,7 @@ static int init_terr(L_entry *entry) {
   const YF_dtable dtbs[] = {l_glob, inst_dtb};
   const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
-  /* vinputs */
+  /* vertex input */
   const YF_vattr attrs[] = {
     {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
     {YF_RESLOC_TC, YF_TYPEFMT_FLOAT2, offsetof(YF_vterr, tc)},
@@ -436,7 +436,7 @@ static int init_terr(L_entry *entry) {
   };
   const unsigned vin_n = sizeof vins / sizeof vins[0];
 
-  /* gstate */
+  /* graphics state */
   const YF_gconf conf = {
     pass,
     stgs,
@@ -468,7 +468,7 @@ static int init_part(L_entry *entry) {
 
   assert(ctx != NULL && pass != NULL);
 
-  /* stages */
+  /* shader stage */
   char *vert_path = make_shdpath(YF_NODEOBJ_PARTICLE, YF_STAGE_VERT, 1);
   char *frag_path = make_shdpath(YF_NODEOBJ_PARTICLE, YF_STAGE_FRAG, 1);
   if (vert_path == NULL || frag_path == NULL) {
@@ -499,7 +499,7 @@ static int init_part(L_entry *entry) {
   };
   const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
-  /* dtables */
+  /* descriptor table */
   const YF_dentry inst_ents[] = {
     {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
     {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL}
@@ -518,7 +518,7 @@ static int init_part(L_entry *entry) {
   const YF_dtable dtbs[] = {l_glob, inst_dtb};
   const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
-  /* vinputs */
+  /* vertex input */
   const YF_vattr attrs[] = {
     {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
     {YF_RESLOC_CLR, YF_TYPEFMT_FLOAT4, offsetof(YF_vpart, clr)}
@@ -528,7 +528,7 @@ static int init_part(L_entry *entry) {
   };
   const unsigned vin_n = sizeof vins / sizeof vins[0];
 
-  /* gstate */
+  /* graphics state */
   const YF_gconf conf = {
     pass,
     stgs,
@@ -560,7 +560,7 @@ static int init_quad(L_entry *entry) {
 
   assert(ctx != NULL && pass != NULL);
 
-  /* stages */
+  /* shader stage */
   char *vert_path = make_shdpath(YF_NODEOBJ_QUAD, YF_STAGE_VERT, 1);
   char *frag_path = make_shdpath(YF_NODEOBJ_QUAD, YF_STAGE_FRAG, 1);
   if (vert_path == NULL || frag_path == NULL) {
@@ -591,7 +591,7 @@ static int init_quad(L_entry *entry) {
   };
   const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
-  /* dtables */
+  /* descriptor table */
   const YF_dentry inst_ents[] = {
     {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
     {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL}
@@ -610,7 +610,7 @@ static int init_quad(L_entry *entry) {
   const YF_dtable dtbs[] = {l_glob, inst_dtb};
   const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
-  /* vinputs */
+  /* vertex input */
   const YF_vattr attrs[] = {
     {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
     {YF_RESLOC_TC, YF_TYPEFMT_FLOAT2, offsetof(YF_vquad, tc)},
@@ -621,7 +621,7 @@ static int init_quad(L_entry *entry) {
   };
   const unsigned vin_n = sizeof vins / sizeof vins[0];
 
-  /* gstate */
+  /* graphics state */
   const YF_gconf conf = {
     pass,
     stgs,
@@ -653,7 +653,7 @@ static int init_labl(L_entry *entry) {
 
   assert(ctx != NULL && pass != NULL);
 
-  /* stages */
+  /* shader stage */
   char *vert_path = make_shdpath(YF_NODEOBJ_LABEL, YF_STAGE_VERT, 1);
   char *frag_path = make_shdpath(YF_NODEOBJ_LABEL, YF_STAGE_FRAG, 1);
   if (vert_path == NULL || frag_path == NULL) {
@@ -684,7 +684,7 @@ static int init_labl(L_entry *entry) {
   };
   const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
-  /* dtables */
+  /* descriptor table */
   const YF_dentry inst_ents[] = {
     {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
     {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL}
@@ -703,7 +703,7 @@ static int init_labl(L_entry *entry) {
   const YF_dtable dtbs[] = {l_glob, inst_dtb};
   const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
-  /* vinputs */
+  /* vertex input */
   const YF_vattr attrs[] = {
     {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
     {YF_RESLOC_TC, YF_TYPEFMT_FLOAT2, offsetof(YF_vlabl, tc)},
@@ -714,7 +714,7 @@ static int init_labl(L_entry *entry) {
   };
   const unsigned vin_n = sizeof vins / sizeof vins[0];
 
-  /* gstate */
+  /* graphics state */
   const YF_gconf conf = {
     pass,
     stgs,
