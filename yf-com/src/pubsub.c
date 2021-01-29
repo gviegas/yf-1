@@ -86,8 +86,19 @@ unsigned yf_checkpub(const void *pub) {
 }
 
 void yf_publish(const void *pub, int pubsub) {
-  /* TODO */
-  assert(0);
+  assert(pub != NULL);
+  assert(l_pubs != NULL);
+
+  const L_pub key = {pub, 0, NULL};
+  L_pub *val = yf_hashset_search(l_pubs, &key);
+  assert(val != NULL);
+
+  YF_iter it = YF_NILIT;
+  L_sub *sub;
+  while ((sub = yf_hashset_next(val->subs, &it)) != NULL) {
+    if (sub->pubsub_mask & pubsub)
+      sub->callb((void *)pub, pubsub, sub->arg);
+  }
 }
 
 int yf_subscribe(const void *pub, const void *sub, unsigned pubsub_mask,
