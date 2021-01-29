@@ -12,6 +12,8 @@
 #include "hashset.h"
 #include "error.h"
 
+/* TODO: Thread-safe. */
+
 /* Publisher variables. */
 typedef struct {
   const void *pub;

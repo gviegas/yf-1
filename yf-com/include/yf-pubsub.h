@@ -22,6 +22,9 @@ YF_DECLS_BEGIN
 /**
  * Sets a publisher object.
  *
+ * This function can be called with 'pubsub_mask' equal to 'YF_PUBSUB_NONE',
+ * which in effect unsets 'pub' as a publisher.
+ *
  * @param pub: The publisher.
  * @param pubsub_mask: The 'YF_PUBSUB' mask indicating what can be published.
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
@@ -38,7 +41,9 @@ int yf_setpub(const void *pub, unsigned pubsub_mask);
 unsigned yf_checkpub(const void *pub);
 
 /**
- * Publishes.
+ * Publishes to all subscribers.
+ *
+ * The caller must ensure that 'pubsub' is valid for 'pub'.
  *
  * @param pub: The publisher.
  * @param pubsub: The 'YF_PUBSUB' value indicating what to publish.
@@ -46,7 +51,10 @@ unsigned yf_checkpub(const void *pub);
 void yf_publish(const void *pub, int pubsub);
 
 /**
- * Subscribes.
+ * Subscribes to notifications from a publisher object.
+ *
+ * This function can be called with 'pubsub_mask' equal to 'YF_PUBSUB_NONE',
+ * which in effect unsubscribes 'sub' from 'pub'.
  *
  * @param pub: The publisher.
  * @param sub: The subscriber.
