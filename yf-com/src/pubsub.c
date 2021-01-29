@@ -35,8 +35,43 @@ static size_t hash_ps(const void *x);
 static int cmp_ps(const void *a, const void *b);
 
 int yf_setpub(const void *pub, unsigned pubsub_mask) {
-  /* TODO */
-  assert(0);
+  if (pub == NULL) {
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return -1;
+  }
+
+  if (l_pubs == NULL && (l_pubs = yf_hashset_init(hash_ps, cmp_ps)) != 0)
+    return -1;
+
+  /* removal */
+  if (pubsub_mask == YF_PUBSUB_NONE) {
+    const L_pub key = {pub, 0, NULL};
+    L_pub *val = yf_hashset_search(l_pubs, &key);
+    if (val != NULL) {
+      L_sub *sub;
+      while ((sub = yf_hashset_extract(val->subs, NULL)) != NULL)
+        free(sub);
+      yf_hashset_deinit(val->subs);
+      free(val);
+      yf_hashset_remove(l_pubs, &key);
+    }
+    return 0;
+  }
+
+  /* insertion */
+  L_pub *val = malloc(sizeof *val);
+  if (val == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  val->pub = pub;
+  val->pubsub_mask = pubsub_mask;
+  val->subs = yf_hashset_init(hash_ps, cmp_ps);
+  if (val->subs == NULL) {
+    free(val);
+    return -1;
+  }
+  return 0;
 }
 
 unsigned yf_checkpub(const void *pub) {
