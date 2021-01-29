@@ -423,7 +423,12 @@ int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
       return -1;
     }
 
-    yf_hashset_insert(img->iviews, iv);
+    if (yf_hashset_insert(img->iviews, iv) != 0) {
+      vkDestroyImageView(img->ctx->device, iv->view, NULL);
+      free(iv->priv);
+      free(iv);
+      return -1;
+    }
   }
 
   ((L_priv *)iv->priv)->count++;
