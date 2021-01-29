@@ -42,7 +42,7 @@ int yf_setpub(const void *pub, unsigned pubsub_mask) {
     return -1;
   }
 
-  if (l_pubs == NULL && (l_pubs = yf_hashset_init(hash_ps, cmp_ps)) != 0)
+  if (l_pubs == NULL && (l_pubs = yf_hashset_init(hash_ps, cmp_ps)) == NULL)
     return -1;
 
   /* removal */
@@ -70,6 +70,11 @@ int yf_setpub(const void *pub, unsigned pubsub_mask) {
   val->pubsub_mask = pubsub_mask;
   val->subs = yf_hashset_init(hash_ps, cmp_ps);
   if (val->subs == NULL) {
+    free(val);
+    return -1;
+  }
+  if (yf_hashset_insert(l_pubs, val) != 0) {
+    yf_hashset_deinit(val->subs);
     free(val);
     return -1;
   }
