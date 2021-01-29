@@ -619,7 +619,7 @@ static int test(int argc, char *argv[]) {
   } else {
     fprintf(stderr, "! No test named '%s'. Try:\n", argv[0]);
     for (size_t i = 0; i < (sizeof l_ids / sizeof l_ids[0]); ++i)
-      fprintf("%s\n", l_ids[i]);
+      fprintf(stderr, "%s\n", l_ids[i]);
     return -1;
   }
 
