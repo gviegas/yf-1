@@ -75,8 +75,14 @@ int yf_setpub(const void *pub, unsigned pubsub_mask) {
 }
 
 unsigned yf_checkpub(const void *pub) {
-  /* TODO */
-  assert(0);
+  assert(pub != NULL);
+
+  if (l_pubs == NULL)
+    return YF_PUBSUB_NONE;
+
+  const L_pub key = {pub, 0, NULL};
+  L_pub *val = yf_hashset_search(l_pubs, &key);
+  return val != NULL ? val->pubsub_mask : YF_PUBSUB_NONE;
 }
 
 void yf_publish(const void *pub, int pubsub) {
