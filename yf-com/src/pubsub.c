@@ -23,7 +23,7 @@ typedef struct {
 typedef struct {
   const void *sub;
   unsigned pubsub_mask;
-  void (*callb)(void *, unsigned, void *);
+  void (*callb)(void *, int, void *);
   void *arg;
 } L_sub;
 
@@ -104,8 +104,47 @@ void yf_publish(const void *pub, int pubsub) {
 int yf_subscribe(const void *pub, const void *sub, unsigned pubsub_mask,
     void (*callb)(void *pub, int pubsub, void *arg), void *arg)
 {
-  /* TODO */
-  assert(0);
+  assert(pub != NULL);
+  assert(callb != NULL);
+
+  if (sub == NULL || l_pubs == NULL) {
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return -1;
+  }
+
+  const L_pub pk = {pub, 0, NULL};
+  L_pub *pv = yf_hashset_search(l_pubs, &pk);
+  if (pv == NULL)
+    return -1;
+  const L_sub sk = {sub, 0, NULL, NULL};
+  L_sub *sv = yf_hashset_search(pv->subs, &sk);
+
+  /* removal */
+  if (pubsub_mask == YF_PUBSUB_NONE) {
+    if (sv != NULL) {
+      free(sv);
+      yf_hashset_remove(pv->subs, &sk);
+    }
+    return 0;
+  }
+
+  /* insertion/update */
+  if (sv == NULL) {
+    if ((sv = malloc(sizeof *sv)) == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+    sv->sub = sub;
+    if (yf_hashset_insert(pv->subs, sv) != 0) {
+      free(sv);
+      return -1;
+    }
+  }
+  /* XXX: May want to compare pub/sub masks. */
+  sv->pubsub_mask = pubsub_mask;
+  sv->callb = callb;
+  sv->arg = arg;
+  return 0;
 }
 
 static size_t hash_ps(const void *x) {
