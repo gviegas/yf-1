@@ -19,6 +19,7 @@
 #include "yf-hashset.h"
 #include "yf-iter.h"
 #include "yf-list.h"
+#include "yf-pubsub.h"
 #include "yf-types.h"
 #include "yf-util.h"
 
