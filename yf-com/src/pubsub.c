@@ -100,7 +100,8 @@ void yf_publish(const void *pub, int pubsub) {
 
   const L_pub key = {pub, 0, NULL};
   L_pub *val = yf_hashset_search(l_pubs, &key);
-  assert(val != NULL);
+  if (val == NULL)
+    return;
 
   YF_iter it = YF_NILIT;
   L_sub *sub;
@@ -114,7 +115,7 @@ int yf_subscribe(const void *pub, const void *sub, unsigned pubsub_mask,
     void (*callb)(void *pub, int pubsub, void *arg), void *arg)
 {
   assert(pub != NULL);
-  assert(callb != NULL);
+  assert(pubsub_mask == YF_PUBSUB_NONE || callb != NULL);
 
   if (sub == NULL || l_pubs == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
