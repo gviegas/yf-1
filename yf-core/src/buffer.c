@@ -2,7 +2,7 @@
  * YF
  * buffer.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -10,6 +10,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-pubsub.h>
 #include <yf/com/yf-error.h>
 
 #include "buffer.h"
@@ -67,6 +68,8 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size) {
     yf_buffer_deinit(buf);
     return NULL;
   }
+
+  yf_setpub(buf, YF_PUBSUB_DEINIT);
   return buf;
 }
 
@@ -93,9 +96,12 @@ void yf_buffer_getval(YF_buffer buf, size_t *size) {
 }
 
 void yf_buffer_deinit(YF_buffer buf) {
-  if (buf != NULL) {
-    yf_buffer_free(buf);
-    vkDestroyBuffer(buf->ctx->device, buf->buffer, NULL);
-    free(buf);
-  }
+  if (buf == NULL)
+    return;
+
+  yf_publish(buf, YF_PUBSUB_DEINIT);
+  yf_setpub(buf, YF_PUBSUB_NONE);
+  yf_buffer_free(buf);
+  vkDestroyBuffer(buf->ctx->device, buf->buffer, NULL);
+  free(buf);
 }
