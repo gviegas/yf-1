@@ -578,11 +578,166 @@ static int test_hashset(void) {
   return 0;
 }
 
+/* Publish-Subscribe test. */
+#define YF_TEST_PUBSUB "pubsub"
+struct ps1 { int val; };
+void pubsub_callb1(void *pub, int pubsub, void *arg) {
+  printf("\ngot: pub=%p (%d) pubsub=0x%x arg=%lu",
+      pub, ((struct ps1 *)pub)->val, pubsub, (size_t)arg);
+}
+struct ps2 { double val; };
+void pubsub_callb2(void *pub, int pubsub, void *arg) {
+  printf("\ngot: pub=%p (%.4f) pubsub=0x%x arg=%lu",
+      pub, ((struct ps2 *)pub)->val, pubsub, (size_t)arg);
+}
+static int test_pubsub(void) {
+  YF_TEST_SUBT;
+
+  struct ps1 a1 = {43131};
+  struct ps1 b1 = {-2219};
+  struct ps2 a2 = {-9.991};
+
+  if (yf_setpub(&a1, YF_PUBSUB_DEINIT|YF_PUBSUB_CHANGE) != 0)
+    return -1;
+  printf("\n(setpub() a1) mask: 0x%x", yf_checkpub(&a1));
+  printf("\n(publish() a1)");
+  yf_publish(&a1, YF_PUBSUB_CHANGE);
+
+  if (yf_setpub(&a1, YF_PUBSUB_DEINIT) != 0)
+    return -1;
+  printf("\n(setpub() a1) mask: 0x%x", yf_checkpub(&a1));
+
+  if (yf_setpub(&a1, YF_PUBSUB_NONE) != 0)
+    return -1;
+  printf("\n(setpub() a1) mask: 0x%x", yf_checkpub(&a1));
+
+  if (yf_setpub(&a1, YF_PUBSUB_DEINIT|YF_PUBSUB_CHANGE) != 0)
+    return -1;
+  printf("\n(setpub() a1) mask: 0x%x", yf_checkpub(&a1));
+
+  if (yf_subscribe(&a1, &b1, YF_PUBSUB_DEINIT, pubsub_callb1, (void *)5) != 0)
+    return -1;
+  printf("\n\n(b1 subscribe() to a1 {DEINIT}");
+
+  printf("\n(publish() a1)");
+  yf_publish(&a1, YF_PUBSUB_DEINIT);
+  yf_publish(&a1, YF_PUBSUB_CHANGE);
+
+  if (yf_subscribe(&a1, &b1, YF_PUBSUB_CHANGE, pubsub_callb1, (void *)6) != 0)
+    return -1;
+  printf("\n\n(b1 subscribe() to a1 {CHANGE}");
+
+  printf("\n(publish() a1)");
+  yf_publish(&a1, YF_PUBSUB_DEINIT);
+  yf_publish(&a1, YF_PUBSUB_CHANGE);
+
+  if (yf_subscribe(&a1, &b1, YF_PUBSUB_DEINIT|YF_PUBSUB_CHANGE,
+        pubsub_callb1, (void *)7) != 0)
+    return -1;
+  printf("\n\n(b1 subscribe() to a1 {DEINIT|CHANGE}");
+
+  printf("\n(publish() a1)");
+  yf_publish(&a1, YF_PUBSUB_DEINIT);
+  yf_publish(&a1, YF_PUBSUB_CHANGE);
+
+  if (yf_subscribe(&a1, &b1, YF_PUBSUB_NONE, pubsub_callb1, (void *)8) != 0)
+    return -1;
+  printf("\n\n(b1 subscribe() to a1 {NONE}");
+
+  printf("\n(publish() a1)");
+  yf_publish(&a1, YF_PUBSUB_DEINIT);
+  yf_publish(&a1, YF_PUBSUB_CHANGE);
+
+  if (yf_setpub(&a2, YF_PUBSUB_DEINIT) != 0)
+    return -1;
+  printf("\n\n(setpub() a2) mask: 0x%x", yf_checkpub(&a2));
+
+  if (yf_subscribe(&a1, &b1, YF_PUBSUB_DEINIT|YF_PUBSUB_CHANGE,
+        pubsub_callb1, (void *)9) != 0)
+    return -1;
+  printf("\n(b1 subscribe() to a1 {DEINIT|CHANGE}");
+
+  if (yf_subscribe(&a2, &b1, YF_PUBSUB_DEINIT, pubsub_callb2, (void *)10) != 0)
+    return -1;
+  printf("\n(b1 subscribe() to a2 {DEINIT}");
+
+  printf("\n(publish() a1)");
+  yf_publish(&a1, YF_PUBSUB_DEINIT);
+  yf_publish(&a1, YF_PUBSUB_CHANGE);
+
+  printf("\n(publish() a2)");
+  yf_publish(&a2, YF_PUBSUB_DEINIT);
+
+  if (yf_subscribe(&a2, &b1, YF_PUBSUB_CHANGE, pubsub_callb2, (void *)11) != 0)
+    return -1;
+  printf("\n\n(b1 subscribe() to a2 {CHANGE}");
+
+  printf("\n(publish() a2)");
+  yf_publish(&a2, YF_PUBSUB_DEINIT);
+
+  if (yf_subscribe(&a2, &a1, YF_PUBSUB_DEINIT, pubsub_callb2, (void *)12) != 0)
+    return -1;
+  printf("\n\n(a1 subscribe() to a2 {DEINIT}");
+
+  if (yf_subscribe(&a2, &b1, YF_PUBSUB_DEINIT, pubsub_callb2, (void *)13) != 0)
+    return -1;
+  printf("\n(b1 subscribe() to a2 {DEINIT}");
+
+  printf("\n(publish() a1)");
+  yf_publish(&a1, YF_PUBSUB_DEINIT);
+  yf_publish(&a1, YF_PUBSUB_CHANGE);
+  printf("\n(publish() a2)");
+  yf_publish(&a2, YF_PUBSUB_DEINIT);
+
+  if (yf_subscribe(&a2, &a1, YF_PUBSUB_NONE, NULL, NULL) != 0)
+    return -1;
+  printf("\n\n(a1 subscribe() to a2 {NONE}");
+
+  printf("\n(publish() a1)");
+  yf_publish(&a1, YF_PUBSUB_DEINIT);
+  yf_publish(&a1, YF_PUBSUB_CHANGE);
+  printf("\n(publish() a2)");
+  yf_publish(&a2, YF_PUBSUB_DEINIT);
+
+  if (yf_subscribe(&a2, &b1, YF_PUBSUB_NONE, NULL, NULL) != 0)
+    return -1;
+  printf("\n(b1 subscribe() to a2 {NONE}");
+
+  printf("\n(publish() a1)");
+  yf_publish(&a1, YF_PUBSUB_DEINIT);
+  yf_publish(&a1, YF_PUBSUB_CHANGE);
+  printf("\n(publish() a2)");
+  yf_publish(&a2, YF_PUBSUB_DEINIT);
+
+  if (yf_subscribe(&a1, &b1, YF_PUBSUB_NONE, NULL, NULL) != 0)
+    return -1;
+  printf("\n(b1 subscribe() to a1 {NONE}");
+
+  printf("\n(publish() a1)");
+  yf_publish(&a1, YF_PUBSUB_DEINIT);
+  yf_publish(&a1, YF_PUBSUB_CHANGE);
+  printf("\n(publish() a2)");
+  yf_publish(&a2, YF_PUBSUB_DEINIT);
+
+  yf_setpub(&a2, YF_PUBSUB_NONE);
+  yf_setpub(&a1, YF_PUBSUB_NONE);
+  yf_publish(&a2, YF_PUBSUB_DEINIT);
+  yf_publish(&a1, YF_PUBSUB_DEINIT);
+
+  if (yf_checkpub(&a2) != YF_PUBSUB_NONE ||
+      yf_checkpub(&a1) != YF_PUBSUB_NONE)
+    return -1;
+
+  puts("");
+  return 0;
+}
+
 static const char *l_ids[] = {
   YF_TEST_ERROR,
   YF_TEST_CLOCK,
   YF_TEST_LIST,
   YF_TEST_HASHSET,
+  YF_TEST_PUBSUB,
   YF_TEST_ALL
 };
 
@@ -604,12 +759,16 @@ static int test(int argc, char *argv[]) {
   } else if (strcmp(argv[0], YF_TEST_HASHSET) == 0) {
     test_n = 1;
     results = test_hashset() == 0;
+  } else if (strcmp(argv[0], YF_TEST_PUBSUB) == 0) {
+    test_n = 1;
+    results = test_pubsub() == 0;
   } else if (strcmp(argv[0], YF_TEST_ALL) == 0) {
     int (* const tests[])(void) = {
       test_error,
       test_clock,
       test_list,
-      test_hashset
+      test_hashset,
+      test_pubsub
     };
     test_n = sizeof tests / sizeof tests[0];
 
