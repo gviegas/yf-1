@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-pubsub.h>
 #include <yf/com/yf-error.h>
 
 #include "image.h"
@@ -199,6 +200,8 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     yf_image_deinit(img);
     return NULL;
   }
+
+  yf_setpub(img, YF_PUBSUB_DEINIT);
   return img;
 }
 
@@ -280,6 +283,9 @@ void yf_image_getval(YF_image img, int *pixfmt, YF_dim3 *dim,
 void yf_image_deinit(YF_image img) {
   if (img == NULL)
     return;
+
+  yf_publish(img, YF_PUBSUB_DEINIT);
+  yf_setpub(img, YF_PUBSUB_NONE);
 
   YF_iview *iv;
   while ((iv = yf_hashset_extract(img->iviews, NULL)) != NULL) {
