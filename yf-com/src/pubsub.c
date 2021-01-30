@@ -45,10 +45,11 @@ int yf_setpub(const void *pub, unsigned pubsub_mask) {
   if (l_pubs == NULL && (l_pubs = yf_hashset_init(hash_ps, cmp_ps)) == NULL)
     return -1;
 
+  const L_pub key = {pub, 0, NULL};
+  L_pub *val = yf_hashset_search(l_pubs, &key);
+
   /* removal */
   if (pubsub_mask == YF_PUBSUB_NONE) {
-    const L_pub key = {pub, 0, NULL};
-    L_pub *val = yf_hashset_search(l_pubs, &key);
     if (val != NULL) {
       L_sub *sub;
       while ((sub = yf_hashset_extract(val->subs, NULL)) != NULL)
@@ -60,24 +61,25 @@ int yf_setpub(const void *pub, unsigned pubsub_mask) {
     return 0;
   }
 
-  /* insertion */
-  L_pub *val = malloc(sizeof *val);
+  /* insertion/update */
   if (val == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    return -1;
+    if ((val = malloc(sizeof *val)) == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+    val->pub = pub;
+    val->subs = yf_hashset_init(hash_ps, cmp_ps);
+    if (val->subs == NULL) {
+      free(val);
+      return -1;
+    }
+    if (yf_hashset_insert(l_pubs, val) != 0) {
+      yf_hashset_deinit(val->subs);
+      free(val);
+      return -1;
+    }
   }
-  val->pub = pub;
   val->pubsub_mask = pubsub_mask;
-  val->subs = yf_hashset_init(hash_ps, cmp_ps);
-  if (val->subs == NULL) {
-    free(val);
-    return -1;
-  }
-  if (yf_hashset_insert(l_pubs, val) != 0) {
-    yf_hashset_deinit(val->subs);
-    free(val);
-    return -1;
-  }
   return 0;
 }
 
