@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-pubsub.h>
 #include <yf/com/yf-error.h>
 
 #include "dtable.h"
@@ -29,6 +30,9 @@ typedef struct {
 
 /* Initializes the descriptor set layout. */
 static int init_layout(YF_dtable dtb);
+
+/* Invalidates all iviews acquired from a given image. */
+static void inval_iview(void *img, int pubsub, void *dtb);
 
 /* Hashes a 'L_kv'. */
 static size_t hash_kv(const void *x);
@@ -210,10 +214,10 @@ void yf_dtable_dealloc(YF_dtable dtb) {
     if (YF_IT_ISNIL(it))
       break;
     for (unsigned i = 0; i < dtb->entries[kv->key.entry_i].elements; ++i) {
-      if (kv->imgs[i] != NULL)
-        /* FIXME: Crashes if any image used for copy is deinitialized before
-           the dtable is deallocated. */
+      if (kv->imgs[i] != NULL) {
+        yf_subscribe(kv->imgs[i], dtb, YF_PUBSUB_NONE, NULL, NULL);
         yf_image_ungetiview(kv->imgs[i], kv->iviews+i);
+      }
     }
     free(kv->iviews);
     free(kv->imgs);
@@ -356,9 +360,12 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
       free(img_infos);
       return -1;
     }
-    if (kv->imgs[i] != NULL)
-      /* FIXME: Crashes here too if 'kv->imgs[i]' is no more. */
+    yf_subscribe(imgs[i], dtb, YF_PUBSUB_DEINIT, inval_iview, dtb);
+    if (kv->imgs[i] != NULL) {
+      if (kv->imgs[i] != imgs[i])
+        yf_subscribe(kv->imgs[i], dtb, YF_PUBSUB_NONE, NULL, NULL);
       yf_image_ungetiview(kv->imgs[i], kv->iviews+i);
+    }
     kv->iviews[i] = iview;
     kv->imgs[i] = imgs[i];
 
@@ -526,6 +533,24 @@ static int init_layout(YF_dtable dtb) {
   free(bindings);
   free(samplers);
   return 0;
+}
+
+static void inval_iview(void *img, int pubsub, void *dtb) {
+  assert(img != NULL);
+  assert(dtb != NULL);
+  assert(pubsub == YF_PUBSUB_DEINIT);
+
+  /* XXX: This may end up being too slow if images are destroyed often. */
+  YF_hashset iviews = ((YF_dtable)dtb)->iviews;
+  YF_iter it = YF_NILIT;
+  L_kv *kv = NULL;
+  while ((kv = yf_hashset_next(iviews, &it)) != NULL) {
+    const unsigned n = ((YF_dtable)dtb)->entries[kv->key.entry_i].elements;
+    for (unsigned i = 0; i < n; ++i) {
+      if (kv->imgs[i] == img)
+        kv->imgs[i] = NULL;
+    }
+  }
 }
 
 static size_t hash_kv(const void *x) {
