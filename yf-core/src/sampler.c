@@ -2,23 +2,25 @@
  * YF
  * sampler.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
+
+#include <limits.h>
+#include <assert.h>
 
 #include <yf/com/yf-error.h>
 
 #include "sampler.h"
 #include "context.h"
 
-VkSampler yf_sampler_make(YF_context ctx, int sampler) {
+VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *samp) {
+  assert(ctx != NULL);
+
   VkSamplerCreateInfo info = {0};
   info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
   info.pNext = NULL;
   info.flags = 0;
-  /* TODO: Make additional types for setting these parameter */
-  info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-  info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-  info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+  /* TODO: Additional members for setting some of these parameters. */
   info.mipLodBias = 0.0f;
   info.anisotropyEnable = VK_FALSE;
   info.maxAnisotropy = 0.0f;
@@ -29,32 +31,35 @@ VkSampler yf_sampler_make(YF_context ctx, int sampler) {
   info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
   info.unnormalizedCoordinates = VK_FALSE;
 
-  switch (sampler) {
-    case YF_SAMPLER_BASIC:
-      info.magFilter = VK_FILTER_NEAREST;
-      info.minFilter = VK_FILTER_NEAREST;
-      info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-      break;
-    case YF_SAMPLER_LINEAR:
-      info.magFilter = VK_FILTER_LINEAR;
-      info.minFilter = VK_FILTER_LINEAR;
-      info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-      break;
-    case YF_SAMPLER_TRILINEAR:
-      info.magFilter = VK_FILTER_LINEAR;
-      info.minFilter = VK_FILTER_LINEAR;
-      info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
-      return NULL;
+  if (samp != NULL) {
+    YF_WRAPMODE_FROM(samp->wrapmode.u, info.addressModeU);
+    YF_WRAPMODE_FROM(samp->wrapmode.v, info.addressModeV);
+    YF_WRAPMODE_FROM(samp->wrapmode.w, info.addressModeW);
+    YF_FILTER_FROM(samp->filter.mag, info.magFilter);
+    YF_FILTER_FROM(samp->filter.min, info.minFilter);
+    YF_FILTER_MIP_FROM(samp->filter.mipmap, info.mipmapMode);
+
+    assert(info.addressModeU != INT_MAX);
+    assert(info.addressModeV != INT_MAX);
+    assert(info.addressModeW != INT_MAX);
+    assert(info.magFilter != INT_MAX);
+    assert(info.minFilter != INT_MAX);
+    assert(info.mipmapMode != INT_MAX);
+
+  } else {
+    info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    info.magFilter = VK_FILTER_NEAREST;
+    info.minFilter = VK_FILTER_NEAREST;
+    info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
   }
 
-  VkSampler samp;
-  VkResult res = vkCreateSampler(ctx->device, &info, NULL, &samp);
+  VkSampler sampler;
+  VkResult res = vkCreateSampler(ctx->device, &info, NULL, &sampler);
   if (res != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     return NULL;
   }
-  return samp;
+  return sampler;
 }

@@ -500,8 +500,7 @@ static int init_layout(YF_dtable dtb) {
       samplers = tmp;
     }
     for (unsigned j = samp_i; j < samp_i + dtb->entries[i].elements; ++j) {
-      /* TODO: Improve the sampler type parameter passing. */
-      samplers[j] = yf_sampler_make(dtb->ctx, (size_t)dtb->entries[i].info);
+      samplers[j] = yf_sampler_make(dtb->ctx, dtb->entries[i].info);
       if (samplers[j] == NULL) {
         free(bindings);
         free(samplers);
