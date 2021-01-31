@@ -175,7 +175,7 @@ int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
     rz->tex = NULL;
   }
   rz->off = (YF_off2){0};
-  rz->dim = (YF_dim2){0};
+  rz->dim = dim;
 
   YF_texdt data;
   data.dim = dim;
