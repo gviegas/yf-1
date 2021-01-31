@@ -122,6 +122,14 @@ unsigned short yf_label_getpt(YF_label labl);
 int yf_label_setpt(YF_label labl, unsigned short pt);
 
 /**
+ * Gets the dimensions of a label.
+ *
+ * @param labl: The label.
+ * @return: The dimensions of the label's rasterized output, in pixels.
+ */
+YF_dim2 yf_label_getdim(YF_label labl);
+
+/**
  * Deinitializes a label.
  *
  * @param labl: The label to deinitialize. Can be 'NULL'.

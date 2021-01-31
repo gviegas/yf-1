@@ -170,6 +170,16 @@ int yf_label_setpt(YF_label labl, unsigned short pt) {
   return 0;
 }
 
+YF_dim2 yf_label_getdim(YF_label labl) {
+  assert(labl != NULL);
+
+  if (labl->changed) {
+    copy_glyphs(labl);
+    labl->changed = 0;
+  }
+  return labl->rz.dim;
+}
+
 void yf_label_deinit(YF_label labl) {
   if (labl != NULL) {
     yf_node_deinit(labl->node);
