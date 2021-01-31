@@ -58,6 +58,8 @@ void yf_print_nodeobj(YF_node node) {
       {
         wchar_t str[256];
         printf("\n str:  %ls", yf_label_getstr((YF_label)obj, str, 256));
+        YF_dim2 dim = yf_label_getdim((YF_label)obj);
+        printf("\n dim:  %ux%u", dim.width, dim.height);
       }
       break;
     case YF_NODEOBJ_LIGHT:
