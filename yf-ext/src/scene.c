@@ -1016,6 +1016,8 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
   YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
   const YF_slice elems = {0, 1};
   size_t off, sz;
+  const YF_mat4 *vp = yf_camera_getxform(scn->cam);
+  YF_mat4 mvp, *m;
 
   switch (resrq) {
     case YF_RESRQ_MDL:
@@ -1026,16 +1028,14 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       sz = obj_n * YF_INSTSZ_MDL;
       for (unsigned i = 0; i < obj_n; ++i) {
         YF_model mdl = ((YF_model *)objs)[i];
-        yf_mat4_mul(*yf_model_getmvp(mdl), *yf_camera_getxform(scn->cam),
-            *yf_model_getxform(mdl));
+        m = yf_model_getxform(mdl);
+        yf_mat4_mul(mvp, *vp, *m);
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_model_getxform(mdl), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* model-view-projection matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_model_getmvp(mdl), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mvp, sizeof mvp) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
       }
@@ -1051,16 +1051,14 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       sz = obj_n * YF_INSTSZ_TERR;
       {
         YF_terrain terr = ((YF_terrain *)objs)[0];
-        yf_mat4_mul(*yf_terrain_getmvp(terr), *yf_camera_getxform(scn->cam),
-            *yf_terrain_getxform(terr));
+        m = yf_terrain_getxform(terr);
+        yf_mat4_mul(mvp, *vp, *m);
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_terrain_getxform(terr), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* model-view-projection matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_terrain_getmvp(terr), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mvp, sizeof mvp) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* copy */
@@ -1076,16 +1074,14 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       sz = obj_n * YF_INSTSZ_PART;
       {
         YF_particle part = ((YF_particle *)objs)[0];
-        yf_mat4_mul(*yf_particle_getmvp(part), *yf_camera_getxform(scn->cam),
-            *yf_particle_getxform(part));
+        m = yf_particle_getxform(part);
+        yf_mat4_mul(mvp, *vp, *m);
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_particle_getxform(part), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* model-view-projection matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_particle_getmvp(part), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mvp, sizeof mvp) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* copy */
@@ -1101,16 +1097,14 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       sz = obj_n * YF_INSTSZ_QUAD;
       {
         YF_quad quad = ((YF_quad *)objs)[0];
-        yf_mat4_mul(*yf_quad_getmvp(quad), *yf_camera_getxform(scn->cam),
-            *yf_quad_getxform(quad));
+        m = yf_quad_getxform(quad);
+        yf_mat4_mul(mvp, *vp, *m);
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_quad_getxform(quad), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* model-view-projection matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_quad_getmvp(quad), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mvp, sizeof mvp) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* copy */
@@ -1126,16 +1120,14 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       sz = obj_n * YF_INSTSZ_LABL;
       {
         YF_label labl = ((YF_label *)objs)[0];
-        yf_mat4_mul(*yf_label_getmvp(labl), *yf_camera_getxform(scn->cam),
-            *yf_label_getxform(labl));
+        m = yf_label_getxform(labl);
+        yf_mat4_mul(mvp, *vp, *m);
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_label_getxform(labl), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* model-view-projection matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_label_getmvp(labl), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mvp, sizeof mvp) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* copy */
