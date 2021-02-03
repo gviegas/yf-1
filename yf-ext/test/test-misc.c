@@ -86,7 +86,9 @@ int yf_test_misc(void) {
     yf_quad_settex(l_vars.quads[i], texs[i%tex_n]);
 
     YF_mat4 *m = yf_quad_getxform(l_vars.quads[i]);
-    (*m)[12] = i<<1;
+    (*m)[12] = i*0.25;
+    (*m)[0] = (i+1)*0.1;
+    (*m)[5] = (i+1)*0.1;
 
     yf_node_insert(yf_scene_getnode(l_vars.scn),
         yf_quad_getnode(l_vars.quads[i]));
@@ -99,11 +101,11 @@ int yf_test_misc(void) {
 
     yf_label_setfont(l_vars.labls[i], fonts[i%font_n]);
     yf_label_setstr(l_vars.labls[i], L"label");
+    yf_label_setpt(l_vars.labls[i], 24+i*12);
 
     YF_mat4 *m = yf_label_getxform(l_vars.labls[i]);
-    (*m)[12] = i<<1;
-    (*m)[13] = i<<1;
-    (*m)[14] = i<<1;
+    (*m)[12] = i*-0.15;
+    (*m)[13] = i*-0.15;
 
     yf_node_insert(yf_scene_getnode(l_vars.scn),
         yf_label_getnode(l_vars.labls[i]));
