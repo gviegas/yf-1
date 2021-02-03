@@ -41,7 +41,7 @@
 #undef YF_INSTCAP
 #define YF_INSTCAP 4
 
-#define YF_GLOBSZ      ((sizeof(YF_mat4) << 1) + 32)
+#define YF_GLOBSZ      (sizeof(YF_mat4) * 3 + 32)
 #define YF_INSTSZ_MDL  (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
@@ -996,9 +996,17 @@ static int copy_glob(YF_scene scn) {
     return -1;
   l_vars.buf_off += sizeof(YF_mat4);
 
-  /* projection matrix */
+  /* projection matrix (persp.) */
   if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
         *yf_camera_getproj(scn->cam), sizeof(YF_mat4)) != 0)
+    return -1;
+  l_vars.buf_off += sizeof(YF_mat4);
+
+  /* projection matrix (ortho.) */
+  /* TODO: This matrix should be taken from the camera. */
+  YF_mat4 ortho;
+  yf_mat4_ortho(ortho, -1.0, 1.0, -1.0, 1.0, 0.0, -1.0);
+  if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, ortho, sizeof ortho) != 0)
     return -1;
   l_vars.buf_off += sizeof(YF_mat4);
 
