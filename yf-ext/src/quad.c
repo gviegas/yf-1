@@ -22,7 +22,6 @@ struct YF_quad_o {
   YF_mesh mesh;
   YF_texture tex;
   /* TODO: Other quad properties. */
-  YF_mat4 mvp;
 };
 
 /* Initializes a quad's mesh rectangle. */
@@ -40,7 +39,6 @@ YF_quad yf_quad_init(void) {
   }
   yf_node_setobj(quad->node, YF_NODEOBJ_QUAD, quad);
   yf_mat4_iden(quad->xform);
-  yf_mat4_iden(quad->mvp);
 
   if (init_rect(quad) != 0) {
     yf_quad_deinit(quad);
@@ -80,11 +78,6 @@ void yf_quad_deinit(YF_quad quad) {
     yf_mesh_deinit(quad->mesh);
     free(quad);
   }
-}
-
-YF_mat4 *yf_quad_getmvp(YF_quad quad) {
-  assert(quad != NULL);
-  return &quad->mvp;
 }
 
 static int init_rect(YF_quad quad) {

@@ -24,7 +24,6 @@ struct YF_terrain_o {
   YF_texture hmap;
   YF_texture tex;
   /* TODO: Other terrain properties. */
-  YF_mat4 mvp;
 };
 
 /* Initializes grid mesh. */
@@ -49,7 +48,6 @@ YF_terrain yf_terrain_init(unsigned width, unsigned depth) {
   terr->width = width;
   terr->depth = depth;
   yf_mat4_iden(terr->xform);
-  yf_mat4_iden(terr->mvp);
 
   if (init_grid(terr) != 0) {
     yf_terrain_deinit(terr);
@@ -99,11 +97,6 @@ void yf_terrain_deinit(YF_terrain terr) {
     yf_mesh_deinit(terr->mesh);
     free(terr);
   }
-}
-
-YF_mat4 *yf_terrain_getmvp(YF_terrain terr) {
-  assert(terr != NULL);
-  return &terr->mvp;
 }
 
 static int init_grid(YF_terrain terr) {

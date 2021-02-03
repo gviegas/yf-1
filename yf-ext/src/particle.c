@@ -48,7 +48,6 @@ struct YF_particle_o {
   YF_mesh mesh;
   YF_texture tex;
   /* TODO: Other particle system properties. */
-  YF_mat4 mvp;
 };
 
 /* Initializes vertices, states and mesh object. */
@@ -72,7 +71,6 @@ YF_particle yf_particle_init(unsigned count) {
   yf_node_setobj(part->node, YF_NODEOBJ_PARTICLE, part);
   part->count = count;
   yf_mat4_iden(part->xform);
-  yf_mat4_iden(part->mvp);
 
   part->sys.emitter.norm[0] = 0.0;
   part->sys.emitter.norm[1] = -1.0;
@@ -245,11 +243,6 @@ void yf_particle_deinit(YF_particle part) {
     free(part->sts);
     free(part);
   }
-}
-
-YF_mat4 *yf_particle_getmvp(YF_particle part) {
-  assert(part != NULL);
-  return &part->mvp;
 }
 
 static int init_points(YF_particle part) {

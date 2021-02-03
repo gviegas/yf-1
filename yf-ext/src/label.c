@@ -37,7 +37,6 @@ struct YF_label_o {
   unsigned short pt;
   int changed;
   /* TODO: Other label properties. */
-  YF_mat4 mvp;
 };
 
 /* Initializes a label's mesh rectangle. */
@@ -58,7 +57,6 @@ YF_label yf_label_init(void) {
   }
   yf_node_setobj(labl->node, YF_NODEOBJ_LABEL, labl);
   yf_mat4_iden(labl->xform);
-  yf_mat4_iden(labl->mvp);
   labl->pt = 16;
   labl->changed = 1;
 
@@ -191,11 +189,6 @@ void yf_label_deinit(YF_label labl) {
     free(labl->str);
     free(labl);
   }
-}
-
-YF_mat4 *yf_label_getmvp(YF_label labl) {
-  assert(labl != NULL);
-  return &labl->mvp;
 }
 
 static int init_rect(YF_label labl) {
