@@ -1016,6 +1016,8 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
   YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
   const YF_slice elems = {0, 1};
   size_t off, sz;
+  const YF_mat4 *vp = yf_camera_getxform(scn->cam);
+  YF_mat4 mvp, *m;
 
   switch (resrq) {
     case YF_RESRQ_MDL:
@@ -1026,16 +1028,14 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       sz = obj_n * YF_INSTSZ_MDL;
       for (unsigned i = 0; i < obj_n; ++i) {
         YF_model mdl = ((YF_model *)objs)[i];
-        yf_mat4_mul(*yf_model_getmvp(mdl), *yf_camera_getxform(scn->cam),
-            *yf_model_getxform(mdl));
+        m = yf_model_getxform(mdl);
+        yf_mat4_mul(mvp, *vp, *m);
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_model_getxform(mdl), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* model-view-projection matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
-              *yf_model_getmvp(mdl), sizeof(YF_mat4)) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mvp, sizeof mvp) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
       }
