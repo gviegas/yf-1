@@ -2,19 +2,41 @@
  * YF
  * mdl.vert.glsl
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #version 460 core
 
+layout(std140, column_major) uniform;
+
+/**
+ * Type defining a viewport.
+ */
+struct T_vport {
+  float x;
+  float y;
+  float wdt;
+  float hgt;
+  float near;
+  float far;
+};
+
+/**
+ * Global uniform data.
+ */
 layout(set=0, binding=0) uniform U_glob {
   mat4 v;
   mat4 p;
+  mat4 o;
+  T_vport vport[1];
 } u_glob;
 
+/**
+ * Instance's uniform data.
+ */
 layout(set=1, binding=0) uniform U_inst {
   mat4 m;
-  mat4 mvp;
+  mat4 mv;
 } u_inst;
 
 layout(location=0) in vec3 pos;
@@ -27,7 +49,7 @@ out IO_vtx {
 } out_vtx;
 
 void main() {
-  gl_Position = u_inst.mvp * vec4(pos, 1.0);
+  gl_Position = u_glob.p * u_inst.mv * vec4(pos, 1.0);
   out_vtx.tc = tc;
   out_vtx.norm = norm;
 }
