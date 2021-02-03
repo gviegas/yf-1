@@ -2,7 +2,7 @@
  * YF
  * model.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -19,7 +19,6 @@ struct YF_model_o {
   YF_mesh mesh;
   YF_texture tex;
   /* TODO: Other model properties. */
-  YF_mat4 mvp;
 };
 
 YF_model yf_model_init(void) {
@@ -34,7 +33,6 @@ YF_model yf_model_init(void) {
   }
   yf_node_setobj(mdl->node, YF_NODEOBJ_MODEL, mdl);
   yf_mat4_iden(mdl->xform);
-  yf_mat4_iden(mdl->mvp);
   return mdl;
 }
 
@@ -73,9 +71,4 @@ void yf_model_deinit(YF_model mdl) {
     yf_node_deinit(mdl->node);
     free(mdl);
   }
-}
-
-YF_mat4 *yf_model_getmvp(YF_model mdl) {
-  assert(mdl != NULL);
-  return &mdl->mvp;
 }
