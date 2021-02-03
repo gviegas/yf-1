@@ -29,6 +29,8 @@ struct L_vars {
   struct {
     int move[4];
     int turn[4];
+    int once;
+    int rgb[3];
     int quit;
   } input;
 };
@@ -62,6 +64,18 @@ static void on_key(int key, int state,
       break;
     case YF_KEY_RIGHT:
       l_vars.input.turn[3] = state;
+      break;
+    case YF_KEY_1:
+      l_vars.input.once = state;
+      break;
+    case YF_KEY_R:
+      l_vars.input.rgb[0] = state;
+      break;
+    case YF_KEY_G:
+      l_vars.input.rgb[1] = state;
+      break;
+    case YF_KEY_B:
+      l_vars.input.rgb[2] = state;
       break;
     default:
       l_vars.input.quit |= state;
@@ -97,6 +111,12 @@ static void update(double elapsed_time) {
     yf_camera_turnl(cam, td);
   if (l_vars.input.turn[3])
     yf_camera_turnr(cam, td);
+
+  YF_psys *sys = yf_particle_getsys(l_vars.part);
+  sys->lifetime.once = l_vars.input.once;
+  sys->color.max[0] = 1.0-l_vars.input.rgb[0];
+  sys->color.max[1] = 1.0-l_vars.input.rgb[1];
+  sys->color.max[2] = 1.0-l_vars.input.rgb[2];
 
   yf_particle_simulate(l_vars.part, elapsed_time);
 }
