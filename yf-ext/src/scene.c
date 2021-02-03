@@ -41,7 +41,7 @@
 #undef YF_INSTCAP
 #define YF_INSTCAP 4
 
-#define YF_GLOBSZ      (sizeof(YF_mat4) << 1)
+#define YF_GLOBSZ      ((sizeof(YF_mat4) << 1) + 32)
 #define YF_INSTSZ_MDL  (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
@@ -1001,6 +1001,12 @@ static int copy_glob(YF_scene scn) {
         *yf_camera_getproj(scn->cam), sizeof(YF_mat4)) != 0)
     return -1;
   l_vars.buf_off += sizeof(YF_mat4);
+
+  /* viewport #0 */
+  if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+        &scn->vport, sizeof scn->vport) != 0)
+    return -1;
+  l_vars.buf_off += 32;
 
   /* copy */
   if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_GLOB, elems,
