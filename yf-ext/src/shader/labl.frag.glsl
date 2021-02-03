@@ -7,6 +7,9 @@
 
 #version 460 core
 
+/**
+ * Primary texture.
+ */
 layout(set=1, binding=1) uniform sampler2D u_tex;
 
 in IO_vtx {
