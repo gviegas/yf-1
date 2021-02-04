@@ -136,8 +136,8 @@ static int init_rect(YF_quad quad) {
   static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
 
   const YF_meshdt data = {
-    .v = {YF_VTYPE_QUAD, verts, 4},
-    .i = {inds, sizeof(inds[0]), 6}
+    .v = {YF_VTYPE_QUAD, (void *)verts, 4},
+    .i = {(void *)inds, sizeof(inds[0]), 6}
   };
 
   quad->mesh = yf_mesh_initdt(&data);
@@ -148,34 +148,34 @@ static int init_rect(YF_quad quad) {
 static void update_rect(YF_quad quad) {
   assert(quad != NULL);
 
-  YF_float u0, v0, u1, v1;
+  YF_float s0, t0, s1, t1;
 
   if (quad->rect.size.width == 0) {
-    u0 = v0 = 0.0;
-    u1 = v1 = 1.0;
+    s0 = t0 = 0.0;
+    s1 = t1 = 1.0;
   } else {
     /* XXX: This assumes that the rect values are valid. */
     assert(quad->tex != NULL);
     const YF_dim2 dim = yf_texture_getdim(quad->tex);
-    const YF_float u_max = dim.width;
-    const YF_float v_max = dim.height;
-    u0 = quad->rect.origin.x / u_max;
-    v0 = quad->rect.origin.y / v_max;
-    u1 = quad->rect.size.width / u_max + u0;
-    v1 = quad->rect.size.height / v_max + v0;
+    const YF_float wdt = dim.width;
+    const YF_float hgt = dim.height;
+    s0 = quad->rect.origin.x / wdt;
+    t0 = quad->rect.origin.y / hgt;
+    s1 = quad->rect.size.width / wdt + s0;
+    t1 = quad->rect.size.height / hgt + t0;
   }
 
-  quad->verts[0].tc[0] = u0;
-  quad->verts[0].tc[1] = v1;
+  quad->verts[0].tc[0] = s0;
+  quad->verts[0].tc[1] = t1;
 
-  quad->verts[1].tc[0] = u0;
-  quad->verts[1].tc[1] = v0;
+  quad->verts[1].tc[0] = s0;
+  quad->verts[1].tc[1] = t0;
 
-  quad->verts[2].tc[0] = u1;
-  quad->verts[2].tc[1] = v0;
+  quad->verts[2].tc[0] = s1;
+  quad->verts[2].tc[1] = t0;
 
-  quad->verts[3].tc[0] = u1;
-  quad->verts[3].tc[1] = v1;
+  quad->verts[3].tc[0] = s1;
+  quad->verts[3].tc[1] = t1;
 
   const YF_slice range = {0, 4};
 #ifdef YF_DEVEL
