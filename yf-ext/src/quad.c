@@ -71,6 +71,8 @@ YF_texture yf_quad_gettex(YF_quad quad) {
 void yf_quad_settex(YF_quad quad, YF_texture tex) {
   assert(quad != NULL);
   quad->tex = tex;
+  quad->rect.origin = (YF_off2){0};
+  quad->rect.size = tex != NULL ? yf_texture_getdim(tex) : (YF_dim2){0};
 }
 
 YF_rect *yf_quad_getrect(YF_quad quad) {
