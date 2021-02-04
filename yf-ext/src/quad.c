@@ -75,9 +75,16 @@ void yf_quad_settex(YF_quad quad, YF_texture tex) {
   quad->rect.size = tex != NULL ? yf_texture_getdim(tex) : (YF_dim2){0};
 }
 
-YF_rect *yf_quad_getrect(YF_quad quad) {
+const YF_rect *yf_quad_getrect(YF_quad quad) {
   assert(quad != NULL);
   return &quad->rect;
+}
+
+void yf_quad_setrect(YF_quad quad, const YF_rect *rect) {
+  assert(quad != NULL);
+  assert(rect != NULL);
+
+  memcpy(&quad->rect, rect, sizeof *rect);
 }
 
 void yf_quad_deinit(YF_quad quad) {

@@ -79,7 +79,19 @@ void yf_quad_settex(YF_quad quad, YF_texture tex);
  * @param quad: The quad.
  * @return: The quad's rectangle.
  */
-YF_rect *yf_quad_getrect(YF_quad quad);
+const YF_rect *yf_quad_getrect(YF_quad quad);
+
+/**
+ * Sets the rectangle for a quad.
+ *
+ * Setting a new texture overrides the value set by a call to this function.
+ *
+ * One must ensure that 'rect' specifies a subrange of the current texture.
+ *
+ * @param quad: The quad.
+ * @param rect: The rect.
+ */
+void yf_quad_setrect(YF_quad quad, const YF_rect *rect);
 
 /**
  * Deinitializes a quad.
