@@ -79,6 +79,13 @@ YF_texture yf_texture_init(int filetype, const char *pathname) {
   return tex;
 }
 
+YF_dim2 yf_texture_getdim(YF_texture tex) {
+  assert(tex != NULL);
+  YF_dim3 dim;
+  yf_image_getval(tex->imge->img, NULL, &dim, NULL, NULL, NULL);
+  return (YF_dim2){dim.width, dim.height};
+}
+
 void yf_texture_deinit(YF_texture tex) {
   if (tex == NULL)
     return;
