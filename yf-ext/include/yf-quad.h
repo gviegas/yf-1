@@ -71,6 +71,17 @@ YF_texture yf_quad_gettex(YF_quad quad);
 void yf_quad_settex(YF_quad quad, YF_texture tex);
 
 /**
+ * Gets the rectangle of a quad.
+ *
+ * This rectangle defines a range of the currently set texture that contains
+ * the quad. The default value is a rect that encloses the whole texture.
+ *
+ * @param quad: The quad.
+ * @return: The quad's rectangle.
+ */
+YF_rect *yf_quad_getrect(YF_quad quad);
+
+/**
  * Deinitializes a quad.
  *
  * @param quad: The quad to deinitialize. Can be 'NULL'.
