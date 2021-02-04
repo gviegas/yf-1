@@ -30,6 +30,7 @@
 struct YF_label_o {
   YF_node node;
   YF_mat4 xform;
+  YF_vlabl verts[4];
   YF_mesh mesh;
   YF_fontrz rz;
   YF_font font;
@@ -194,19 +195,6 @@ void yf_label_deinit(YF_label labl) {
 static int init_rect(YF_label labl) {
   assert(labl != NULL);
 
-  YF_meshdt data = {
-    .v = {YF_VTYPE_LABL, NULL, 4},
-    .i = {NULL, sizeof(unsigned short), 6}
-  };
-  data.v.data = malloc(sizeof(YF_vlabl) * data.v.n);
-  data.i.data = malloc(data.i.stride * data.i.n);
-  if (data.v.data == NULL || data.i.data == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    free(data.v.data);
-    free(data.i.data);
-    return -1;
-  }
-
   static const YF_vlabl verts[4] = {
     {
       .pos = {-1.0, -1.0, 0.5},
@@ -231,11 +219,13 @@ static int init_rect(YF_label labl) {
   };
   static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
 
-  memcpy(data.v.data, verts, sizeof verts);
-  memcpy(data.i.data, inds, sizeof inds);
+  const YF_meshdt data = {
+    .v = {YF_VTYPE_LABL, (void *)verts, 4},
+    .i = {(void *)inds, sizeof inds[0], 6}
+  };
+
   labl->mesh = yf_mesh_initdt(&data);
-  free(data.v.data);
-  free(data.i.data);
+  memcpy(labl->verts, verts, sizeof verts);
   return labl->mesh == NULL ? -1 : 0;
 }
 
