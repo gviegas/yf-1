@@ -2,7 +2,7 @@
  * YF
  * yf-types.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_TYPES_H
@@ -66,6 +66,19 @@ typedef struct {
   YF_off2 origin;
   YF_dim2 size;
 } YF_rect;
+
+/**
+ * Corners of a rectangle.
+ */
+#define YF_CORNER_TOPL    0x01
+#define YF_CORNER_TOPR    0x02
+#define YF_CORNER_BOTTOML 0x04
+#define YF_CORNER_BOTTOMR 0x08
+#define YF_CORNER_TOP     0x03
+#define YF_CORNER_BOTTOM  0x0c
+#define YF_CORNER_LEFT    0x05
+#define YF_CORNER_RIGHT   0x0a
+#define YF_CORNER_ALL     0x0f
 
 /**
  * Type defining a normalized RGBA color.
