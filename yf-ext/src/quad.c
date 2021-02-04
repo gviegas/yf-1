@@ -21,6 +21,7 @@ struct YF_quad_o {
   YF_mat4 xform;
   YF_mesh mesh;
   YF_texture tex;
+  YF_rect rect;
   /* TODO: Other quad properties. */
 };
 
@@ -70,6 +71,11 @@ YF_texture yf_quad_gettex(YF_quad quad) {
 void yf_quad_settex(YF_quad quad, YF_texture tex) {
   assert(quad != NULL);
   quad->tex = tex;
+}
+
+YF_rect *yf_quad_getrect(YF_quad quad) {
+  assert(quad != NULL);
+  return &quad->rect;
 }
 
 void yf_quad_deinit(YF_quad quad) {
