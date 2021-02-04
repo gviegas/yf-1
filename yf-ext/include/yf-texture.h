@@ -37,6 +37,14 @@ typedef struct YF_texture_o *YF_texture;
 YF_texture yf_texture_init(int filetype, const char *pathname);
 
 /**
+ * Gets the dimensions of a texture.
+ *
+ * @param tex: The texture.
+ * @return: The texture dimensions, in pixels.
+ */
+YF_dim2 yf_texture_getdim(YF_texture tex);
+
+/**
  * Deinitializes a texture.
  *
  * @param tex: The texture to deinitialize. Can be 'NULL'.
