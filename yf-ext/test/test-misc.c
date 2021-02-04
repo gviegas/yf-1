@@ -84,11 +84,16 @@ int yf_test_misc(void) {
     assert(l_vars.quads[i] != NULL);
 
     yf_quad_settex(l_vars.quads[i], texs[i%tex_n]);
+    if (i == quad_n-1) {
+      YF_rect rect = *yf_quad_getrect(l_vars.quads[i]);
+      rect.size.width >>= 1;
+      yf_quad_setrect(l_vars.quads[i], &rect);
+    }
 
     YF_mat4 *m = yf_quad_getxform(l_vars.quads[i]);
-    (*m)[12] = i*0.25;
-    (*m)[0] = (i+1)*0.1;
-    (*m)[5] = (i+1)*0.1;
+    (*m)[12] = i*0.2;
+    (*m)[0] = (i+1)*0.65;
+    (*m)[5] = (i+1)*0.65;
 
     yf_node_insert(yf_scene_getnode(l_vars.scn),
         yf_quad_getnode(l_vars.quads[i]));
