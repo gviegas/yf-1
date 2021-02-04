@@ -100,6 +100,16 @@ void yf_quad_setrect(YF_quad quad, const YF_rect *rect) {
   quad->changed = 1;
 }
 
+YF_color yf_quad_getcolor(YF_quad quad, int corner) {
+  /* TODO */
+  assert(0);
+}
+
+void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color) {
+  /* TODO */
+  assert(0);
+}
+
 void yf_quad_deinit(YF_quad quad) {
   if (quad != NULL) {
     yf_node_deinit(quad->node);

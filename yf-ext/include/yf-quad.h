@@ -94,6 +94,26 @@ const YF_rect *yf_quad_getrect(YF_quad quad);
 void yf_quad_setrect(YF_quad quad, const YF_rect *rect);
 
 /**
+ * Gets the color of quad.
+ *
+ * @param quad: The quad.
+ * @param corner: The 'YF_CORNER' value indicating the corner from which to
+ *  retrieve the color.
+ * @return: The color currently set for 'corner'.
+ */
+YF_color yf_quad_getcolor(YF_quad quad, int corner);
+
+/**
+ * Sets the color for a quad.
+ *
+ * @param quad: The quad.
+ * @param corner_mask: A mask of 'YF_CORNER' values indicating the corners
+ *  to be updated with 'color'.
+ * @param color: The color to set.
+ */
+void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color);
+
+/**
  * Deinitializes a quad.
  *
  * @param quad: The quad to deinitialize. Can be 'NULL'.
