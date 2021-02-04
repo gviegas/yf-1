@@ -19,6 +19,7 @@
 struct YF_quad_o {
   YF_node node;
   YF_mat4 xform;
+  YF_vquad verts[4];
   YF_mesh mesh;
   YF_texture tex;
   YF_rect rect;
@@ -98,19 +99,6 @@ void yf_quad_deinit(YF_quad quad) {
 static int init_rect(YF_quad quad) {
   assert(quad != NULL);
 
-  YF_meshdt data = {
-    .v = {YF_VTYPE_QUAD, NULL, 4},
-    .i = {NULL, sizeof(unsigned short), 6}
-  };
-  data.v.data = malloc(sizeof(YF_vquad) * data.v.n);
-  data.i.data = malloc(data.i.stride * data.i.n);
-  if (data.v.data == NULL || data.i.data == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    free(data.v.data);
-    free(data.i.data);
-    return -1;
-  }
-
   static const YF_vquad verts[4] = {
     {
       .pos = {-1.0, -1.0, 0.5},
@@ -135,10 +123,12 @@ static int init_rect(YF_quad quad) {
   };
   static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
 
-  memcpy(data.v.data, verts, sizeof verts);
-  memcpy(data.i.data, inds, sizeof inds);
+  const YF_meshdt data = {
+    .v = {YF_VTYPE_QUAD, verts, 4},
+    .i = {inds, sizeof(inds[0]), 6}
+  };
+
   quad->mesh = yf_mesh_initdt(&data);
-  free(data.v.data);
-  free(data.i.data);
+  memcpy(quad->verts, verts, sizeof verts);
   return quad->mesh == NULL ? -1 : 0;
 }
