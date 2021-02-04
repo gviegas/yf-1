@@ -45,7 +45,7 @@
 #define YF_INSTSZ_MDL  (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
-#define YF_INSTSZ_QUAD (sizeof(YF_mat4) << 1)
+#define YF_INSTSZ_QUAD ((sizeof(YF_mat4) << 1) + 16)
 #define YF_INSTSZ_LABL ((sizeof(YF_mat4) << 1) + 16)
 
 #define YF_PEND_NONE 0
@@ -1113,6 +1113,8 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
         YF_quad quad = ((YF_quad *)objs)[0];
         m = yf_quad_getxform(quad);
         yf_mat4_mul(mv, *v, *m);
+        const YF_rect *rect = yf_quad_getrect(quad);
+        const float dim[2] = {rect->size.width, rect->size.height};
         /* model matrix */
         if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
           return -1;
@@ -1121,6 +1123,10 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
         if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
+        /* dimensions */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim, sizeof dim) != 0)
+          return -1;
+        l_vars.buf_off += 16;
         /* copy */
         if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
               &l_vars.buf, &off, &sz) != 0)
@@ -1147,7 +1153,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
           return -1;
         l_vars.buf_off += sizeof(YF_mat4);
         /* dimensions */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, &dim, sizeof dim) != 0)
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim, sizeof dim) != 0)
           return -1;
         l_vars.buf_off += 16;
         /* copy */
