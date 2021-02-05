@@ -47,6 +47,9 @@ struct YF_label_o {
 /* Initializes a label's mesh rectangle. */
 static int init_rect(YF_label labl);
 
+/* Updates a label's mesh rectangle. */
+static void update_rect(YF_label labl);
+
 /* Copies label glyphs to texture. */
 static int copy_glyphs(YF_label labl);
 
@@ -88,10 +91,10 @@ YF_mesh yf_label_getmesh(YF_label labl) {
   if (labl->pend_mask != YF_PEND_NONE) {
     if (labl->pend_mask & YF_PEND_RZ) {
       copy_glyphs(labl);
-      /* TODO: Upate rect. */
-    } else {
-      /* TODO: Upate rect. */
+      labl->pend_mask &= ~YF_PEND_RZ;
+      labl->pend_mask |= YF_PEND_TC;
     }
+    update_rect(labl);
     labl->pend_mask = YF_PEND_NONE;
   }
   return labl->mesh;
@@ -304,10 +307,53 @@ static int init_rect(YF_label labl) {
   return labl->mesh == NULL ? -1 : 0;
 }
 
+static void update_rect(YF_label labl) {
+  assert(labl != NULL);
+  assert(labl->pend_mask != YF_PEND_NONE);
+
+  if (labl->pend_mask & YF_PEND_TC) {
+    const YF_fontrz *rz = &labl->rz;
+    YF_float s0, t0, s1, t1;
+
+    if (rz->tex == NULL || rz->dim.width == 0 || rz->dim.height == 0) {
+      s0 = t0 = 0.0;
+      s1 = t1 = 1.0;
+    } else {
+      const YF_dim2 dim = yf_texture_getdim(rz->tex);
+      const YF_float wdt = dim.width;
+      const YF_float hgt = dim.height;
+      s0 = rz->off.x / wdt;
+      t0 = rz->off.y / hgt;
+      s1 = rz->dim.width / wdt + s0;
+      t1 = rz->dim.height / hgt + t0;
+    }
+
+    labl->verts[0].tc[0] = s0;
+    labl->verts[0].tc[1] = t1;
+
+    labl->verts[1].tc[0] = s0;
+    labl->verts[1].tc[1] = t0;
+
+    labl->verts[2].tc[0] = s1;
+    labl->verts[2].tc[1] = t0;
+
+    labl->verts[3].tc[0] = s1;
+    labl->verts[3].tc[1] = t1;
+  }
+
+  const YF_slice range = {0, 4};
+#ifdef YF_DEVEL
+  if (yf_mesh_setvtx(labl->mesh, range, labl->verts) != 0) assert(0);
+#else
+  yf_mesh_setvtx(labl->mesh, range, labl->verts);
+#endif
+}
+
 static int copy_glyphs(YF_label labl) {
   assert(labl != NULL);
   assert(labl->font != NULL);
   assert(labl->str != NULL);
+  assert(labl->pend_mask & YF_PEND_RZ);
 
   const size_t len = wcslen(labl->str);
   if (len == 0)
