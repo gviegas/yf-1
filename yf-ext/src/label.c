@@ -170,8 +170,31 @@ int yf_label_setpt(YF_label labl, unsigned short pt) {
 }
 
 YF_color yf_label_getcolor(YF_label labl, int corner) {
-  /* TODO */
-  assert(0);
+  assert(labl != NULL);
+
+  unsigned i = 0;
+  switch (corner) {
+    case YF_CORNER_TOPL:
+    case YF_CORNER_TOP:
+    case YF_CORNER_LEFT:
+    case YF_CORNER_ALL:
+      i = 0;
+      break;
+    case YF_CORNER_TOPR:
+    case YF_CORNER_RIGHT:
+      i = 3;
+      break;
+    case YF_CORNER_BOTTOML:
+    case YF_CORNER_BOTTOM:
+      i = 1;
+      break;
+    case YF_CORNER_BOTTOMR:
+      i = 2;
+      break;
+  }
+
+  const YF_vlabl *v = labl->verts+i;
+  return (YF_color){v->clr[0], v->clr[1], v->clr[2], v->clr[3]};
 }
 
 void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color) {
