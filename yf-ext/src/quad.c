@@ -23,7 +23,10 @@ struct YF_quad_o {
   YF_mesh mesh;
   YF_texture tex;
   YF_rect rect;
-  int changed;
+#define YF_PEND_NONE 0
+#define YF_PEND_TC   0x01 /* 'rect' changed, 'verts[].tc' not up to date */
+#define YF_PEND_CLR  0x02 /* 'verts[].clr' set but 'mesh' not up to date */
+  unsigned pend_mask;
   /* TODO: Other quad properties. */
 };
 
@@ -66,9 +69,9 @@ YF_mat4 *yf_quad_getxform(YF_quad quad) {
 YF_mesh yf_quad_getmesh(YF_quad quad) {
   assert(quad != NULL);
 
-  if (quad->changed) {
+  if (quad->pend_mask != YF_PEND_NONE) {
     update_rect(quad);
-    quad->changed = 0;
+    quad->pend_mask = YF_PEND_NONE;
   }
   return quad->mesh;
 }
@@ -84,7 +87,7 @@ void yf_quad_settex(YF_quad quad, YF_texture tex) {
   quad->tex = tex;
   quad->rect.origin = (YF_off2){0};
   quad->rect.size = tex != NULL ? yf_texture_getdim(tex) : (YF_dim2){0};
-  quad->changed = 1;
+  quad->pend_mask |= YF_PEND_TC;
 }
 
 const YF_rect *yf_quad_getrect(YF_quad quad) {
@@ -97,7 +100,7 @@ void yf_quad_setrect(YF_quad quad, const YF_rect *rect) {
   assert(rect != NULL);
 
   memcpy(&quad->rect, rect, sizeof *rect);
-  quad->changed = 1;
+  quad->pend_mask |= YF_PEND_TC;
 }
 
 YF_color yf_quad_getcolor(YF_quad quad, int corner) {
@@ -155,6 +158,8 @@ void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color) {
     quad->verts[2].clr[2] = color.b;
     quad->verts[2].clr[3] = color.a;
   }
+
+  quad->pend_mask |= YF_PEND_CLR;
 }
 
 void yf_quad_deinit(YF_quad quad) {
@@ -204,35 +209,38 @@ static int init_rect(YF_quad quad) {
 
 static void update_rect(YF_quad quad) {
   assert(quad != NULL);
+  assert(quad->pend_mask != YF_PEND_NONE);
 
-  YF_float s0, t0, s1, t1;
+  if (quad->pend_mask & YF_PEND_TC) {
+    YF_float s0, t0, s1, t1;
 
-  if (quad->rect.size.width == 0) {
-    s0 = t0 = 0.0;
-    s1 = t1 = 1.0;
-  } else {
-    /* XXX: This assumes that the rect values are valid. */
-    assert(quad->tex != NULL);
-    const YF_dim2 dim = yf_texture_getdim(quad->tex);
-    const YF_float wdt = dim.width;
-    const YF_float hgt = dim.height;
-    s0 = quad->rect.origin.x / wdt;
-    t0 = quad->rect.origin.y / hgt;
-    s1 = quad->rect.size.width / wdt + s0;
-    t1 = quad->rect.size.height / hgt + t0;
+    if (quad->rect.size.width == 0) {
+      s0 = t0 = 0.0;
+      s1 = t1 = 1.0;
+    } else {
+      /* XXX: This assumes that the rect values are valid. */
+      assert(quad->tex != NULL);
+      const YF_dim2 dim = yf_texture_getdim(quad->tex);
+      const YF_float wdt = dim.width;
+      const YF_float hgt = dim.height;
+      s0 = quad->rect.origin.x / wdt;
+      t0 = quad->rect.origin.y / hgt;
+      s1 = quad->rect.size.width / wdt + s0;
+      t1 = quad->rect.size.height / hgt + t0;
+    }
+
+    quad->verts[0].tc[0] = s0;
+    quad->verts[0].tc[1] = t1;
+
+    quad->verts[1].tc[0] = s0;
+    quad->verts[1].tc[1] = t0;
+
+    quad->verts[2].tc[0] = s1;
+    quad->verts[2].tc[1] = t0;
+
+    quad->verts[3].tc[0] = s1;
+    quad->verts[3].tc[1] = t1;
   }
-
-  quad->verts[0].tc[0] = s0;
-  quad->verts[0].tc[1] = t1;
-
-  quad->verts[1].tc[0] = s0;
-  quad->verts[1].tc[1] = t0;
-
-  quad->verts[2].tc[0] = s1;
-  quad->verts[2].tc[1] = t0;
-
-  quad->verts[3].tc[0] = s1;
-  quad->verts[3].tc[1] = t1;
 
   const YF_slice range = {0, 4};
 #ifdef YF_DEVEL
