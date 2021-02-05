@@ -100,6 +100,63 @@ void yf_quad_setrect(YF_quad quad, const YF_rect *rect) {
   quad->changed = 1;
 }
 
+YF_color yf_quad_getcolor(YF_quad quad, int corner) {
+  assert(quad != NULL);
+
+  unsigned i = 0;
+  switch (corner) {
+    case YF_CORNER_TOPL:
+    case YF_CORNER_TOP:
+    case YF_CORNER_LEFT:
+    case YF_CORNER_ALL:
+      i = 0;
+      break;
+    case YF_CORNER_TOPR:
+    case YF_CORNER_RIGHT:
+      i = 3;
+      break;
+    case YF_CORNER_BOTTOML:
+    case YF_CORNER_BOTTOM:
+      i = 1;
+      break;
+    case YF_CORNER_BOTTOMR:
+      i = 2;
+      break;
+  }
+
+  const YF_vquad *v = quad->verts+i;
+  return (YF_color){v->clr[0], v->clr[1], v->clr[2], v->clr[3]};
+}
+
+void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color) {
+  assert(quad != NULL);
+
+  if (corner_mask & YF_CORNER_TOPL) {
+    quad->verts[0].clr[0] = color.r;
+    quad->verts[0].clr[1] = color.g;
+    quad->verts[0].clr[2] = color.b;
+    quad->verts[0].clr[3] = color.a;
+  }
+  if (corner_mask & YF_CORNER_TOPR) {
+    quad->verts[3].clr[0] = color.r;
+    quad->verts[3].clr[1] = color.g;
+    quad->verts[3].clr[2] = color.b;
+    quad->verts[3].clr[3] = color.a;
+  }
+  if (corner_mask & YF_CORNER_BOTTOML) {
+    quad->verts[1].clr[0] = color.r;
+    quad->verts[1].clr[1] = color.g;
+    quad->verts[1].clr[2] = color.b;
+    quad->verts[1].clr[3] = color.a;
+  }
+  if (corner_mask & YF_CORNER_BOTTOMR) {
+    quad->verts[2].clr[0] = color.r;
+    quad->verts[2].clr[1] = color.g;
+    quad->verts[2].clr[2] = color.b;
+    quad->verts[2].clr[3] = color.a;
+  }
+}
+
 void yf_quad_deinit(YF_quad quad) {
   if (quad != NULL) {
     yf_node_deinit(quad->node);
