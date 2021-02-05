@@ -104,7 +104,7 @@ typedef struct {
 #define YF_COLOR_GREY        (YF_color){0.5f, 0.5f, 0.5f, 1.0f}
 #define YF_COLOR_LIGHTGREY   (YF_color){0.9f, 0.9f, 0.9f, 1.0f}
 #define YF_COLOR_DARKGREY    (YF_color){0.1f, 0.1f, 0.1f, 1.0f}
-#define YF_COLOR_TRANSPARENT (YF_color){0.0f}
+#define YF_COLOR_TRANSPARENT (YF_color){1.0f, 1.0f, 1.0f, 0.0f}
 
 /**
  * Type defining a viewport.
