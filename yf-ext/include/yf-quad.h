@@ -86,7 +86,8 @@ const YF_rect *yf_quad_getrect(YF_quad quad);
  *
  * Setting a new texture overrides the value set by a call to this function.
  *
- * One must ensure that 'rect' specifies a subrange of the current texture.
+ * NOTE: One must ensure that 'rect' specifies a subrange of the current
+ *  texture.
  *
  * @param quad: The quad.
  * @param rect: The rect.

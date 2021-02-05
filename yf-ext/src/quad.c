@@ -129,8 +129,32 @@ YF_color yf_quad_getcolor(YF_quad quad, int corner) {
 }
 
 void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color) {
-  /* TODO */
-  assert(0);
+  assert(quad != NULL);
+
+  if (corner_mask & YF_CORNER_TOPL) {
+    quad->verts[0].clr[0] = color.r;
+    quad->verts[0].clr[1] = color.g;
+    quad->verts[0].clr[2] = color.b;
+    quad->verts[0].clr[3] = color.a;
+  }
+  if (corner_mask & YF_CORNER_TOPR) {
+    quad->verts[3].clr[0] = color.r;
+    quad->verts[3].clr[1] = color.g;
+    quad->verts[3].clr[2] = color.b;
+    quad->verts[3].clr[3] = color.a;
+  }
+  if (corner_mask & YF_CORNER_BOTTOML) {
+    quad->verts[1].clr[0] = color.r;
+    quad->verts[1].clr[1] = color.g;
+    quad->verts[1].clr[2] = color.b;
+    quad->verts[1].clr[3] = color.a;
+  }
+  if (corner_mask & YF_CORNER_BOTTOMR) {
+    quad->verts[2].clr[0] = color.r;
+    quad->verts[2].clr[1] = color.g;
+    quad->verts[2].clr[2] = color.b;
+    quad->verts[2].clr[3] = color.a;
+  }
 }
 
 void yf_quad_deinit(YF_quad quad) {
