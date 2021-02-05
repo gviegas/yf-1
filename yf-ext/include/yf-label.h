@@ -122,6 +122,26 @@ unsigned short yf_label_getpt(YF_label labl);
 int yf_label_setpt(YF_label labl, unsigned short pt);
 
 /**
+ * Gets the color of a label.
+ *
+ * @param labl: The label.
+ * @param corner: The 'YF_CORNER' value indicating the corner from which to
+ *  retrieve the color.
+ * @return: The color currently set for 'corner'.
+ */
+YF_color yf_label_getcolor(YF_label labl, int corner);
+
+/**
+ * Sets the color for a label.
+ *
+ * @param labl: The label.
+ * @param corner_mask: A mask of 'YF_CORNER' values indicating the corners
+ *  to be updated with 'color'.
+ * @param color: The color to set.
+ */
+void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color);
+
+/**
  * Gets the dimensions of a label.
  *
  * @param labl: The label.

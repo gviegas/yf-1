@@ -169,6 +169,16 @@ int yf_label_setpt(YF_label labl, unsigned short pt) {
   return 0;
 }
 
+YF_color yf_label_getcolor(YF_label labl, int corner) {
+  /* TODO */
+  assert(0);
+}
+
+void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color) {
+  /* TODO */
+  assert(0);
+}
+
 YF_dim2 yf_label_getdim(YF_label labl) {
   assert(labl != NULL);
 
