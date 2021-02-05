@@ -36,7 +36,11 @@ struct YF_label_o {
   YF_font font;
   wchar_t *str;
   unsigned short pt;
-  int changed;
+#define YF_PEND_NONE 0
+#define YF_PEND_TC   0x01 /* 'rz' changed, 'verts[].tc' not up to date */
+#define YF_PEND_CLR  0x02 /* 'verts[].clr' set but 'mesh' not up to date */
+#define YF_PEND_RZ   0x04 /* font prop. changed, 'rz' not up to date */
+  unsigned pend_mask;
   /* TODO: Other label properties. */
 };
 
@@ -59,7 +63,7 @@ YF_label yf_label_init(void) {
   yf_node_setobj(labl->node, YF_NODEOBJ_LABEL, labl);
   yf_mat4_iden(labl->xform);
   labl->pt = 16;
-  labl->changed = 1;
+  labl->pend_mask = YF_PEND_RZ;
 
   if (init_rect(labl) != 0) {
     yf_label_deinit(labl);
@@ -80,15 +84,26 @@ YF_mat4 *yf_label_getxform(YF_label labl) {
 
 YF_mesh yf_label_getmesh(YF_label labl) {
   assert(labl != NULL);
+
+  if (labl->pend_mask != YF_PEND_NONE) {
+    if (labl->pend_mask & YF_PEND_RZ) {
+      copy_glyphs(labl);
+      /* TODO: Upate rect. */
+    } else {
+      /* TODO: Upate rect. */
+    }
+    labl->pend_mask = YF_PEND_NONE;
+  }
   return labl->mesh;
 }
 
 YF_texture yf_label_gettex(YF_label labl) {
   assert(labl != NULL);
 
-  if (labl->changed) {
+  if (labl->pend_mask & YF_PEND_RZ) {
     copy_glyphs(labl);
-    labl->changed = 0;
+    labl->pend_mask &= ~YF_PEND_RZ;
+    labl->pend_mask |= YF_PEND_TC;
   }
   return labl->rz.tex;
 }
@@ -107,7 +122,7 @@ void yf_label_setfont(YF_label labl, YF_font font) {
     yf_font_yieldrz(labl->font, &labl->rz);
 
   labl->font = font;
-  labl->changed = 1;
+  labl->pend_mask |= YF_PEND_RZ;
 }
 
 wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n) {
@@ -145,7 +160,7 @@ int yf_label_setstr(YF_label labl, const wchar_t *str) {
     }
   }
   wcscpy(labl->str, str);
-  labl->changed = 1;
+  labl->pend_mask |= YF_PEND_RZ;
   return 0;
 }
 
@@ -165,7 +180,7 @@ int yf_label_setpt(YF_label labl, unsigned short pt) {
     return -1;
   }
   labl->pt = pt;
-  labl->changed = 1;
+  labl->pend_mask |= YF_PEND_RZ;
   return 0;
 }
 
@@ -224,14 +239,17 @@ void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color) {
     labl->verts[2].clr[2] = color.b;
     labl->verts[2].clr[3] = color.a;
   }
+
+  labl->pend_mask |= YF_PEND_CLR;
 }
 
 YF_dim2 yf_label_getdim(YF_label labl) {
   assert(labl != NULL);
 
-  if (labl->changed) {
+  if (labl->pend_mask & YF_PEND_RZ) {
     copy_glyphs(labl);
-    labl->changed = 0;
+    labl->pend_mask &= ~YF_PEND_RZ;
+    labl->pend_mask |= YF_PEND_TC;
   }
   return labl->rz.dim;
 }
