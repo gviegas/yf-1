@@ -22,7 +22,7 @@
 #define YF_SYMBOL_END  4
 #define YF_SYMBOL_ERR  5
 
-#define YF_MAXTOKENS 256
+#define YF_MAXTOKENS 512
 
 /* Type defining a symbol. */
 typedef struct {
@@ -158,5 +158,5 @@ static int next_symbol(FILE *file, L_symbol *symbol) {
   }
 
   symbol->tokens[i] = '\0';
-  return c;
+  return symbol->symbol;
 }
