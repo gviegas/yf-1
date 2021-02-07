@@ -92,6 +92,8 @@ static int next_symbol(FILE *file, L_symbol *symbol) {
       ++i;
       break;
 
+    case '-':
+    case '+':
     case '0':
     case '1':
     case '2':
@@ -103,7 +105,7 @@ static int next_symbol(FILE *file, L_symbol *symbol) {
     case '8':
     case '9':
       while (++i < YF_MAXTOKENS-1) {
-        do c = getc(file); while (isspace(c));
+        c = getc(file);
         if (isxdigit(c) || c == '.') {
           symbol->tokens[i] = c;
           continue;
