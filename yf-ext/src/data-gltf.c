@@ -19,8 +19,9 @@
 #define YF_SYMBOL_OP   1
 #define YF_SYMBOL_NUM  2
 #define YF_SYMBOL_BOOL 3
-#define YF_SYMBOL_END  4
-#define YF_SYMBOL_ERR  5
+#define YF_SYMBOL_NULL 4
+#define YF_SYMBOL_END  5
+#define YF_SYMBOL_ERR  6
 
 #define YF_MAXTOKENS 512
 
@@ -147,6 +148,23 @@ static int next_symbol(FILE *file, L_symbol *symbol) {
       symbol->tokens[i] = '\0';
       if (strcmp("false", symbol->tokens) == 0)
         symbol->symbol = YF_SYMBOL_BOOL;
+      else
+        symbol->symbol = YF_SYMBOL_ERR;
+      break;
+
+    case 'n':
+      while (++i < YF_MAXTOKENS-1) {
+        c = getc(file);
+        if (islower(c))
+          symbol->tokens[i] = c;
+        else
+          break;
+      }
+      if (c != EOF)
+        ungetc(c, file);
+      symbol->tokens[i] = '\0';
+      if (strcmp("null", symbol->tokens) == 0)
+        symbol->symbol = YF_SYMBOL_NULL;
       else
         symbol->symbol = YF_SYMBOL_ERR;
       break;
