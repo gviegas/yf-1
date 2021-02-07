@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <errno.h>
 #include <assert.h>
 
 #include <yf/com/yf-error.h>
@@ -47,12 +48,14 @@ typedef struct {
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
+  long scene;
   /* TODO */
 } L_gltf;
 
 /* Structured glTF content parsing functions. */
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
 static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset);
+static int parse_scene(FILE *file, L_symbol *symbol, long *scene);
 /* TODO */
 
 int yf_loadgltf(const char *pathname, void *data) {
@@ -88,6 +91,9 @@ int yf_loadgltf(const char *pathname, void *data) {
   printf(" generator:  %s\n", gltf.asset.generator);
   printf(" version:    %s\n", gltf.asset.version);
   printf(" minVersion: %s\n", gltf.asset.min_version);
+
+  puts("glTF.scene:");
+  printf(" #: %ld\n", gltf.scene);
   ////////////////////
 
   fclose(file);
@@ -229,6 +235,9 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
         if (strcmp(YF_GLTF_PROP("asset"), symbol->tokens) == 0) {
           if (parse_asset(file, symbol, &gltf->asset) != 0)
             return -1;
+        } else if (strcmp(YF_GLTF_PROP("scene"), symbol->tokens) == 0) {
+          if (parse_scene(file, symbol, &gltf->scene) != 0)
+            return -1;
         } else {
           /* TODO */
           printf("! %s parsing unimplemented\n", symbol->tokens);
@@ -314,4 +323,22 @@ static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset) {
   } while (1);
 
   return 0;
+}
+
+static int parse_scene(FILE *file, L_symbol *symbol, long *scene) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(scene != NULL);
+  assert(symbol->symbol == YF_SYMBOL_STR);
+  assert(strcmp(symbol->tokens, YF_GLTF_PROP("scene")) == 0);
+
+  next_symbol(file, symbol); /* : */
+  next_symbol(file, symbol);
+
+  if (symbol->symbol != YF_SYMBOL_NUM)
+    return -1;
+
+  errno = 0;
+  *scene = strtol(symbol->tokens, NULL, 0);
+  return errno;
 }
