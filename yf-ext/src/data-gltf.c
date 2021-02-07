@@ -34,6 +34,27 @@ typedef struct {
 /* Gets the next symbol from a file stream. */
 static int next_symbol(FILE *file, L_symbol *symbol);
 
+#define YF_GLTF_MAKEPROP(prop) (#prop)
+
+/* Type defining the asset property. */
+typedef struct {
+  char *copyright;
+  char *generator;
+  char *version;
+  char *min_version;
+} L_asset;
+
+/* Type defining the root glTF object. */
+typedef struct {
+  L_asset asset;
+  /* TODO */
+} L_gltf;
+
+/* Structured glTF content parsing functions. */
+static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
+static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset);
+/* TODO */
+
 int yf_loadgltf(const char *pathname, void *data) {
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
@@ -47,13 +68,19 @@ int yf_loadgltf(const char *pathname, void *data) {
   }
 
   L_symbol symbol = {0};
-
-  ////////////////////
-  while (!feof(file)) {
-    next_symbol(file, &symbol);
-    printf("> [%d] %s\n", symbol.symbol, symbol.tokens);
+  next_symbol(file, &symbol);
+  if (symbol.symbol != YF_SYMBOL_OP && symbol.tokens[0] != '{') {
+    /* TODO: Set error (either here or on caller). */
+    fclose(file);
+    return -1;
   }
-  ////////////////////
+
+  L_gltf gltf = {0};
+  if (parse_gltf(file, &symbol, &gltf) != 0) {
+    /* TODO: Set error; dealloc. */
+    fclose(file);
+    return -1;
+  }
 
   fclose(file);
   return 0;
@@ -179,4 +206,49 @@ static int next_symbol(FILE *file, L_symbol *symbol) {
 
   symbol->tokens[i] = '\0';
   return symbol->symbol;
+}
+
+static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(gltf != NULL);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '{');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp(YF_GLTF_MAKEPROP("asset"), symbol->tokens) == 0) {
+          if (parse_asset(file, symbol, &gltf->asset) != 0)
+            return -1;
+        } else {
+          /* TODO */
+          printf("! %s parsing unimplemented\n", symbol->tokens);
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(asset != NULL);
+  assert(symbol->symbol == YF_SYMBOL_STR);
+  assert(strcmp(symbol->tokens, YF_GLTF_MAKEPROP("asset")) == 0);
+
+  /* TODO */
+  printf("%s\n", __func__);
+
+  return 0;
 }
