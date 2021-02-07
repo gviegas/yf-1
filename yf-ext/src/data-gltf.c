@@ -34,7 +34,7 @@ typedef struct {
 /* Gets the next symbol from a file stream. */
 static int next_symbol(FILE *file, L_symbol *symbol);
 
-#define YF_GLTF_MAKEPROP(prop) (#prop)
+#define YF_GLTF_PROP(prop) (#prop)
 
 /* Type defining the asset property. */
 typedef struct {
@@ -78,9 +78,17 @@ int yf_loadgltf(const char *pathname, void *data) {
   L_gltf gltf = {0};
   if (parse_gltf(file, &symbol, &gltf) != 0) {
     /* TODO: Set error; dealloc. */
-    fclose(file);
-    return -1;
+    //fclose(file);
+    //return -1;
   }
+
+  ////////////////////
+  puts("glTF.asset:");
+  printf(" copyright:  %s\n", gltf.asset.copyright);
+  printf(" generator:  %s\n", gltf.asset.generator);
+  printf(" version:    %s\n", gltf.asset.version);
+  printf(" minVersion: %s\n", gltf.asset.min_version);
+  ////////////////////
 
   fclose(file);
   return 0;
@@ -218,7 +226,7 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
   do {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
-        if (strcmp(YF_GLTF_MAKEPROP("asset"), symbol->tokens) == 0) {
+        if (strcmp(YF_GLTF_PROP("asset"), symbol->tokens) == 0) {
           if (parse_asset(file, symbol, &gltf->asset) != 0)
             return -1;
         } else {
@@ -245,10 +253,65 @@ static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset) {
   assert(symbol != NULL);
   assert(asset != NULL);
   assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, YF_GLTF_MAKEPROP("asset")) == 0);
+  assert(strcmp(symbol->tokens, YF_GLTF_PROP("asset")) == 0);
 
-  /* TODO */
-  printf("%s\n", __func__);
+  next_symbol(file, symbol); /* : */
+  next_symbol(file, symbol); /* { */
+
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '{')
+    return -1;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp(YF_GLTF_PROP("copyright"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          asset->copyright = malloc(1+strlen(symbol->tokens));
+          if (asset->copyright == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(asset->copyright, symbol->tokens);
+        } else if (strcmp(YF_GLTF_PROP("generator"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          asset->generator = malloc(1+strlen(symbol->tokens));
+          if (asset->generator == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(asset->generator, symbol->tokens);
+        } else if (strcmp(YF_GLTF_PROP("version"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          asset->version = malloc(1+strlen(symbol->tokens));
+          if (asset->version == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(asset->version, symbol->tokens);
+        } else if (strcmp(YF_GLTF_PROP("minVersion"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          asset->min_version = malloc(1+strlen(symbol->tokens));
+          if (asset->min_version == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(asset->min_version, symbol->tokens);
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
 
   return 0;
 }
