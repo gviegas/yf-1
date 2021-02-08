@@ -55,11 +55,21 @@ typedef struct {
   size_t n;
 } L_scenes;
 
+/* Type defining the 'nodes' property. */
+typedef struct {
+  struct {
+    size_t mesh;
+    char *name;
+  } *v;
+  size_t n;
+} L_nodes;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
   size_t scene;
   L_scenes scenes;
+  L_nodes nodes;
   /* TODO */
 } L_gltf;
 
@@ -70,6 +80,9 @@ static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene);
 static int parse_scenes(FILE *file, L_symbol *symbol, L_scenes *scenes);
 static int parse_scenes_i(FILE *file, L_symbol *symbol,
     L_scenes *scenes, size_t index);
+static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes);
+static int parse_nodes_i(FILE *file, L_symbol *symbol,
+    L_nodes *nodes, size_t index);
 /* TODO */
 
 int yf_loadgltf(const char *pathname, void *data) {
@@ -116,6 +129,13 @@ int yf_loadgltf(const char *pathname, void *data) {
     for (size_t j = 0; j < gltf.scenes.v[i].node_n; ++j)
       printf("%lu ", gltf.scenes.v[i].nodes[j]);
     puts("]");
+  }
+
+  puts("glTF.nodes:");
+  printf(" n: %lu\n", gltf.nodes.n);
+  for (size_t i = 0; i < gltf.nodes.n; ++i) {
+    printf(" node '%s':\n", gltf.nodes.v[i].name);
+    printf("  mesh: %lu\n", gltf.nodes.v[i].mesh);
   }
   ////////////////////
 
@@ -263,6 +283,9 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
             return -1;
         } else if (strcmp(YF_GLTF_PROP("scenes"), symbol->tokens) == 0) {
           if (parse_scenes(file, symbol, &gltf->scenes) != 0)
+            return -1;
+        } else if (strcmp(YF_GLTF_PROP("nodes"), symbol->tokens) == 0) {
+          if (parse_nodes(file, symbol, &gltf->nodes) != 0)
             return -1;
         } else {
           /* TODO */
@@ -483,6 +506,101 @@ static int parse_scenes_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(scenes->v[index].name, symbol->tokens);
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(nodes != NULL);
+  assert(symbol->symbol == YF_SYMBOL_STR);
+  assert(strcmp(symbol->tokens, YF_GLTF_PROP("nodes")) == 0);
+
+  next_symbol(file, symbol); /* : */
+  next_symbol(file, symbol); /* [ */
+
+  size_t i = 0;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '{') {
+          if (i == nodes->n) {
+            const size_t n = i == 0 ? 1 : i<<1;
+            void *tmp = realloc(nodes->v, n*sizeof *nodes->v);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            nodes->v = tmp;
+            nodes->n = n;
+            memset(nodes->v+i, 0, (nodes->n-i)*sizeof *nodes->v);
+            if (parse_nodes_i(file, symbol, nodes, i++) != 0)
+              return -1;
+          }
+        } else if (symbol->tokens[0] == ']') {
+          if (i < nodes->n) {
+            nodes->n = i;
+            void *tmp = realloc(nodes->v, nodes->n*sizeof *nodes->v);
+            if (tmp != NULL)
+              nodes->v = tmp;
+          }
+          return 0;
+        }
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_nodes_i(FILE *file, L_symbol *symbol,
+    L_nodes *nodes, size_t index)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(nodes != NULL);
+  assert(index < nodes->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '{');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp(YF_GLTF_PROP("mesh"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          nodes->v[index].mesh = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp(YF_GLTF_PROP("name"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          nodes->v[index].name = malloc(1+strlen(symbol->tokens));
+          if (nodes->v[index].name == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(nodes->v[index].name, symbol->tokens);
         }
         break;
 
