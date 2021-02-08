@@ -48,17 +48,17 @@ typedef struct {
 /* Type defining the 'scenes' property. */
 typedef struct {
   struct {
-    int *nodes;
-    unsigned node_n;
+    size_t *nodes;
+    size_t node_n;
     char *name;
   } *v;
-  unsigned n;
+  size_t n;
 } L_scenes;
 
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
-  long scene;
+  size_t scene;
   L_scenes scenes;
   /* TODO */
 } L_gltf;
@@ -66,10 +66,10 @@ typedef struct {
 /* Structured glTF content parsing functions. */
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
 static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset);
-static int parse_scene(FILE *file, L_symbol *symbol, long *scene);
+static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene);
 static int parse_scenes(FILE *file, L_symbol *symbol, L_scenes *scenes);
 static int parse_scenes_i(FILE *file, L_symbol *symbol,
-    L_scenes *scenes, unsigned index);
+    L_scenes *scenes, size_t index);
 /* TODO */
 
 int yf_loadgltf(const char *pathname, void *data) {
@@ -110,7 +110,13 @@ int yf_loadgltf(const char *pathname, void *data) {
   printf(" #: %ld\n", gltf.scene);
 
   puts("glTF.scenes:");
-  printf(" n: %u\n", gltf.scenes.n);
+  printf(" n: %lu\n", gltf.scenes.n);
+  for (size_t i = 0; i < gltf.scenes.n; ++i) {
+    printf(" scene '%s': [ ", gltf.scenes.v[i].name);
+    for (size_t j = 0; j < gltf.scenes.v[i].node_n; ++j)
+      printf("%lu ", gltf.scenes.v[i].nodes[j]);
+    puts("]");
+  }
   ////////////////////
 
   fclose(file);
@@ -345,7 +351,7 @@ static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset) {
   return 0;
 }
 
-static int parse_scene(FILE *file, L_symbol *symbol, long *scene) {
+static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene) {
   assert(!feof(file));
   assert(symbol != NULL);
   assert(scene != NULL);
@@ -359,7 +365,7 @@ static int parse_scene(FILE *file, L_symbol *symbol, long *scene) {
     return -1;
 
   errno = 0;
-  *scene = strtol(symbol->tokens, NULL, 0);
+  *scene = strtoll(symbol->tokens, NULL, 0);
   return errno;
 }
 
@@ -373,20 +379,21 @@ static int parse_scenes(FILE *file, L_symbol *symbol, L_scenes *scenes) {
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol); /* [ */
 
-  unsigned i = 0;
+  size_t i = 0;
 
   do {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_OP:
         if (symbol->tokens[0] == '{') {
           if (i == scenes->n) {
-            scenes->n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(scenes->v, scenes->n*sizeof *scenes->v);
+            const size_t n = i == 0 ? 1 : i<<1;
+            void *tmp = realloc(scenes->v, n*sizeof *scenes->v);
             if (tmp == NULL) {
               yf_seterr(YF_ERR_NOMEM, __func__);
               return -1;
             }
             scenes->v = tmp;
+            scenes->n = n;
             memset(scenes->v+i, 0, (scenes->n-i)*sizeof *scenes->v);
             if (parse_scenes_i(file, symbol, scenes, i++) != 0)
               return -1;
@@ -411,14 +418,83 @@ static int parse_scenes(FILE *file, L_symbol *symbol, L_scenes *scenes) {
 }
 
 static int parse_scenes_i(FILE *file, L_symbol *symbol,
-    L_scenes *scenes, unsigned index)
+    L_scenes *scenes, size_t index)
 {
   assert(!feof(file));
   assert(symbol != NULL);
   assert(scenes != NULL);
+  assert(index < scenes->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '{');
 
-  /* TODO */
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp(YF_GLTF_PROP("nodes"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          size_t i = 0;
+          long long node;
+          do {
+            switch (next_symbol(file, symbol)) {
+              case YF_SYMBOL_NUM:
+                errno = 0;
+                node = strtoll(symbol->tokens, NULL, 0);
+                if (errno != 0) {
+                  yf_seterr(YF_ERR_OTHER, __func__);
+                  return -1;
+                }
+                if (i == scenes->v[index].node_n) {
+                  const size_t n = i == 0 ? 1 : i<<1;
+                  void *tmp = realloc(scenes->v[index].nodes,
+                      n*sizeof *scenes->v[index].nodes);
+                  if (tmp == NULL) {
+                    yf_seterr(YF_ERR_NOMEM, __func__);
+                    return -1;
+                  }
+                  scenes->v[index].nodes = tmp;
+                  scenes->v[index].node_n = n;
+                }
+                scenes->v[index].nodes[i++] = node;
+                break;
+
+              case YF_SYMBOL_OP:
+                if (symbol->tokens[0] == ']') {
+                  if (i < scenes->v[index].node_n) {
+                    scenes->v[index].node_n = i;
+                    void *tmp = realloc(scenes->v[index].nodes,
+                        i*sizeof *scenes->v[index].nodes);
+                    if (tmp != NULL)
+                      scenes->v[index].nodes = tmp;
+                  }
+                }
+                break;
+
+              default:
+                return -1;
+            }
+          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+        } else if (strcmp(YF_GLTF_PROP("name"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          scenes->v[index].name = malloc(1+strlen(symbol->tokens));
+          if (scenes->v[index].name == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(scenes->v[index].name, symbol->tokens);
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
   return 0;
 }
