@@ -16,6 +16,7 @@
 #include <yf/com/yf-error.h>
 
 #include "data-gltf.h"
+#include "vertex.h"
 
 #define YF_SYMBOL_STR  0
 #define YF_SYMBOL_OP   1
@@ -88,6 +89,20 @@ typedef struct {
   size_t n;
 } L_meshes;
 
+/* Type defining the 'materials' property. */
+typedef struct {
+  struct {
+    struct {
+      YF_vec4 base_clr_fac;
+      YF_float metallic_fac;
+      YF_float roughness_fac;
+    } pbrmr;
+    int double_sided;
+    char *name;
+  } *v;
+  size_t n;
+} L_materials;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
@@ -95,6 +110,7 @@ typedef struct {
   L_scenes scenes;
   L_nodes nodes;
   L_meshes meshes;
+  L_materials materials;
   /* TODO */
 } L_gltf;
 
@@ -115,6 +131,10 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
 static int parse_meshes(FILE *file, L_symbol *symbol, L_meshes *meshes);
 static int parse_meshes_i(FILE *file, L_symbol *symbol,
     L_meshes *meshes, size_t index);
+static int parse_materials(FILE *file, L_symbol *symbol,
+    L_materials *materials);
+static int parse_materials_i(FILE *file, L_symbol *symbol,
+    L_materials *materials, size_t index);
 /* TODO */
 
 int yf_loadgltf(const char *pathname, void *data) {
@@ -186,6 +206,22 @@ int yf_loadgltf(const char *pathname, void *data) {
       printf("  indices:    %lu\n", gltf.meshes.v[i].primitives.v[j].indices);
       printf("  materials:  %lu\n", gltf.meshes.v[i].primitives.v[j].materials);
     }
+  }
+
+  puts("glTF.materials:");
+  printf(" n: %lu\n", gltf.materials.n);
+  for (size_t i = 0; i < gltf.materials.n; ++i) {
+    printf(" material '%s':\n", gltf.materials.v[i].name);
+    puts("  pbrMetallicRoughness:");
+    printf("   baseColorFactor: [%.9f, %.9f, %.9f, %.9f]\n",
+        gltf.materials.v[i].pbrmr.base_clr_fac[0],
+        gltf.materials.v[i].pbrmr.base_clr_fac[1],
+        gltf.materials.v[i].pbrmr.base_clr_fac[2],
+        gltf.materials.v[i].pbrmr.base_clr_fac[3]);
+    printf("   metallicFactor: %.9f\n", gltf.materials.v[i].pbrmr.metallic_fac);
+    printf("   roughnessFactor: %.9f\n",
+        gltf.materials.v[i].pbrmr.roughness_fac);
+    printf("  doubleSided: %d\n", gltf.materials.v[i].double_sided);
   }
   ////////////////////
 
@@ -339,6 +375,9 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
             return -1;
         } else if (strcmp(YF_GLTF_PROP("meshes"), symbol->tokens) == 0) {
           if (parse_meshes(file, symbol, &gltf->meshes) != 0)
+            return -1;
+        } else if (strcmp(YF_GLTF_PROP("materials"), symbol->tokens) == 0) {
+          if (parse_materials(file, symbol, &gltf->materials) != 0)
             return -1;
         } else {
           /* TODO */
@@ -795,7 +834,7 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
             yf_seterr(YF_ERR_OTHER, __func__);
             return -1;
           }
-        } else if (strcmp(YF_GLTF_PROP("materials"), symbol->tokens) == 0) {
+        } else if (strcmp(YF_GLTF_PROP("material"), symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
           errno = 0;
@@ -893,6 +932,174 @@ static int parse_meshes_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(meshes->v[index].name, symbol->tokens);
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_materials(FILE *file, L_symbol *symbol,
+    L_materials *materials)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(materials != NULL);
+  assert(symbol->symbol == YF_SYMBOL_STR);
+  assert(strcmp(symbol->tokens, YF_GLTF_PROP("materials")) == 0);
+
+  next_symbol(file, symbol); /* : */
+  next_symbol(file, symbol); /* [ */
+
+  size_t i = 0;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '{') {
+          if (i == materials->n) {
+            const size_t n = i == 0 ? 1 : i<<1;
+            void *tmp = realloc(materials->v, n*sizeof *materials->v);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            materials->v = tmp;
+            materials->n = n;
+            memset(materials->v+i, 0, (n-i)*sizeof *materials->v);
+            if (parse_materials_i(file, symbol, materials, i++) != 0)
+              return -1;
+          }
+        } else if (symbol->tokens[0] == ']') {
+          if (i < materials->n) {
+            materials->n = i;
+            void *tmp = realloc(materials->v, i*sizeof *materials->v);
+            if (tmp != NULL)
+              materials->v = tmp;
+          }
+          return 0;
+        }
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_materials_i(FILE *file, L_symbol *symbol,
+    L_materials *materials, size_t index)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(materials != NULL);
+  assert(index < materials->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '{');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp(YF_GLTF_PROP("pbrMetallicRoughness"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* { */
+          do {
+            switch (next_symbol(file, symbol)) {
+              case YF_SYMBOL_STR:
+                if (strcmp(YF_GLTF_PROP("baseColorFactor"),
+                    symbol->tokens) == 0)
+                {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol); /* [ */
+                  errno = 0;
+
+                  next_symbol(file, symbol);
+                  materials->v[index].pbrmr.base_clr_fac[0] =
+                    strtod(symbol->tokens, NULL);
+                  next_symbol(file, symbol); /* , */
+
+                  next_symbol(file, symbol);
+                  materials->v[index].pbrmr.base_clr_fac[1] =
+                    strtod(symbol->tokens, NULL);
+                  next_symbol(file, symbol); /* , */
+
+                  next_symbol(file, symbol);
+                  materials->v[index].pbrmr.base_clr_fac[2] =
+                    strtod(symbol->tokens, NULL);
+                  next_symbol(file, symbol); /* , */
+
+                  next_symbol(file, symbol);
+                  materials->v[index].pbrmr.base_clr_fac[3] =
+                    strtod(symbol->tokens, NULL);
+                  next_symbol(file, symbol); /* ] */
+
+                  if (errno != 0) {
+                    yf_seterr(YF_ERR_OTHER, __func__);
+                    return -1;
+                  }
+                } else if (strcmp(YF_GLTF_PROP("metallicFactor"),
+                    symbol->tokens) == 0)
+                {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  errno = 0;
+
+                  materials->v[index].pbrmr.metallic_fac =
+                    strtod(symbol->tokens, NULL);
+
+                  if (errno != 0) {
+                    yf_seterr(YF_ERR_OTHER, __func__);
+                    return -1;
+                  }
+                } else if (strcmp(YF_GLTF_PROP("roughnessFactor"),
+                    symbol->tokens) == 0)
+                {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  errno = 0;
+
+                  materials->v[index].pbrmr.roughness_fac =
+                    strtod(symbol->tokens, NULL);
+
+                  if (errno != 0) {
+                    yf_seterr(YF_ERR_OTHER, __func__);
+                    return -1;
+                  }
+                }
+                break;
+
+              case YF_SYMBOL_OP:
+                break;
+
+              default:
+                return -1;
+            }
+          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
+        } else if (strcmp(YF_GLTF_PROP("doubleSided"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          materials->v[index].double_sided =
+            strcmp("true", symbol->tokens) == 0;
+        } else if (strcmp(YF_GLTF_PROP("name"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          materials->v[index].name = malloc(1+strlen(symbol->tokens));
+          if (materials->v[index].name == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(materials->v[index].name, symbol->tokens);
         }
         break;
 
