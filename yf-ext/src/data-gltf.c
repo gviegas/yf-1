@@ -64,6 +64,29 @@ typedef struct {
   size_t n;
 } L_nodes;
 
+/* Type defining the 'meshes.primitives' property. */
+typedef struct {
+  struct {
+#define YF_GLTF_ATTR_POS  0
+#define YF_GLTF_ATTR_NORM 1
+#define YF_GLTF_ATTR_TEX0 2
+#define YF_GLTF_ATTR_N    3
+    size_t attributes[YF_GLTF_ATTR_N];
+    size_t indices;
+    size_t materials;
+  } *v;
+  size_t n;
+} L_primitives;
+
+/* Type defining the 'meshes' property. */
+typedef struct {
+  struct {
+    L_primitives primitives;
+    char *name;
+  } *v;
+  size_t n;
+} L_meshes;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
@@ -83,6 +106,10 @@ static int parse_scenes_i(FILE *file, L_symbol *symbol,
 static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes);
 static int parse_nodes_i(FILE *file, L_symbol *symbol,
     L_nodes *nodes, size_t index);
+static int parse_primitives(FILE *file, L_symbol *symbol,
+    L_primitives *primitives);
+static int parse_primitives_i(FILE *file, L_symbol *symbol,
+    L_primitives *primitives, size_t index);
 /* TODO */
 
 int yf_loadgltf(const char *pathname, void *data) {
@@ -417,14 +444,14 @@ static int parse_scenes(FILE *file, L_symbol *symbol, L_scenes *scenes) {
             }
             scenes->v = tmp;
             scenes->n = n;
-            memset(scenes->v+i, 0, (scenes->n-i)*sizeof *scenes->v);
+            memset(scenes->v+i, 0, (n-i)*sizeof *scenes->v);
             if (parse_scenes_i(file, symbol, scenes, i++) != 0)
               return -1;
           }
         } else if (symbol->tokens[0] == ']') {
           if (i < scenes->n) {
             scenes->n = i;
-            void *tmp = realloc(scenes->v, scenes->n*sizeof *scenes->v);
+            void *tmp = realloc(scenes->v, i*sizeof *scenes->v);
             if (tmp != NULL)
               scenes->v = tmp;
           }
@@ -547,14 +574,14 @@ static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes) {
             }
             nodes->v = tmp;
             nodes->n = n;
-            memset(nodes->v+i, 0, (nodes->n-i)*sizeof *nodes->v);
+            memset(nodes->v+i, 0, (n-i)*sizeof *nodes->v);
             if (parse_nodes_i(file, symbol, nodes, i++) != 0)
               return -1;
           }
         } else if (symbol->tokens[0] == ']') {
           if (i < nodes->n) {
             nodes->n = i;
-            void *tmp = realloc(nodes->v, nodes->n*sizeof *nodes->v);
+            void *tmp = realloc(nodes->v, i*sizeof *nodes->v);
             if (tmp != NULL)
               nodes->v = tmp;
           }
@@ -601,6 +628,153 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(nodes->v[index].name, symbol->tokens);
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_primitives(FILE *file, L_symbol *symbol,
+    L_primitives *primitives)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(primitives != NULL);
+  assert(symbol->symbol == YF_SYMBOL_STR);
+  assert(strcmp(symbol->tokens, YF_GLTF_PROP("primitives")) == 0);
+
+  next_symbol(file, symbol); /* : */
+  next_symbol(file, symbol); /* [ */
+
+  size_t i = 0;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '{') {
+          if (i == primitives->n) {
+            const size_t n = i == 0 ? 1 : i<<1;
+            void *tmp = realloc(primitives->v, n*sizeof *primitives->v);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            primitives->v = tmp;
+            primitives->n = n;
+            memset(primitives->v+i, 0, (n-i)*sizeof *primitives->v);
+            if (parse_primitives_i(file, symbol, primitives, i++) != 0)
+              return -1;
+          }
+        } else if (symbol->tokens[0] == ']') {
+          if (i < primitives->n) {
+            primitives->n = i;
+            void *tmp = realloc(primitives->v, i*sizeof *primitives->v);
+            if (tmp != NULL)
+              primitives->v = tmp;
+          }
+          return 0;
+        }
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_primitives_i(FILE *file, L_symbol *symbol,
+    L_primitives *primitives, size_t index)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(primitives != NULL);
+  assert(index < primitives->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '{');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp(YF_GLTF_PROP("attributes"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* { */
+          do {
+            switch (next_symbol(file, symbol)) {
+              case YF_SYMBOL_STR:
+                if (strcmp(YF_GLTF_PROP("POSITION"), symbol->tokens) == 0) {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  errno = 0;
+                  primitives->v[index].attributes[YF_GLTF_ATTR_POS] =
+                    strtoll(symbol->tokens, NULL, 0);
+                  if (errno != 0) {
+                    yf_seterr(YF_ERR_OTHER, __func__);
+                    return -1;
+                  }
+                } else if (strcmp(YF_GLTF_PROP("NORMAL"), symbol->tokens)
+                  == 0)
+                {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  errno = 0;
+                  primitives->v[index].attributes[YF_GLTF_ATTR_NORM] =
+                    strtoll(symbol->tokens, NULL, 0);
+                  if (errno != 0) {
+                    yf_seterr(YF_ERR_OTHER, __func__);
+                    return -1;
+                  }
+                } else if (strcmp(YF_GLTF_PROP("TEXCOORD_0"), symbol->tokens)
+                  == 0)
+                {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  errno = 0;
+                  primitives->v[index].attributes[YF_GLTF_ATTR_TEX0] =
+                    strtoll(symbol->tokens, NULL, 0);
+                  if (errno != 0) {
+                    yf_seterr(YF_ERR_OTHER, __func__);
+                    return -1;
+                  }
+                }
+                break;
+
+              case YF_SYMBOL_OP:
+                break;
+
+              default:
+                return -1;
+            }
+          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
+        } else if (strcmp(YF_GLTF_PROP("indices"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          primitives->v[index].indices = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp(YF_GLTF_PROP("materials"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          primitives->v[index].materials = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
         }
         break;
 
