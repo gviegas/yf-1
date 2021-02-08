@@ -5,6 +5,7 @@
  * Copyright © 2021 Gustavo C. Viegas.
  */
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -93,6 +94,7 @@ typedef struct {
   size_t scene;
   L_scenes scenes;
   L_nodes nodes;
+  L_meshes meshes;
   /* TODO */
 } L_gltf;
 
@@ -110,6 +112,9 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
     L_primitives *primitives);
 static int parse_primitives_i(FILE *file, L_symbol *symbol,
     L_primitives *primitives, size_t index);
+static int parse_meshes(FILE *file, L_symbol *symbol, L_meshes *meshes);
+static int parse_meshes_i(FILE *file, L_symbol *symbol,
+    L_meshes *meshes, size_t index);
 /* TODO */
 
 int yf_loadgltf(const char *pathname, void *data) {
@@ -163,6 +168,24 @@ int yf_loadgltf(const char *pathname, void *data) {
   for (size_t i = 0; i < gltf.nodes.n; ++i) {
     printf(" node '%s':\n", gltf.nodes.v[i].name);
     printf("  mesh: %lu\n", gltf.nodes.v[i].mesh);
+  }
+
+  puts("glTF.meshes:");
+  printf(" n: %lu\n", gltf.meshes.n);
+  for (size_t i = 0; i < gltf.meshes.n; ++i) {
+    printf(" mesh '%s':\n", gltf.meshes.v[i].name);
+    printf("  n: %lu\n", gltf.meshes.v[i].primitives.n);
+    for (size_t j = 0; j < gltf.meshes.v[i].primitives.n; ++j) {
+      printf("  primitives #%lu:\n", j);
+      printf("   POSITION:  %lu\n",
+          gltf.meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_POS]);
+      printf("   NORMAL:    %lu\n",
+          gltf.meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_NORM]);
+      printf("   TEXTURE_0: %lu\n",
+          gltf.meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TEX0]);
+      printf("  indices:    %lu\n", gltf.meshes.v[i].primitives.v[j].indices);
+      printf("  materials:  %lu\n", gltf.meshes.v[i].primitives.v[j].materials);
+    }
   }
   ////////////////////
 
@@ -313,6 +336,9 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
             return -1;
         } else if (strcmp(YF_GLTF_PROP("nodes"), symbol->tokens) == 0) {
           if (parse_nodes(file, symbol, &gltf->nodes) != 0)
+            return -1;
+        } else if (strcmp(YF_GLTF_PROP("meshes"), symbol->tokens) == 0) {
+          if (parse_meshes(file, symbol, &gltf->meshes) != 0)
             return -1;
         } else {
           /* TODO */
@@ -704,6 +730,9 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '{');
 
+  for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i)
+    primitives->v[index].attributes[i] = SIZE_MAX;
+
   do {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
@@ -775,6 +804,95 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
             yf_seterr(YF_ERR_OTHER, __func__);
             return -1;
           }
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_meshes(FILE *file, L_symbol *symbol, L_meshes *meshes) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(meshes != NULL);
+  assert(symbol->symbol == YF_SYMBOL_STR);
+  assert(strcmp(symbol->tokens, YF_GLTF_PROP("meshes")) == 0);
+
+  next_symbol(file, symbol); /* : */
+  next_symbol(file, symbol); /* [ */
+
+  size_t i = 0;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '{') {
+          if (i == meshes->n) {
+            const size_t n = i == 0 ? 1 : i<<1;
+            void *tmp = realloc(meshes->v, n*sizeof *meshes->v);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            meshes->v = tmp;
+            meshes->n = n;
+            memset(meshes->v+i, 0, (n-i)*sizeof *meshes->v);
+            if (parse_meshes_i(file, symbol, meshes, i++) != 0)
+              return -1;
+          }
+        } else if (symbol->tokens[0] == ']') {
+          if (i < meshes->n) {
+            meshes->n = i;
+            void *tmp = realloc(meshes->v, i*sizeof *meshes->v);
+            if (tmp != NULL)
+              meshes->v = tmp;
+          }
+          return 0;
+        }
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_meshes_i(FILE *file, L_symbol *symbol,
+    L_meshes *meshes, size_t index)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(meshes != NULL);
+  assert(index < meshes->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '{');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp(YF_GLTF_PROP("primitives"), symbol->tokens) == 0) {
+          if (parse_primitives(file, symbol, &meshes->v[index].primitives) != 0)
+            return -1;
+        } else if (strcmp(YF_GLTF_PROP("name"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          meshes->v[index].name = malloc(1+strlen(symbol->tokens));
+          if (meshes->v[index].name == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(meshes->v[index].name, symbol->tokens);
         }
         break;
 
