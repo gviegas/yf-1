@@ -38,6 +38,9 @@ typedef struct {
 /* Gets the next symbol from a file stream. */
 static int next_symbol(FILE *file, L_symbol *symbol);
 
+/* Consumes the current property. */
+static int consume_prop(FILE *file, L_symbol *symbol);
+
 /* Type defining the 'asset' property. */
 typedef struct {
   char *copyright;
@@ -484,6 +487,64 @@ static int next_symbol(FILE *file, L_symbol *symbol) {
 
   symbol->tokens[i] = '\0';
   return symbol->symbol;
+}
+
+static int consume_prop(FILE *file, L_symbol *symbol) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(symbol->symbol == YF_SYMBOL_STR);
+
+  next_symbol(file, symbol); /* : */
+
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ':') {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  switch (next_symbol(file, symbol)) {
+    case YF_SYMBOL_STR:
+    case YF_SYMBOL_NUM:
+    case YF_SYMBOL_BOOL:
+    case YF_SYMBOL_NULL:
+      break;
+
+    case YF_SYMBOL_OP: {
+      char cl, op = symbol->tokens[0];
+      switch (op) {
+        case '[':
+          cl = ']';
+          break;
+        case '{':
+          cl = '}';
+          break;
+        default:
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          return -1;
+      }
+      int n = 1;
+      do {
+        switch (next_symbol(file, symbol)) {
+          case YF_SYMBOL_OP:
+            if (symbol->tokens[0] == op)
+              ++n;
+            else if (symbol->tokens[0] == cl)
+              --n;
+            break;
+
+          case YF_SYMBOL_END:
+          case YF_SYMBOL_ERR:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+      } while (n > 0);
+    } break;
+
+    default:
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      return -1;
+  }
+
+  return 0;
 }
 
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
