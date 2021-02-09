@@ -16,6 +16,7 @@
 #include <yf/com/yf-error.h>
 
 #include "data-gltf.h"
+#include "matrix.h"
 #include "vertex.h"
 
 #define YF_SYMBOL_STR  0
@@ -75,7 +76,7 @@ typedef struct {
 #define YF_GLTF_ATTR_N    3
     size_t attributes[YF_GLTF_ATTR_N];
     size_t indices;
-    size_t materials;
+    size_t material;
   } *v;
   size_t n;
 } L_primitives;
@@ -103,6 +104,42 @@ typedef struct {
   size_t n;
 } L_materials;
 
+/* Type defining the 'accessors' property. */
+typedef struct {
+  struct {
+    size_t buffer_view;
+    size_t byte_off;
+    size_t count;
+#define YF_GLTF_COMP_BYTE   5120
+#define YF_GLTF_COMP_UBYTE  5121
+#define YF_GLTF_COMP_SHORT  5122
+#define YF_GLTF_COMP_USHORT 5123
+#define YF_GLTF_COMP_UINT   5125
+#define YF_GLTF_COMP_FLOAT  5126
+    int comp_type;
+#define YF_GLTF_TYPE_SCALAR 1
+#define YF_GLTF_TYPE_VEC2   2
+#define YF_GLTF_TYPE_VEC3   3
+#define YF_GLTF_TYPE_VEC4   4
+#define YF_GLTF_TYPE_MAT2   22
+#define YF_GLTF_TYPE_MAT3   33
+#define YF_GLTF_TYPE_MAT4   44
+    int type;
+    union {
+      /* XXX: May not suffice for uint32. */
+      YF_float s;
+      YF_vec2 v2;
+      YF_vec3 v3;
+      YF_vec4 v4;
+      YF_mat2 m2;
+      YF_mat3 m3;
+      YF_mat4 m4;
+    } min, max;
+    char *name;
+  } *v;
+  size_t n;
+} L_accessors;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
@@ -111,6 +148,7 @@ typedef struct {
   L_nodes nodes;
   L_meshes meshes;
   L_materials materials;
+  L_accessors accessors;
   /* TODO */
 } L_gltf;
 
@@ -135,6 +173,10 @@ static int parse_materials(FILE *file, L_symbol *symbol,
     L_materials *materials);
 static int parse_materials_i(FILE *file, L_symbol *symbol,
     L_materials *materials, size_t index);
+static int parse_accessors(FILE *file, L_symbol *symbol,
+    L_accessors *accessors);
+static int parse_accessors_i(FILE *file, L_symbol *symbol,
+    L_accessors *accessors, size_t index);
 /* TODO */
 
 int yf_loadgltf(const char *pathname, void *data) {
@@ -166,9 +208,9 @@ int yf_loadgltf(const char *pathname, void *data) {
 
   ////////////////////
   puts("glTF.asset:");
-  printf(" copyright:  %s\n", gltf.asset.copyright);
-  printf(" generator:  %s\n", gltf.asset.generator);
-  printf(" version:    %s\n", gltf.asset.version);
+  printf(" copyright: %s\n", gltf.asset.copyright);
+  printf(" generator: %s\n", gltf.asset.generator);
+  printf(" version: %s\n", gltf.asset.version);
   printf(" minVersion: %s\n", gltf.asset.min_version);
 
   puts("glTF.scene:");
@@ -197,14 +239,14 @@ int yf_loadgltf(const char *pathname, void *data) {
     printf("  n: %lu\n", gltf.meshes.v[i].primitives.n);
     for (size_t j = 0; j < gltf.meshes.v[i].primitives.n; ++j) {
       printf("  primitives #%lu:\n", j);
-      printf("   POSITION:  %lu\n",
+      printf("   POSITION: %lu\n",
           gltf.meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_POS]);
-      printf("   NORMAL:    %lu\n",
+      printf("   NORMAL: %lu\n",
           gltf.meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_NORM]);
       printf("   TEXTURE_0: %lu\n",
           gltf.meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TEX0]);
-      printf("  indices:    %lu\n", gltf.meshes.v[i].primitives.v[j].indices);
-      printf("  materials:  %lu\n", gltf.meshes.v[i].primitives.v[j].materials);
+      printf("  indices: %lu\n", gltf.meshes.v[i].primitives.v[j].indices);
+      printf("  material: %lu\n", gltf.meshes.v[i].primitives.v[j].material);
     }
   }
 
@@ -223,6 +265,48 @@ int yf_loadgltf(const char *pathname, void *data) {
         gltf.materials.v[i].pbrmr.roughness_fac);
     printf("  doubleSided: %d\n", gltf.materials.v[i].double_sided);
   }
+
+  puts("glTF.accessors:");
+  printf(" n: %lu\n", gltf.accessors.n);
+  for (size_t i = 0; i < gltf.accessors.n; ++i) {
+    printf(" accessor '%s':\n", gltf.accessors.v[i].name);
+    printf("  bufferView: %lu\n", gltf.accessors.v[i].buffer_view);
+    printf("  byteOffset: %lu\n", gltf.accessors.v[i].byte_off);
+    printf("  count: %lu\n", gltf.accessors.v[i].count);
+    printf("  componenType: %d\n", gltf.accessors.v[i].comp_type);
+    printf("  type: %d\n", gltf.accessors.v[i].type);
+    switch (gltf.accessors.v[i].type) {
+      case YF_GLTF_TYPE_SCALAR:
+        printf("  min: %.9f\n", gltf.accessors.v[i].min.s);
+        printf("  max: %.9f\n", gltf.accessors.v[i].max.s);
+        break;
+      case YF_GLTF_TYPE_VEC2:
+        printf("  min: [%.9f, %.9f]\n",
+            gltf.accessors.v[i].min.v2[0], gltf.accessors.v[i].min.v2[1]);
+        printf("  max: [%.9f, %.9f]\n",
+            gltf.accessors.v[i].max.v2[0], gltf.accessors.v[i].max.v2[1]);
+        break;
+      case YF_GLTF_TYPE_VEC3:
+        printf("  min: [%.9f, %.9f, %.9f]\n",
+            gltf.accessors.v[i].min.v3[0], gltf.accessors.v[i].min.v3[1],
+            gltf.accessors.v[i].min.v3[2]);
+        printf("  max: [%.9f, %.9f, %.9f]\n",
+            gltf.accessors.v[i].max.v3[0], gltf.accessors.v[i].max.v3[1],
+            gltf.accessors.v[i].max.v3[2]);
+        break;
+      case YF_GLTF_TYPE_VEC4:
+        printf("  min: [%.9f, %.9f, %.9f, %.9f]\n",
+            gltf.accessors.v[i].min.v4[0], gltf.accessors.v[i].min.v4[1],
+            gltf.accessors.v[i].min.v4[2], gltf.accessors.v[i].min.v4[3]);
+        printf("  max: [%.9f, %.9f, %.9f, %.9f]\n",
+            gltf.accessors.v[i].max.v4[0], gltf.accessors.v[i].max.v4[1],
+            gltf.accessors.v[i].max.v4[2], gltf.accessors.v[i].max.v4[3]);
+        break;
+      default:
+        puts("  missing min/max output...");
+    }
+  }
+
   ////////////////////
 
   fclose(file);
@@ -379,6 +463,9 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
         } else if (strcmp(YF_GLTF_PROP("materials"), symbol->tokens) == 0) {
           if (parse_materials(file, symbol, &gltf->materials) != 0)
             return -1;
+        } else if (strcmp(YF_GLTF_PROP("accessors"), symbol->tokens) == 0) {
+          if (parse_accessors(file, symbol, &gltf->accessors) != 0)
+            return -1;
         } else {
           /* TODO */
           printf("! %s parsing unimplemented\n", symbol->tokens);
@@ -510,9 +597,9 @@ static int parse_scenes(FILE *file, L_symbol *symbol, L_scenes *scenes) {
             scenes->v = tmp;
             scenes->n = n;
             memset(scenes->v+i, 0, (n-i)*sizeof *scenes->v);
-            if (parse_scenes_i(file, symbol, scenes, i++) != 0)
-              return -1;
           }
+          if (parse_scenes_i(file, symbol, scenes, i++) != 0)
+            return -1;
         } else if (symbol->tokens[0] == ']') {
           if (i < scenes->n) {
             scenes->n = i;
@@ -640,9 +727,9 @@ static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes) {
             nodes->v = tmp;
             nodes->n = n;
             memset(nodes->v+i, 0, (n-i)*sizeof *nodes->v);
-            if (parse_nodes_i(file, symbol, nodes, i++) != 0)
-              return -1;
           }
+          if (parse_nodes_i(file, symbol, nodes, i++) != 0)
+            return -1;
         } else if (symbol->tokens[0] == ']') {
           if (i < nodes->n) {
             nodes->n = i;
@@ -737,9 +824,9 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
             primitives->v = tmp;
             primitives->n = n;
             memset(primitives->v+i, 0, (n-i)*sizeof *primitives->v);
-            if (parse_primitives_i(file, symbol, primitives, i++) != 0)
-              return -1;
           }
+          if (parse_primitives_i(file, symbol, primitives, i++) != 0)
+            return -1;
         } else if (symbol->tokens[0] == ']') {
           if (i < primitives->n) {
             primitives->n = i;
@@ -838,7 +925,7 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
           errno = 0;
-          primitives->v[index].materials = strtoll(symbol->tokens, NULL, 0);
+          primitives->v[index].material = strtoll(symbol->tokens, NULL, 0);
           if (errno != 0) {
             yf_seterr(YF_ERR_OTHER, __func__);
             return -1;
@@ -885,9 +972,9 @@ static int parse_meshes(FILE *file, L_symbol *symbol, L_meshes *meshes) {
             meshes->v = tmp;
             meshes->n = n;
             memset(meshes->v+i, 0, (n-i)*sizeof *meshes->v);
-            if (parse_meshes_i(file, symbol, meshes, i++) != 0)
-              return -1;
           }
+          if (parse_meshes_i(file, symbol, meshes, i++) != 0)
+            return -1;
         } else if (symbol->tokens[0] == ']') {
           if (i < meshes->n) {
             meshes->n = i;
@@ -976,9 +1063,9 @@ static int parse_materials(FILE *file, L_symbol *symbol,
             materials->v = tmp;
             materials->n = n;
             memset(materials->v+i, 0, (n-i)*sizeof *materials->v);
-            if (parse_materials_i(file, symbol, materials, i++) != 0)
-              return -1;
           }
+          if (parse_materials_i(file, symbol, materials, i++) != 0)
+            return -1;
         } else if (symbol->tokens[0] == ']') {
           if (i < materials->n) {
             materials->n = i;
@@ -1100,6 +1187,188 @@ static int parse_materials_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(materials->v[index].name, symbol->tokens);
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_accessors(FILE *file, L_symbol *symbol,
+    L_accessors *accessors)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(accessors != NULL);
+  assert(symbol->symbol == YF_SYMBOL_STR);
+  assert(strcmp(symbol->tokens, YF_GLTF_PROP("accessors")) == 0);
+
+  next_symbol(file, symbol); /* : */
+  next_symbol(file, symbol); /* [ */
+
+  size_t i = 0;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '{') {
+          if (i == accessors->n) {
+            const size_t n = i == 0 ? 1 : i<<1;
+            void *tmp = realloc(accessors->v, n*sizeof *accessors->v);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            accessors->v = tmp;
+            accessors->n = n;
+            memset(accessors->v+i, 0, (n-i)*sizeof *accessors->v);
+          }
+          if (parse_accessors_i(file, symbol, accessors, i++) != 0)
+            return -1;
+        } else if (symbol->tokens[0] == ']') {
+          if (i < accessors->n) {
+            accessors->n = i;
+            void *tmp = realloc(accessors->v, i*sizeof *accessors->v);
+            if (tmp != NULL)
+              accessors->v = tmp;
+          }
+          return 0;
+        }
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_accessors_i(FILE *file, L_symbol *symbol,
+    L_accessors *accessors, size_t index)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(accessors != NULL);
+  assert(index < accessors->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '{');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp(YF_GLTF_PROP("bufferView"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          accessors->v[index].buffer_view = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp(YF_GLTF_PROP("byteOffset"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          accessors->v[index].byte_off = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp(YF_GLTF_PROP("count"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          accessors->v[index].count = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp(YF_GLTF_PROP("componentType"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          accessors->v[index].comp_type = strtol(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp(YF_GLTF_PROP("type"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          if (strcmp(YF_GLTF_PROP("SCALAR"), symbol->tokens) == 0)
+            accessors->v[index].type = YF_GLTF_TYPE_SCALAR;
+          else if (strcmp(YF_GLTF_PROP("VEC2"), symbol->tokens) == 0)
+            accessors->v[index].type = YF_GLTF_TYPE_VEC2;
+          else if (strcmp(YF_GLTF_PROP("VEC3"), symbol->tokens) == 0)
+            accessors->v[index].type = YF_GLTF_TYPE_VEC3;
+          else if (strcmp(YF_GLTF_PROP("VEC4"), symbol->tokens) == 0)
+            accessors->v[index].type = YF_GLTF_TYPE_VEC4;
+          else if (strcmp(YF_GLTF_PROP("MAT2"), symbol->tokens) == 0)
+            accessors->v[index].type = YF_GLTF_TYPE_MAT2;
+          else if (strcmp(YF_GLTF_PROP("MAT3"), symbol->tokens) == 0)
+            accessors->v[index].type = YF_GLTF_TYPE_MAT3;
+          else if (strcmp(YF_GLTF_PROP("MAT4"), symbol->tokens) == 0)
+            accessors->v[index].type = YF_GLTF_TYPE_MAT4;
+        } else if (strcmp(YF_GLTF_PROP("min"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          for (size_t i = 0; i < 16; ++i) {
+            next_symbol(file, symbol);
+            if (symbol->symbol != YF_SYMBOL_NUM)
+              break;
+            errno = 0;
+            accessors->v[index].min.m4[i] = strtof(symbol->tokens, NULL);
+            if (errno != 0) {
+              errno = 0;
+              accessors->v[i].min.m4[index] = strtol(symbol->tokens, NULL, 0);
+              if (errno != 0) {
+                yf_seterr(YF_ERR_OTHER, __func__);
+                return -1;
+              }
+            }
+            next_symbol(file, symbol);
+            if (symbol->symbol == YF_SYMBOL_OP && symbol->tokens[0] == ']')
+              break;
+          }
+        } else if (strcmp(YF_GLTF_PROP("max"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          for (size_t i = 0; i < 16; ++i) {
+            next_symbol(file, symbol);
+            if (symbol->symbol != YF_SYMBOL_NUM)
+              break;
+            errno = 0;
+            accessors->v[index].max.m4[i] = strtof(symbol->tokens, NULL);
+            if (errno != 0) {
+              accessors->v[index].max.m4[i] = strtol(symbol->tokens, NULL, 0);
+              if (errno != 0) {
+                yf_seterr(YF_ERR_OTHER, __func__);
+                return -1;
+              }
+            }
+            next_symbol(file, symbol);
+            if (symbol->symbol == YF_SYMBOL_OP && symbol->tokens[0] == ']')
+              break;
+          }
+        } else if (strcmp(YF_GLTF_PROP("name"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          accessors->v[index].name = malloc(1+strlen(symbol->tokens));
+          if (accessors->v[index].name == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(accessors->v[index].name, symbol->tokens);
         }
         break;
 
