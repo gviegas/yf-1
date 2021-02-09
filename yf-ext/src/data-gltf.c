@@ -152,6 +152,16 @@ typedef struct {
   size_t n;
 } L_bufferviews;
 
+/* Type defining the 'buffers' property. */
+typedef struct {
+  struct {
+    size_t byte_len;
+    char *uri;
+    char *name;
+  } *v;
+  size_t n;
+} L_buffers;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
@@ -162,6 +172,7 @@ typedef struct {
   L_materials materials;
   L_accessors accessors;
   L_bufferviews bufferviews;
+  L_buffers buffers;
   /* TODO */
 } L_gltf;
 
@@ -194,7 +205,9 @@ static int parse_bufferviews(FILE *file, L_symbol *symbol,
     L_bufferviews *bufferviews);
 static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
     L_bufferviews *bufferviews, size_t index);
-/* TODO */
+static int parse_buffers(FILE *file, L_symbol *symbol, L_buffers *buffers);
+static int parse_buffers_i(FILE *file, L_symbol *symbol,
+    L_buffers *buffers, size_t index);
 
 int yf_loadgltf(const char *pathname, void *data) {
   if (pathname == NULL) {
@@ -223,7 +236,8 @@ int yf_loadgltf(const char *pathname, void *data) {
     //return -1;
   }
 
-  ////////////////////
+////////////////////////////////////////
+#ifdef YF_DEVEL
   puts("glTF.asset:");
   printf(" copyright: %s\n", gltf.asset.copyright);
   printf(" generator: %s\n", gltf.asset.generator);
@@ -334,7 +348,15 @@ int yf_loadgltf(const char *pathname, void *data) {
     printf("  byteStride: %lu\n", gltf.bufferviews.v[i].byte_strd);
   }
 
-  ////////////////////
+  puts("glTF.buffers:");
+  printf(" n: %lu\n", gltf.buffers.n);
+  for (size_t i = 0; i < gltf.buffers.n; ++i) {
+    printf(" buffer '%s':\n", gltf.buffers.v[i].name);
+    printf("  byteLength: %lu\n", gltf.buffers.v[i].byte_len);
+    printf("  uri: %s\n", gltf.buffers.v[i].uri);
+  }
+#endif
+////////////////////////////////////////
 
   fclose(file);
   return 0;
@@ -495,6 +517,9 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
             return -1;
         } else if (strcmp(YF_GLTF_PROP("bufferViews"), symbol->tokens) == 0) {
           if (parse_bufferviews(file, symbol, &gltf->bufferviews) != 0)
+            return -1;
+        } else if (strcmp(YF_GLTF_PROP("buffers"), symbol->tokens) == 0) {
+          if (parse_buffers(file, symbol, &gltf->buffers) != 0)
             return -1;
         } else {
           /* TODO */
@@ -1523,6 +1548,110 @@ static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(bufferviews->v[index].name, symbol->tokens);
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_buffers(FILE *file, L_symbol *symbol, L_buffers *buffers) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(buffers != NULL);
+  assert(symbol->symbol == YF_SYMBOL_STR);
+  assert(strcmp(symbol->tokens, YF_GLTF_PROP("buffers")) == 0);
+
+  next_symbol(file, symbol); /* : */
+  next_symbol(file, symbol); /* [ */
+
+  size_t i = 0;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '{') {
+          if (i == buffers->n) {
+            const size_t n = i == 0 ? 1 : i<<1;
+            void *tmp = realloc(buffers->v, n*sizeof *buffers->v);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            buffers->v = tmp;
+            buffers->n = n;
+            memset(buffers->v+i, 0, (n-i)*sizeof *buffers->v);
+          }
+          if (parse_buffers_i(file, symbol, buffers, i++) != 0)
+            return -1;
+        } else if (symbol->tokens[0] == ']') {
+          if (i < buffers->n) {
+            buffers->n = i;
+            void *tmp = realloc(buffers->v, i*sizeof *buffers->v);
+            if (tmp != NULL)
+              buffers->v = tmp;
+          }
+          return 0;
+        }
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_buffers_i(FILE *file, L_symbol *symbol,
+    L_buffers *buffers, size_t index)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(buffers != NULL);
+  assert(index < buffers->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '{');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp(YF_GLTF_PROP("byteLength"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          buffers->v[index].byte_len = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp(YF_GLTF_PROP("uri"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          buffers->v[index].uri = malloc(1+strlen(symbol->tokens));
+          if (buffers->v[index].uri == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(buffers->v[index].uri, symbol->tokens);
+        } else if (strcmp(YF_GLTF_PROP("name"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          buffers->v[index].name = malloc(1+strlen(symbol->tokens));
+          if (buffers->v[index].name == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(buffers->v[index].name, symbol->tokens);
         }
         break;
 
