@@ -140,6 +140,18 @@ typedef struct {
   size_t n;
 } L_accessors;
 
+/* Type defining the 'bufferViews' property. */
+typedef struct {
+  struct {
+    size_t buffer;
+    size_t byte_off;
+    size_t byte_len;
+    size_t byte_strd;
+    char *name;
+  } *v;
+  size_t n;
+} L_bufferviews;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
@@ -149,6 +161,7 @@ typedef struct {
   L_meshes meshes;
   L_materials materials;
   L_accessors accessors;
+  L_bufferviews bufferviews;
   /* TODO */
 } L_gltf;
 
@@ -177,6 +190,10 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
     L_accessors *accessors);
 static int parse_accessors_i(FILE *file, L_symbol *symbol,
     L_accessors *accessors, size_t index);
+static int parse_bufferviews(FILE *file, L_symbol *symbol,
+    L_bufferviews *bufferviews);
+static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
+    L_bufferviews *bufferviews, size_t index);
 /* TODO */
 
 int yf_loadgltf(const char *pathname, void *data) {
@@ -305,6 +322,16 @@ int yf_loadgltf(const char *pathname, void *data) {
       default:
         puts("  missing min/max output...");
     }
+  }
+
+  puts("glTF.bufferViews:");
+  printf(" n: %lu\n", gltf.bufferviews.n);
+  for (size_t i = 0; i < gltf.bufferviews.n; ++i) {
+    printf(" buffer view '%s':\n", gltf.bufferviews.v[i].name);
+    printf("  buffer: %lu\n", gltf.bufferviews.v[i].buffer);
+    printf("  byteOffset: %lu\n", gltf.bufferviews.v[i].byte_off);
+    printf("  byteLength: %lu\n", gltf.bufferviews.v[i].byte_len);
+    printf("  byteStride: %lu\n", gltf.bufferviews.v[i].byte_strd);
   }
 
   ////////////////////
@@ -465,6 +492,9 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
             return -1;
         } else if (strcmp(YF_GLTF_PROP("accessors"), symbol->tokens) == 0) {
           if (parse_accessors(file, symbol, &gltf->accessors) != 0)
+            return -1;
+        } else if (strcmp(YF_GLTF_PROP("bufferViews"), symbol->tokens) == 0) {
+          if (parse_bufferviews(file, symbol, &gltf->bufferviews) != 0)
             return -1;
         } else {
           /* TODO */
@@ -1369,6 +1399,130 @@ static int parse_accessors_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(accessors->v[index].name, symbol->tokens);
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_bufferviews(FILE *file, L_symbol *symbol,
+    L_bufferviews *bufferviews)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(bufferviews != NULL);
+  assert(symbol->symbol == YF_SYMBOL_STR);
+  assert(strcmp(symbol->tokens, YF_GLTF_PROP("bufferViews")) == 0);
+
+  next_symbol(file, symbol); /* : */
+  next_symbol(file, symbol); /* [ */
+
+  size_t i = 0;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '{') {
+          if (i == bufferviews->n) {
+            const size_t n = i == 0 ? 1 : i<<1;
+            void *tmp = realloc(bufferviews->v, n*sizeof *bufferviews->v);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            bufferviews->v = tmp;
+            bufferviews->n = n;
+            memset(bufferviews->v+i, 0, (n-i)*sizeof *bufferviews->v);
+          }
+          if (parse_bufferviews_i(file, symbol, bufferviews, i++) != 0)
+            return -1;
+        } else if (symbol->tokens[0] == ']') {
+          if (i < bufferviews->n) {
+            bufferviews->n = i;
+            void *tmp = realloc(bufferviews->v, i*sizeof *bufferviews->v);
+            if (tmp != NULL)
+              bufferviews->v = tmp;
+          }
+          return 0;
+        }
+        break;
+
+      default:
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
+    L_bufferviews *bufferviews, size_t index)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(bufferviews != NULL);
+  assert(index < bufferviews->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '{');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp(YF_GLTF_PROP("buffer"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          bufferviews->v[index].buffer = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp(YF_GLTF_PROP("byteOffset"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          bufferviews->v[index].byte_off = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp(YF_GLTF_PROP("byteLength"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          bufferviews->v[index].byte_len = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp(YF_GLTF_PROP("byteStride"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          bufferviews->v[index].byte_strd = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp(YF_GLTF_PROP("name"), symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          bufferviews->v[index].name = malloc(1+strlen(symbol->tokens));
+          if (bufferviews->v[index].name == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+          }
+          strcpy(bufferviews->v[index].name, symbol->tokens);
         }
         break;
 
