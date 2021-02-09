@@ -221,17 +221,18 @@ int yf_loadgltf(const char *pathname, void *data) {
 
   L_symbol symbol = {0};
   next_symbol(file, &symbol);
+  /* TODO: .glb */
   if (symbol.symbol != YF_SYMBOL_OP && symbol.tokens[0] != '{') {
-    /* TODO: Set error (either here or on caller). */
+    yf_seterr(YF_ERR_INVFILE, __func__);
     fclose(file);
     return -1;
   }
 
   L_gltf gltf = {0};
   if (parse_gltf(file, &symbol, &gltf) != 0) {
-    /* TODO: Set error; dealloc. */
-    //fclose(file);
-    //return -1;
+    /* TODO: Dealloc. */
+    fclose(file);
+    return -1;
   }
 
 ////////////////////////////////////////
@@ -534,6 +535,7 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -551,8 +553,10 @@ static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset) {
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol); /* { */
 
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '{')
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '{') {
+    yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
+  }
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -602,6 +606,7 @@ static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset) {
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -619,8 +624,10 @@ static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene) {
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol);
 
-  if (symbol->symbol != YF_SYMBOL_NUM)
+  if (symbol->symbol != YF_SYMBOL_NUM) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
+  }
 
   errno = 0;
   *scene = strtoll(symbol->tokens, NULL, 0);
@@ -636,6 +643,11 @@ static int parse_scenes(FILE *file, L_symbol *symbol, L_scenes *scenes) {
 
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol); /* [ */
+
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
 
   size_t i = 0;
 
@@ -668,6 +680,7 @@ static int parse_scenes(FILE *file, L_symbol *symbol, L_scenes *scenes) {
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -729,6 +742,7 @@ static int parse_scenes_i(FILE *file, L_symbol *symbol,
                 break;
 
               default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
                 return -1;
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
@@ -750,6 +764,7 @@ static int parse_scenes_i(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -766,6 +781,11 @@ static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes) {
 
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol); /* [ */
+
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
 
   size_t i = 0;
 
@@ -798,6 +818,7 @@ static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes) {
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -845,6 +866,7 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -863,6 +885,11 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
 
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol); /* [ */
+
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
 
   size_t i = 0;
 
@@ -895,6 +922,7 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -961,6 +989,7 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
                 break;
 
               default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
                 return -1;
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
@@ -991,6 +1020,7 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -1007,6 +1037,11 @@ static int parse_meshes(FILE *file, L_symbol *symbol, L_meshes *meshes) {
 
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol); /* [ */
+
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
 
   size_t i = 0;
 
@@ -1039,6 +1074,7 @@ static int parse_meshes(FILE *file, L_symbol *symbol, L_meshes *meshes) {
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -1080,6 +1116,7 @@ static int parse_meshes_i(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -1098,6 +1135,11 @@ static int parse_materials(FILE *file, L_symbol *symbol,
 
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol); /* [ */
+
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
 
   size_t i = 0;
 
@@ -1130,6 +1172,7 @@ static int parse_materials(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -1216,6 +1259,7 @@ static int parse_materials_i(FILE *file, L_symbol *symbol,
                 break;
 
               default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
                 return -1;
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
@@ -1242,6 +1286,7 @@ static int parse_materials_i(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -1260,6 +1305,11 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
 
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol); /* [ */
+
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
 
   size_t i = 0;
 
@@ -1292,6 +1342,7 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -1424,6 +1475,7 @@ static int parse_accessors_i(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -1442,6 +1494,11 @@ static int parse_bufferviews(FILE *file, L_symbol *symbol,
 
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol); /* [ */
+
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
 
   size_t i = 0;
 
@@ -1474,6 +1531,7 @@ static int parse_bufferviews(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -1548,6 +1606,7 @@ static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -1564,6 +1623,11 @@ static int parse_buffers(FILE *file, L_symbol *symbol, L_buffers *buffers) {
 
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol); /* [ */
+
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
 
   size_t i = 0;
 
@@ -1596,6 +1660,7 @@ static int parse_buffers(FILE *file, L_symbol *symbol, L_buffers *buffers) {
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
@@ -1652,6 +1717,7 @@ static int parse_buffers_i(FILE *file, L_symbol *symbol,
         break;
 
       default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
   } while (1);
