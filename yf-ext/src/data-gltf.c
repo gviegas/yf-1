@@ -216,6 +216,9 @@ static int parse_buffers_i(FILE *file, L_symbol *symbol,
 /* Loads a single mesh from glTF contents. */
 static int load_meshdt(const L_gltf *gltf, YF_meshdt *data);
 
+/* Deinitializes glTF contents. */
+static void deinit_gltf(L_gltf *gltf);
+
 int yf_loadgltf(const char *pathname, YF_meshdt *data) {
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
@@ -239,13 +242,13 @@ int yf_loadgltf(const char *pathname, YF_meshdt *data) {
 
   L_gltf gltf = {0};
   if (parse_gltf(file, &symbol, &gltf) != 0) {
-    /* TODO: Dealloc. */
+    deinit_gltf(&gltf);
     fclose(file);
     return -1;
   }
 
   if (load_meshdt(&gltf, data) != 0) {
-    /* TODO: Dealloc. */
+    deinit_gltf(&gltf);
     fclose(file);
     return -1;
   }
@@ -372,6 +375,7 @@ int yf_loadgltf(const char *pathname, YF_meshdt *data) {
 #endif
 ////////////////////////////////////////
 
+  deinit_gltf(&gltf);
   fclose(file);
   return 0;
 }
@@ -2057,4 +2061,48 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
   data->i.n = i_n;
 
   return 0;
+}
+
+static void deinit_gltf(L_gltf *gltf) {
+  if (gltf == NULL)
+    return;
+
+  free(gltf->asset.copyright);
+  free(gltf->asset.generator);
+  free(gltf->asset.version);
+  free(gltf->asset.min_version);
+
+  for (size_t i = 0; i < gltf->scenes.n; ++i) {
+    free(gltf->scenes.v[i].nodes);
+    free(gltf->scenes.v[i].name);
+  }
+  free(gltf->scenes.v);
+
+  for (size_t i = 0; i < gltf->nodes.n; ++i)
+    free(gltf->nodes.v[i].name);
+  free(gltf->nodes.v);
+
+  for (size_t i = 0; i < gltf->meshes.n; ++i) {
+    free(gltf->meshes.v[i].primitives.v);
+    free(gltf->meshes.v[i].name);
+  }
+  free(gltf->meshes.v);
+
+  for (size_t i = 0; i < gltf->materials.n; ++i)
+    free(gltf->materials.v[i].name);
+  free(gltf->materials.v);
+
+  for (size_t i = 0; i < gltf->accessors.n; ++i)
+    free(gltf->accessors.v[i].name);
+  free(gltf->accessors.v);
+
+  for (size_t i = 0; i < gltf->bufferviews.n; ++i)
+    free(gltf->bufferviews.v[i].name);
+  free(gltf->bufferviews.v);
+
+  for (size_t i = 0; i < gltf->buffers.n; ++i) {
+    free(gltf->buffers.v[i].uri);
+    free(gltf->buffers.v[i].name);
+  }
+  free(gltf->buffers.v);
 }
