@@ -35,11 +35,10 @@ typedef struct {
   char tokens[YF_MAXTOKENS];
 } L_symbol;
 
-/* Gets the next symbol from a file stream. */
+/* Gets the next symbol from a file stream.
+   This function returns 'symbol->symbol'. Upon failure, the value returned
+   is equal to 'YF_SYMBOL_ERR' - the global error variable is not set. */
 static int next_symbol(FILE *file, L_symbol *symbol);
-
-/* Consumes the current property. */
-static int consume_prop(FILE *file, L_symbol *symbol);
 
 /* Type defining the 'asset' property. */
 typedef struct {
@@ -176,6 +175,10 @@ typedef struct {
   L_buffers buffers;
   /* TODO: Other properties. */
 } L_gltf;
+
+/* Consumes the current property.
+   This allows unknown/unimplemented properties to be ignored. */
+static int consume_prop(FILE *file, L_symbol *symbol);
 
 /* Structured glTF content parsing functions. */
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
@@ -585,8 +588,8 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
           if (parse_buffers(file, symbol, &gltf->buffers) != 0)
             return -1;
         } else {
-          /* TODO */
-          printf("! %s parsing unimplemented\n", symbol->tokens);
+          if (consume_prop(file, symbol) != 0)
+            return -1;
         }
         break;
 
@@ -658,6 +661,9 @@ static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset) {
             return -1;
           }
           strcpy(asset->min_version, symbol->tokens);
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
         }
         break;
 
@@ -816,6 +822,9 @@ static int parse_scenes_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(scenes->v[index].name, symbol->tokens);
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
         }
         break;
 
@@ -918,6 +927,9 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(nodes->v[index].name, symbol->tokens);
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
         }
         break;
 
@@ -1072,6 +1084,9 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
             yf_seterr(YF_ERR_OTHER, __func__);
             return -1;
           }
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
         }
         break;
 
@@ -1168,6 +1183,9 @@ static int parse_meshes_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(meshes->v[index].name, symbol->tokens);
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
         }
         break;
 
@@ -1313,6 +1331,9 @@ static int parse_materials_i(FILE *file, L_symbol *symbol,
                     yf_seterr(YF_ERR_OTHER, __func__);
                     return -1;
                   }
+                } else {
+                  if (consume_prop(file, symbol) != 0)
+                    return -1;
                 }
                 break;
 
@@ -1338,6 +1359,9 @@ static int parse_materials_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(materials->v[index].name, symbol->tokens);
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
         }
         break;
 
@@ -1527,6 +1551,9 @@ static int parse_accessors_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(accessors->v[index].name, symbol->tokens);
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
         }
         break;
 
@@ -1658,6 +1685,9 @@ static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(bufferviews->v[index].name, symbol->tokens);
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
         }
         break;
 
@@ -1769,6 +1799,9 @@ static int parse_buffers_i(FILE *file, L_symbol *symbol,
             return -1;
           }
           strcpy(buffers->v[index].name, symbol->tokens);
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
         }
         break;
 
