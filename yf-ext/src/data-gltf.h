@@ -8,7 +8,9 @@
 #ifndef YF_DATA_GLTF_H
 #define YF_DATA_GLTF_H
 
-/* XXX */
-int yf_loadgltf(const char *pathname, void *data);
+#include "mesh.h"
+
+/* Loads mesh data from a glTF file. */
+int yf_loadgltf(const char *pathname, YF_meshdt *data);
 
 #endif /* YF_DATA_GLTF_H */

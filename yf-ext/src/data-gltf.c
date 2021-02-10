@@ -213,7 +213,10 @@ static int parse_buffers(FILE *file, L_symbol *symbol, L_buffers *buffers);
 static int parse_buffers_i(FILE *file, L_symbol *symbol,
     L_buffers *buffers, size_t index);
 
-int yf_loadgltf(const char *pathname, void *data) {
+/* Loads a single mesh from glTF contents. */
+static int load_meshdt(const L_gltf *gltf, YF_meshdt *data);
+
+int yf_loadgltf(const char *pathname, YF_meshdt *data) {
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
@@ -236,6 +239,12 @@ int yf_loadgltf(const char *pathname, void *data) {
 
   L_gltf gltf = {0};
   if (parse_gltf(file, &symbol, &gltf) != 0) {
+    /* TODO: Dealloc. */
+    fclose(file);
+    return -1;
+  }
+
+  if (load_meshdt(&gltf, data) != 0) {
     /* TODO: Dealloc. */
     fclose(file);
     return -1;
@@ -1815,6 +1824,237 @@ static int parse_buffers_i(FILE *file, L_symbol *symbol,
         return -1;
     }
   } while (1);
+
+  return 0;
+}
+
+static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
+  assert(gltf != NULL);
+  assert(data != NULL);
+
+  if (gltf->accessors.n == 0 || gltf->bufferviews.n == 0 ||
+      gltf->buffers.n == 0 || gltf->meshes.n == 0 ||
+      gltf->meshes.v[0].primitives.n == 0)
+  {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  struct { size_t accessor, view, buffer; } idx, attrs[YF_GLTF_ATTR_N];
+  const L_primitives *prim = &gltf->meshes.v[0].primitives;
+
+  idx.accessor = prim->v[0].indices;
+  if (idx.accessor != SIZE_MAX) {
+    idx.view = gltf->accessors.v[idx.accessor].buffer_view;
+    idx.buffer = gltf->bufferviews.v[idx.view].buffer;
+  }
+  for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i) {
+    attrs[i].accessor = prim->v[0].attributes[i];
+    if (attrs[i].accessor != SIZE_MAX) {
+      attrs[i].view = gltf->accessors.v[attrs[i].accessor].buffer_view;
+      attrs[i].buffer = gltf->bufferviews.v[attrs[i].view].buffer;
+    }
+  }
+  if (attrs[YF_GLTF_ATTR_POS].accessor == SIZE_MAX) {
+    yf_seterr(YF_ERR_UNSUP, __func__);
+    return -1;
+  }
+
+  const size_t v_n = gltf->accessors.v[attrs[YF_GLTF_ATTR_POS].accessor].count;
+  YF_vmdl *verts = malloc(v_n*sizeof *verts);
+  if (verts == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  const size_t i_strd = v_n < UINT16_MAX ? 2 : 4;
+  size_t i_n = 0;
+  void *inds = NULL;
+  if (idx.accessor != SIZE_MAX) {
+    i_n = gltf->accessors.v[idx.accessor].count;
+    inds = malloc(i_n*i_strd);
+    if (inds == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      free(verts);
+      return -1;
+    }
+  }
+
+  size_t buf_i = SIZE_MAX;
+  FILE *file = NULL;
+  size_t comp_sz = 0;
+  size_t comp_n = 0;
+
+  for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i) {
+    switch (i) {
+      case YF_GLTF_ATTR_POS:
+        assert(file == NULL);
+        file = fopen(gltf->buffers.v[attrs[i].buffer].uri, "r");
+        if (file == NULL) {
+          yf_seterr(YF_ERR_NOFILE, __func__);
+          free(verts);
+          free(inds);
+          return -1;
+        }
+        if (fseek(file, gltf->bufferviews.v[attrs[i].view].byte_off,
+              SEEK_SET))
+        {
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          free(verts);
+          free(inds);
+          fclose(file);
+          return -1;
+        }
+        /* TODO: Other comp/type combinations. */
+        assert(gltf->accessors.v[attrs[i].accessor].comp_type ==
+            YF_GLTF_COMP_FLOAT);
+        assert(gltf->accessors.v[attrs[i].accessor].type == YF_GLTF_TYPE_VEC3);
+        comp_sz = 4;
+        comp_n = 3;
+        for (size_t j = 0; j < v_n; ++j) {
+          if (fread(verts[j].pos, comp_sz, comp_n, file) < comp_n) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            free(verts);
+            free(inds);
+            fclose(file);
+            return -1;
+          }
+        }
+        buf_i = attrs[i].buffer;
+        break;
+
+      case YF_GLTF_ATTR_NORM:
+        assert(file != NULL);
+        if (buf_i != attrs[i].buffer) {
+          fclose(file);
+          file = fopen(gltf->buffers.v[attrs[i].buffer].uri, "r");
+          if (file == NULL) {
+            yf_seterr(YF_ERR_NOFILE, __func__);
+            free(verts);
+            free(inds);
+            return -1;
+          }
+          buf_i = attrs[i].buffer;
+        }
+        if (fseek(file, gltf->bufferviews.v[attrs[i].view].byte_off,
+              SEEK_SET))
+        {
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          free(verts);
+          free(inds);
+          fclose(file);
+          return -1;
+        }
+        /* TODO: Other comp/type combinations. */
+        assert(gltf->accessors.v[attrs[i].accessor].comp_type ==
+            YF_GLTF_COMP_FLOAT);
+        assert(gltf->accessors.v[attrs[i].accessor].type == YF_GLTF_TYPE_VEC3);
+        comp_sz = 4;
+        comp_n = 3;
+        for (size_t j = 0; j < v_n; ++j) {
+          if (fread(verts[j].norm, comp_sz, comp_n, file) < comp_n) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            free(verts);
+            free(inds);
+            fclose(file);
+            return -1;
+          }
+        }
+        break;
+
+      case YF_GLTF_ATTR_TEX0:
+        assert(file != NULL);
+        if (buf_i != attrs[i].buffer) {
+          fclose(file);
+          file = fopen(gltf->buffers.v[attrs[i].buffer].uri, "r");
+          if (file == NULL) {
+            yf_seterr(YF_ERR_NOFILE, __func__);
+            free(verts);
+            free(inds);
+            return -1;
+          }
+          buf_i = attrs[i].buffer;
+        }
+        if (fseek(file, gltf->bufferviews.v[attrs[i].view].byte_off,
+              SEEK_SET))
+        {
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          free(verts);
+          free(inds);
+          fclose(file);
+          return -1;
+        }
+        /* TODO: Other comp/type combinations. */
+        assert(gltf->accessors.v[attrs[i].accessor].comp_type ==
+            YF_GLTF_COMP_FLOAT);
+        assert(gltf->accessors.v[attrs[i].accessor].type == YF_GLTF_TYPE_VEC2);
+        comp_sz = 4;
+        comp_n = 2;
+        for (size_t j = 0; j < v_n; ++j) {
+          if (fread(verts[j].tc, comp_sz, comp_n, file) < comp_n) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            free(verts);
+            free(inds);
+            fclose(file);
+            return -1;
+          }
+        }
+        break;
+    }
+  }
+
+  if (inds != NULL) {
+    assert(file != NULL);
+    if (buf_i != idx.buffer) {
+      fclose(file);
+      file = fopen(gltf->buffers.v[idx.buffer].uri, "r");
+      if (file == NULL) {
+        yf_seterr(YF_ERR_NOFILE, __func__);
+        free(verts);
+        free(inds);
+        return -1;
+      }
+      buf_i = idx.buffer;
+    }
+    if (fseek(file, gltf->bufferviews.v[idx.view].byte_off, SEEK_SET)) {
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      free(verts);
+      free(inds);
+      fclose(file);
+      return -1;
+    }
+    /* TODO: Other comps. */
+    switch (gltf->accessors.v[idx.accessor].comp_type) {
+      case YF_GLTF_COMP_USHORT:
+        comp_sz = 2;
+        break;
+      case YF_GLTF_COMP_UINT:
+        comp_sz = 4;
+        break;
+      default:
+        assert(0);
+        return -1;
+    }
+    assert(gltf->accessors.v[idx.accessor].type == YF_GLTF_TYPE_SCALAR);
+    /* TODO */
+    assert(comp_sz == i_strd);
+    comp_n = 1;
+    for (size_t j = 0; j < i_n; ++j) {
+      if (fread((char *)inds+j*comp_sz, comp_sz, comp_n, file) < comp_n) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        free(verts);
+        free(inds);
+        fclose(file);
+        return -1;
+      }
+    }
+  }
+
+  data->v.vtype = YF_VTYPE_MDL;
+  data->v.data = verts;
+  data->v.n = v_n;
+  data->i.data = inds;
+  data->i.stride = i_strd;
+  data->i.n = i_n;
 
   return 0;
 }
