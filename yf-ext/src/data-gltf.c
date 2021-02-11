@@ -116,6 +116,7 @@ typedef struct {
 #define YF_GLTF_MODE_TRISTRIP 5
 #define YF_GLTF_MODE_TRIFAN   6
     int mode;
+    L_targets targets;
   } *v;
   size_t n;
 } L_primitives;
@@ -1390,7 +1391,9 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
                     yf_seterr(YF_ERR_OTHER, __func__);
                     return -1;
                   }
-
+                } else {
+                  if (consume_prop(file, symbol) != 0)
+                    return -1;
                 }
                 break;
 
@@ -1429,6 +1432,9 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
             yf_seterr(YF_ERR_OTHER, __func__);
             return -1;
           }
+        } else if (strcmp("targets", symbol->tokens) == 0) {
+          if (parse_targets(file, symbol, &primitives->v[index].targets) != 0)
+            return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
@@ -2524,23 +2530,38 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  n: %lu\n", gltf->meshes.v[i].primitives.n);
     for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; ++j) {
       printf("  primitives #%lu:\n", j);
-      printf("   POSITION: %lu\n",
+      printf("   attributes#%lu:\n", j);
+      printf("    POSITION: %lu\n",
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_POS]);
-      printf("   NORMAL: %lu\n",
+      printf("    NORMAL: %lu\n",
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_NORM]);
-      printf("   TANGENT: %lu\n",
+      printf("    TANGENT: %lu\n",
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TAN]);
-      printf("   TEXCOORD_0: %lu\n",
+      printf("    TEXCOORD_0: %lu\n",
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TC0]);
-      printf("   TEXCOORD_1: %lu\n",
+      printf("    TEXCOORD_1: %lu\n",
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TC1]);
-      printf("   JOINTS_0: %lu\n",
+      printf("    JOINTS_0: %lu\n",
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_JNT0]);
-      printf("   WEIGHTS_0: %lu\n",
+      printf("    WEIGHTS_0: %lu\n",
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_WGT0]);
-      printf("  indices: %lu\n", gltf->meshes.v[i].primitives.v[j].indices);
-      printf("  material: %lu\n", gltf->meshes.v[i].primitives.v[j].material);
-      printf("  mode: %d\n", gltf->meshes.v[i].primitives.v[j].mode);
+      printf("   indices: %lu\n", gltf->meshes.v[i].primitives.v[j].indices);
+      printf("   material: %lu\n", gltf->meshes.v[i].primitives.v[j].material);
+      printf("   mode: %d\n", gltf->meshes.v[i].primitives.v[j].mode);
+      if (gltf->meshes.v[i].primitives.v[j].targets.n == 0) {
+        puts("   (no targets)");
+      } else {
+        const size_t target_n = gltf->meshes.v[i].primitives.v[j].targets.n;
+        for (size_t k = 0; k < target_n; ++k) {
+          printf("   targets #%lu:\n", j);
+          printf("    POSITION: %lu\n",
+              gltf->meshes.v[i].primitives.v[j].targets.v[k].position);
+          printf("    NORMAL: %lu\n",
+              gltf->meshes.v[i].primitives.v[j].targets.v[k].normal);
+          printf("    TANGENT: %lu\n",
+              gltf->meshes.v[i].primitives.v[j].targets.v[k].tangent);
+        }
+      }
     }
   }
 
