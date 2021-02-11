@@ -83,6 +83,16 @@ typedef struct {
   size_t n;
 } L_nodes;
 
+/* Type defining the 'gltf.meshes.primitives.targets' property. */
+typedef struct {
+  struct {
+    size_t position;
+    size_t normal;
+    size_t tangent;
+  } *v;
+  size_t n;
+} L_targets;
+
 /* Type defining the 'glTF.meshes.primitives' property. */
 typedef struct {
   struct {
@@ -231,6 +241,13 @@ static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes);
 /* Parses a given element from the 'glTF.nodes' property. */
 static int parse_nodes_i(FILE *file, L_symbol *symbol,
     L_nodes *nodes, size_t index);
+
+/* Parses the 'glTF.meshes.primitives.targets' property. */
+static int parse_targets(FILE *file, L_symbol *symbol, L_targets *targets);
+
+/* Parses a given element from the 'glTF.meshes.primitives.targets' property. */
+static int parse_targets_i(FILE *file, L_symbol *symbol,
+    L_targets *targets, size_t index);
 
 /* Parses the 'glTF.meshes.primitives' property. */
 static int parse_primitives(FILE *file, L_symbol *symbol,
@@ -1083,6 +1100,124 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
           }
           return 0;
         }
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_targets(FILE *file, L_symbol *symbol, L_targets *targets) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(targets != NULL);
+  assert(symbol->symbol == YF_SYMBOL_STR);
+  assert(strcmp(symbol->tokens, "targets") == 0);
+
+  next_symbol(file, symbol); /* : */
+  next_symbol(file, symbol); /* [ */
+
+  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  size_t i = 0;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '{') {
+          if (i == targets->n) {
+            const size_t n = i == 0 ? 1 : i<<1;
+            void *tmp = realloc(targets->v, n*sizeof *targets->v);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            targets->v = tmp;
+            targets->n = n;
+            memset(targets->v+i, 0, (n-i)*sizeof *targets->v);
+          }
+          if (parse_targets_i(file, symbol, targets, i++) != 0)
+            return -1;
+        } else if (symbol->tokens[0] == ']') {
+          if (i < targets->n) {
+            targets->n = i;
+            void *tmp = realloc(targets->v, i*sizeof *targets->v);
+            if (tmp != NULL)
+              targets->v = tmp;
+          }
+          return 0;
+        }
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_targets_i(FILE *file, L_symbol *symbol,
+    L_targets *targets, size_t index)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(targets != NULL);
+  assert(index < targets->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '{');
+
+  targets->v[index].position = SIZE_MAX;
+  targets->v[index].normal = SIZE_MAX;
+  targets->v[index].tangent = SIZE_MAX;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("POSITION", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          targets->v[index].position = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp("NORMAL", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          targets->v[index].normal = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp("TANGENT", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          targets->v[index].tangent = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
         break;
 
       default:
