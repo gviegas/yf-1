@@ -2210,8 +2210,11 @@ static void deinit_gltf(L_gltf *gltf) {
   }
   free(gltf->scenes.v);
 
-  for (size_t i = 0; i < gltf->nodes.n; ++i)
+  for (size_t i = 0; i < gltf->nodes.n; ++i) {
+    free(gltf->nodes.v[i].children);
+    free(gltf->nodes.v[i].weights);
     free(gltf->nodes.v[i].name);
+  }
   free(gltf->nodes.v);
 
   for (size_t i = 0; i < gltf->meshes.n; ++i) {
