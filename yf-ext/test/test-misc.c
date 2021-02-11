@@ -15,13 +15,14 @@
 #define YF_WINW 800
 #define YF_WINH 600
 #define YF_WINT "Misc"
-#define YF_FPS  30
+#define YF_FPS  60
 
 /* Local variables. */
 struct L_vars {
   YF_window win;
   YF_view view;
   YF_scene scn;
+  YF_model mdl;
   YF_quad quads[3];
   YF_label labls[4];
 
@@ -52,6 +53,16 @@ static void update(double elapsed_time) {
     puts("quit");
     yf_view_stop(l_vars.view);
   }
+
+  static YF_float rx = 0.0;
+  static YF_float ry = 0.0;
+  rx += elapsed_time;
+  ry += elapsed_time*1.5;
+
+  YF_mat4 m1, m2;
+  yf_mat4_rotx(m1, rx);
+  yf_mat4_roty(m2, ry);
+  yf_mat4_mul(*yf_model_getxform(l_vars.mdl), m1, m2);
 }
 
 /* Tests miscellany. */
@@ -68,7 +79,13 @@ int yf_test_misc(void) {
   l_vars.scn = yf_scene_init();
   assert(l_vars.scn != NULL);
 
-  YF_texture texs[] = {yf_texture_init(YF_FILETYPE_BMP, "tmp/quad.bmp")};
+  YF_mesh mesh = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.gltf");
+  assert(mesh != NULL);
+
+  YF_texture texs[] = {
+    yf_texture_init(YF_FILETYPE_BMP, "tmp/cube_alt.bmp"),
+    yf_texture_init(YF_FILETYPE_BMP, "tmp/quad.bmp")
+  };
   const size_t tex_n = sizeof texs / sizeof texs[0];
   for (size_t i = 0; i < tex_n; ++i)
     assert(texs[i] != NULL);
@@ -78,12 +95,20 @@ int yf_test_misc(void) {
   for (size_t i = 0; i < font_n; ++i)
     assert(fonts[i] != NULL);
 
+  l_vars.mdl = yf_model_init();
+  assert(l_vars.mdl != NULL);
+
+  yf_model_setmesh(l_vars.mdl, mesh);
+  yf_model_settex(l_vars.mdl, texs[0]);
+
+  yf_node_insert(yf_scene_getnode(l_vars.scn), yf_model_getnode(l_vars.mdl));
+
   const size_t quad_n = sizeof l_vars.quads / sizeof l_vars.quads[0];
   for (size_t i = 0; i < quad_n; ++i) {
     l_vars.quads[i] = yf_quad_init();
     assert(l_vars.quads[i] != NULL);
 
-    yf_quad_settex(l_vars.quads[i], texs[i%tex_n]);
+    yf_quad_settex(l_vars.quads[i], texs[1]);
     if (i == quad_n-1) {
       YF_rect rect = *yf_quad_getrect(l_vars.quads[i]);
       rect.size.width >>= 1;
@@ -116,6 +141,7 @@ int yf_test_misc(void) {
         yf_label_getnode(l_vars.labls[i]));
   }
 
+  yf_scene_setcolor(l_vars.scn, YF_COLOR_DARKGREY);
   yf_view_setscene(l_vars.view, l_vars.scn);
 
   if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
@@ -124,10 +150,14 @@ int yf_test_misc(void) {
   yf_view_deinit(l_vars.view);
   yf_scene_deinit(l_vars.scn);
   yf_window_deinit(l_vars.win);
+
+  yf_model_deinit(l_vars.mdl);
   for (size_t i = 0; i < quad_n; ++i)
     yf_quad_deinit(l_vars.quads[i]);
   for (size_t i = 0; i < labl_n; ++i)
     yf_label_deinit(l_vars.labls[i]);
+
+  yf_mesh_deinit(mesh);
   for (size_t i = 0; i < tex_n; ++i)
     yf_texture_deinit(texs[i]);
   for (size_t i = 0; i < font_n; ++i)
