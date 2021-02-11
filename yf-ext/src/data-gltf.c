@@ -61,6 +61,8 @@ typedef struct {
 /* Type defining the 'glTF.nodes' property. */
 typedef struct {
   struct {
+    size_t *children;
+    size_t child_n;
     size_t mesh;
     char *name;
   } *v;
@@ -848,7 +850,52 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
   do {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
-        if (strcmp("mesh", symbol->tokens) == 0) {
+        if (strcmp("children", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          size_t i = 0;
+          long long child;
+          do {
+            switch (next_symbol(file, symbol)) {
+              case YF_SYMBOL_NUM:
+                errno = 0;
+                child = strtoll(symbol->tokens, NULL, 0);
+                if (errno != 0) {
+                  yf_seterr(YF_ERR_OTHER, __func__);
+                  return -1;
+                }
+                if (i == nodes->v[index].child_n) {
+                  const size_t n = i == 0 ? 1 : i<<1;
+                  void *tmp = realloc(nodes->v[index].children,
+                      n*sizeof *nodes->v[index].children);
+                  if (tmp == NULL) {
+                    yf_seterr(YF_ERR_NOMEM, __func__);
+                    return -1;
+                  }
+                  nodes->v[index].children = tmp;
+                  nodes->v[index].child_n = n;
+                }
+                nodes->v[index].children[i++] = child;
+                break;
+
+              case YF_SYMBOL_OP:
+                if (symbol->tokens[0] == ']') {
+                  if (i < nodes->v[index].child_n) {
+                    nodes->v[index].child_n = i;
+                    void *tmp = realloc(nodes->v[index].children,
+                        i*sizeof *nodes->v[index].children);
+                    if (tmp != NULL)
+                      nodes->v[index].children = tmp;
+                  }
+                }
+                break;
+
+              default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+        } else if (strcmp("mesh", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
           errno = 0;
@@ -2065,7 +2112,8 @@ static void print_gltf(const L_gltf *gltf) {
   puts("glTF.scenes:");
   printf(" n: %lu\n", gltf->scenes.n);
   for (size_t i = 0; i < gltf->scenes.n; ++i) {
-    printf(" scene '%s': [ ", gltf->scenes.v[i].name);
+    printf(" scene '%s':\n", gltf->scenes.v[i].name);
+    printf("  nodes: [ ");
     for (size_t j = 0; j < gltf->scenes.v[i].node_n; ++j)
       printf("%lu ", gltf->scenes.v[i].nodes[j]);
     puts("]");
@@ -2075,6 +2123,10 @@ static void print_gltf(const L_gltf *gltf) {
   printf(" n: %lu\n", gltf->nodes.n);
   for (size_t i = 0; i < gltf->nodes.n; ++i) {
     printf(" node '%s':\n", gltf->nodes.v[i].name);
+    printf("  children: [ ");
+    for (size_t j = 0; j < gltf->nodes.v[i].child_n; ++j)
+      printf("%lu ", gltf->nodes.v[i].children[j]);
+    puts("]");
     printf("  mesh: %lu\n", gltf->nodes.v[i].mesh);
   }
 
