@@ -65,6 +65,16 @@ typedef struct {
     size_t child_n;
     size_t camera;
     size_t mesh;
+#define YF_GLTF_XFORM_NONE 0
+#define YF_GLTF_XFORM_M    0x01
+#define YF_GLTF_XFORM_T    0x02
+#define YF_GLTF_XFORM_R    0x04
+#define YF_GLTF_XFORM_S    0x08
+    unsigned xform_mask;
+    union {
+      YF_mat4 matrix;
+      struct { YF_vec3 t; YF_vec4 r; YF_vec3 s; } trs;
+    };
     char *name;
   } *v;
   size_t n;
@@ -915,6 +925,62 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
             yf_seterr(YF_ERR_OTHER, __func__);
             return -1;
           }
+        } else if (strcmp("matrix", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          nodes->v[index].xform_mask = YF_GLTF_XFORM_M;
+          for (size_t i = 0; i < 16; ++i) {
+            next_symbol(file, symbol);
+            errno = 0;
+            nodes->v[index].matrix[i] = strtof(symbol->tokens, NULL);
+            if (errno != 0) {
+              yf_seterr(YF_ERR_OTHER, __func__);
+              return -1;
+            }
+            next_symbol(file, symbol);
+          }
+        } else if (strcmp("translation", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          nodes->v[index].xform_mask |= YF_GLTF_XFORM_T;
+          for (size_t i = 0; i < 3; ++i) {
+            next_symbol(file, symbol);
+            errno = 0;
+            nodes->v[index].trs.t[i] = strtof(symbol->tokens, NULL);
+            if (errno != 0) {
+              yf_seterr(YF_ERR_OTHER, __func__);
+              return -1;
+            }
+            next_symbol(file, symbol);
+          }
+        } else if (strcmp("rotation", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          nodes->v[index].xform_mask |= YF_GLTF_XFORM_R;
+          for (size_t i = 0; i < 4; ++i) {
+            next_symbol(file, symbol);
+            errno = 0;
+            nodes->v[index].trs.r[i] = strtof(symbol->tokens, NULL);
+            if (errno != 0) {
+              yf_seterr(YF_ERR_OTHER, __func__);
+              return -1;
+            }
+            next_symbol(file, symbol);
+          }
+        } else if (strcmp("scale", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          nodes->v[index].xform_mask |= YF_GLTF_XFORM_S;
+          for (size_t i = 0; i < 3; ++i) {
+            next_symbol(file, symbol);
+            errno = 0;
+            nodes->v[index].trs.s[i] = strtof(symbol->tokens, NULL);
+            if (errno != 0) {
+              yf_seterr(YF_ERR_OTHER, __func__);
+              return -1;
+            }
+            next_symbol(file, symbol);
+          }
         } else if (strcmp("name", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
@@ -931,8 +997,20 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
         break;
 
       case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '}')
+        if (symbol->tokens[0] == '}') {
+          const unsigned mask = nodes->v[index].xform_mask;
+          if (mask != YF_GLTF_XFORM_NONE && !(mask & YF_GLTF_XFORM_M)) {
+            if (!(mask & YF_GLTF_XFORM_T))
+              yf_vec3_set(nodes->v[index].trs.t, 0.0);
+            if (!(mask & YF_GLTF_XFORM_R)) {
+              yf_vec4_set(nodes->v[index].trs.r, 0.0);
+              nodes->v[index].trs.r[3] = 1.0;
+            }
+            if (!(mask & YF_GLTF_XFORM_S))
+              yf_vec3_set(nodes->v[index].trs.s, 1.0);
+          }
           return 0;
+        }
         break;
 
       default:
@@ -2140,6 +2218,27 @@ static void print_gltf(const L_gltf *gltf) {
     puts("]");
     printf("  camera: %lu\n", gltf->nodes.v[i].camera);
     printf("  mesh: %lu\n", gltf->nodes.v[i].mesh);
+    if (gltf->nodes.v[i].xform_mask == YF_GLTF_XFORM_NONE) {
+      puts("  (no transform)");
+    } else if (gltf->nodes.v[i].xform_mask == YF_GLTF_XFORM_NONE) {
+      printf("  matrix: [ ");
+      for (size_t j = 0; j < 16; ++j)
+        printf("%.4f ", gltf->nodes.v[i].matrix[j]);
+      puts("]");
+    } else {
+      printf("  translation: [ ");
+      for (size_t j = 0; j < 3; ++j)
+        printf("%.4f ", gltf->nodes.v[i].trs.t[j]);
+      puts("]");
+      printf("  rotation: [ ");
+      for (size_t j = 0; j < 4; ++j)
+        printf("%.4f ", gltf->nodes.v[i].trs.r[j]);
+      puts("]");
+      printf("  scale: [ ");
+      for (size_t j = 0; j < 3; ++j)
+        printf("%.4f ", gltf->nodes.v[i].trs.s[j]);
+      puts("]");
+    }
   }
 
   puts("glTF.meshes:");
