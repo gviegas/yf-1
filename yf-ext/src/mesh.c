@@ -18,6 +18,7 @@
 #include "mesh.h"
 #include "coreobj.h"
 #include "vertex.h"
+#include "data-gltf.h"
 #include "data-obj.h"
 
 #undef YF_BUFLEN
@@ -70,11 +71,13 @@ YF_mesh yf_mesh_init(int filetype, const char *pathname) {
 
   switch (filetype) {
     case YF_FILETYPE_INTERNAL:
-    case YF_FILETYPE_COLLADA:
-    case YF_FILETYPE_GLTF:
       /* TODO */
       assert(0);
       return NULL;
+    case YF_FILETYPE_GLTF:
+      if (yf_loadgltf(pathname, &data) != 0)
+        return NULL;
+      break;
     case YF_FILETYPE_OBJ:
       if (yf_loadobj(pathname, &data) != 0)
         return NULL;
