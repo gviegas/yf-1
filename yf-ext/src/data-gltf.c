@@ -88,8 +88,13 @@ typedef struct {
   struct {
 #define YF_GLTF_ATTR_POS  0
 #define YF_GLTF_ATTR_NORM 1
-#define YF_GLTF_ATTR_TEX0 2
-#define YF_GLTF_ATTR_N    3
+#define YF_GLTF_ATTR_TAN  2
+#define YF_GLTF_ATTR_TC0  3
+#define YF_GLTF_ATTR_TC1  4
+#define YF_GLTF_ATTR_CLR0 5
+#define YF_GLTF_ATTR_JNT0 6
+#define YF_GLTF_ATTR_WGT0 7
+#define YF_GLTF_ATTR_N    8
     size_t attributes[YF_GLTF_ATTR_N];
     size_t indices;
     size_t material;
@@ -1190,16 +1195,67 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
                     yf_seterr(YF_ERR_OTHER, __func__);
                     return -1;
                   }
-                } else if (strcmp("TEXCOORD_0", symbol->tokens) == 0) {
+                } else if (strcmp("TANGENT", symbol->tokens) == 0) {
                   next_symbol(file, symbol); /* : */
                   next_symbol(file, symbol);
                   errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_TEX0] =
+                  primitives->v[index].attributes[YF_GLTF_ATTR_TAN] =
                     strtoll(symbol->tokens, NULL, 0);
                   if (errno != 0) {
                     yf_seterr(YF_ERR_OTHER, __func__);
                     return -1;
                   }
+                } else if (strcmp("TEXCOORD_0", symbol->tokens) == 0) {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  errno = 0;
+                  primitives->v[index].attributes[YF_GLTF_ATTR_TC0] =
+                    strtoll(symbol->tokens, NULL, 0);
+                  if (errno != 0) {
+                    yf_seterr(YF_ERR_OTHER, __func__);
+                    return -1;
+                  }
+                } else if (strcmp("TEXCOORD_1", symbol->tokens) == 0) {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  errno = 0;
+                  primitives->v[index].attributes[YF_GLTF_ATTR_TC1] =
+                    strtoll(symbol->tokens, NULL, 0);
+                  if (errno != 0) {
+                    yf_seterr(YF_ERR_OTHER, __func__);
+                    return -1;
+                  }
+                } else if (strcmp("COLOR_0", symbol->tokens) == 0) {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  errno = 0;
+                  primitives->v[index].attributes[YF_GLTF_ATTR_CLR0] =
+                    strtoll(symbol->tokens, NULL, 0);
+                  if (errno != 0) {
+                    yf_seterr(YF_ERR_OTHER, __func__);
+                    return -1;
+                  }
+                } else if (strcmp("JOINTS_0", symbol->tokens) == 0) {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  errno = 0;
+                  primitives->v[index].attributes[YF_GLTF_ATTR_JNT0] =
+                    strtoll(symbol->tokens, NULL, 0);
+                  if (errno != 0) {
+                    yf_seterr(YF_ERR_OTHER, __func__);
+                    return -1;
+                  }
+                } else if (strcmp("WEIGHTS_0", symbol->tokens) == 0) {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  errno = 0;
+                  primitives->v[index].attributes[YF_GLTF_ATTR_WGT0] =
+                    strtoll(symbol->tokens, NULL, 0);
+                  if (errno != 0) {
+                    yf_seterr(YF_ERR_OTHER, __func__);
+                    return -1;
+                  }
+
                 }
                 break;
 
@@ -2115,7 +2171,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
         }
         break;
 
-      case YF_GLTF_ATTR_TEX0:
+      case YF_GLTF_ATTR_TC0:
         assert(file != NULL);
         if (buf_i != attrs[i].buffer) {
           fclose(file);
@@ -2337,8 +2393,16 @@ static void print_gltf(const L_gltf *gltf) {
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_POS]);
       printf("   NORMAL: %lu\n",
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_NORM]);
-      printf("   TEXTURE_0: %lu\n",
-          gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TEX0]);
+      printf("   TANGENT: %lu\n",
+          gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TAN]);
+      printf("   TEXCOORD_0: %lu\n",
+          gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TC0]);
+      printf("   TEXCOORD_1: %lu\n",
+          gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TC1]);
+      printf("   JOINTS_0: %lu\n",
+          gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_JNT0]);
+      printf("   WEIGHTS_0: %lu\n",
+          gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_WGT0]);
       printf("  indices: %lu\n", gltf->meshes.v[i].primitives.v[j].indices);
       printf("  material: %lu\n", gltf->meshes.v[i].primitives.v[j].material);
       printf("  mode: %d\n", gltf->meshes.v[i].primitives.v[j].mode);
