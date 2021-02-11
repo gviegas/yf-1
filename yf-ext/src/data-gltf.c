@@ -63,6 +63,7 @@ typedef struct {
   struct {
     size_t *children;
     size_t child_n;
+    size_t camera;
     size_t mesh;
     char *name;
   } *v;
@@ -846,6 +847,7 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
   assert(symbol->tokens[0] == '{');
 
   nodes->v[index].mesh = SIZE_MAX;
+  nodes->v[index].camera = SIZE_MAX;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -895,6 +897,15 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
                 return -1;
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+        } else if (strcmp("camera", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          nodes->v[index].camera = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
         } else if (strcmp("mesh", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
@@ -2127,6 +2138,7 @@ static void print_gltf(const L_gltf *gltf) {
     for (size_t j = 0; j < gltf->nodes.v[i].child_n; ++j)
       printf("%lu ", gltf->nodes.v[i].children[j]);
     puts("]");
+    printf("  camera: %lu\n", gltf->nodes.v[i].camera);
     printf("  mesh: %lu\n", gltf->nodes.v[i].mesh);
   }
 
