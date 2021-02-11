@@ -93,6 +93,14 @@ typedef struct {
     size_t attributes[YF_GLTF_ATTR_N];
     size_t indices;
     size_t material;
+#define YF_GLTF_MODE_PTS      0
+#define YF_GLTF_MODE_LNS      1
+#define YF_GLTF_MODE_LNLOOP   2
+#define YF_GLTF_MODE_LNSTRIP  3
+#define YF_GLTF_MODE_TRIS     4
+#define YF_GLTF_MODE_TRISTRIP 5
+#define YF_GLTF_MODE_TRIFAN   6
+    int mode;
   } *v;
   size_t n;
 } L_primitives;
@@ -1147,8 +1155,9 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '{');
 
-  primitives->v[index].material = SIZE_MAX;
   primitives->v[index].indices = SIZE_MAX;
+  primitives->v[index].material = SIZE_MAX;
+  primitives->v[index].mode = YF_GLTF_MODE_TRIS;
   for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i)
     primitives->v[index].attributes[i] = SIZE_MAX;
 
@@ -1216,6 +1225,15 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
           next_symbol(file, symbol);
           errno = 0;
           primitives->v[index].material = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
+          }
+        } else if (strcmp("mode", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          primitives->v[index].mode = strtol(symbol->tokens, NULL, 0);
           if (errno != 0) {
             yf_seterr(YF_ERR_OTHER, __func__);
             return -1;
@@ -2323,6 +2341,7 @@ static void print_gltf(const L_gltf *gltf) {
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TEX0]);
       printf("  indices: %lu\n", gltf->meshes.v[i].primitives.v[j].indices);
       printf("  material: %lu\n", gltf->meshes.v[i].primitives.v[j].material);
+      printf("  mode: %d\n", gltf->meshes.v[i].primitives.v[j].mode);
     }
   }
 
