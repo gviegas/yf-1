@@ -40,7 +40,7 @@ typedef struct {
    is equal to 'YF_SYMBOL_ERR' - the global error variable is not set. */
 static int next_symbol(FILE *file, L_symbol *symbol);
 
-/* Type defining the 'asset' property. */
+/* Type defining the 'glTF.asset' property. */
 typedef struct {
   char *copyright;
   char *generator;
@@ -48,7 +48,7 @@ typedef struct {
   char *min_version;
 } L_asset;
 
-/* Type defining the 'scenes' property. */
+/* Type defining the 'glTF.scenes' property. */
 typedef struct {
   struct {
     size_t *nodes;
@@ -58,7 +58,7 @@ typedef struct {
   size_t n;
 } L_scenes;
 
-/* Type defining the 'nodes' property. */
+/* Type defining the 'glTF.nodes' property. */
 typedef struct {
   struct {
     size_t mesh;
@@ -67,7 +67,7 @@ typedef struct {
   size_t n;
 } L_nodes;
 
-/* Type defining the 'meshes.primitives' property. */
+/* Type defining the 'glTF.meshes.primitives' property. */
 typedef struct {
   struct {
 #define YF_GLTF_ATTR_POS  0
@@ -81,7 +81,7 @@ typedef struct {
   size_t n;
 } L_primitives;
 
-/* Type defining the 'meshes' property. */
+/* Type defining the 'glTF.meshes' property. */
 typedef struct {
   struct {
     L_primitives primitives;
@@ -90,7 +90,7 @@ typedef struct {
   size_t n;
 } L_meshes;
 
-/* Type defining the 'materials' property. */
+/* Type defining the 'glTF.materials' property. */
 typedef struct {
   struct {
     struct {
@@ -104,7 +104,7 @@ typedef struct {
   size_t n;
 } L_materials;
 
-/* Type defining the 'accessors' property. */
+/* Type defining the 'glTF.accessors' property. */
 typedef struct {
   struct {
     size_t buffer_view;
@@ -140,7 +140,7 @@ typedef struct {
   size_t n;
 } L_accessors;
 
-/* Type defining the 'bufferViews' property. */
+/* Type defining the 'glTF.bufferViews' property. */
 typedef struct {
   struct {
     size_t buffer;
@@ -152,7 +152,7 @@ typedef struct {
   size_t n;
 } L_bufferviews;
 
-/* Type defining the 'buffers' property. */
+/* Type defining the 'glTF.buffers' property. */
 typedef struct {
   struct {
     size_t byte_len;
@@ -180,36 +180,72 @@ typedef struct {
    This allows unknown/unimplemented properties to be ignored. */
 static int consume_prop(FILE *file, L_symbol *symbol);
 
-/* Structured glTF content parsing functions. */
+/* Parses the root glTF object. */
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
+
+/* Parses the 'glTF.asset' property. */
 static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset);
+
+/* Parses the 'glTF.scene' property. */
 static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene);
+
+/* Parses the 'glTF.scenes' property. */
 static int parse_scenes(FILE *file, L_symbol *symbol, L_scenes *scenes);
+
+/* Parses a given element from the 'glTF.scenes' property. */
 static int parse_scenes_i(FILE *file, L_symbol *symbol,
     L_scenes *scenes, size_t index);
+
+/* Parses the 'glTF.nodes' property. */
 static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes);
+
+/* Parses a given element from the 'glTF.nodes' property. */
 static int parse_nodes_i(FILE *file, L_symbol *symbol,
     L_nodes *nodes, size_t index);
+
+/* Parses the 'glTF.meshes.primitives' property. */
 static int parse_primitives(FILE *file, L_symbol *symbol,
     L_primitives *primitives);
+
+/* Parses a given element from the 'glTF.meshes.primitives' property. */
 static int parse_primitives_i(FILE *file, L_symbol *symbol,
     L_primitives *primitives, size_t index);
+
+/* Parses the 'glTF.meshes' property. */
 static int parse_meshes(FILE *file, L_symbol *symbol, L_meshes *meshes);
+
+/* Parses a given element from the 'glTF.meshes' property. */
 static int parse_meshes_i(FILE *file, L_symbol *symbol,
     L_meshes *meshes, size_t index);
+
+/* Parses the 'glTF.materials' property. */
 static int parse_materials(FILE *file, L_symbol *symbol,
     L_materials *materials);
+
+/* Parses a given element from the 'glTF.materials' property. */
 static int parse_materials_i(FILE *file, L_symbol *symbol,
     L_materials *materials, size_t index);
+
+/* Parses the 'glTF.accessors' property. */
 static int parse_accessors(FILE *file, L_symbol *symbol,
     L_accessors *accessors);
+
+/* Parses a given element from the 'glTF.accessors' property. */
 static int parse_accessors_i(FILE *file, L_symbol *symbol,
     L_accessors *accessors, size_t index);
+
+/* Parses the 'glTF.bufferViews' property. */
 static int parse_bufferviews(FILE *file, L_symbol *symbol,
     L_bufferviews *bufferviews);
+
+/* Parses a given element from the 'glTF.bufferViews' property. */
 static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
     L_bufferviews *bufferviews, size_t index);
+
+/* Parses the 'glTF.buffers' property. */
 static int parse_buffers(FILE *file, L_symbol *symbol, L_buffers *buffers);
+
+/* Parses a given element from the 'glTF.buffers' property. */
 static int parse_buffers_i(FILE *file, L_symbol *symbol,
     L_buffers *buffers, size_t index);
 
@@ -218,6 +254,10 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data);
 
 /* Deinitializes glTF contents. */
 static void deinit_gltf(L_gltf *gltf);
+
+#ifdef YF_DEVEL
+static void print_gltf(const L_gltf *gltf);
+#endif
 
 int yf_loadgltf(const char *pathname, YF_meshdt *data) {
   if (pathname == NULL) {
@@ -247,133 +287,15 @@ int yf_loadgltf(const char *pathname, YF_meshdt *data) {
     return -1;
   }
 
+#ifdef YF_DEVEL
+  print_gltf(&gltf);
+#endif
+
   if (load_meshdt(&gltf, data) != 0) {
     deinit_gltf(&gltf);
     fclose(file);
     return -1;
   }
-
-////////////////////////////////////////
-#ifdef YF_DEVEL
-  puts("glTF.asset:");
-  printf(" copyright: %s\n", gltf.asset.copyright);
-  printf(" generator: %s\n", gltf.asset.generator);
-  printf(" version: %s\n", gltf.asset.version);
-  printf(" minVersion: %s\n", gltf.asset.min_version);
-
-  puts("glTF.scene:");
-  printf(" #: %ld\n", gltf.scene);
-
-  puts("glTF.scenes:");
-  printf(" n: %lu\n", gltf.scenes.n);
-  for (size_t i = 0; i < gltf.scenes.n; ++i) {
-    printf(" scene '%s': [ ", gltf.scenes.v[i].name);
-    for (size_t j = 0; j < gltf.scenes.v[i].node_n; ++j)
-      printf("%lu ", gltf.scenes.v[i].nodes[j]);
-    puts("]");
-  }
-
-  puts("glTF.nodes:");
-  printf(" n: %lu\n", gltf.nodes.n);
-  for (size_t i = 0; i < gltf.nodes.n; ++i) {
-    printf(" node '%s':\n", gltf.nodes.v[i].name);
-    printf("  mesh: %lu\n", gltf.nodes.v[i].mesh);
-  }
-
-  puts("glTF.meshes:");
-  printf(" n: %lu\n", gltf.meshes.n);
-  for (size_t i = 0; i < gltf.meshes.n; ++i) {
-    printf(" mesh '%s':\n", gltf.meshes.v[i].name);
-    printf("  n: %lu\n", gltf.meshes.v[i].primitives.n);
-    for (size_t j = 0; j < gltf.meshes.v[i].primitives.n; ++j) {
-      printf("  primitives #%lu:\n", j);
-      printf("   POSITION: %lu\n",
-          gltf.meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_POS]);
-      printf("   NORMAL: %lu\n",
-          gltf.meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_NORM]);
-      printf("   TEXTURE_0: %lu\n",
-          gltf.meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TEX0]);
-      printf("  indices: %lu\n", gltf.meshes.v[i].primitives.v[j].indices);
-      printf("  material: %lu\n", gltf.meshes.v[i].primitives.v[j].material);
-    }
-  }
-
-  puts("glTF.materials:");
-  printf(" n: %lu\n", gltf.materials.n);
-  for (size_t i = 0; i < gltf.materials.n; ++i) {
-    printf(" material '%s':\n", gltf.materials.v[i].name);
-    puts("  pbrMetallicRoughness:");
-    printf("   baseColorFactor: [%.9f, %.9f, %.9f, %.9f]\n",
-        gltf.materials.v[i].pbrmr.base_clr_fac[0],
-        gltf.materials.v[i].pbrmr.base_clr_fac[1],
-        gltf.materials.v[i].pbrmr.base_clr_fac[2],
-        gltf.materials.v[i].pbrmr.base_clr_fac[3]);
-    printf("   metallicFactor: %.9f\n", gltf.materials.v[i].pbrmr.metallic_fac);
-    printf("   roughnessFactor: %.9f\n",
-        gltf.materials.v[i].pbrmr.roughness_fac);
-    printf("  doubleSided: %d\n", gltf.materials.v[i].double_sided);
-  }
-
-  puts("glTF.accessors:");
-  printf(" n: %lu\n", gltf.accessors.n);
-  for (size_t i = 0; i < gltf.accessors.n; ++i) {
-    printf(" accessor '%s':\n", gltf.accessors.v[i].name);
-    printf("  bufferView: %lu\n", gltf.accessors.v[i].buffer_view);
-    printf("  byteOffset: %lu\n", gltf.accessors.v[i].byte_off);
-    printf("  count: %lu\n", gltf.accessors.v[i].count);
-    printf("  componenType: %d\n", gltf.accessors.v[i].comp_type);
-    printf("  type: %d\n", gltf.accessors.v[i].type);
-    switch (gltf.accessors.v[i].type) {
-      case YF_GLTF_TYPE_SCALAR:
-        printf("  min: %.9f\n", gltf.accessors.v[i].min.s);
-        printf("  max: %.9f\n", gltf.accessors.v[i].max.s);
-        break;
-      case YF_GLTF_TYPE_VEC2:
-        printf("  min: [%.9f, %.9f]\n",
-            gltf.accessors.v[i].min.v2[0], gltf.accessors.v[i].min.v2[1]);
-        printf("  max: [%.9f, %.9f]\n",
-            gltf.accessors.v[i].max.v2[0], gltf.accessors.v[i].max.v2[1]);
-        break;
-      case YF_GLTF_TYPE_VEC3:
-        printf("  min: [%.9f, %.9f, %.9f]\n",
-            gltf.accessors.v[i].min.v3[0], gltf.accessors.v[i].min.v3[1],
-            gltf.accessors.v[i].min.v3[2]);
-        printf("  max: [%.9f, %.9f, %.9f]\n",
-            gltf.accessors.v[i].max.v3[0], gltf.accessors.v[i].max.v3[1],
-            gltf.accessors.v[i].max.v3[2]);
-        break;
-      case YF_GLTF_TYPE_VEC4:
-        printf("  min: [%.9f, %.9f, %.9f, %.9f]\n",
-            gltf.accessors.v[i].min.v4[0], gltf.accessors.v[i].min.v4[1],
-            gltf.accessors.v[i].min.v4[2], gltf.accessors.v[i].min.v4[3]);
-        printf("  max: [%.9f, %.9f, %.9f, %.9f]\n",
-            gltf.accessors.v[i].max.v4[0], gltf.accessors.v[i].max.v4[1],
-            gltf.accessors.v[i].max.v4[2], gltf.accessors.v[i].max.v4[3]);
-        break;
-      default:
-        puts("  missing min/max output...");
-    }
-  }
-
-  puts("glTF.bufferViews:");
-  printf(" n: %lu\n", gltf.bufferviews.n);
-  for (size_t i = 0; i < gltf.bufferviews.n; ++i) {
-    printf(" buffer view '%s':\n", gltf.bufferviews.v[i].name);
-    printf("  buffer: %lu\n", gltf.bufferviews.v[i].buffer);
-    printf("  byteOffset: %lu\n", gltf.bufferviews.v[i].byte_off);
-    printf("  byteLength: %lu\n", gltf.bufferviews.v[i].byte_len);
-    printf("  byteStride: %lu\n", gltf.bufferviews.v[i].byte_strd);
-  }
-
-  puts("glTF.buffers:");
-  printf(" n: %lu\n", gltf.buffers.n);
-  for (size_t i = 0; i < gltf.buffers.n; ++i) {
-    printf(" buffer '%s':\n", gltf.buffers.v[i].name);
-    printf("  byteLength: %lu\n", gltf.buffers.v[i].byte_len);
-    printf("  uri: %s\n", gltf.buffers.v[i].uri);
-  }
-#endif
-////////////////////////////////////////
 
   deinit_gltf(&gltf);
   fclose(file);
@@ -569,6 +491,8 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
   assert(gltf != NULL);
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '{');
+
+  gltf->scene = SIZE_MAX;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -919,6 +843,8 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '{');
 
+  nodes->v[index].mesh = SIZE_MAX;
+
   do {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
@@ -1026,6 +952,8 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '{');
 
+  primitives->v[index].material = SIZE_MAX;
+  primitives->v[index].indices = SIZE_MAX;
   for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i)
     primitives->v[index].attributes[i] = SIZE_MAX;
 
@@ -1282,6 +1210,13 @@ static int parse_materials_i(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '{');
 
+  materials->v[index].pbrmr.base_clr_fac[0] = 1.0;
+  materials->v[index].pbrmr.base_clr_fac[1] = 1.0;
+  materials->v[index].pbrmr.base_clr_fac[2] = 1.0;
+  materials->v[index].pbrmr.base_clr_fac[3] = 1.0;
+  materials->v[index].pbrmr.metallic_fac = 1.0;
+  materials->v[index].pbrmr.roughness_fac = 1.0;
+
   do {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
@@ -1457,6 +1392,8 @@ static int parse_accessors_i(FILE *file, L_symbol *symbol,
   assert(index < accessors->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '{');
+
+  accessors->v[index].buffer_view = SIZE_MAX;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -2106,3 +2043,133 @@ static void deinit_gltf(L_gltf *gltf) {
   }
   free(gltf->buffers.v);
 }
+
+
+/*
+ * DEVEL
+ */
+
+#ifdef YF_DEVEL
+static void print_gltf(const L_gltf *gltf) {
+  printf("\n[YF] OUTPUT (%s):\n", __func__);
+
+  puts("glTF.asset:");
+  printf(" copyright: %s\n", gltf->asset.copyright);
+  printf(" generator: %s\n", gltf->asset.generator);
+  printf(" version: %s\n", gltf->asset.version);
+  printf(" minVersion: %s\n", gltf->asset.min_version);
+
+  puts("glTF.scene:");
+  printf(" #: %ld\n", gltf->scene);
+
+  puts("glTF.scenes:");
+  printf(" n: %lu\n", gltf->scenes.n);
+  for (size_t i = 0; i < gltf->scenes.n; ++i) {
+    printf(" scene '%s': [ ", gltf->scenes.v[i].name);
+    for (size_t j = 0; j < gltf->scenes.v[i].node_n; ++j)
+      printf("%lu ", gltf->scenes.v[i].nodes[j]);
+    puts("]");
+  }
+
+  puts("glTF.nodes:");
+  printf(" n: %lu\n", gltf->nodes.n);
+  for (size_t i = 0; i < gltf->nodes.n; ++i) {
+    printf(" node '%s':\n", gltf->nodes.v[i].name);
+    printf("  mesh: %lu\n", gltf->nodes.v[i].mesh);
+  }
+
+  puts("glTF.meshes:");
+  printf(" n: %lu\n", gltf->meshes.n);
+  for (size_t i = 0; i < gltf->meshes.n; ++i) {
+    printf(" mesh '%s':\n", gltf->meshes.v[i].name);
+    printf("  n: %lu\n", gltf->meshes.v[i].primitives.n);
+    for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; ++j) {
+      printf("  primitives #%lu:\n", j);
+      printf("   POSITION: %lu\n",
+          gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_POS]);
+      printf("   NORMAL: %lu\n",
+          gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_NORM]);
+      printf("   TEXTURE_0: %lu\n",
+          gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_TEX0]);
+      printf("  indices: %lu\n", gltf->meshes.v[i].primitives.v[j].indices);
+      printf("  material: %lu\n", gltf->meshes.v[i].primitives.v[j].material);
+    }
+  }
+
+  puts("glTF.materials:");
+  printf(" n: %lu\n", gltf->materials.n);
+  for (size_t i = 0; i < gltf->materials.n; ++i) {
+    printf(" material '%s':\n", gltf->materials.v[i].name);
+    puts("  pbrMetallicRoughness:");
+    printf("   baseColorFactor: [%.9f, %.9f, %.9f, %.9f]\n",
+        gltf->materials.v[i].pbrmr.base_clr_fac[0],
+        gltf->materials.v[i].pbrmr.base_clr_fac[1],
+        gltf->materials.v[i].pbrmr.base_clr_fac[2],
+        gltf->materials.v[i].pbrmr.base_clr_fac[3]);
+    printf("   metallicFactor: %.9f\n",
+        gltf->materials.v[i].pbrmr.metallic_fac);
+    printf("   roughnessFactor: %.9f\n",
+        gltf->materials.v[i].pbrmr.roughness_fac);
+    printf("  doubleSided: %d\n", gltf->materials.v[i].double_sided);
+  }
+
+  puts("glTF.accessors:");
+  printf(" n: %lu\n", gltf->accessors.n);
+  for (size_t i = 0; i < gltf->accessors.n; ++i) {
+    printf(" accessor '%s':\n", gltf->accessors.v[i].name);
+    printf("  bufferView: %lu\n", gltf->accessors.v[i].buffer_view);
+    printf("  byteOffset: %lu\n", gltf->accessors.v[i].byte_off);
+    printf("  count: %lu\n", gltf->accessors.v[i].count);
+    printf("  componenType: %d\n", gltf->accessors.v[i].comp_type);
+    printf("  type: %d\n", gltf->accessors.v[i].type);
+    switch (gltf->accessors.v[i].type) {
+      case YF_GLTF_TYPE_SCALAR:
+        printf("  min: %.9f\n", gltf->accessors.v[i].min.s);
+        printf("  max: %.9f\n", gltf->accessors.v[i].max.s);
+        break;
+      case YF_GLTF_TYPE_VEC2:
+        printf("  min: [%.9f, %.9f]\n",
+            gltf->accessors.v[i].min.v2[0], gltf->accessors.v[i].min.v2[1]);
+        printf("  max: [%.9f, %.9f]\n",
+            gltf->accessors.v[i].max.v2[0], gltf->accessors.v[i].max.v2[1]);
+        break;
+      case YF_GLTF_TYPE_VEC3:
+        printf("  min: [%.9f, %.9f, %.9f]\n",
+            gltf->accessors.v[i].min.v3[0], gltf->accessors.v[i].min.v3[1],
+            gltf->accessors.v[i].min.v3[2]);
+        printf("  max: [%.9f, %.9f, %.9f]\n",
+            gltf->accessors.v[i].max.v3[0], gltf->accessors.v[i].max.v3[1],
+            gltf->accessors.v[i].max.v3[2]);
+        break;
+      case YF_GLTF_TYPE_VEC4:
+        printf("  min: [%.9f, %.9f, %.9f, %.9f]\n",
+            gltf->accessors.v[i].min.v4[0], gltf->accessors.v[i].min.v4[1],
+            gltf->accessors.v[i].min.v4[2], gltf->accessors.v[i].min.v4[3]);
+        printf("  max: [%.9f, %.9f, %.9f, %.9f]\n",
+            gltf->accessors.v[i].max.v4[0], gltf->accessors.v[i].max.v4[1],
+            gltf->accessors.v[i].max.v4[2], gltf->accessors.v[i].max.v4[3]);
+        break;
+      default:
+        puts("  missing min/max output...");
+    }
+  }
+
+  puts("glTF.bufferViews:");
+  printf(" n: %lu\n", gltf->bufferviews.n);
+  for (size_t i = 0; i < gltf->bufferviews.n; ++i) {
+    printf(" buffer view '%s':\n", gltf->bufferviews.v[i].name);
+    printf("  buffer: %lu\n", gltf->bufferviews.v[i].buffer);
+    printf("  byteOffset: %lu\n", gltf->bufferviews.v[i].byte_off);
+    printf("  byteLength: %lu\n", gltf->bufferviews.v[i].byte_len);
+    printf("  byteStride: %lu\n", gltf->bufferviews.v[i].byte_strd);
+  }
+
+  puts("glTF.buffers:");
+  printf(" n: %lu\n", gltf->buffers.n);
+  for (size_t i = 0; i < gltf->buffers.n; ++i) {
+    printf(" buffer '%s':\n", gltf->buffers.v[i].name);
+    printf("  byteLength: %lu\n", gltf->buffers.v[i].byte_len);
+    printf("  uri: %s\n", gltf->buffers.v[i].uri);
+  }
+}
+#endif
