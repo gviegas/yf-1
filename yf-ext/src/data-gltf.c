@@ -75,6 +75,7 @@ typedef struct {
       YF_mat4 matrix;
       struct { YF_vec3 t; YF_vec4 r; YF_vec3 s; } trs;
     };
+    size_t skin;
     char *name;
   } *v;
   size_t n;
@@ -858,6 +859,7 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
 
   nodes->v[index].mesh = SIZE_MAX;
   nodes->v[index].camera = SIZE_MAX;
+  nodes->v[index].skin = SIZE_MAX;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -980,6 +982,15 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
               return -1;
             }
             next_symbol(file, symbol);
+          }
+        } else if (strcmp("skin", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          errno = 0;
+          nodes->v[index].skin = strtoll(symbol->tokens, NULL, 0);
+          if (errno != 0) {
+            yf_seterr(YF_ERR_OTHER, __func__);
+            return -1;
           }
         } else if (strcmp("name", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
@@ -2239,6 +2250,7 @@ static void print_gltf(const L_gltf *gltf) {
         printf("%.4f ", gltf->nodes.v[i].trs.s[j]);
       puts("]");
     }
+    printf("  skin: %lu\n", gltf->nodes.v[i].skin);
   }
 
   puts("glTF.meshes:");
