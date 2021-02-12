@@ -571,14 +571,13 @@ static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_pp) {
   L_id *id = *(L_id **)id_pp;
   assert(id != NULL);
 
-  if (symbol->symbol != YF_SYMBOL_NUM) {
-    next_symbol(file, symbol); /* [ or , */
-    if (symbol->symbol != YF_SYMBOL_NUM) {
+  while (symbol->symbol != YF_SYMBOL_NUM) {
+    next_symbol(file, symbol);
+    if (symbol->symbol == YF_SYMBOL_END || symbol->symbol == YF_SYMBOL_ERR) {
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
   }
-
   errno = 0;
   char *end = NULL;
   ((L_id *)id)[index] = strtoll(symbol->tokens, &end, 0);
@@ -818,68 +817,18 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("children", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol); /* [ */
-          size_t i = 0;
-          long long child;
-          do {
-            switch (next_symbol(file, symbol)) {
-              case YF_SYMBOL_NUM:
-                errno = 0;
-                child = strtoll(symbol->tokens, NULL, 0);
-                if (errno != 0) {
-                  yf_seterr(YF_ERR_OTHER, __func__);
-                  return -1;
-                }
-                if (i == nodes->v[index].child_n) {
-                  const size_t n = i == 0 ? 1 : i<<1;
-                  void *tmp = realloc(nodes->v[index].children,
-                      n*sizeof *nodes->v[index].children);
-                  if (tmp == NULL) {
-                    yf_seterr(YF_ERR_NOMEM, __func__);
-                    return -1;
-                  }
-                  nodes->v[index].children = tmp;
-                  nodes->v[index].child_n = n;
-                }
-                nodes->v[index].children[i++] = child;
-                break;
-
-              case YF_SYMBOL_OP:
-                if (symbol->tokens[0] == ']') {
-                  if (i < nodes->v[index].child_n) {
-                    nodes->v[index].child_n = i;
-                    void *tmp = realloc(nodes->v[index].children,
-                        i*sizeof *nodes->v[index].children);
-                    if (tmp != NULL)
-                      nodes->v[index].children = tmp;
-                  }
-                }
-                break;
-
-              default:
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+          if (parse_array(file, symbol, (void **)&nodes->v[index].children,
+                &nodes->v[index].child_n, sizeof *nodes->v[index].children,
+                parse_id, &nodes->v[index].children) != 0)
+            return -1;
         } else if (strcmp("camera", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          nodes->v[index].camera = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &nodes->v[index].camera;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("mesh", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          nodes->v[index].mesh = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &nodes->v[index].mesh;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("matrix", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
@@ -937,14 +886,9 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
             next_symbol(file, symbol);
           }
         } else if (strcmp("skin", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          nodes->v[index].skin = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &nodes->v[index].skin;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("weights", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
