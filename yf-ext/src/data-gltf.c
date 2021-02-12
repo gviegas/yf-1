@@ -42,6 +42,7 @@ static int next_symbol(FILE *file, L_symbol *symbol);
 
 /* Type defining a glTF id/index. */
 typedef size_t L_id;
+#define YF_GLTF_ID_INV SIZE_MAX
 
 /* Type defining the 'glTF.asset' property. */
 typedef struct {
@@ -566,7 +567,7 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '{');
 
-  gltf->scene = SIZE_MAX;
+  gltf->scene = YF_GLTF_ID_INV;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -827,9 +828,9 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  nodes->v[index].mesh = SIZE_MAX;
-  nodes->v[index].camera = SIZE_MAX;
-  nodes->v[index].skin = SIZE_MAX;
+  nodes->v[index].mesh = YF_GLTF_ID_INV;
+  nodes->v[index].camera = YF_GLTF_ID_INV;
+  nodes->v[index].skin = YF_GLTF_ID_INV;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1060,9 +1061,9 @@ static int parse_targets(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  targets->v[index].position = SIZE_MAX;
-  targets->v[index].normal = SIZE_MAX;
-  targets->v[index].tangent = SIZE_MAX;
+  targets->v[index].position = YF_GLTF_ID_INV;
+  targets->v[index].normal = YF_GLTF_ID_INV;
+  targets->v[index].tangent = YF_GLTF_ID_INV;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1126,11 +1127,11 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  primitives->v[index].indices = SIZE_MAX;
-  primitives->v[index].material = SIZE_MAX;
+  primitives->v[index].indices = YF_GLTF_ID_INV;
+  primitives->v[index].material = YF_GLTF_ID_INV;
   primitives->v[index].mode = YF_GLTF_MODE_TRIS;
   for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i)
-    primitives->v[index].attributes[i] = SIZE_MAX;
+    primitives->v[index].attributes[i] = YF_GLTF_ID_INV;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1526,7 +1527,7 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  accessors->v[index].buffer_view = SIZE_MAX;
+  accessors->v[index].buffer_view = YF_GLTF_ID_INV;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1808,22 +1809,22 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
     return -1;
   }
 
-  struct { size_t accessor, view, buffer; } idx, attrs[YF_GLTF_ATTR_N];
+  struct { L_id accessor, view, buffer; } idx, attrs[YF_GLTF_ATTR_N];
   const L_primitives *prim = &gltf->meshes.v[0].primitives;
 
   idx.accessor = prim->v[0].indices;
-  if (idx.accessor != SIZE_MAX) {
+  if (idx.accessor != YF_GLTF_ID_INV) {
     idx.view = gltf->accessors.v[idx.accessor].buffer_view;
     idx.buffer = gltf->bufferviews.v[idx.view].buffer;
   }
   for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i) {
     attrs[i].accessor = prim->v[0].attributes[i];
-    if (attrs[i].accessor != SIZE_MAX) {
+    if (attrs[i].accessor != YF_GLTF_ID_INV) {
       attrs[i].view = gltf->accessors.v[attrs[i].accessor].buffer_view;
       attrs[i].buffer = gltf->bufferviews.v[attrs[i].view].buffer;
     }
   }
-  if (attrs[YF_GLTF_ATTR_POS].accessor == SIZE_MAX) {
+  if (attrs[YF_GLTF_ATTR_POS].accessor == YF_GLTF_ID_INV) {
     yf_seterr(YF_ERR_UNSUP, __func__);
     return -1;
   }
@@ -1837,7 +1838,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
   const size_t i_strd = v_n < UINT16_MAX ? 2 : 4;
   size_t i_n = 0;
   void *inds = NULL;
-  if (idx.accessor != SIZE_MAX) {
+  if (idx.accessor != YF_GLTF_ID_INV) {
     i_n = gltf->accessors.v[idx.accessor].count;
     inds = malloc(i_n*i_strd);
     if (inds == NULL) {
@@ -1847,7 +1848,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
     }
   }
 
-  size_t buf_i = SIZE_MAX;
+  L_id buf_id = YF_GLTF_ID_INV;
   FILE *file = NULL;
   size_t comp_sz = 0;
   size_t comp_n = 0;
@@ -1887,12 +1888,12 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
             return -1;
           }
         }
-        buf_i = attrs[i].buffer;
+        buf_id = attrs[i].buffer;
         break;
 
       case YF_GLTF_ATTR_NORM:
         assert(file != NULL);
-        if (buf_i != attrs[i].buffer) {
+        if (buf_id != attrs[i].buffer) {
           fclose(file);
           file = fopen(gltf->buffers.v[attrs[i].buffer].uri, "r");
           if (file == NULL) {
@@ -1901,7 +1902,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
             free(inds);
             return -1;
           }
-          buf_i = attrs[i].buffer;
+          buf_id = attrs[i].buffer;
         }
         if (fseek(file, gltf->bufferviews.v[attrs[i].view].byte_off,
               SEEK_SET))
@@ -1931,7 +1932,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
 
       case YF_GLTF_ATTR_TC0:
         assert(file != NULL);
-        if (buf_i != attrs[i].buffer) {
+        if (buf_id != attrs[i].buffer) {
           fclose(file);
           file = fopen(gltf->buffers.v[attrs[i].buffer].uri, "r");
           if (file == NULL) {
@@ -1940,7 +1941,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
             free(inds);
             return -1;
           }
-          buf_i = attrs[i].buffer;
+          buf_id = attrs[i].buffer;
         }
         if (fseek(file, gltf->bufferviews.v[attrs[i].view].byte_off,
               SEEK_SET))
@@ -1972,7 +1973,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
 
   if (inds != NULL) {
     assert(file != NULL);
-    if (buf_i != idx.buffer) {
+    if (buf_id != idx.buffer) {
       fclose(file);
       file = fopen(gltf->buffers.v[idx.buffer].uri, "r");
       if (file == NULL) {
@@ -1981,7 +1982,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
         free(inds);
         return -1;
       }
-      buf_i = idx.buffer;
+      buf_id = idx.buffer;
     }
     if (fseek(file, gltf->bufferviews.v[idx.view].byte_off, SEEK_SET)) {
       yf_seterr(YF_ERR_INVFILE, __func__);
