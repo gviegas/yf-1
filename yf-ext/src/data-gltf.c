@@ -253,11 +253,8 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
     size_t index, void *primitives_p);
 
 /* Parses the 'glTF.meshes' property. */
-static int parse_meshes(FILE *file, L_symbol *symbol, L_meshes *meshes);
-
-/* Parses a given element from the 'glTF.meshes' property. */
-static int parse_meshes_i(FILE *file, L_symbol *symbol,
-    L_meshes *meshes, size_t index);
+static int parse_meshes(FILE *file, L_symbol *symbol,
+    size_t index, void *meshes_p);
 
 /* Parses the 'glTF.materials' property. */
 static int parse_materials(FILE *file, L_symbol *symbol,
@@ -603,7 +600,9 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
                 (void *)&gltf->nodes) != 0)
             return -1;
         } else if (strcmp("meshes", symbol->tokens) == 0) {
-          if (parse_meshes(file, symbol, &gltf->meshes) != 0)
+          if (parse_array(file, symbol, (void **)&gltf->meshes.v,
+                &gltf->meshes.n, sizeof *gltf->meshes.v, parse_meshes,
+                (void *)&gltf->meshes) != 0)
             return -1;
         } else if (strcmp("materials", symbol->tokens) == 0) {
           if (parse_materials(file, symbol, &gltf->materials) != 0)
@@ -1294,69 +1293,17 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
   return 0;
 }
 
-static int parse_meshes(FILE *file, L_symbol *symbol, L_meshes *meshes) {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(meshes != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "meshes") == 0);
-
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == meshes->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(meshes->v, n*sizeof *meshes->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            meshes->v = tmp;
-            meshes->n = n;
-            memset(meshes->v+i, 0, (n-i)*sizeof *meshes->v);
-          }
-          if (parse_meshes_i(file, symbol, meshes, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < meshes->n) {
-            meshes->n = i;
-            void *tmp = realloc(meshes->v, i*sizeof *meshes->v);
-            if (tmp != NULL)
-              meshes->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_meshes_i(FILE *file, L_symbol *symbol,
-    L_meshes *meshes, size_t index)
+static int parse_meshes(FILE *file, L_symbol *symbol,
+    size_t index, void *meshes_p)
 {
+  L_meshes *meshes = meshes_p;
+
   assert(!feof(file));
   assert(symbol != NULL);
   assert(meshes != NULL);
   assert(index < meshes->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -2421,7 +2368,7 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  n: %lu\n", gltf->meshes.v[i].primitives.n);
     for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; ++j) {
       printf("  primitives #%lu:\n", j);
-      printf("   attributes#%lu:\n", j);
+      puts("   attributes:");
       printf("    POSITION: %lu\n",
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_POS]);
       printf("    NORMAL: %lu\n",
