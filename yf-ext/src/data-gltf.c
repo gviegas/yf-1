@@ -125,6 +125,8 @@ typedef struct {
 typedef struct {
   struct {
     L_primitives primitives;
+    YF_float *weights;
+    size_t weight_n;
     char *name;
   } *v;
   size_t n;
@@ -1070,7 +1072,6 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
                 return -1;
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
-
         } else if (strcmp("name", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
@@ -1525,6 +1526,51 @@ static int parse_meshes_i(FILE *file, L_symbol *symbol,
         if (strcmp("primitives", symbol->tokens) == 0) {
           if (parse_primitives(file, symbol, &meshes->v[index].primitives) != 0)
             return -1;
+        } else if (strcmp("weights", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          size_t i = 0;
+          YF_float weight;
+          do {
+            switch (next_symbol(file, symbol)) {
+              case YF_SYMBOL_NUM:
+                errno = 0;
+                weight = strtod(symbol->tokens, NULL);
+                if (errno != 0) {
+                  yf_seterr(YF_ERR_OTHER, __func__);
+                  return -1;
+                }
+                if (i == meshes->v[index].weight_n) {
+                  const size_t n = i == 0 ? 1 : i<<1;
+                  void *tmp = realloc(meshes->v[index].weights,
+                      n*sizeof *meshes->v[index].weights);
+                  if (tmp == NULL) {
+                    yf_seterr(YF_ERR_NOMEM, __func__);
+                    return -1;
+                  }
+                  meshes->v[index].weights = tmp;
+                  meshes->v[index].weight_n = n;
+                }
+                meshes->v[index].weights[i++] = weight;
+                break;
+
+              case YF_SYMBOL_OP:
+                if (symbol->tokens[0] == ']') {
+                  if (i < meshes->v[index].weight_n) {
+                    meshes->v[index].weight_n = i;
+                    void *tmp = realloc(meshes->v[index].weights,
+                        i*sizeof *meshes->v[index].weights);
+                    if (tmp != NULL)
+                      meshes->v[index].weights = tmp;
+                  }
+                }
+                break;
+
+              default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
         } else if (strcmp("name", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
@@ -2565,6 +2611,10 @@ static void print_gltf(const L_gltf *gltf) {
         }
       }
     }
+    printf("  weights: [ ");
+    for (size_t j = 0; j < gltf->meshes.v[i].weight_n; ++j)
+      printf("%.9f ", gltf->meshes.v[i].weights[j]);
+    puts("]");
   }
 
   puts("glTF.materials:");
