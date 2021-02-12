@@ -222,6 +222,11 @@ typedef struct {
    This allows unknown/unimplemented properties to be ignored. */
 static int consume_prop(FILE *file, L_symbol *symbol);
 
+/* Parses an array of something. */
+static int parse_array(FILE *file, L_symbol *symbol,
+    void **array, size_t *n, size_t elem_sz,
+    int (*fn)(FILE *, L_symbol *, size_t, void *), void *arg);
+
 /* Parses the root glTF object. */
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
 
@@ -531,6 +536,54 @@ static int consume_prop(FILE *file, L_symbol *symbol) {
       return -1;
   }
 
+  return 0;
+}
+
+static int parse_array(FILE *file, L_symbol *symbol,
+    void **array, size_t *n, size_t elem_sz,
+    int (*fn)(FILE *, L_symbol *, size_t, void *), void *arg)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(elem_sz > 0);
+  assert(n != NULL && *n == 0);
+  assert(fn != NULL);
+
+  next_symbol(file, symbol); /* : */
+  size_t i = 0;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] != ']') {
+          if (i == *n) {
+            const size_t new_n = i == 0 ? 1 : i<<1;
+            void *tmp = realloc(*array, new_n*elem_sz);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            *array = tmp;
+            *n = new_n;
+            memset((char *)*array+i*elem_sz, 0, (new_n-i)*elem_sz);
+          }
+          if (fn(file, symbol, i, arg) != 0)
+            return -1;
+        }
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+
+  if (i < *n) {
+    *n = i;
+    void *tmp = realloc(*array, i*elem_sz);
+    if (tmp != NULL)
+      *array = tmp;
+  }
   return 0;
 }
 
