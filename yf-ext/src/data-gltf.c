@@ -222,6 +222,11 @@ typedef struct {
    This allows unknown/unimplemented properties to be ignored. */
 static int consume_prop(FILE *file, L_symbol *symbol);
 
+/* Parses an array of something. */
+static int parse_array(FILE *file, L_symbol *symbol,
+    void **array, size_t *n, size_t elem_sz,
+    int (*fn)(FILE *, L_symbol *, size_t, void *), void *arg);
+
 /* Parses the root glTF object. */
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
 
@@ -232,71 +237,40 @@ static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset);
 static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene);
 
 /* Parses the 'glTF.scenes' property. */
-static int parse_scenes(FILE *file, L_symbol *symbol, L_scenes *scenes);
-
-/* Parses a given element from the 'glTF.scenes' property. */
-static int parse_scenes_i(FILE *file, L_symbol *symbol,
-    L_scenes *scenes, size_t index);
+static int parse_scenes(FILE *file, L_symbol *symbol,
+    size_t index, void *scenes_p);
 
 /* Parses the 'glTF.nodes' property. */
-static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes);
-
-/* Parses a given element from the 'glTF.nodes' property. */
-static int parse_nodes_i(FILE *file, L_symbol *symbol,
-    L_nodes *nodes, size_t index);
+static int parse_nodes(FILE *file, L_symbol *symbol,
+    size_t index, void *nodes_p);
 
 /* Parses the 'glTF.meshes.primitives.targets' property. */
-static int parse_targets(FILE *file, L_symbol *symbol, L_targets *targets);
-
-/* Parses a given element from the 'glTF.meshes.primitives.targets' property. */
-static int parse_targets_i(FILE *file, L_symbol *symbol,
-    L_targets *targets, size_t index);
+static int parse_targets(FILE *file, L_symbol *symbol,
+    size_t index, void *targets_p);
 
 /* Parses the 'glTF.meshes.primitives' property. */
 static int parse_primitives(FILE *file, L_symbol *symbol,
-    L_primitives *primitives);
-
-/* Parses a given element from the 'glTF.meshes.primitives' property. */
-static int parse_primitives_i(FILE *file, L_symbol *symbol,
-    L_primitives *primitives, size_t index);
+    size_t index, void *primitives_p);
 
 /* Parses the 'glTF.meshes' property. */
-static int parse_meshes(FILE *file, L_symbol *symbol, L_meshes *meshes);
-
-/* Parses a given element from the 'glTF.meshes' property. */
-static int parse_meshes_i(FILE *file, L_symbol *symbol,
-    L_meshes *meshes, size_t index);
+static int parse_meshes(FILE *file, L_symbol *symbol,
+    size_t index, void *meshes_p);
 
 /* Parses the 'glTF.materials' property. */
 static int parse_materials(FILE *file, L_symbol *symbol,
-    L_materials *materials);
-
-/* Parses a given element from the 'glTF.materials' property. */
-static int parse_materials_i(FILE *file, L_symbol *symbol,
-    L_materials *materials, size_t index);
+    size_t index, void *materials_p);
 
 /* Parses the 'glTF.accessors' property. */
 static int parse_accessors(FILE *file, L_symbol *symbol,
-    L_accessors *accessors);
-
-/* Parses a given element from the 'glTF.accessors' property. */
-static int parse_accessors_i(FILE *file, L_symbol *symbol,
-    L_accessors *accessors, size_t index);
+    size_t index, void *accessors_p);
 
 /* Parses the 'glTF.bufferViews' property. */
 static int parse_bufferviews(FILE *file, L_symbol *symbol,
-    L_bufferviews *bufferviews);
-
-/* Parses a given element from the 'glTF.bufferViews' property. */
-static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
-    L_bufferviews *bufferviews, size_t index);
+    size_t index, void *bufferviews_p);
 
 /* Parses the 'glTF.buffers' property. */
-static int parse_buffers(FILE *file, L_symbol *symbol, L_buffers *buffers);
-
-/* Parses a given element from the 'glTF.buffers' property. */
-static int parse_buffers_i(FILE *file, L_symbol *symbol,
-    L_buffers *buffers, size_t index);
+static int parse_buffers(FILE *file, L_symbol *symbol,
+    size_t index, void *buffers_p);
 
 /* Loads a single mesh from glTF contents. */
 static int load_meshdt(const L_gltf *gltf, YF_meshdt *data);
@@ -534,6 +508,54 @@ static int consume_prop(FILE *file, L_symbol *symbol) {
   return 0;
 }
 
+static int parse_array(FILE *file, L_symbol *symbol,
+    void **array, size_t *n, size_t elem_sz,
+    int (*fn)(FILE *, L_symbol *, size_t, void *), void *arg)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(elem_sz > 0);
+  assert(n != NULL && *n == 0);
+  assert(fn != NULL);
+
+  next_symbol(file, symbol); /* : */
+  size_t i = 0;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] != ']') {
+          if (i == *n) {
+            const size_t new_n = i == 0 ? 1 : i<<1;
+            void *tmp = realloc(*array, new_n*elem_sz);
+            if (tmp == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              return -1;
+            }
+            *array = tmp;
+            *n = new_n;
+            memset((char *)*array+i*elem_sz, 0, (new_n-i)*elem_sz);
+          }
+          if (fn(file, symbol, i++, arg) != 0)
+            return -1;
+        }
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+
+  if (i < *n) {
+    *n = i;
+    void *tmp = realloc(*array, i*elem_sz);
+    if (tmp != NULL)
+      *array = tmp;
+  }
+  return 0;
+}
+
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
   assert(!feof(file));
   assert(symbol != NULL);
@@ -553,25 +575,39 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
           if (parse_scene(file, symbol, &gltf->scene) != 0)
             return -1;
         } else if (strcmp("scenes", symbol->tokens) == 0) {
-          if (parse_scenes(file, symbol, &gltf->scenes) != 0)
+          if (parse_array(file, symbol, (void **)&gltf->scenes.v,
+                &gltf->scenes.n, sizeof *gltf->scenes.v, parse_scenes,
+                (void *)&gltf->scenes) != 0)
             return -1;
         } else if (strcmp("nodes", symbol->tokens) == 0) {
-          if (parse_nodes(file, symbol, &gltf->nodes) != 0)
+          if (parse_array(file, symbol, (void **)&gltf->nodes.v,
+                &gltf->nodes.n, sizeof *gltf->nodes.v, parse_nodes,
+                (void *)&gltf->nodes) != 0)
             return -1;
         } else if (strcmp("meshes", symbol->tokens) == 0) {
-          if (parse_meshes(file, symbol, &gltf->meshes) != 0)
+          if (parse_array(file, symbol, (void **)&gltf->meshes.v,
+                &gltf->meshes.n, sizeof *gltf->meshes.v, parse_meshes,
+                (void *)&gltf->meshes) != 0)
             return -1;
         } else if (strcmp("materials", symbol->tokens) == 0) {
-          if (parse_materials(file, symbol, &gltf->materials) != 0)
+          if (parse_array(file, symbol, (void **)&gltf->materials.v,
+                &gltf->materials.n, sizeof *gltf->materials.v, parse_materials,
+                (void *)&gltf->materials) != 0)
             return -1;
         } else if (strcmp("accessors", symbol->tokens) == 0) {
-          if (parse_accessors(file, symbol, &gltf->accessors) != 0)
+          if (parse_array(file, symbol, (void **)&gltf->accessors.v,
+                &gltf->accessors.n, sizeof *gltf->accessors.v, parse_accessors,
+                (void *)&gltf->accessors) != 0)
             return -1;
         } else if (strcmp("bufferViews", symbol->tokens) == 0) {
-          if (parse_bufferviews(file, symbol, &gltf->bufferviews) != 0)
+          if (parse_array(file, symbol, (void **)&gltf->bufferviews.v,
+                &gltf->bufferviews.n, sizeof *gltf->bufferviews.v,
+                parse_bufferviews, (void *)&gltf->bufferviews) != 0)
             return -1;
         } else if (strcmp("buffers", symbol->tokens) == 0) {
-          if (parse_buffers(file, symbol, &gltf->buffers) != 0)
+          if (parse_array(file, symbol, (void **)&gltf->buffers.v,
+                &gltf->buffers.n, sizeof *gltf->buffers.v, parse_buffers,
+                (void *)&gltf->buffers) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
@@ -687,69 +723,17 @@ static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene) {
   return errno;
 }
 
-static int parse_scenes(FILE *file, L_symbol *symbol, L_scenes *scenes) {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(scenes != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "scenes") == 0);
-
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == scenes->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(scenes->v, n*sizeof *scenes->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            scenes->v = tmp;
-            scenes->n = n;
-            memset(scenes->v+i, 0, (n-i)*sizeof *scenes->v);
-          }
-          if (parse_scenes_i(file, symbol, scenes, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < scenes->n) {
-            scenes->n = i;
-            void *tmp = realloc(scenes->v, i*sizeof *scenes->v);
-            if (tmp != NULL)
-              scenes->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_scenes_i(FILE *file, L_symbol *symbol,
-    L_scenes *scenes, size_t index)
+static int parse_scenes(FILE *file, L_symbol *symbol,
+    size_t index, void *scenes_p)
 {
+  L_scenes *scenes = scenes_p;
+
   assert(!feof(file));
   assert(symbol != NULL);
   assert(scenes != NULL);
   assert(index < scenes->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -828,69 +812,17 @@ static int parse_scenes_i(FILE *file, L_symbol *symbol,
   return 0;
 }
 
-static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes) {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(nodes != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "nodes") == 0);
-
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == nodes->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(nodes->v, n*sizeof *nodes->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            nodes->v = tmp;
-            nodes->n = n;
-            memset(nodes->v+i, 0, (n-i)*sizeof *nodes->v);
-          }
-          if (parse_nodes_i(file, symbol, nodes, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < nodes->n) {
-            nodes->n = i;
-            void *tmp = realloc(nodes->v, i*sizeof *nodes->v);
-            if (tmp != NULL)
-              nodes->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_nodes_i(FILE *file, L_symbol *symbol,
-    L_nodes *nodes, size_t index)
+static int parse_nodes(FILE *file, L_symbol *symbol,
+    size_t index, void *nodes_p)
 {
+  L_nodes *nodes = nodes_p;
+
   assert(!feof(file));
   assert(symbol != NULL);
   assert(nodes != NULL);
   assert(index < nodes->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   nodes->v[index].mesh = SIZE_MAX;
   nodes->v[index].camera = SIZE_MAX;
@@ -1113,69 +1045,17 @@ static int parse_nodes_i(FILE *file, L_symbol *symbol,
   return 0;
 }
 
-static int parse_targets(FILE *file, L_symbol *symbol, L_targets *targets) {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(targets != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "targets") == 0);
-
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == targets->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(targets->v, n*sizeof *targets->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            targets->v = tmp;
-            targets->n = n;
-            memset(targets->v+i, 0, (n-i)*sizeof *targets->v);
-          }
-          if (parse_targets_i(file, symbol, targets, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < targets->n) {
-            targets->n = i;
-            void *tmp = realloc(targets->v, i*sizeof *targets->v);
-            if (tmp != NULL)
-              targets->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_targets_i(FILE *file, L_symbol *symbol,
-    L_targets *targets, size_t index)
+static int parse_targets(FILE *file, L_symbol *symbol,
+    size_t index, void *targets_p)
 {
+  L_targets *targets = targets_p;
+
   assert(!feof(file));
   assert(symbol != NULL);
   assert(targets != NULL);
   assert(index < targets->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   targets->v[index].position = SIZE_MAX;
   targets->v[index].normal = SIZE_MAX;
@@ -1232,70 +1112,16 @@ static int parse_targets_i(FILE *file, L_symbol *symbol,
 }
 
 static int parse_primitives(FILE *file, L_symbol *symbol,
-    L_primitives *primitives)
+    size_t index, void *primitives_p)
 {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(primitives != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "primitives") == 0);
+  L_primitives *primitives = primitives_p;
 
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == primitives->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(primitives->v, n*sizeof *primitives->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            primitives->v = tmp;
-            primitives->n = n;
-            memset(primitives->v+i, 0, (n-i)*sizeof *primitives->v);
-          }
-          if (parse_primitives_i(file, symbol, primitives, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < primitives->n) {
-            primitives->n = i;
-            void *tmp = realloc(primitives->v, i*sizeof *primitives->v);
-            if (tmp != NULL)
-              primitives->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_primitives_i(FILE *file, L_symbol *symbol,
-    L_primitives *primitives, size_t index)
-{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(primitives != NULL);
   assert(index < primitives->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   primitives->v[index].indices = SIZE_MAX;
   primitives->v[index].material = SIZE_MAX;
@@ -1434,7 +1260,11 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
             return -1;
           }
         } else if (strcmp("targets", symbol->tokens) == 0) {
-          if (parse_targets(file, symbol, &primitives->v[index].targets) != 0)
+          if (parse_array(file, symbol,
+                (void **)&primitives->v[index].targets.v,
+                &primitives->v[index].targets.n,
+                sizeof *primitives->v[index].targets.v,
+                parse_targets, (void *)&primitives->v[index].targets) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
@@ -1456,75 +1286,27 @@ static int parse_primitives_i(FILE *file, L_symbol *symbol,
   return 0;
 }
 
-static int parse_meshes(FILE *file, L_symbol *symbol, L_meshes *meshes) {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(meshes != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "meshes") == 0);
-
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == meshes->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(meshes->v, n*sizeof *meshes->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            meshes->v = tmp;
-            meshes->n = n;
-            memset(meshes->v+i, 0, (n-i)*sizeof *meshes->v);
-          }
-          if (parse_meshes_i(file, symbol, meshes, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < meshes->n) {
-            meshes->n = i;
-            void *tmp = realloc(meshes->v, i*sizeof *meshes->v);
-            if (tmp != NULL)
-              meshes->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_meshes_i(FILE *file, L_symbol *symbol,
-    L_meshes *meshes, size_t index)
+static int parse_meshes(FILE *file, L_symbol *symbol,
+    size_t index, void *meshes_p)
 {
+  L_meshes *meshes = meshes_p;
+
   assert(!feof(file));
   assert(symbol != NULL);
   assert(meshes != NULL);
   assert(index < meshes->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   do {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("primitives", symbol->tokens) == 0) {
-          if (parse_primitives(file, symbol, &meshes->v[index].primitives) != 0)
+          if (parse_array(file, symbol,
+                (void **)&meshes->v[index].primitives.v,
+                &meshes->v[index].primitives.n,
+                sizeof *meshes->v[index].primitives.v,
+                parse_primitives, (void *)&meshes->v[index].primitives) != 0)
             return -1;
         } else if (strcmp("weights", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
@@ -1601,70 +1383,16 @@ static int parse_meshes_i(FILE *file, L_symbol *symbol,
 }
 
 static int parse_materials(FILE *file, L_symbol *symbol,
-    L_materials *materials)
+    size_t index, void *materials_p)
 {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(materials != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "materials") == 0);
+  L_materials *materials = materials_p;
 
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == materials->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(materials->v, n*sizeof *materials->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            materials->v = tmp;
-            materials->n = n;
-            memset(materials->v+i, 0, (n-i)*sizeof *materials->v);
-          }
-          if (parse_materials_i(file, symbol, materials, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < materials->n) {
-            materials->n = i;
-            void *tmp = realloc(materials->v, i*sizeof *materials->v);
-            if (tmp != NULL)
-              materials->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_materials_i(FILE *file, L_symbol *symbol,
-    L_materials *materials, size_t index)
-{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(materials != NULL);
   assert(index < materials->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   materials->v[index].pbrmr.base_clr_fac[0] = 1.0;
   materials->v[index].pbrmr.base_clr_fac[1] = 1.0;
@@ -1784,70 +1512,16 @@ static int parse_materials_i(FILE *file, L_symbol *symbol,
 }
 
 static int parse_accessors(FILE *file, L_symbol *symbol,
-    L_accessors *accessors)
+    size_t index, void *accessors_p)
 {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(accessors != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "accessors") == 0);
+  L_accessors *accessors = accessors_p;
 
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == accessors->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(accessors->v, n*sizeof *accessors->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            accessors->v = tmp;
-            accessors->n = n;
-            memset(accessors->v+i, 0, (n-i)*sizeof *accessors->v);
-          }
-          if (parse_accessors_i(file, symbol, accessors, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < accessors->n) {
-            accessors->n = i;
-            void *tmp = realloc(accessors->v, i*sizeof *accessors->v);
-            if (tmp != NULL)
-              accessors->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_accessors_i(FILE *file, L_symbol *symbol,
-    L_accessors *accessors, size_t index)
-{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(accessors != NULL);
   assert(index < accessors->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   accessors->v[index].buffer_view = SIZE_MAX;
 
@@ -1978,70 +1652,16 @@ static int parse_accessors_i(FILE *file, L_symbol *symbol,
 }
 
 static int parse_bufferviews(FILE *file, L_symbol *symbol,
-    L_bufferviews *bufferviews)
+    size_t index, void *bufferviews_p)
 {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(bufferviews != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "bufferViews") == 0);
+  L_bufferviews *bufferviews = bufferviews_p;
 
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == bufferviews->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(bufferviews->v, n*sizeof *bufferviews->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            bufferviews->v = tmp;
-            bufferviews->n = n;
-            memset(bufferviews->v+i, 0, (n-i)*sizeof *bufferviews->v);
-          }
-          if (parse_bufferviews_i(file, symbol, bufferviews, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < bufferviews->n) {
-            bufferviews->n = i;
-            void *tmp = realloc(bufferviews->v, i*sizeof *bufferviews->v);
-            if (tmp != NULL)
-              bufferviews->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
-    L_bufferviews *bufferviews, size_t index)
-{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(bufferviews != NULL);
   assert(index < bufferviews->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -2111,69 +1731,17 @@ static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
   return 0;
 }
 
-static int parse_buffers(FILE *file, L_symbol *symbol, L_buffers *buffers) {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(buffers != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "buffers") == 0);
-
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == buffers->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(buffers->v, n*sizeof *buffers->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            buffers->v = tmp;
-            buffers->n = n;
-            memset(buffers->v+i, 0, (n-i)*sizeof *buffers->v);
-          }
-          if (parse_buffers_i(file, symbol, buffers, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < buffers->n) {
-            buffers->n = i;
-            void *tmp = realloc(buffers->v, i*sizeof *buffers->v);
-            if (tmp != NULL)
-              buffers->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_buffers_i(FILE *file, L_symbol *symbol,
-    L_buffers *buffers, size_t index)
+static int parse_buffers(FILE *file, L_symbol *symbol,
+    size_t index, void *buffers_p)
 {
+  L_buffers *buffers = buffers_p;
+
   assert(!feof(file));
   assert(symbol != NULL);
   assert(buffers != NULL);
   assert(index < buffers->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -2579,7 +2147,7 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  n: %lu\n", gltf->meshes.v[i].primitives.n);
     for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; ++j) {
       printf("  primitives #%lu:\n", j);
-      printf("   attributes#%lu:\n", j);
+      puts("   attributes:");
       printf("    POSITION: %lu\n",
           gltf->meshes.v[i].primitives.v[j].attributes[YF_GLTF_ATTR_POS]);
       printf("    NORMAL: %lu\n",
