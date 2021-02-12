@@ -735,14 +735,7 @@ static int parse_scene(FILE *file, L_symbol *symbol, L_id *scene) {
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol);
 
-  if (symbol->symbol != YF_SYMBOL_NUM) {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  errno = 0;
-  *scene = strtoll(symbol->tokens, NULL, 0);
-  return errno;
+  return parse_id(file, symbol, 0, scene);
 }
 
 static int parse_scenes(FILE *file, L_symbol *symbol,
