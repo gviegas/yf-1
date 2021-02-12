@@ -232,7 +232,7 @@ static int parse_array(FILE *file, L_symbol *symbol,
     int (*fn)(FILE *, L_symbol *, size_t, void *), void *arg);
 
 /* Parses an ID. */
-static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_p);
+static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_pp);
 
 /* Parses the root glTF object. */
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
@@ -563,14 +563,25 @@ static int parse_array(FILE *file, L_symbol *symbol,
   return 0;
 }
 
-static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_p) {
+static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_pp) {
   assert(!feof(file));
   assert(symbol != NULL);
-  assert(symbol->symbol == YF_SYMBOL_NUM);
+  assert(id_pp != NULL);
+
+  L_id *id = *(L_id **)id_pp;
+  assert(id != NULL);
+
+  if (symbol->symbol != YF_SYMBOL_NUM) {
+    next_symbol(file, symbol); /* [ or , */
+    if (symbol->symbol != YF_SYMBOL_NUM) {
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      return -1;
+    }
+  }
 
   errno = 0;
   char *end = NULL;
-  ((L_id *)id_p)[index] = strtoll(symbol->tokens, &end, 0);
+  ((L_id *)id)[index] = strtoll(symbol->tokens, &end, 0);
   if (errno != 0 || end[0] != '\0') {
     yf_seterr(YF_ERR_OTHER, __func__);
     return -1;
@@ -735,7 +746,7 @@ static int parse_scene(FILE *file, L_symbol *symbol, L_id *scene) {
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol);
 
-  return parse_id(file, symbol, 0, scene);
+  return parse_id(file, symbol, 0, &scene);
 }
 
 static int parse_scenes(FILE *file, L_symbol *symbol,
@@ -754,50 +765,10 @@ static int parse_scenes(FILE *file, L_symbol *symbol,
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("nodes", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol); /* [ */
-          size_t i = 0;
-          long long node;
-          do {
-            switch (next_symbol(file, symbol)) {
-              case YF_SYMBOL_NUM:
-                errno = 0;
-                node = strtoll(symbol->tokens, NULL, 0);
-                if (errno != 0) {
-                  yf_seterr(YF_ERR_OTHER, __func__);
-                  return -1;
-                }
-                if (i == scenes->v[index].node_n) {
-                  const size_t n = i == 0 ? 1 : i<<1;
-                  void *tmp = realloc(scenes->v[index].nodes,
-                      n*sizeof *scenes->v[index].nodes);
-                  if (tmp == NULL) {
-                    yf_seterr(YF_ERR_NOMEM, __func__);
-                    return -1;
-                  }
-                  scenes->v[index].nodes = tmp;
-                  scenes->v[index].node_n = n;
-                }
-                scenes->v[index].nodes[i++] = node;
-                break;
-
-              case YF_SYMBOL_OP:
-                if (symbol->tokens[0] == ']') {
-                  if (i < scenes->v[index].node_n) {
-                    scenes->v[index].node_n = i;
-                    void *tmp = realloc(scenes->v[index].nodes,
-                        i*sizeof *scenes->v[index].nodes);
-                    if (tmp != NULL)
-                      scenes->v[index].nodes = tmp;
-                  }
-                }
-                break;
-
-              default:
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+          if (parse_array(file, symbol, (void **)&scenes->v[index].nodes,
+                &scenes->v[index].node_n, sizeof *scenes->v[index].nodes,
+                parse_id, &scenes->v[index].nodes) != 0)
+            return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
