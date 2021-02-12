@@ -40,6 +40,9 @@ typedef struct {
    is equal to 'YF_SYMBOL_ERR' - the global error variable is not set. */
 static int next_symbol(FILE *file, L_symbol *symbol);
 
+/* Type defining a glTF id/index. */
+typedef size_t L_id;
+
 /* Type defining the 'glTF.asset' property. */
 typedef struct {
   char *copyright;
@@ -51,7 +54,7 @@ typedef struct {
 /* Type defining the 'glTF.scenes' property. */
 typedef struct {
   struct {
-    size_t *nodes;
+    L_id *nodes;
     size_t node_n;
     char *name;
   } *v;
@@ -61,10 +64,10 @@ typedef struct {
 /* Type defining the 'glTF.nodes' property. */
 typedef struct {
   struct {
-    size_t *children;
+    L_id *children;
     size_t child_n;
-    size_t camera;
-    size_t mesh;
+    L_id camera;
+    L_id mesh;
 #define YF_GLTF_XFORM_NONE 0
 #define YF_GLTF_XFORM_M    0x01
 #define YF_GLTF_XFORM_T    0x02
@@ -75,9 +78,9 @@ typedef struct {
       YF_mat4 matrix;
       struct { YF_vec3 t; YF_vec4 r; YF_vec3 s; } trs;
     };
-    size_t skin;
+    L_id skin;
     YF_float *weights;
-    size_t weight_n;
+    L_id weight_n;
     char *name;
   } *v;
   size_t n;
@@ -86,9 +89,9 @@ typedef struct {
 /* Type defining the 'gltf.meshes.primitives.targets' property. */
 typedef struct {
   struct {
-    size_t position;
-    size_t normal;
-    size_t tangent;
+    L_id position;
+    L_id normal;
+    L_id tangent;
   } *v;
   size_t n;
 } L_targets;
@@ -105,9 +108,9 @@ typedef struct {
 #define YF_GLTF_ATTR_JNT0 6
 #define YF_GLTF_ATTR_WGT0 7
 #define YF_GLTF_ATTR_N    8
-    size_t attributes[YF_GLTF_ATTR_N];
-    size_t indices;
-    size_t material;
+    L_id attributes[YF_GLTF_ATTR_N];
+    L_id indices;
+    L_id material;
 #define YF_GLTF_MODE_PTS      0
 #define YF_GLTF_MODE_LNS      1
 #define YF_GLTF_MODE_LNLOOP   2
@@ -149,7 +152,7 @@ typedef struct {
 /* Type defining the 'glTF.accessors' property. */
 typedef struct {
   struct {
-    size_t buffer_view;
+    L_id buffer_view;
     size_t byte_off;
     size_t count;
 #define YF_GLTF_COMP_BYTE   5120
@@ -185,7 +188,7 @@ typedef struct {
 /* Type defining the 'glTF.bufferViews' property. */
 typedef struct {
   struct {
-    size_t buffer;
+    L_id buffer;
     size_t byte_off;
     size_t byte_len;
     size_t byte_strd;
@@ -207,7 +210,7 @@ typedef struct {
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
-  size_t scene;
+  L_id scene;
   L_scenes scenes;
   L_nodes nodes;
   L_meshes meshes;
@@ -234,7 +237,7 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
 static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset);
 
 /* Parses the 'glTF.scene' property. */
-static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene);
+static int parse_scene(FILE *file, L_symbol *symbol, L_id *scene);
 
 /* Parses the 'glTF.scenes' property. */
 static int parse_scenes(FILE *file, L_symbol *symbol,
@@ -703,7 +706,7 @@ static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset) {
   return 0;
 }
 
-static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene) {
+static int parse_scene(FILE *file, L_symbol *symbol, L_id *scene) {
   assert(!feof(file));
   assert(symbol != NULL);
   assert(scene != NULL);
