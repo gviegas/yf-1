@@ -238,14 +238,11 @@ static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene);
 
 /* Parses the 'glTF.scenes' property. */
 static int parse_scenes(FILE *file, L_symbol *symbol,
-    size_t index, void *gltf_scenes);
+    size_t index, void *scenes_p);
 
 /* Parses the 'glTF.nodes' property. */
-static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes);
-
-/* Parses a given element from the 'glTF.nodes' property. */
-static int parse_nodes_i(FILE *file, L_symbol *symbol,
-    L_nodes *nodes, size_t index);
+static int parse_nodes(FILE *file, L_symbol *symbol,
+    size_t index, void *nodes_p);
 
 /* Parses the 'glTF.meshes.primitives.targets' property. */
 static int parse_targets(FILE *file, L_symbol *symbol, L_targets *targets);
@@ -608,7 +605,9 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
                 (void *)&gltf->scenes) != 0)
             return -1;
         } else if (strcmp("nodes", symbol->tokens) == 0) {
-          if (parse_nodes(file, symbol, &gltf->nodes) != 0)
+          if (parse_array(file, symbol, (void **)&gltf->nodes.v,
+                &gltf->nodes.n, sizeof *gltf->nodes.v, parse_nodes,
+                (void *)&gltf->nodes) != 0)
             return -1;
         } else if (strcmp("meshes", symbol->tokens) == 0) {
           if (parse_meshes(file, symbol, &gltf->meshes) != 0)
@@ -740,16 +739,16 @@ static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene) {
 }
 
 static int parse_scenes(FILE *file, L_symbol *symbol,
-    size_t index, void *gltf_scenes)
+    size_t index, void *scenes_p)
 {
-  L_scenes *scenes = gltf_scenes;
+  L_scenes *scenes = scenes_p;
 
   assert(!feof(file));
   assert(symbol != NULL);
   assert(scenes != NULL);
   assert(index < scenes->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -828,69 +827,17 @@ static int parse_scenes(FILE *file, L_symbol *symbol,
   return 0;
 }
 
-static int parse_nodes(FILE *file, L_symbol *symbol, L_nodes *nodes) {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(nodes != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "nodes") == 0);
-
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == nodes->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(nodes->v, n*sizeof *nodes->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            nodes->v = tmp;
-            nodes->n = n;
-            memset(nodes->v+i, 0, (n-i)*sizeof *nodes->v);
-          }
-          if (parse_nodes_i(file, symbol, nodes, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < nodes->n) {
-            nodes->n = i;
-            void *tmp = realloc(nodes->v, i*sizeof *nodes->v);
-            if (tmp != NULL)
-              nodes->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_nodes_i(FILE *file, L_symbol *symbol,
-    L_nodes *nodes, size_t index)
+static int parse_nodes(FILE *file, L_symbol *symbol,
+    size_t index, void *nodes_p)
 {
+  L_nodes *nodes = nodes_p;
+
   assert(!feof(file));
   assert(symbol != NULL);
   assert(nodes != NULL);
   assert(index < nodes->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   nodes->v[index].mesh = SIZE_MAX;
   nodes->v[index].camera = SIZE_MAX;
