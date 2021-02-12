@@ -266,11 +266,7 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
 
 /* Parses the 'glTF.bufferViews' property. */
 static int parse_bufferviews(FILE *file, L_symbol *symbol,
-    L_bufferviews *bufferviews);
-
-/* Parses a given element from the 'glTF.bufferViews' property. */
-static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
-    L_bufferviews *bufferviews, size_t index);
+    size_t index, void *bufferviews_p);
 
 /* Parses the 'glTF.buffers' property. */
 static int parse_buffers(FILE *file, L_symbol *symbol, L_buffers *buffers);
@@ -607,7 +603,9 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
                 (void *)&gltf->accessors) != 0)
             return -1;
         } else if (strcmp("bufferViews", symbol->tokens) == 0) {
-          if (parse_bufferviews(file, symbol, &gltf->bufferviews) != 0)
+          if (parse_array(file, symbol, (void **)&gltf->bufferviews.v,
+                &gltf->bufferviews.n, sizeof *gltf->bufferviews.v,
+                parse_bufferviews, (void *)&gltf->bufferviews) != 0)
             return -1;
         } else if (strcmp("buffers", symbol->tokens) == 0) {
           if (parse_buffers(file, symbol, &gltf->buffers) != 0)
@@ -1655,70 +1653,16 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
 }
 
 static int parse_bufferviews(FILE *file, L_symbol *symbol,
-    L_bufferviews *bufferviews)
+    size_t index, void *bufferviews_p)
 {
-  assert(!feof(file));
-  assert(symbol != NULL);
-  assert(bufferviews != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "bufferViews") == 0);
+  L_bufferviews *bufferviews = bufferviews_p;
 
-  next_symbol(file, symbol); /* : */
-  next_symbol(file, symbol); /* [ */
-
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '[') {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  size_t i = 0;
-
-  do {
-    switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == '{') {
-          if (i == bufferviews->n) {
-            const size_t n = i == 0 ? 1 : i<<1;
-            void *tmp = realloc(bufferviews->v, n*sizeof *bufferviews->v);
-            if (tmp == NULL) {
-              yf_seterr(YF_ERR_NOMEM, __func__);
-              return -1;
-            }
-            bufferviews->v = tmp;
-            bufferviews->n = n;
-            memset(bufferviews->v+i, 0, (n-i)*sizeof *bufferviews->v);
-          }
-          if (parse_bufferviews_i(file, symbol, bufferviews, i++) != 0)
-            return -1;
-        } else if (symbol->tokens[0] == ']') {
-          if (i < bufferviews->n) {
-            bufferviews->n = i;
-            void *tmp = realloc(bufferviews->v, i*sizeof *bufferviews->v);
-            if (tmp != NULL)
-              bufferviews->v = tmp;
-          }
-          return 0;
-        }
-        break;
-
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-  } while (1);
-
-  return 0;
-}
-
-static int parse_bufferviews_i(FILE *file, L_symbol *symbol,
-    L_bufferviews *bufferviews, size_t index)
-{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(bufferviews != NULL);
   assert(index < bufferviews->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   do {
     switch (next_symbol(file, symbol)) {
