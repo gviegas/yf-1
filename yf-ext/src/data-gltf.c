@@ -40,7 +40,7 @@ typedef struct {
    is equal to 'YF_SYMBOL_ERR' - the global error variable is not set. */
 static int next_symbol(FILE *file, L_symbol *symbol);
 
-/* Type defining a glTF id/index. */
+/* Type defining a glTF ID. */
 typedef size_t L_id;
 #define YF_GLTF_ID_INV SIZE_MAX
 
@@ -81,7 +81,7 @@ typedef struct {
     };
     L_id skin;
     YF_float *weights;
-    L_id weight_n;
+    size_t weight_n;
     char *name;
   } *v;
   size_t n;
@@ -230,6 +230,9 @@ static int consume_prop(FILE *file, L_symbol *symbol);
 static int parse_array(FILE *file, L_symbol *symbol,
     void **array, size_t *n, size_t elem_sz,
     int (*fn)(FILE *, L_symbol *, size_t, void *), void *arg);
+
+/* Parses an ID. */
+static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_p);
 
 /* Parses the root glTF object. */
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
@@ -556,6 +559,21 @@ static int parse_array(FILE *file, L_symbol *symbol,
     void *tmp = realloc(*array, i*elem_sz);
     if (tmp != NULL)
       *array = tmp;
+  }
+  return 0;
+}
+
+static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_p) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(symbol->symbol == YF_SYMBOL_NUM);
+
+  errno = 0;
+  char *end = NULL;
+  ((L_id *)id_p)[index] = strtoll(symbol->tokens, &end, 0);
+  if (errno != 0 || end[0] != '\0') {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
   }
   return 0;
 }
