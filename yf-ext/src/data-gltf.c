@@ -2482,6 +2482,7 @@ static void deinit_gltf(L_gltf *gltf) {
     for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; ++j)
       free(gltf->meshes.v[i].primitives.v[j].targets.v);
     free(gltf->meshes.v[i].primitives.v);
+    free(gltf->meshes.v[i].weights);
     free(gltf->meshes.v[i].name);
   }
   free(gltf->meshes.v);
