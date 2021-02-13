@@ -1416,32 +1416,14 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
           if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
         } else if (strcmp("byteOffset", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          accessors->v[index].byte_off = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          if (parse_int(file, symbol, &accessors->v[index].byte_off) != 0)
             return -1;
-          }
         } else if (strcmp("count", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          accessors->v[index].count = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          if (parse_int(file, symbol, &accessors->v[index].count) != 0)
             return -1;
-          }
         } else if (strcmp("componentType", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          accessors->v[index].comp_type = strtol(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          if (parse_int(file, symbol, &accessors->v[index].comp_type) != 0)
             return -1;
-          }
         } else if (strcmp("type", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
