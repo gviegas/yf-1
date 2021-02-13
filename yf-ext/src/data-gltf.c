@@ -1140,14 +1140,8 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
           if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
         } else if (strcmp("mode", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          primitives->v[index].mode = strtol(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          if (parse_int(file, symbol, &primitives->v[index].mode) != 0)
             return -1;
-          }
         } else if (strcmp("targets", symbol->tokens) == 0) {
           if (parse_array(file, symbol,
                 (void **)&primitives->v[index].targets.v,
