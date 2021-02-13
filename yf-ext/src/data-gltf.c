@@ -995,32 +995,17 @@ static int parse_targets(FILE *file, L_symbol *symbol,
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("POSITION", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          targets->v[index].position = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &targets->v[index].position;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("NORMAL", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          targets->v[index].normal = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &targets->v[index].normal;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("TANGENT", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          targets->v[index].tangent = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &targets->v[index].tangent;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
