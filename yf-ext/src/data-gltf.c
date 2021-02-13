@@ -1054,85 +1054,45 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
             switch (next_symbol(file, symbol)) {
               case YF_SYMBOL_STR:
                 if (strcmp("POSITION", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_POS] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_POS];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("NORMAL", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_NORM] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_NORM];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("TANGENT", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_TAN] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_TAN];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("TEXCOORD_0", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_TC0] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_TC0];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("TEXCOORD_1", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_TC1] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_TC1];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("COLOR_0", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_CLR0] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_CLR0];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("JOINTS_0", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_JNT0] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_JNT0];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("WEIGHTS_0", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_WGT0] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_WGT0];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else {
                   if (consume_prop(file, symbol) != 0)
                     return -1;
@@ -1148,23 +1108,13 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
         } else if (strcmp("indices", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          primitives->v[index].indices = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &primitives->v[index].indices;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("material", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          primitives->v[index].material = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &primitives->v[index].material;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("mode", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
