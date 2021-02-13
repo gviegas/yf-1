@@ -231,6 +231,9 @@ static int parse_array(FILE *file, L_symbol *symbol,
     void **array, size_t *n, size_t elem_sz,
     int (*fn)(FILE *, L_symbol *, size_t, void *), void *arg);
 
+/* Parses an integer number. */
+static int parse_int(FILE *file, L_symbol *symbol, void *int_p);
+
 /* Parses an ID. */
 static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_pp);
 
@@ -559,6 +562,27 @@ static int parse_array(FILE *file, L_symbol *symbol,
     void *tmp = realloc(*array, i*elem_sz);
     if (tmp != NULL)
       *array = tmp;
+  }
+  return 0;
+}
+
+static int parse_int(FILE *file, L_symbol *symbol, void *int_p) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(int_p != NULL);
+
+  next_symbol(file, symbol); /* , : [ */
+  if (next_symbol(file, symbol) != YF_SYMBOL_NUM) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  errno = 0;
+  char *end;
+  *(long long *)int_p = strtoll(symbol->tokens, &end, 0);
+  if (errno != 0 || *end != '\0') {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
   }
   return 0;
 }
