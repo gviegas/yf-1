@@ -226,13 +226,17 @@ typedef struct {
    This allows unknown/unimplemented properties to be ignored. */
 static int consume_prop(FILE *file, L_symbol *symbol);
 
-/* Parses an array of something. */
+/* Parses an array of unknown size. */
 static int parse_array(FILE *file, L_symbol *symbol,
     void **array, size_t *n, size_t elem_sz,
     int (*fn)(FILE *, L_symbol *, size_t, void *), void *arg);
 
 /* Parses an integer number. */
 static int parse_int(FILE *file, L_symbol *symbol, void *int_p);
+
+/* Parses an element of an array of integer numbers. */
+static int parse_int_array(FILE *file, L_symbol *symbol,
+    size_t index, void *int_pp);
 
 /* Parses an ID. */
 static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_pp);
@@ -524,8 +528,8 @@ static int parse_array(FILE *file, L_symbol *symbol,
 {
   assert(!feof(file));
   assert(symbol != NULL);
-  assert(elem_sz > 0);
   assert(n != NULL && *n == 0);
+  assert(elem_sz > 0);
   assert(fn != NULL);
 
   next_symbol(file, symbol); /* : */
@@ -585,6 +589,19 @@ static int parse_int(FILE *file, L_symbol *symbol, void *int_p) {
     return -1;
   }
   return 0;
+}
+
+static int parse_int_array(FILE *file, L_symbol *symbol,
+    size_t index, void *int_pp)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(int_pp != NULL);
+
+  long long *int_p = *(long long **)int_pp;
+  assert(int_p != NULL);
+
+  return parse_int(file, symbol, int_p+index);
 }
 
 static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_pp) {
