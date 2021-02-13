@@ -609,37 +609,37 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
         } else if (strcmp("scenes", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->scenes.v,
                 &gltf->scenes.n, sizeof *gltf->scenes.v, parse_scenes,
-                (void *)&gltf->scenes) != 0)
+                &gltf->scenes) != 0)
             return -1;
         } else if (strcmp("nodes", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->nodes.v,
                 &gltf->nodes.n, sizeof *gltf->nodes.v, parse_nodes,
-                (void *)&gltf->nodes) != 0)
+                &gltf->nodes) != 0)
             return -1;
         } else if (strcmp("meshes", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->meshes.v,
                 &gltf->meshes.n, sizeof *gltf->meshes.v, parse_meshes,
-                (void *)&gltf->meshes) != 0)
+                &gltf->meshes) != 0)
             return -1;
         } else if (strcmp("materials", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->materials.v,
                 &gltf->materials.n, sizeof *gltf->materials.v, parse_materials,
-                (void *)&gltf->materials) != 0)
+                &gltf->materials) != 0)
             return -1;
         } else if (strcmp("accessors", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->accessors.v,
                 &gltf->accessors.n, sizeof *gltf->accessors.v, parse_accessors,
-                (void *)&gltf->accessors) != 0)
+                &gltf->accessors) != 0)
             return -1;
         } else if (strcmp("bufferViews", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->bufferviews.v,
                 &gltf->bufferviews.n, sizeof *gltf->bufferviews.v,
-                parse_bufferviews, (void *)&gltf->bufferviews) != 0)
+                parse_bufferviews, &gltf->bufferviews) != 0)
             return -1;
         } else if (strcmp("buffers", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->buffers.v,
                 &gltf->buffers.n, sizeof *gltf->buffers.v, parse_buffers,
-                (void *)&gltf->buffers) != 0)
+                &gltf->buffers) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
