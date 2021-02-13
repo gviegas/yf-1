@@ -40,6 +40,10 @@ typedef struct {
    is equal to 'YF_SYMBOL_ERR' - the global error variable is not set. */
 static int next_symbol(FILE *file, L_symbol *symbol);
 
+/* Type defining a glTF ID. */
+typedef size_t L_id;
+#define YF_GLTF_ID_INV SIZE_MAX
+
 /* Type defining the 'glTF.asset' property. */
 typedef struct {
   char *copyright;
@@ -51,7 +55,7 @@ typedef struct {
 /* Type defining the 'glTF.scenes' property. */
 typedef struct {
   struct {
-    size_t *nodes;
+    L_id *nodes;
     size_t node_n;
     char *name;
   } *v;
@@ -61,10 +65,10 @@ typedef struct {
 /* Type defining the 'glTF.nodes' property. */
 typedef struct {
   struct {
-    size_t *children;
+    L_id *children;
     size_t child_n;
-    size_t camera;
-    size_t mesh;
+    L_id camera;
+    L_id mesh;
 #define YF_GLTF_XFORM_NONE 0
 #define YF_GLTF_XFORM_M    0x01
 #define YF_GLTF_XFORM_T    0x02
@@ -75,7 +79,7 @@ typedef struct {
       YF_mat4 matrix;
       struct { YF_vec3 t; YF_vec4 r; YF_vec3 s; } trs;
     };
-    size_t skin;
+    L_id skin;
     YF_float *weights;
     size_t weight_n;
     char *name;
@@ -86,9 +90,9 @@ typedef struct {
 /* Type defining the 'gltf.meshes.primitives.targets' property. */
 typedef struct {
   struct {
-    size_t position;
-    size_t normal;
-    size_t tangent;
+    L_id position;
+    L_id normal;
+    L_id tangent;
   } *v;
   size_t n;
 } L_targets;
@@ -105,9 +109,9 @@ typedef struct {
 #define YF_GLTF_ATTR_JNT0 6
 #define YF_GLTF_ATTR_WGT0 7
 #define YF_GLTF_ATTR_N    8
-    size_t attributes[YF_GLTF_ATTR_N];
-    size_t indices;
-    size_t material;
+    L_id attributes[YF_GLTF_ATTR_N];
+    L_id indices;
+    L_id material;
 #define YF_GLTF_MODE_PTS      0
 #define YF_GLTF_MODE_LNS      1
 #define YF_GLTF_MODE_LNLOOP   2
@@ -149,7 +153,7 @@ typedef struct {
 /* Type defining the 'glTF.accessors' property. */
 typedef struct {
   struct {
-    size_t buffer_view;
+    L_id buffer_view;
     size_t byte_off;
     size_t count;
 #define YF_GLTF_COMP_BYTE   5120
@@ -185,7 +189,7 @@ typedef struct {
 /* Type defining the 'glTF.bufferViews' property. */
 typedef struct {
   struct {
-    size_t buffer;
+    L_id buffer;
     size_t byte_off;
     size_t byte_len;
     size_t byte_strd;
@@ -207,7 +211,7 @@ typedef struct {
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
-  size_t scene;
+  L_id scene;
   L_scenes scenes;
   L_nodes nodes;
   L_meshes meshes;
@@ -227,6 +231,9 @@ static int parse_array(FILE *file, L_symbol *symbol,
     void **array, size_t *n, size_t elem_sz,
     int (*fn)(FILE *, L_symbol *, size_t, void *), void *arg);
 
+/* Parses an ID. */
+static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_pp);
+
 /* Parses the root glTF object. */
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
 
@@ -234,7 +241,7 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
 static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset);
 
 /* Parses the 'glTF.scene' property. */
-static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene);
+static int parse_scene(FILE *file, L_symbol *symbol, L_id *scene);
 
 /* Parses the 'glTF.scenes' property. */
 static int parse_scenes(FILE *file, L_symbol *symbol,
@@ -556,6 +563,31 @@ static int parse_array(FILE *file, L_symbol *symbol,
   return 0;
 }
 
+static int parse_id(FILE *file, L_symbol *symbol, size_t index, void *id_pp) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(id_pp != NULL);
+
+  L_id *id = *(L_id **)id_pp;
+  assert(id != NULL);
+
+  while (symbol->symbol != YF_SYMBOL_NUM) {
+    next_symbol(file, symbol);
+    if (symbol->symbol == YF_SYMBOL_END || symbol->symbol == YF_SYMBOL_ERR) {
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      return -1;
+    }
+  }
+  errno = 0;
+  char *end = NULL;
+  ((L_id *)id)[index] = strtoll(symbol->tokens, &end, 0);
+  if (errno != 0 || end[0] != '\0') {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
+  }
+  return 0;
+}
+
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
   assert(!feof(file));
   assert(symbol != NULL);
@@ -563,7 +595,7 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '{');
 
-  gltf->scene = SIZE_MAX;
+  gltf->scene = YF_GLTF_ID_INV;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -577,37 +609,37 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
         } else if (strcmp("scenes", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->scenes.v,
                 &gltf->scenes.n, sizeof *gltf->scenes.v, parse_scenes,
-                (void *)&gltf->scenes) != 0)
+                &gltf->scenes) != 0)
             return -1;
         } else if (strcmp("nodes", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->nodes.v,
                 &gltf->nodes.n, sizeof *gltf->nodes.v, parse_nodes,
-                (void *)&gltf->nodes) != 0)
+                &gltf->nodes) != 0)
             return -1;
         } else if (strcmp("meshes", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->meshes.v,
                 &gltf->meshes.n, sizeof *gltf->meshes.v, parse_meshes,
-                (void *)&gltf->meshes) != 0)
+                &gltf->meshes) != 0)
             return -1;
         } else if (strcmp("materials", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->materials.v,
                 &gltf->materials.n, sizeof *gltf->materials.v, parse_materials,
-                (void *)&gltf->materials) != 0)
+                &gltf->materials) != 0)
             return -1;
         } else if (strcmp("accessors", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->accessors.v,
                 &gltf->accessors.n, sizeof *gltf->accessors.v, parse_accessors,
-                (void *)&gltf->accessors) != 0)
+                &gltf->accessors) != 0)
             return -1;
         } else if (strcmp("bufferViews", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->bufferviews.v,
                 &gltf->bufferviews.n, sizeof *gltf->bufferviews.v,
-                parse_bufferviews, (void *)&gltf->bufferviews) != 0)
+                parse_bufferviews, &gltf->bufferviews) != 0)
             return -1;
         } else if (strcmp("buffers", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->buffers.v,
                 &gltf->buffers.n, sizeof *gltf->buffers.v, parse_buffers,
-                (void *)&gltf->buffers) != 0)
+                &gltf->buffers) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
@@ -703,7 +735,7 @@ static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset) {
   return 0;
 }
 
-static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene) {
+static int parse_scene(FILE *file, L_symbol *symbol, L_id *scene) {
   assert(!feof(file));
   assert(symbol != NULL);
   assert(scene != NULL);
@@ -713,14 +745,7 @@ static int parse_scene(FILE *file, L_symbol *symbol, size_t *scene) {
   next_symbol(file, symbol); /* : */
   next_symbol(file, symbol);
 
-  if (symbol->symbol != YF_SYMBOL_NUM) {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    return -1;
-  }
-
-  errno = 0;
-  *scene = strtoll(symbol->tokens, NULL, 0);
-  return errno;
+  return parse_id(file, symbol, 0, &scene);
 }
 
 static int parse_scenes(FILE *file, L_symbol *symbol,
@@ -739,50 +764,10 @@ static int parse_scenes(FILE *file, L_symbol *symbol,
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("nodes", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol); /* [ */
-          size_t i = 0;
-          long long node;
-          do {
-            switch (next_symbol(file, symbol)) {
-              case YF_SYMBOL_NUM:
-                errno = 0;
-                node = strtoll(symbol->tokens, NULL, 0);
-                if (errno != 0) {
-                  yf_seterr(YF_ERR_OTHER, __func__);
-                  return -1;
-                }
-                if (i == scenes->v[index].node_n) {
-                  const size_t n = i == 0 ? 1 : i<<1;
-                  void *tmp = realloc(scenes->v[index].nodes,
-                      n*sizeof *scenes->v[index].nodes);
-                  if (tmp == NULL) {
-                    yf_seterr(YF_ERR_NOMEM, __func__);
-                    return -1;
-                  }
-                  scenes->v[index].nodes = tmp;
-                  scenes->v[index].node_n = n;
-                }
-                scenes->v[index].nodes[i++] = node;
-                break;
-
-              case YF_SYMBOL_OP:
-                if (symbol->tokens[0] == ']') {
-                  if (i < scenes->v[index].node_n) {
-                    scenes->v[index].node_n = i;
-                    void *tmp = realloc(scenes->v[index].nodes,
-                        i*sizeof *scenes->v[index].nodes);
-                    if (tmp != NULL)
-                      scenes->v[index].nodes = tmp;
-                  }
-                }
-                break;
-
-              default:
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+          if (parse_array(file, symbol, (void **)&scenes->v[index].nodes,
+                &scenes->v[index].node_n, sizeof *scenes->v[index].nodes,
+                parse_id, &scenes->v[index].nodes) != 0)
+            return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
@@ -824,76 +809,26 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  nodes->v[index].mesh = SIZE_MAX;
-  nodes->v[index].camera = SIZE_MAX;
-  nodes->v[index].skin = SIZE_MAX;
+  nodes->v[index].mesh = YF_GLTF_ID_INV;
+  nodes->v[index].camera = YF_GLTF_ID_INV;
+  nodes->v[index].skin = YF_GLTF_ID_INV;
 
   do {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("children", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol); /* [ */
-          size_t i = 0;
-          long long child;
-          do {
-            switch (next_symbol(file, symbol)) {
-              case YF_SYMBOL_NUM:
-                errno = 0;
-                child = strtoll(symbol->tokens, NULL, 0);
-                if (errno != 0) {
-                  yf_seterr(YF_ERR_OTHER, __func__);
-                  return -1;
-                }
-                if (i == nodes->v[index].child_n) {
-                  const size_t n = i == 0 ? 1 : i<<1;
-                  void *tmp = realloc(nodes->v[index].children,
-                      n*sizeof *nodes->v[index].children);
-                  if (tmp == NULL) {
-                    yf_seterr(YF_ERR_NOMEM, __func__);
-                    return -1;
-                  }
-                  nodes->v[index].children = tmp;
-                  nodes->v[index].child_n = n;
-                }
-                nodes->v[index].children[i++] = child;
-                break;
-
-              case YF_SYMBOL_OP:
-                if (symbol->tokens[0] == ']') {
-                  if (i < nodes->v[index].child_n) {
-                    nodes->v[index].child_n = i;
-                    void *tmp = realloc(nodes->v[index].children,
-                        i*sizeof *nodes->v[index].children);
-                    if (tmp != NULL)
-                      nodes->v[index].children = tmp;
-                  }
-                }
-                break;
-
-              default:
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+          if (parse_array(file, symbol, (void **)&nodes->v[index].children,
+                &nodes->v[index].child_n, sizeof *nodes->v[index].children,
+                parse_id, &nodes->v[index].children) != 0)
+            return -1;
         } else if (strcmp("camera", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          nodes->v[index].camera = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &nodes->v[index].camera;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("mesh", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          nodes->v[index].mesh = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &nodes->v[index].mesh;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("matrix", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
@@ -951,14 +886,9 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
             next_symbol(file, symbol);
           }
         } else if (strcmp("skin", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          nodes->v[index].skin = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &nodes->v[index].skin;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("weights", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
@@ -1057,40 +987,25 @@ static int parse_targets(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  targets->v[index].position = SIZE_MAX;
-  targets->v[index].normal = SIZE_MAX;
-  targets->v[index].tangent = SIZE_MAX;
+  targets->v[index].position = YF_GLTF_ID_INV;
+  targets->v[index].normal = YF_GLTF_ID_INV;
+  targets->v[index].tangent = YF_GLTF_ID_INV;
 
   do {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("POSITION", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          targets->v[index].position = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &targets->v[index].position;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("NORMAL", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          targets->v[index].normal = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &targets->v[index].normal;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("TANGENT", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          targets->v[index].tangent = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &targets->v[index].tangent;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
@@ -1123,11 +1038,11 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  primitives->v[index].indices = SIZE_MAX;
-  primitives->v[index].material = SIZE_MAX;
+  primitives->v[index].indices = YF_GLTF_ID_INV;
+  primitives->v[index].material = YF_GLTF_ID_INV;
   primitives->v[index].mode = YF_GLTF_MODE_TRIS;
   for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i)
-    primitives->v[index].attributes[i] = SIZE_MAX;
+    primitives->v[index].attributes[i] = YF_GLTF_ID_INV;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1139,85 +1054,45 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
             switch (next_symbol(file, symbol)) {
               case YF_SYMBOL_STR:
                 if (strcmp("POSITION", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_POS] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_POS];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("NORMAL", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_NORM] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_NORM];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("TANGENT", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_TAN] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_TAN];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("TEXCOORD_0", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_TC0] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_TC0];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("TEXCOORD_1", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_TC1] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_TC1];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("COLOR_0", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_CLR0] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_CLR0];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("JOINTS_0", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_JNT0] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_JNT0];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else if (strcmp("WEIGHTS_0", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-                  primitives->v[index].attributes[YF_GLTF_ATTR_WGT0] =
-                    strtoll(symbol->tokens, NULL, 0);
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  L_id *id_p;
+                  id_p = &primitives->v[index].attributes[YF_GLTF_ATTR_WGT0];
+                  if (parse_id(file, symbol, 0, &id_p) != 0)
                     return -1;
-                  }
                 } else {
                   if (consume_prop(file, symbol) != 0)
                     return -1;
@@ -1233,23 +1108,13 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
         } else if (strcmp("indices", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          primitives->v[index].indices = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &primitives->v[index].indices;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("material", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          primitives->v[index].material = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &primitives->v[index].material;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("mode", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
@@ -1523,20 +1388,15 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  accessors->v[index].buffer_view = SIZE_MAX;
+  accessors->v[index].buffer_view = YF_GLTF_ID_INV;
 
   do {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("bufferView", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          accessors->v[index].buffer_view = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &accessors->v[index].buffer_view;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("byteOffset", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
@@ -1667,14 +1527,9 @@ static int parse_bufferviews(FILE *file, L_symbol *symbol,
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("buffer", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          bufferviews->v[index].buffer = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &bufferviews->v[index].buffer;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("byteOffset", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
@@ -1805,22 +1660,22 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
     return -1;
   }
 
-  struct { size_t accessor, view, buffer; } idx, attrs[YF_GLTF_ATTR_N];
+  struct { L_id accessor, view, buffer; } idx, attrs[YF_GLTF_ATTR_N];
   const L_primitives *prim = &gltf->meshes.v[0].primitives;
 
   idx.accessor = prim->v[0].indices;
-  if (idx.accessor != SIZE_MAX) {
+  if (idx.accessor != YF_GLTF_ID_INV) {
     idx.view = gltf->accessors.v[idx.accessor].buffer_view;
     idx.buffer = gltf->bufferviews.v[idx.view].buffer;
   }
   for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i) {
     attrs[i].accessor = prim->v[0].attributes[i];
-    if (attrs[i].accessor != SIZE_MAX) {
+    if (attrs[i].accessor != YF_GLTF_ID_INV) {
       attrs[i].view = gltf->accessors.v[attrs[i].accessor].buffer_view;
       attrs[i].buffer = gltf->bufferviews.v[attrs[i].view].buffer;
     }
   }
-  if (attrs[YF_GLTF_ATTR_POS].accessor == SIZE_MAX) {
+  if (attrs[YF_GLTF_ATTR_POS].accessor == YF_GLTF_ID_INV) {
     yf_seterr(YF_ERR_UNSUP, __func__);
     return -1;
   }
@@ -1834,7 +1689,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
   const size_t i_strd = v_n < UINT16_MAX ? 2 : 4;
   size_t i_n = 0;
   void *inds = NULL;
-  if (idx.accessor != SIZE_MAX) {
+  if (idx.accessor != YF_GLTF_ID_INV) {
     i_n = gltf->accessors.v[idx.accessor].count;
     inds = malloc(i_n*i_strd);
     if (inds == NULL) {
@@ -1844,7 +1699,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
     }
   }
 
-  size_t buf_i = SIZE_MAX;
+  L_id buf_id = YF_GLTF_ID_INV;
   FILE *file = NULL;
   size_t comp_sz = 0;
   size_t comp_n = 0;
@@ -1884,12 +1739,12 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
             return -1;
           }
         }
-        buf_i = attrs[i].buffer;
+        buf_id = attrs[i].buffer;
         break;
 
       case YF_GLTF_ATTR_NORM:
         assert(file != NULL);
-        if (buf_i != attrs[i].buffer) {
+        if (buf_id != attrs[i].buffer) {
           fclose(file);
           file = fopen(gltf->buffers.v[attrs[i].buffer].uri, "r");
           if (file == NULL) {
@@ -1898,7 +1753,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
             free(inds);
             return -1;
           }
-          buf_i = attrs[i].buffer;
+          buf_id = attrs[i].buffer;
         }
         if (fseek(file, gltf->bufferviews.v[attrs[i].view].byte_off,
               SEEK_SET))
@@ -1928,7 +1783,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
 
       case YF_GLTF_ATTR_TC0:
         assert(file != NULL);
-        if (buf_i != attrs[i].buffer) {
+        if (buf_id != attrs[i].buffer) {
           fclose(file);
           file = fopen(gltf->buffers.v[attrs[i].buffer].uri, "r");
           if (file == NULL) {
@@ -1937,7 +1792,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
             free(inds);
             return -1;
           }
-          buf_i = attrs[i].buffer;
+          buf_id = attrs[i].buffer;
         }
         if (fseek(file, gltf->bufferviews.v[attrs[i].view].byte_off,
               SEEK_SET))
@@ -1969,7 +1824,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
 
   if (inds != NULL) {
     assert(file != NULL);
-    if (buf_i != idx.buffer) {
+    if (buf_id != idx.buffer) {
       fclose(file);
       file = fopen(gltf->buffers.v[idx.buffer].uri, "r");
       if (file == NULL) {
@@ -1978,7 +1833,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
         free(inds);
         return -1;
       }
-      buf_i = idx.buffer;
+      buf_id = idx.buffer;
     }
     if (fseek(file, gltf->bufferviews.v[idx.view].byte_off, SEEK_SET)) {
       yf_seterr(YF_ERR_INVFILE, __func__);
