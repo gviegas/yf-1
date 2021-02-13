@@ -1394,14 +1394,9 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("bufferView", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          errno = 0;
-          accessors->v[index].buffer_view = strtoll(symbol->tokens, NULL, 0);
-          if (errno != 0) {
-            yf_seterr(YF_ERR_OTHER, __func__);
+          L_id *id_p = &accessors->v[index].buffer_view;
+          if (parse_id(file, symbol, 0, &id_p) != 0)
             return -1;
-          }
         } else if (strcmp("byteOffset", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
