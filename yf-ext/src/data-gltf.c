@@ -1369,14 +1369,8 @@ static int parse_materials(FILE *file, L_symbol *symbol,
           if (parse_bool(file, symbol, &materials->v[index].double_sided) != 0)
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          materials->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (materials->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &materials->v[index].name) != 0)
             return -1;
-          }
-          strcpy(materials->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
