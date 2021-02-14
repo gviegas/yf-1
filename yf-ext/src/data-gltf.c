@@ -241,6 +241,9 @@ static int parse_array(FILE *file, L_symbol *symbol,
     void **array, size_t *n, size_t elem_sz,
     int (*fn)(FILE *, L_symbol *, size_t, void *), void *arg);
 
+/* Parses a string. */
+static int parse_str(FILE *file, L_symbol *symbol, L_str *str);
+
 /* Parses an integer number. */
 static int parse_int(FILE *file, L_symbol *symbol, L_int *intr);
 
@@ -577,6 +580,31 @@ static int parse_array(FILE *file, L_symbol *symbol,
     if (tmp != NULL)
       *array = tmp;
   }
+  return 0;
+}
+
+static int parse_str(FILE *file, L_symbol *symbol, L_str *str) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(str != NULL);
+
+  switch (symbol->symbol) {
+    case YF_SYMBOL_OP:
+      break;
+    default:
+      next_symbol(file, symbol);
+  }
+  if (symbol->symbol != YF_SYMBOL_STR) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  *str = malloc(1+strlen(symbol->tokens));
+  if (*str == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  strcpy(*str, symbol->tokens);
   return 0;
 }
 
