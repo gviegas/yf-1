@@ -46,6 +46,11 @@ typedef long long L_int;
 #define YF_INT_MIN LLONG_MIN
 #define YF_INT_MAX LLONG_MAX
 
+/* Type defining a boolean value. */
+typedef int L_bool;
+#define YF_TRUE  1
+#define YF_FALSE 0
+
 /* Type defining the 'glTF.asset' property. */
 typedef struct {
   char *copyright;
@@ -146,7 +151,7 @@ typedef struct {
       YF_float metallic_fac;
       YF_float roughness_fac;
     } pbrmr;
-    int double_sided;
+    L_bool double_sided;
     char *name;
   } *v;
   size_t n;
