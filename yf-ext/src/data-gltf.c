@@ -159,8 +159,10 @@ typedef struct {
   struct {
     struct {
       L_num base_clr_fac[4];
+      L_textureinfo base_clr_tex;
       L_num metallic_fac;
       L_num roughness_fac;
+      L_textureinfo metal_rough_tex;
     } pbrmr;
     L_bool double_sided;
     L_str name;
@@ -1284,8 +1286,10 @@ static int parse_materials(FILE *file, L_symbol *symbol,
   materials->v[index].pbrmr.base_clr_fac[1] = 1.0;
   materials->v[index].pbrmr.base_clr_fac[2] = 1.0;
   materials->v[index].pbrmr.base_clr_fac[3] = 1.0;
+  materials->v[index].pbrmr.base_clr_tex.index = YF_INT_MIN;
   materials->v[index].pbrmr.metallic_fac = 1.0;
   materials->v[index].pbrmr.roughness_fac = 1.0;
+  materials->v[index].pbrmr.metal_rough_tex.index = YF_INT_MIN;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1305,6 +1309,11 @@ static int parse_materials(FILE *file, L_symbol *symbol,
                       return -1;
                   }
                   next_symbol(file, symbol); /* ] */
+                } else if (strcmp("baseColorTexture", symbol->tokens) == 0) {
+                  if (parse_textureinfo(file, symbol,
+                        &materials->v[index].pbrmr.base_clr_tex) != 0)
+                    return -1;
+                  next_symbol(file, symbol); /* , } */
                 } else if (strcmp("metallicFactor", symbol->tokens) == 0) {
                   if (parse_num(file, symbol,
                         &materials->v[index].pbrmr.metallic_fac) != 0)
@@ -1313,6 +1322,13 @@ static int parse_materials(FILE *file, L_symbol *symbol,
                   if (parse_num(file, symbol,
                         &materials->v[index].pbrmr.roughness_fac) != 0)
                     return -1;
+                } else if (strcmp("metallicRoughnessTexture", symbol->tokens)
+                    == 0)
+                {
+                  if (parse_textureinfo(file, symbol,
+                        &materials->v[index].pbrmr.metal_rough_tex) != 0)
+                    return -1;
+                  next_symbol(file, symbol); /* , } */
                 } else {
                   if (consume_prop(file, symbol) != 0)
                     return -1;
@@ -1939,10 +1955,20 @@ static void print_gltf(const L_gltf *gltf) {
         gltf->materials.v[i].pbrmr.base_clr_fac[1],
         gltf->materials.v[i].pbrmr.base_clr_fac[2],
         gltf->materials.v[i].pbrmr.base_clr_fac[3]);
+    puts("   baseColorTexture:");
+    printf("    index: %lld\n",
+        gltf->materials.v[i].pbrmr.base_clr_tex.index);
+    printf("    texCoord: %lld\n",
+        gltf->materials.v[i].pbrmr.base_clr_tex.tex_coord);
     printf("   metallicFactor: %.9f\n",
         gltf->materials.v[i].pbrmr.metallic_fac);
     printf("   roughnessFactor: %.9f\n",
         gltf->materials.v[i].pbrmr.roughness_fac);
+    puts("   metallicRoughnessTexture:");
+    printf("    index: %lld\n",
+        gltf->materials.v[i].pbrmr.metal_rough_tex.index);
+    printf("    texCoord: %lld\n",
+        gltf->materials.v[i].pbrmr.metal_rough_tex.tex_coord);
     printf("  doubleSided: %d\n", gltf->materials.v[i].double_sided);
   }
 
