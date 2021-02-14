@@ -1356,20 +1356,9 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
           for (size_t i = 0; i < 16; ++i) {
-            next_symbol(file, symbol);
-            if (symbol->symbol != YF_SYMBOL_NUM)
-              break;
-            errno = 0;
-            accessors->v[index].min.m4[i] = strtod(symbol->tokens, NULL);
-            if (errno != 0) {
-              errno = 0;
-              accessors->v[i].min.m4[index] = strtol(symbol->tokens, NULL, 0);
-              if (errno != 0) {
-                yf_seterr(YF_ERR_OTHER, __func__);
-                return -1;
-              }
-            }
-            next_symbol(file, symbol);
+            if (parse_num(file, symbol, accessors->v[index].min.m4+i) != 0)
+              return -1;
+            next_symbol(file, symbol); /* , ] */
             if (symbol->symbol == YF_SYMBOL_OP && symbol->tokens[0] == ']')
               break;
           }
@@ -1377,19 +1366,9 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
           for (size_t i = 0; i < 16; ++i) {
-            next_symbol(file, symbol);
-            if (symbol->symbol != YF_SYMBOL_NUM)
-              break;
-            errno = 0;
-            accessors->v[index].max.m4[i] = strtod(symbol->tokens, NULL);
-            if (errno != 0) {
-              accessors->v[index].max.m4[i] = strtol(symbol->tokens, NULL, 0);
-              if (errno != 0) {
-                yf_seterr(YF_ERR_OTHER, __func__);
-                return -1;
-              }
-            }
-            next_symbol(file, symbol);
+            if (parse_num(file, symbol, accessors->v[index].max.m4+i) != 0)
+              return -1;
+            next_symbol(file, symbol); /* , ] */
             if (symbol->symbol == YF_SYMBOL_OP && symbol->tokens[0] == ']')
               break;
           }
