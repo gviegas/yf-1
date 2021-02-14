@@ -46,6 +46,11 @@ typedef long long L_int;
 #define YF_INT_MIN LLONG_MIN
 #define YF_INT_MAX LLONG_MAX
 
+/* Type defining a boolean value. */
+typedef int L_bool;
+#define YF_TRUE  1
+#define YF_FALSE 0
+
 /* Type defining the 'glTF.asset' property. */
 typedef struct {
   char *copyright;
@@ -146,7 +151,7 @@ typedef struct {
       YF_float metallic_fac;
       YF_float roughness_fac;
     } pbrmr;
-    int double_sided;
+    L_bool double_sided;
     char *name;
   } *v;
   size_t n;
@@ -239,6 +244,9 @@ static int parse_int(FILE *file, L_symbol *symbol, L_int *intr);
 /* Parses an element of an array of integer numbers. */
 static int parse_int_array(FILE *file, L_symbol *symbol,
     size_t index, void *int_pp);
+
+/* Parses a boolean value. */
+static int parse_bool(FILE *file, L_symbol *symbol, L_bool *booln);
 
 /* Parses the root glTF object. */
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
@@ -606,6 +614,29 @@ static int parse_int_array(FILE *file, L_symbol *symbol,
   assert(int_p != NULL);
 
   return parse_int(file, symbol, int_p+index);
+}
+
+static int parse_bool(FILE *file, L_symbol *symbol, L_bool *booln) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(booln != NULL);
+
+  switch (symbol->symbol) {
+    case YF_SYMBOL_OP:
+      break;
+    default:
+      next_symbol(file, symbol);
+  }
+  if (next_symbol(file, symbol) != YF_SYMBOL_BOOL) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  if (strcmp("true", symbol->tokens) == 0)
+    *booln = YF_TRUE;
+  else
+    *booln = YF_FALSE;
+  return 0;
 }
 
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
@@ -1346,10 +1377,8 @@ static int parse_materials(FILE *file, L_symbol *symbol,
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
         } else if (strcmp("doubleSided", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          materials->v[index].double_sided =
-            strcmp("true", symbol->tokens) == 0;
+          if (parse_bool(file, symbol, &materials->v[index].double_sided) != 0)
+            return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
