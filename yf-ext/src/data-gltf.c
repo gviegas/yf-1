@@ -152,6 +152,7 @@ typedef struct {
 typedef struct {
   L_int index;
   L_int tex_coord;
+  L_num scale;
 } L_textureinfo;
 
 /* Type defining the 'glTF.materials' property. */
@@ -164,6 +165,7 @@ typedef struct {
       L_num roughness_fac;
       L_textureinfo metal_rough_tex;
     } pbrmr;
+    L_textureinfo normal_tex;
     L_bool double_sided;
     L_str name;
   } *v;
@@ -1250,6 +1252,9 @@ static int parse_textureinfo(FILE *file, L_symbol *symbol,
         } else if (strcmp("texCoord", symbol->tokens) == 0) {
           if (parse_int(file, symbol, &textureinfo->tex_coord) != 0)
             return -1;
+        } else if (strcmp("scale", symbol->tokens) == 0) {
+          if (parse_num(file, symbol, &textureinfo->scale) != 0)
+            return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
@@ -1290,6 +1295,8 @@ static int parse_materials(FILE *file, L_symbol *symbol,
   materials->v[index].pbrmr.metallic_fac = 1.0;
   materials->v[index].pbrmr.roughness_fac = 1.0;
   materials->v[index].pbrmr.metal_rough_tex.index = YF_INT_MIN;
+  materials->v[index].normal_tex.index = YF_INT_MIN;
+  materials->v[index].normal_tex.scale = 1.0;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1343,6 +1350,10 @@ static int parse_materials(FILE *file, L_symbol *symbol,
                 return -1;
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
+        } else if (strcmp("normalTexture", symbol->tokens) == 0) {
+          if (parse_textureinfo(file, symbol, &materials->v[index].normal_tex)
+              != 0)
+            return -1;
         } else if (strcmp("doubleSided", symbol->tokens) == 0) {
           if (parse_bool(file, symbol, &materials->v[index].double_sided) != 0)
             return -1;
@@ -1969,6 +1980,13 @@ static void print_gltf(const L_gltf *gltf) {
         gltf->materials.v[i].pbrmr.metal_rough_tex.index);
     printf("    texCoord: %lld\n",
         gltf->materials.v[i].pbrmr.metal_rough_tex.tex_coord);
+    puts("  normalTexture:");
+    printf("   index: %lld\n",
+        gltf->materials.v[i].normal_tex.index);
+    printf("   texCoord: %lld\n",
+        gltf->materials.v[i].normal_tex.tex_coord);
+    printf("   scale: %.9f\n",
+        gltf->materials.v[i].normal_tex.scale);
     printf("  doubleSided: %d\n", gltf->materials.v[i].double_sided);
   }
 
