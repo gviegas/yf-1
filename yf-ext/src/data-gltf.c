@@ -28,7 +28,7 @@
 #define YF_SYMBOL_END  5
 #define YF_SYMBOL_ERR  6
 
-#define YF_MAXTOKENS 512
+#define YF_MAXTOKENS 1024
 
 /* Type defining a symbol. */
 typedef struct {
