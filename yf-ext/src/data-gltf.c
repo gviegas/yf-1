@@ -245,6 +245,9 @@ static int parse_int(FILE *file, L_symbol *symbol, L_int *intr);
 static int parse_int_array(FILE *file, L_symbol *symbol,
     size_t index, void *int_pp);
 
+/* Parses a boolean value. */
+static int parse_bool(FILE *file, L_symbol *symbol, L_bool *booln);
+
 /* Parses the root glTF object. */
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf);
 
@@ -611,6 +614,29 @@ static int parse_int_array(FILE *file, L_symbol *symbol,
   assert(int_p != NULL);
 
   return parse_int(file, symbol, int_p+index);
+}
+
+static int parse_bool(FILE *file, L_symbol *symbol, L_bool *booln) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(booln != NULL);
+
+  switch (symbol->symbol) {
+    case YF_SYMBOL_OP:
+      break;
+    default:
+      next_symbol(file, symbol);
+  }
+  if (next_symbol(file, symbol) != YF_SYMBOL_BOOL) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  if (strcmp("true", symbol->tokens) == 0)
+    *booln = YF_TRUE;
+  else
+    *booln = YF_FALSE;
+  return 0;
 }
 
 static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
