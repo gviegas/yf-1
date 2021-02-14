@@ -594,7 +594,7 @@ static int parse_str(FILE *file, L_symbol *symbol, L_str *str) {
     default:
       next_symbol(file, symbol);
   }
-  if (symbol->symbol != YF_SYMBOL_STR) {
+  if (next_symbol(file, symbol) != YF_SYMBOL_STR) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
@@ -762,41 +762,17 @@ static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset) {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("copyright", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          asset->copyright = malloc(1+strlen(symbol->tokens));
-          if (asset->copyright == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &asset->copyright) != 0)
             return -1;
-          }
-          strcpy(asset->copyright, symbol->tokens);
         } else if (strcmp("generator", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          asset->generator = malloc(1+strlen(symbol->tokens));
-          if (asset->generator == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &asset->generator) != 0)
             return -1;
-          }
-          strcpy(asset->generator, symbol->tokens);
         } else if (strcmp("version", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          asset->version = malloc(1+strlen(symbol->tokens));
-          if (asset->version == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &asset->version) != 0)
             return -1;
-          }
-          strcpy(asset->version, symbol->tokens);
         } else if (strcmp("minVersion", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          asset->min_version = malloc(1+strlen(symbol->tokens));
-          if (asset->min_version == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &asset->min_version) != 0)
             return -1;
-          }
-          strcpy(asset->min_version, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
