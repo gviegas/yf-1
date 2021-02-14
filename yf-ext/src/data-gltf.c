@@ -148,6 +148,12 @@ typedef struct {
   size_t n;
 } L_meshes;
 
+/* Type defining the 'glTF.*.textureInfo' property. */
+typedef struct {
+  L_int index;
+  L_int tex_coord;
+} L_textureinfo;
+
 /* Type defining the 'glTF.materials' property. */
 typedef struct {
   struct {
@@ -291,6 +297,10 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
 /* Parses the 'glTF.meshes' property. */
 static int parse_meshes(FILE *file, L_symbol *symbol,
     size_t index, void *meshes_p);
+
+/* Parses the 'glTF.*.textureInfo property. */
+static int parse_textureinfo(FILE *file, L_symbol *symbol,
+    L_textureinfo *textureinfo);
 
 /* Parses the 'glTF.materials' property. */
 static int parse_materials(FILE *file, L_symbol *symbol,
@@ -1200,6 +1210,43 @@ static int parse_meshes(FILE *file, L_symbol *symbol,
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &meshes->v[index].name) != 0)
+            return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_textureinfo(FILE *file, L_symbol *symbol,
+    L_textureinfo *textureinfo)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(textureinfo != NULL);
+  assert(textureinfo->tex_coord == 0);
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("index", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &textureinfo->index) != 0)
+            return -1;
+        } else if (strcmp("texCoord", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &textureinfo->tex_coord) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
