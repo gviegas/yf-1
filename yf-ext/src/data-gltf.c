@@ -1377,10 +1377,8 @@ static int parse_materials(FILE *file, L_symbol *symbol,
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
         } else if (strcmp("doubleSided", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          materials->v[index].double_sided =
-            strcmp("true", symbol->tokens) == 0;
+          if (parse_bool(file, symbol, &materials->v[index].double_sided) != 0)
+            return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
