@@ -17,7 +17,6 @@
 #include <yf/com/yf-error.h>
 
 #include "data-gltf.h"
-#include "matrix.h"
 #include "vertex.h"
 
 #define YF_SYMBOL_STR  0
@@ -43,6 +42,9 @@ static int next_symbol(FILE *file, L_symbol *symbol);
 
 /* Type defining a string. */
 typedef char *L_str;
+
+/* Type defining a floating-point number. */
+typedef YF_float L_num;
 
 /* Type defining an integer number. */
 typedef long long L_int;
@@ -86,11 +88,11 @@ typedef struct {
 #define YF_GLTF_XFORM_S    0x08
     unsigned xform_mask;
     union {
-      YF_mat4 matrix;
-      struct { YF_vec3 t; YF_vec4 r; YF_vec3 s; } trs;
+      L_num matrix[16];
+      struct { L_num t[3]; L_num r[4]; L_num s[3]; } trs;
     };
     L_int skin;
-    YF_float *weights;
+    L_num *weights;
     size_t weight_n;
     L_str name;
   } *v;
@@ -139,7 +141,7 @@ typedef struct {
 typedef struct {
   struct {
     L_primitives primitives;
-    YF_float *weights;
+    L_num *weights;
     size_t weight_n;
     L_str name;
   } *v;
@@ -150,9 +152,9 @@ typedef struct {
 typedef struct {
   struct {
     struct {
-      YF_vec4 base_clr_fac;
-      YF_float metallic_fac;
-      YF_float roughness_fac;
+      L_num base_clr_fac[4];
+      L_num metallic_fac;
+      L_num roughness_fac;
     } pbrmr;
     L_bool double_sided;
     L_str name;
@@ -183,13 +185,13 @@ typedef struct {
     int type;
     union {
       /* XXX: May not suffice for uint32. */
-      YF_float s;
-      YF_vec2 v2;
-      YF_vec3 v3;
-      YF_vec4 v4;
-      YF_mat2 m2;
-      YF_mat3 m3;
-      YF_mat4 m4;
+      L_num s;
+      L_num v2[2];
+      L_num v3[3];
+      L_num v4[4];
+      L_num m2[4];
+      L_num m3[9];
+      L_num m4[16];
     } min, max;
     L_str name;
   } *v;
@@ -243,6 +245,13 @@ static int parse_array(FILE *file, L_symbol *symbol,
 
 /* Parses a string. */
 static int parse_str(FILE *file, L_symbol *symbol, L_str *str);
+
+/* Parses a floating-point number. */
+static int parse_num(FILE *file, L_symbol *symbol, L_num *num);
+
+/* Parses an element of an array of floating-point numbers. */
+static int parse_num_array(FILE *file, L_symbol *symbol,
+    size_t index, void *num_pp);
 
 /* Parses an integer number. */
 static int parse_int(FILE *file, L_symbol *symbol, L_int *intr);
@@ -608,6 +617,49 @@ static int parse_str(FILE *file, L_symbol *symbol, L_str *str) {
   return 0;
 }
 
+static int parse_num(FILE *file, L_symbol *symbol, L_num *num) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(num != NULL);
+
+  switch (symbol->symbol) {
+    case YF_SYMBOL_OP:
+      break;
+    default:
+      next_symbol(file, symbol);
+  }
+  if (next_symbol(file, symbol) != YF_SYMBOL_NUM) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  errno = 0;
+  char *end;
+#ifdef YF_USE_FLOAT64
+  *num = strtod(symbol->tokens, &end);
+#else
+  *num = strtof(symbol->tokens, &end);
+#endif
+  if (errno != 0 || *end != '\0') {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
+  }
+  return 0;
+}
+
+static int parse_num_array(FILE *file, L_symbol *symbol,
+    size_t index, void *num_pp)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(num_pp != NULL);
+
+  L_num *num_p = *(L_num **)num_pp;
+  assert(num_p != NULL);
+
+  return parse_num(file, symbol, num_p+index);
+}
+
 static int parse_int(FILE *file, L_symbol *symbol, L_int *intr) {
   assert(!feof(file));
   assert(symbol != NULL);
@@ -877,109 +929,49 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
           if (parse_int(file, symbol, &nodes->v[index].mesh) != 0)
             return -1;
         } else if (strcmp("matrix", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol); /* [ */
           nodes->v[index].xform_mask = YF_GLTF_XFORM_M;
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
           for (size_t i = 0; i < 16; ++i) {
-            next_symbol(file, symbol);
-            errno = 0;
-            nodes->v[index].matrix[i] = strtod(symbol->tokens, NULL);
-            if (errno != 0) {
-              yf_seterr(YF_ERR_OTHER, __func__);
+            if (parse_num(file, symbol, nodes->v[index].matrix+i) != 0)
               return -1;
-            }
-            next_symbol(file, symbol);
           }
+          next_symbol(file, symbol); /* ] */
         } else if (strcmp("translation", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol); /* [ */
           nodes->v[index].xform_mask |= YF_GLTF_XFORM_T;
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
           for (size_t i = 0; i < 3; ++i) {
-            next_symbol(file, symbol);
-            errno = 0;
-            nodes->v[index].trs.t[i] = strtod(symbol->tokens, NULL);
-            if (errno != 0) {
-              yf_seterr(YF_ERR_OTHER, __func__);
+            if (parse_num(file, symbol, nodes->v[index].trs.t+i) != 0)
               return -1;
-            }
-            next_symbol(file, symbol);
           }
+          next_symbol(file, symbol); /* ] */
         } else if (strcmp("rotation", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol); /* [ */
           nodes->v[index].xform_mask |= YF_GLTF_XFORM_R;
-          for (size_t i = 0; i < 4; ++i) {
-            next_symbol(file, symbol);
-            errno = 0;
-            nodes->v[index].trs.r[i] = strtod(symbol->tokens, NULL);
-            if (errno != 0) {
-              yf_seterr(YF_ERR_OTHER, __func__);
-              return -1;
-            }
-            next_symbol(file, symbol);
-          }
-        } else if (strcmp("scale", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
-          nodes->v[index].xform_mask |= YF_GLTF_XFORM_S;
-          for (size_t i = 0; i < 3; ++i) {
-            next_symbol(file, symbol);
-            errno = 0;
-            nodes->v[index].trs.s[i] = strtod(symbol->tokens, NULL);
-            if (errno != 0) {
-              yf_seterr(YF_ERR_OTHER, __func__);
+          for (size_t i = 0; i < 4; ++i) {
+            if (parse_num(file, symbol, nodes->v[index].trs.r+i) != 0)
               return -1;
-            }
-            next_symbol(file, symbol);
           }
+          next_symbol(file, symbol); /* ] */
+        } else if (strcmp("scale", symbol->tokens) == 0) {
+          nodes->v[index].xform_mask |= YF_GLTF_XFORM_S;
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          for (size_t i = 0; i < 3; ++i) {
+            if (parse_num(file, symbol, nodes->v[index].trs.s+i) != 0)
+              return -1;
+          }
+          next_symbol(file, symbol); /* ] */
         } else if (strcmp("skin", symbol->tokens) == 0) {
           if (parse_int(file, symbol, &nodes->v[index].skin) != 0)
             return -1;
         } else if (strcmp("weights", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol); /* [ */
-          size_t i = 0;
-          YF_float weight;
-          do {
-            switch (next_symbol(file, symbol)) {
-              case YF_SYMBOL_NUM:
-                errno = 0;
-                weight = strtod(symbol->tokens, NULL);
-                if (errno != 0) {
-                  yf_seterr(YF_ERR_OTHER, __func__);
-                  return -1;
-                }
-                if (i == nodes->v[index].weight_n) {
-                  const size_t n = i == 0 ? 1 : i<<1;
-                  void *tmp = realloc(nodes->v[index].weights,
-                      n*sizeof *nodes->v[index].weights);
-                  if (tmp == NULL) {
-                    yf_seterr(YF_ERR_NOMEM, __func__);
-                    return -1;
-                  }
-                  nodes->v[index].weights = tmp;
-                  nodes->v[index].weight_n = n;
-                }
-                nodes->v[index].weights[i++] = weight;
-                break;
-
-              case YF_SYMBOL_OP:
-                if (symbol->tokens[0] == ']') {
-                  if (i < nodes->v[index].weight_n) {
-                    nodes->v[index].weight_n = i;
-                    void *tmp = realloc(nodes->v[index].weights,
-                        i*sizeof *nodes->v[index].weights);
-                    if (tmp != NULL)
-                      nodes->v[index].weights = tmp;
-                  }
-                }
-                break;
-
-              default:
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+          if (parse_array(file, symbol, (void **)&nodes->v[index].weights,
+                &nodes->v[index].weight_n, sizeof *nodes->v[index].weights,
+                parse_num_array, &nodes->v[index].weights) != 0)
+            return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &nodes->v[index].name) != 0)
             return -1;
@@ -993,14 +985,13 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
         if (symbol->tokens[0] == '}') {
           const unsigned mask = nodes->v[index].xform_mask;
           if (mask != YF_GLTF_XFORM_NONE && !(mask & YF_GLTF_XFORM_M)) {
-            if (!(mask & YF_GLTF_XFORM_T))
-              yf_vec3_set(nodes->v[index].trs.t, 0.0);
-            if (!(mask & YF_GLTF_XFORM_R)) {
-              yf_vec4_set(nodes->v[index].trs.r, 0.0);
+            if (!(mask & YF_GLTF_XFORM_R))
               nodes->v[index].trs.r[3] = 1.0;
+            if (!(mask & YF_GLTF_XFORM_S)) {
+              nodes->v[index].trs.s[0] = 1.0;
+              nodes->v[index].trs.s[1] = 1.0;
+              nodes->v[index].trs.s[2] = 1.0;
             }
-            if (!(mask & YF_GLTF_XFORM_S))
-              yf_vec3_set(nodes->v[index].trs.s, 1.0);
           }
           return 0;
         }
@@ -1203,50 +1194,10 @@ static int parse_meshes(FILE *file, L_symbol *symbol,
                 parse_primitives, (void *)&meshes->v[index].primitives) != 0)
             return -1;
         } else if (strcmp("weights", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol); /* [ */
-          size_t i = 0;
-          YF_float weight;
-          do {
-            switch (next_symbol(file, symbol)) {
-              case YF_SYMBOL_NUM:
-                errno = 0;
-                weight = strtod(symbol->tokens, NULL);
-                if (errno != 0) {
-                  yf_seterr(YF_ERR_OTHER, __func__);
-                  return -1;
-                }
-                if (i == meshes->v[index].weight_n) {
-                  const size_t n = i == 0 ? 1 : i<<1;
-                  void *tmp = realloc(meshes->v[index].weights,
-                      n*sizeof *meshes->v[index].weights);
-                  if (tmp == NULL) {
-                    yf_seterr(YF_ERR_NOMEM, __func__);
-                    return -1;
-                  }
-                  meshes->v[index].weights = tmp;
-                  meshes->v[index].weight_n = n;
-                }
-                meshes->v[index].weights[i++] = weight;
-                break;
-
-              case YF_SYMBOL_OP:
-                if (symbol->tokens[0] == ']') {
-                  if (i < meshes->v[index].weight_n) {
-                    meshes->v[index].weight_n = i;
-                    void *tmp = realloc(meshes->v[index].weights,
-                        i*sizeof *meshes->v[index].weights);
-                    if (tmp != NULL)
-                      meshes->v[index].weights = tmp;
-                  }
-                }
-                break;
-
-              default:
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+          if (parse_array(file, symbol, (void **)&meshes->v[index].weights,
+                &meshes->v[index].weight_n, sizeof *meshes->v[index].weights,
+                parse_num_array, &meshes->v[index].weights) != 0)
+            return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &meshes->v[index].name) != 0)
             return -1;
@@ -1301,56 +1252,20 @@ static int parse_materials(FILE *file, L_symbol *symbol,
                 if (strcmp("baseColorFactor", symbol->tokens) == 0) {
                   next_symbol(file, symbol); /* : */
                   next_symbol(file, symbol); /* [ */
-                  errno = 0;
-
-                  next_symbol(file, symbol);
-                  materials->v[index].pbrmr.base_clr_fac[0] =
-                    strtod(symbol->tokens, NULL);
-                  next_symbol(file, symbol); /* , */
-
-                  next_symbol(file, symbol);
-                  materials->v[index].pbrmr.base_clr_fac[1] =
-                    strtod(symbol->tokens, NULL);
-                  next_symbol(file, symbol); /* , */
-
-                  next_symbol(file, symbol);
-                  materials->v[index].pbrmr.base_clr_fac[2] =
-                    strtod(symbol->tokens, NULL);
-                  next_symbol(file, symbol); /* , */
-
-                  next_symbol(file, symbol);
-                  materials->v[index].pbrmr.base_clr_fac[3] =
-                    strtod(symbol->tokens, NULL);
+                  for (size_t i = 0; i < 4; ++i) {
+                    if (parse_num(file, symbol,
+                          materials->v[index].pbrmr.base_clr_fac+i) != 0)
+                      return -1;
+                  }
                   next_symbol(file, symbol); /* ] */
-
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
-                    return -1;
-                  }
                 } else if (strcmp("metallicFactor", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-
-                  materials->v[index].pbrmr.metallic_fac =
-                    strtod(symbol->tokens, NULL);
-
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  if (parse_num(file, symbol,
+                        &materials->v[index].pbrmr.metallic_fac) != 0)
                     return -1;
-                  }
                 } else if (strcmp("roughnessFactor", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-
-                  materials->v[index].pbrmr.roughness_fac =
-                    strtod(symbol->tokens, NULL);
-
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  if (parse_num(file, symbol,
+                        &materials->v[index].pbrmr.roughness_fac) != 0)
                     return -1;
-                  }
                 } else {
                   if (consume_prop(file, symbol) != 0)
                     return -1;
@@ -1441,20 +1356,9 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
           for (size_t i = 0; i < 16; ++i) {
-            next_symbol(file, symbol);
-            if (symbol->symbol != YF_SYMBOL_NUM)
-              break;
-            errno = 0;
-            accessors->v[index].min.m4[i] = strtod(symbol->tokens, NULL);
-            if (errno != 0) {
-              errno = 0;
-              accessors->v[i].min.m4[index] = strtol(symbol->tokens, NULL, 0);
-              if (errno != 0) {
-                yf_seterr(YF_ERR_OTHER, __func__);
-                return -1;
-              }
-            }
-            next_symbol(file, symbol);
+            if (parse_num(file, symbol, accessors->v[index].min.m4+i) != 0)
+              return -1;
+            next_symbol(file, symbol); /* , ] */
             if (symbol->symbol == YF_SYMBOL_OP && symbol->tokens[0] == ']')
               break;
           }
@@ -1462,19 +1366,9 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
           for (size_t i = 0; i < 16; ++i) {
-            next_symbol(file, symbol);
-            if (symbol->symbol != YF_SYMBOL_NUM)
-              break;
-            errno = 0;
-            accessors->v[index].max.m4[i] = strtod(symbol->tokens, NULL);
-            if (errno != 0) {
-              accessors->v[index].max.m4[i] = strtol(symbol->tokens, NULL, 0);
-              if (errno != 0) {
-                yf_seterr(YF_ERR_OTHER, __func__);
-                return -1;
-              }
-            }
-            next_symbol(file, symbol);
+            if (parse_num(file, symbol, accessors->v[index].max.m4+i) != 0)
+              return -1;
+            next_symbol(file, symbol); /* , ] */
             if (symbol->symbol == YF_SYMBOL_OP && symbol->tokens[0] == ']')
               break;
           }
