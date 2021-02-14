@@ -170,6 +170,11 @@ typedef struct {
     L_textureinfo occlusion_tex;
     L_num emissive_fac[3];
     L_textureinfo emissive_tex;
+#define YF_GLTF_ALPHA_OPAQUE 0
+#define YF_GLTF_ALPHA_MASK   1
+#define YF_GLTF_ALPHA_BLEND  2
+    int alpha_mode;
+    L_num alpha_cutoff;
     L_bool double_sided;
     L_str name;
   } *v;
@@ -1307,6 +1312,7 @@ static int parse_materials(FILE *file, L_symbol *symbol,
   materials->v[index].occlusion_tex.index = YF_INT_MIN;
   materials->v[index].occlusion_tex.strength = 1.0;
   materials->v[index].emissive_tex.index = YF_INT_MIN;
+  materials->v[index].alpha_cutoff = 0.5;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1380,6 +1386,20 @@ static int parse_materials(FILE *file, L_symbol *symbol,
         } else if (strcmp("emissiveTexture", symbol->tokens) == 0) {
           if (parse_textureinfo(file, symbol,
                 &materials->v[index].emissive_tex) != 0)
+            return -1;
+        } else if (strcmp("alphaMode", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          if (strcmp("MASK", symbol->tokens) == 0) {
+            materials->v[index].alpha_mode = YF_GLTF_ALPHA_MASK;
+          } else if (strcmp("BLEND", symbol->tokens) == 0) {
+            materials->v[index].alpha_mode = YF_GLTF_ALPHA_BLEND;
+          } else if (strcmp("OPAQUE", symbol->tokens) != 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+          }
+        } else if (strcmp("alphaCutoff", symbol->tokens) == 0) {
+          if (parse_num(file, symbol, &materials->v[index].alpha_cutoff) != 0)
             return -1;
         } else if (strcmp("doubleSided", symbol->tokens) == 0) {
           if (parse_bool(file, symbol, &materials->v[index].double_sided) != 0)
@@ -2030,6 +2050,8 @@ static void print_gltf(const L_gltf *gltf) {
         gltf->materials.v[i].emissive_tex.index);
     printf("   texCoord: %lld\n",
         gltf->materials.v[i].emissive_tex.tex_coord);
+    printf("  alphaMode: %d\n", gltf->materials.v[i].alpha_mode);
+    printf("  alphaCutoff: %.9f\n", gltf->materials.v[i].alpha_cutoff);
     printf("  doubleSided: %d\n", gltf->materials.v[i].double_sided);
   }
 
