@@ -929,36 +929,36 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
           if (parse_int(file, symbol, &nodes->v[index].mesh) != 0)
             return -1;
         } else if (strcmp("matrix", symbol->tokens) == 0) {
+          nodes->v[index].xform_mask = YF_GLTF_XFORM_M;
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
-          nodes->v[index].xform_mask = YF_GLTF_XFORM_M;
           for (size_t i = 0; i < 16; ++i) {
             if (parse_num(file, symbol, nodes->v[index].matrix+i) != 0)
               return -1;
           }
           next_symbol(file, symbol); /* ] */
         } else if (strcmp("translation", symbol->tokens) == 0) {
+          nodes->v[index].xform_mask |= YF_GLTF_XFORM_T;
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
-          nodes->v[index].xform_mask |= YF_GLTF_XFORM_T;
           for (size_t i = 0; i < 3; ++i) {
             if (parse_num(file, symbol, nodes->v[index].trs.t+i) != 0)
               return -1;
           }
           next_symbol(file, symbol); /* ] */
         } else if (strcmp("rotation", symbol->tokens) == 0) {
+          nodes->v[index].xform_mask |= YF_GLTF_XFORM_R;
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
-          nodes->v[index].xform_mask |= YF_GLTF_XFORM_R;
           for (size_t i = 0; i < 4; ++i) {
             if (parse_num(file, symbol, nodes->v[index].trs.r+i) != 0)
               return -1;
           }
           next_symbol(file, symbol); /* ] */
         } else if (strcmp("scale", symbol->tokens) == 0) {
+          nodes->v[index].xform_mask |= YF_GLTF_XFORM_S;
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
-          nodes->v[index].xform_mask |= YF_GLTF_XFORM_S;
           for (size_t i = 0; i < 3; ++i) {
             if (parse_num(file, symbol, nodes->v[index].trs.s+i) != 0)
               return -1;
@@ -1194,50 +1194,10 @@ static int parse_meshes(FILE *file, L_symbol *symbol,
                 parse_primitives, (void *)&meshes->v[index].primitives) != 0)
             return -1;
         } else if (strcmp("weights", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol); /* [ */
-          size_t i = 0;
-          YF_float weight;
-          do {
-            switch (next_symbol(file, symbol)) {
-              case YF_SYMBOL_NUM:
-                errno = 0;
-                weight = strtod(symbol->tokens, NULL);
-                if (errno != 0) {
-                  yf_seterr(YF_ERR_OTHER, __func__);
-                  return -1;
-                }
-                if (i == meshes->v[index].weight_n) {
-                  const size_t n = i == 0 ? 1 : i<<1;
-                  void *tmp = realloc(meshes->v[index].weights,
-                      n*sizeof *meshes->v[index].weights);
-                  if (tmp == NULL) {
-                    yf_seterr(YF_ERR_NOMEM, __func__);
-                    return -1;
-                  }
-                  meshes->v[index].weights = tmp;
-                  meshes->v[index].weight_n = n;
-                }
-                meshes->v[index].weights[i++] = weight;
-                break;
-
-              case YF_SYMBOL_OP:
-                if (symbol->tokens[0] == ']') {
-                  if (i < meshes->v[index].weight_n) {
-                    meshes->v[index].weight_n = i;
-                    void *tmp = realloc(meshes->v[index].weights,
-                        i*sizeof *meshes->v[index].weights);
-                    if (tmp != NULL)
-                      meshes->v[index].weights = tmp;
-                  }
-                }
-                break;
-
-              default:
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+          if (parse_array(file, symbol, (void **)&meshes->v[index].weights,
+                &meshes->v[index].weight_n, sizeof *meshes->v[index].weights,
+                parse_num_array, &meshes->v[index].weights) != 0)
+            return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &meshes->v[index].name) != 0)
             return -1;
