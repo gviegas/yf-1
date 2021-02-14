@@ -41,6 +41,9 @@ typedef struct {
    is equal to 'YF_SYMBOL_ERR' - the global error variable is not set. */
 static int next_symbol(FILE *file, L_symbol *symbol);
 
+/* Type defining a string. */
+typedef char *L_str;
+
 /* Type defining an integer number. */
 typedef long long L_int;
 #define YF_INT_MIN LLONG_MIN
@@ -53,10 +56,10 @@ typedef int L_bool;
 
 /* Type defining the 'glTF.asset' property. */
 typedef struct {
-  char *copyright;
-  char *generator;
-  char *version;
-  char *min_version;
+  L_str copyright;
+  L_str generator;
+  L_str version;
+  L_str min_version;
 } L_asset;
 
 /* Type defining the 'glTF.scenes' property. */
@@ -64,7 +67,7 @@ typedef struct {
   struct {
     L_int *nodes;
     size_t node_n;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_scenes;
@@ -89,7 +92,7 @@ typedef struct {
     L_int skin;
     YF_float *weights;
     size_t weight_n;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_nodes;
@@ -138,7 +141,7 @@ typedef struct {
     L_primitives primitives;
     YF_float *weights;
     size_t weight_n;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_meshes;
@@ -152,7 +155,7 @@ typedef struct {
       YF_float roughness_fac;
     } pbrmr;
     L_bool double_sided;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_materials;
@@ -188,7 +191,7 @@ typedef struct {
       YF_mat3 m3;
       YF_mat4 m4;
     } min, max;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_accessors;
@@ -200,7 +203,7 @@ typedef struct {
     L_int byte_off;
     L_int byte_len;
     L_int byte_strd;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_bufferviews;
@@ -209,8 +212,8 @@ typedef struct {
 typedef struct {
   struct {
     L_int byte_len;
-    char *uri;
-    char *name;
+    L_str uri;
+    L_str name;
   } *v;
   size_t n;
 } L_buffers;
@@ -237,6 +240,9 @@ static int consume_prop(FILE *file, L_symbol *symbol);
 static int parse_array(FILE *file, L_symbol *symbol,
     void **array, size_t *n, size_t elem_sz,
     int (*fn)(FILE *, L_symbol *, size_t, void *), void *arg);
+
+/* Parses a string. */
+static int parse_str(FILE *file, L_symbol *symbol, L_str *str);
 
 /* Parses an integer number. */
 static int parse_int(FILE *file, L_symbol *symbol, L_int *intr);
@@ -577,6 +583,31 @@ static int parse_array(FILE *file, L_symbol *symbol,
   return 0;
 }
 
+static int parse_str(FILE *file, L_symbol *symbol, L_str *str) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(str != NULL);
+
+  switch (symbol->symbol) {
+    case YF_SYMBOL_OP:
+      break;
+    default:
+      next_symbol(file, symbol);
+  }
+  if (next_symbol(file, symbol) != YF_SYMBOL_STR) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  *str = malloc(1+strlen(symbol->tokens));
+  if (*str == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  strcpy(*str, symbol->tokens);
+  return 0;
+}
+
 static int parse_int(FILE *file, L_symbol *symbol, L_int *intr) {
   assert(!feof(file));
   assert(symbol != NULL);
@@ -731,41 +762,17 @@ static int parse_asset(FILE *file, L_symbol *symbol, L_asset *asset) {
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("copyright", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          asset->copyright = malloc(1+strlen(symbol->tokens));
-          if (asset->copyright == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &asset->copyright) != 0)
             return -1;
-          }
-          strcpy(asset->copyright, symbol->tokens);
         } else if (strcmp("generator", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          asset->generator = malloc(1+strlen(symbol->tokens));
-          if (asset->generator == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &asset->generator) != 0)
             return -1;
-          }
-          strcpy(asset->generator, symbol->tokens);
         } else if (strcmp("version", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          asset->version = malloc(1+strlen(symbol->tokens));
-          if (asset->version == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &asset->version) != 0)
             return -1;
-          }
-          strcpy(asset->version, symbol->tokens);
         } else if (strcmp("minVersion", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          asset->min_version = malloc(1+strlen(symbol->tokens));
-          if (asset->min_version == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &asset->min_version) != 0)
             return -1;
-          }
-          strcpy(asset->min_version, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
@@ -817,14 +824,8 @@ static int parse_scenes(FILE *file, L_symbol *symbol,
                 parse_int_array, &scenes->v[index].nodes) != 0)
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          scenes->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (scenes->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &scenes->v[index].name) != 0)
             return -1;
-          }
-          strcpy(scenes->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
@@ -980,14 +981,8 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          nodes->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (nodes->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &nodes->v[index].name) != 0)
             return -1;
-          }
-          strcpy(nodes->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
@@ -1253,14 +1248,8 @@ static int parse_meshes(FILE *file, L_symbol *symbol,
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          meshes->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (meshes->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &meshes->v[index].name) != 0)
             return -1;
-          }
-          strcpy(meshes->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
@@ -1380,14 +1369,8 @@ static int parse_materials(FILE *file, L_symbol *symbol,
           if (parse_bool(file, symbol, &materials->v[index].double_sided) != 0)
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          materials->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (materials->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &materials->v[index].name) != 0)
             return -1;
-          }
-          strcpy(materials->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
@@ -1496,14 +1479,8 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
               break;
           }
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          accessors->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (accessors->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &accessors->v[index].name) != 0)
             return -1;
-          }
-          strcpy(accessors->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
@@ -1552,14 +1529,8 @@ static int parse_bufferviews(FILE *file, L_symbol *symbol,
           if (parse_int(file, symbol, &bufferviews->v[index].byte_strd) != 0)
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          bufferviews->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (bufferviews->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &bufferviews->v[index].name) != 0)
             return -1;
-          }
-          strcpy(bufferviews->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
@@ -1599,23 +1570,11 @@ static int parse_buffers(FILE *file, L_symbol *symbol,
           if (parse_int(file, symbol, &buffers->v[index].byte_len) != 0)
             return -1;
         } else if (strcmp("uri", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          buffers->v[index].uri = malloc(1+strlen(symbol->tokens));
-          if (buffers->v[index].uri == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &buffers->v[index].uri) != 0)
             return -1;
-          }
-          strcpy(buffers->v[index].uri, symbol->tokens);
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          buffers->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (buffers->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &buffers->v[index].name) != 0)
             return -1;
-          }
-          strcpy(buffers->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
