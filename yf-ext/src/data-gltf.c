@@ -152,6 +152,8 @@ typedef struct {
 typedef struct {
   L_int index;
   L_int tex_coord;
+  L_num scale;
+  L_num strength;
 } L_textureinfo;
 
 /* Type defining the 'glTF.materials' property. */
@@ -159,9 +161,20 @@ typedef struct {
   struct {
     struct {
       L_num base_clr_fac[4];
+      L_textureinfo base_clr_tex;
       L_num metallic_fac;
       L_num roughness_fac;
+      L_textureinfo metal_rough_tex;
     } pbrmr;
+    L_textureinfo normal_tex;
+    L_textureinfo occlusion_tex;
+    L_num emissive_fac[3];
+    L_textureinfo emissive_tex;
+#define YF_GLTF_ALPHA_OPAQUE 0
+#define YF_GLTF_ALPHA_MASK   1
+#define YF_GLTF_ALPHA_BLEND  2
+    int alpha_mode;
+    L_num alpha_cutoff;
     L_bool double_sided;
     L_str name;
   } *v;
@@ -1248,6 +1261,12 @@ static int parse_textureinfo(FILE *file, L_symbol *symbol,
         } else if (strcmp("texCoord", symbol->tokens) == 0) {
           if (parse_int(file, symbol, &textureinfo->tex_coord) != 0)
             return -1;
+        } else if (strcmp("scale", symbol->tokens) == 0) {
+          if (parse_num(file, symbol, &textureinfo->scale) != 0)
+            return -1;
+        } else if (strcmp("strength", symbol->tokens) == 0) {
+          if (parse_num(file, symbol, &textureinfo->strength) != 0)
+            return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
@@ -1284,8 +1303,16 @@ static int parse_materials(FILE *file, L_symbol *symbol,
   materials->v[index].pbrmr.base_clr_fac[1] = 1.0;
   materials->v[index].pbrmr.base_clr_fac[2] = 1.0;
   materials->v[index].pbrmr.base_clr_fac[3] = 1.0;
+  materials->v[index].pbrmr.base_clr_tex.index = YF_INT_MIN;
   materials->v[index].pbrmr.metallic_fac = 1.0;
   materials->v[index].pbrmr.roughness_fac = 1.0;
+  materials->v[index].pbrmr.metal_rough_tex.index = YF_INT_MIN;
+  materials->v[index].normal_tex.index = YF_INT_MIN;
+  materials->v[index].normal_tex.scale = 1.0;
+  materials->v[index].occlusion_tex.index = YF_INT_MIN;
+  materials->v[index].occlusion_tex.strength = 1.0;
+  materials->v[index].emissive_tex.index = YF_INT_MIN;
+  materials->v[index].alpha_cutoff = 0.5;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1305,6 +1332,11 @@ static int parse_materials(FILE *file, L_symbol *symbol,
                       return -1;
                   }
                   next_symbol(file, symbol); /* ] */
+                } else if (strcmp("baseColorTexture", symbol->tokens) == 0) {
+                  if (parse_textureinfo(file, symbol,
+                        &materials->v[index].pbrmr.base_clr_tex) != 0)
+                    return -1;
+                  next_symbol(file, symbol); /* , } */
                 } else if (strcmp("metallicFactor", symbol->tokens) == 0) {
                   if (parse_num(file, symbol,
                         &materials->v[index].pbrmr.metallic_fac) != 0)
@@ -1313,6 +1345,13 @@ static int parse_materials(FILE *file, L_symbol *symbol,
                   if (parse_num(file, symbol,
                         &materials->v[index].pbrmr.roughness_fac) != 0)
                     return -1;
+                } else if (strcmp("metallicRoughnessTexture", symbol->tokens)
+                    == 0)
+                {
+                  if (parse_textureinfo(file, symbol,
+                        &materials->v[index].pbrmr.metal_rough_tex) != 0)
+                    return -1;
+                  next_symbol(file, symbol); /* , } */
                 } else {
                   if (consume_prop(file, symbol) != 0)
                     return -1;
@@ -1327,6 +1366,41 @@ static int parse_materials(FILE *file, L_symbol *symbol,
                 return -1;
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
+        } else if (strcmp("normalTexture", symbol->tokens) == 0) {
+          if (parse_textureinfo(file, symbol, &materials->v[index].normal_tex)
+              != 0)
+            return -1;
+        } else if (strcmp("occlusionTexture", symbol->tokens) == 0) {
+          if (parse_textureinfo(file, symbol,
+                &materials->v[index].occlusion_tex) != 0)
+            return -1;
+        } else if (strcmp("emissiveFactor", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          for (size_t i = 0; i < 3; ++i) {
+            if (parse_num(file, symbol, materials->v[index].emissive_fac+i)
+                != 0)
+              return -1;
+          }
+          next_symbol(file, symbol); /* ] */
+        } else if (strcmp("emissiveTexture", symbol->tokens) == 0) {
+          if (parse_textureinfo(file, symbol,
+                &materials->v[index].emissive_tex) != 0)
+            return -1;
+        } else if (strcmp("alphaMode", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          if (strcmp("MASK", symbol->tokens) == 0) {
+            materials->v[index].alpha_mode = YF_GLTF_ALPHA_MASK;
+          } else if (strcmp("BLEND", symbol->tokens) == 0) {
+            materials->v[index].alpha_mode = YF_GLTF_ALPHA_BLEND;
+          } else if (strcmp("OPAQUE", symbol->tokens) != 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+          }
+        } else if (strcmp("alphaCutoff", symbol->tokens) == 0) {
+          if (parse_num(file, symbol, &materials->v[index].alpha_cutoff) != 0)
+            return -1;
         } else if (strcmp("doubleSided", symbol->tokens) == 0) {
           if (parse_bool(file, symbol, &materials->v[index].double_sided) != 0)
             return -1;
@@ -1939,10 +2013,45 @@ static void print_gltf(const L_gltf *gltf) {
         gltf->materials.v[i].pbrmr.base_clr_fac[1],
         gltf->materials.v[i].pbrmr.base_clr_fac[2],
         gltf->materials.v[i].pbrmr.base_clr_fac[3]);
+    puts("   baseColorTexture:");
+    printf("    index: %lld\n",
+        gltf->materials.v[i].pbrmr.base_clr_tex.index);
+    printf("    texCoord: %lld\n",
+        gltf->materials.v[i].pbrmr.base_clr_tex.tex_coord);
     printf("   metallicFactor: %.9f\n",
         gltf->materials.v[i].pbrmr.metallic_fac);
     printf("   roughnessFactor: %.9f\n",
         gltf->materials.v[i].pbrmr.roughness_fac);
+    puts("   metallicRoughnessTexture:");
+    printf("    index: %lld\n",
+        gltf->materials.v[i].pbrmr.metal_rough_tex.index);
+    printf("    texCoord: %lld\n",
+        gltf->materials.v[i].pbrmr.metal_rough_tex.tex_coord);
+    puts("  normalTexture:");
+    printf("   index: %lld\n",
+        gltf->materials.v[i].normal_tex.index);
+    printf("   texCoord: %lld\n",
+        gltf->materials.v[i].normal_tex.tex_coord);
+    printf("   scale: %.9f\n",
+        gltf->materials.v[i].normal_tex.scale);
+    puts("  occlusionTexture:");
+    printf("   index: %lld\n",
+        gltf->materials.v[i].occlusion_tex.index);
+    printf("   texCoord: %lld\n",
+        gltf->materials.v[i].occlusion_tex.tex_coord);
+    printf("   strength: %.9f\n",
+        gltf->materials.v[i].occlusion_tex.strength);
+    printf("   emissiveFactor: [%.9f, %.9f, %.9f]\n",
+        gltf->materials.v[i].emissive_fac[0],
+        gltf->materials.v[i].emissive_fac[1],
+        gltf->materials.v[i].emissive_fac[2]);
+    puts("  emissiveTexture:");
+    printf("   index: %lld\n",
+        gltf->materials.v[i].emissive_tex.index);
+    printf("   texCoord: %lld\n",
+        gltf->materials.v[i].emissive_tex.tex_coord);
+    printf("  alphaMode: %d\n", gltf->materials.v[i].alpha_mode);
+    printf("  alphaCutoff: %.9f\n", gltf->materials.v[i].alpha_cutoff);
     printf("  doubleSided: %d\n", gltf->materials.v[i].double_sided);
   }
 
