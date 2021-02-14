@@ -824,14 +824,8 @@ static int parse_scenes(FILE *file, L_symbol *symbol,
                 parse_int_array, &scenes->v[index].nodes) != 0)
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          scenes->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (scenes->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &scenes->v[index].name) != 0)
             return -1;
-          }
-          strcpy(scenes->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
