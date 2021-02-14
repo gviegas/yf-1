@@ -17,7 +17,6 @@
 #include <yf/com/yf-error.h>
 
 #include "data-gltf.h"
-#include "matrix.h"
 #include "vertex.h"
 
 #define YF_SYMBOL_STR  0
@@ -43,6 +42,9 @@ static int next_symbol(FILE *file, L_symbol *symbol);
 
 /* Type defining a string. */
 typedef char *L_str;
+
+/* Type defining a floating-point number. */
+typedef YF_float L_num;
 
 /* Type defining an integer number. */
 typedef long long L_int;
@@ -86,11 +88,11 @@ typedef struct {
 #define YF_GLTF_XFORM_S    0x08
     unsigned xform_mask;
     union {
-      YF_mat4 matrix;
-      struct { YF_vec3 t; YF_vec4 r; YF_vec3 s; } trs;
+      L_num matrix[16];
+      struct { L_num t[3]; L_num r[4]; L_num s[3]; } trs;
     };
     L_int skin;
-    YF_float *weights;
+    L_num *weights;
     size_t weight_n;
     L_str name;
   } *v;
@@ -139,7 +141,7 @@ typedef struct {
 typedef struct {
   struct {
     L_primitives primitives;
-    YF_float *weights;
+    L_num *weights;
     size_t weight_n;
     L_str name;
   } *v;
@@ -150,9 +152,9 @@ typedef struct {
 typedef struct {
   struct {
     struct {
-      YF_vec4 base_clr_fac;
-      YF_float metallic_fac;
-      YF_float roughness_fac;
+      L_num base_clr_fac[4];
+      L_num metallic_fac;
+      L_num roughness_fac;
     } pbrmr;
     L_bool double_sided;
     L_str name;
@@ -183,13 +185,13 @@ typedef struct {
     int type;
     union {
       /* XXX: May not suffice for uint32. */
-      YF_float s;
-      YF_vec2 v2;
-      YF_vec3 v3;
-      YF_vec4 v4;
-      YF_mat2 m2;
-      YF_mat3 m3;
-      YF_mat4 m4;
+      L_num s;
+      L_num v2[2];
+      L_num v3[3];
+      L_num v4[4];
+      L_num m2[4];
+      L_num m3[9];
+      L_num m4[16];
     } min, max;
     L_str name;
   } *v;
