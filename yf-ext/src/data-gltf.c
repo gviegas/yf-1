@@ -246,6 +246,9 @@ static int parse_array(FILE *file, L_symbol *symbol,
 /* Parses a string. */
 static int parse_str(FILE *file, L_symbol *symbol, L_str *str);
 
+/* Parses a floating-point number. */
+static int parse_num(FILE *file, L_symbol *symbol, L_num *num);
+
 /* Parses an integer number. */
 static int parse_int(FILE *file, L_symbol *symbol, L_int *intr);
 
@@ -607,6 +610,36 @@ static int parse_str(FILE *file, L_symbol *symbol, L_str *str) {
     return -1;
   }
   strcpy(*str, symbol->tokens);
+  return 0;
+}
+
+static int parse_num(FILE *file, L_symbol *symbol, L_num *num) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(num != NULL);
+
+  switch (symbol->symbol) {
+    case YF_SYMBOL_OP:
+      break;
+    default:
+      next_symbol(file, symbol);
+  }
+  if (next_symbol(file, symbol) != YF_SYMBOL_NUM) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  errno = 0;
+  char *end;
+#ifdef YF_USE_FLOAT64
+  *num = strtod(symbol->tokens, &end);
+#else
+  *num = strtof(symbol->tokens, &end);
+#endif
+  if (errno != 0 || *end != '\0') {
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
+  }
   return 0;
 }
 
