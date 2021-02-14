@@ -43,8 +43,8 @@ static int next_symbol(FILE *file, L_symbol *symbol);
 
 /* Type defining an integer number. */
 typedef long long L_int;
-#define YF_GLTF_INTMIN LLONG_MIN
-#define YF_GLTF_INTMAX LLONG_MAX
+#define YF_INT_MIN LLONG_MIN
+#define YF_INT_MAX LLONG_MAX
 
 /* Type defining the 'glTF.asset' property. */
 typedef struct {
@@ -615,7 +615,7 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '{');
 
-  gltf->scene = YF_GLTF_INTMIN;
+  gltf->scene = YF_INT_MIN;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -826,9 +826,9 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  nodes->v[index].mesh = YF_GLTF_INTMIN;
-  nodes->v[index].camera = YF_GLTF_INTMIN;
-  nodes->v[index].skin = YF_GLTF_INTMIN;
+  nodes->v[index].mesh = YF_INT_MIN;
+  nodes->v[index].camera = YF_INT_MIN;
+  nodes->v[index].skin = YF_INT_MIN;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1001,9 +1001,9 @@ static int parse_targets(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  targets->v[index].position = YF_GLTF_INTMIN;
-  targets->v[index].normal = YF_GLTF_INTMIN;
-  targets->v[index].tangent = YF_GLTF_INTMIN;
+  targets->v[index].position = YF_INT_MIN;
+  targets->v[index].normal = YF_INT_MIN;
+  targets->v[index].tangent = YF_INT_MIN;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1049,11 +1049,11 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  primitives->v[index].indices = YF_GLTF_INTMIN;
-  primitives->v[index].material = YF_GLTF_INTMIN;
+  primitives->v[index].indices = YF_INT_MIN;
+  primitives->v[index].material = YF_INT_MIN;
   primitives->v[index].mode = YF_GLTF_MODE_TRIS;
   for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i)
-    primitives->v[index].attributes[i] = YF_GLTF_INTMIN;
+    primitives->v[index].attributes[i] = YF_INT_MIN;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1391,7 +1391,7 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  accessors->v[index].buffer_view = YF_GLTF_INTMIN;
+  accessors->v[index].buffer_view = YF_INT_MIN;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1623,18 +1623,18 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
   const L_primitives *prim = &gltf->meshes.v[0].primitives;
 
   idx.accessor = prim->v[0].indices;
-  if (idx.accessor != YF_GLTF_INTMIN) {
+  if (idx.accessor != YF_INT_MIN) {
     idx.view = gltf->accessors.v[idx.accessor].buffer_view;
     idx.buffer = gltf->bufferviews.v[idx.view].buffer;
   }
   for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i) {
     attrs[i].accessor = prim->v[0].attributes[i];
-    if (attrs[i].accessor != YF_GLTF_INTMIN) {
+    if (attrs[i].accessor != YF_INT_MIN) {
       attrs[i].view = gltf->accessors.v[attrs[i].accessor].buffer_view;
       attrs[i].buffer = gltf->bufferviews.v[attrs[i].view].buffer;
     }
   }
-  if (attrs[YF_GLTF_ATTR_POS].accessor == YF_GLTF_INTMIN) {
+  if (attrs[YF_GLTF_ATTR_POS].accessor == YF_INT_MIN) {
     yf_seterr(YF_ERR_UNSUP, __func__);
     return -1;
   }
@@ -1648,7 +1648,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
   const size_t i_strd = v_n < UINT16_MAX ? 2 : 4;
   size_t i_n = 0;
   void *inds = NULL;
-  if (idx.accessor != YF_GLTF_INTMIN) {
+  if (idx.accessor != YF_INT_MIN) {
     i_n = gltf->accessors.v[idx.accessor].count;
     inds = malloc(i_n*i_strd);
     if (inds == NULL) {
@@ -1658,7 +1658,7 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
     }
   }
 
-  L_int buf_id = YF_GLTF_INTMIN;
+  L_int buf_id = YF_INT_MIN;
   FILE *file = NULL;
   size_t comp_sz = 0;
   size_t comp_n = 0;
