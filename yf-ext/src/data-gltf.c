@@ -981,14 +981,8 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          nodes->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (nodes->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &nodes->v[index].name) != 0)
             return -1;
-          }
-          strcpy(nodes->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
