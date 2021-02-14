@@ -249,6 +249,10 @@ static int parse_str(FILE *file, L_symbol *symbol, L_str *str);
 /* Parses a floating-point number. */
 static int parse_num(FILE *file, L_symbol *symbol, L_num *num);
 
+/* Parses an element of an array of floating-point numbers. */
+static int parse_num_array(FILE *file, L_symbol *symbol,
+    size_t index, void *num_pp);
+
 /* Parses an integer number. */
 static int parse_int(FILE *file, L_symbol *symbol, L_int *intr);
 
@@ -641,6 +645,19 @@ static int parse_num(FILE *file, L_symbol *symbol, L_num *num) {
     return -1;
   }
   return 0;
+}
+
+static int parse_num_array(FILE *file, L_symbol *symbol,
+    size_t index, void *num_pp)
+{
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(num_pp != NULL);
+
+  L_num *num_p = *(L_num **)num_pp;
+  assert(num_p != NULL);
+
+  return parse_num(file, symbol, num_p+index);
 }
 
 static int parse_int(FILE *file, L_symbol *symbol, L_int *intr) {
