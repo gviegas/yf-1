@@ -1252,56 +1252,20 @@ static int parse_materials(FILE *file, L_symbol *symbol,
                 if (strcmp("baseColorFactor", symbol->tokens) == 0) {
                   next_symbol(file, symbol); /* : */
                   next_symbol(file, symbol); /* [ */
-                  errno = 0;
-
-                  next_symbol(file, symbol);
-                  materials->v[index].pbrmr.base_clr_fac[0] =
-                    strtod(symbol->tokens, NULL);
-                  next_symbol(file, symbol); /* , */
-
-                  next_symbol(file, symbol);
-                  materials->v[index].pbrmr.base_clr_fac[1] =
-                    strtod(symbol->tokens, NULL);
-                  next_symbol(file, symbol); /* , */
-
-                  next_symbol(file, symbol);
-                  materials->v[index].pbrmr.base_clr_fac[2] =
-                    strtod(symbol->tokens, NULL);
-                  next_symbol(file, symbol); /* , */
-
-                  next_symbol(file, symbol);
-                  materials->v[index].pbrmr.base_clr_fac[3] =
-                    strtod(symbol->tokens, NULL);
+                  for (size_t i = 0; i < 4; ++i) {
+                    if (parse_num(file, symbol,
+                          materials->v[index].pbrmr.base_clr_fac+i) != 0)
+                      return -1;
+                  }
                   next_symbol(file, symbol); /* ] */
-
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
-                    return -1;
-                  }
                 } else if (strcmp("metallicFactor", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-
-                  materials->v[index].pbrmr.metallic_fac =
-                    strtod(symbol->tokens, NULL);
-
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  if (parse_num(file, symbol,
+                        &materials->v[index].pbrmr.metallic_fac) != 0)
                     return -1;
-                  }
                 } else if (strcmp("roughnessFactor", symbol->tokens) == 0) {
-                  next_symbol(file, symbol); /* : */
-                  next_symbol(file, symbol);
-                  errno = 0;
-
-                  materials->v[index].pbrmr.roughness_fac =
-                    strtod(symbol->tokens, NULL);
-
-                  if (errno != 0) {
-                    yf_seterr(YF_ERR_OTHER, __func__);
+                  if (parse_num(file, symbol,
+                        &materials->v[index].pbrmr.roughness_fac) != 0)
                     return -1;
-                  }
                 } else {
                   if (consume_prop(file, symbol) != 0)
                     return -1;
