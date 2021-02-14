@@ -1570,23 +1570,11 @@ static int parse_buffers(FILE *file, L_symbol *symbol,
           if (parse_int(file, symbol, &buffers->v[index].byte_len) != 0)
             return -1;
         } else if (strcmp("uri", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          buffers->v[index].uri = malloc(1+strlen(symbol->tokens));
-          if (buffers->v[index].uri == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &buffers->v[index].uri) != 0)
             return -1;
-          }
-          strcpy(buffers->v[index].uri, symbol->tokens);
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          buffers->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (buffers->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &buffers->v[index].name) != 0)
             return -1;
-          }
-          strcpy(buffers->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
