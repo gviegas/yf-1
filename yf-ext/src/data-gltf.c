@@ -148,6 +148,12 @@ typedef struct {
   size_t n;
 } L_meshes;
 
+/* Type defining the 'glTF.*.textureInfo' property. */
+typedef struct {
+  L_int index;
+  L_int tex_coord;
+} L_textureinfo;
+
 /* Type defining the 'glTF.materials' property. */
 typedef struct {
   struct {
