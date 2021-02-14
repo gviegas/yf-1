@@ -1479,14 +1479,8 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
               break;
           }
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          accessors->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (accessors->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &accessors->v[index].name) != 0)
             return -1;
-          }
-          strcpy(accessors->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
