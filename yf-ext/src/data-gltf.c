@@ -168,6 +168,8 @@ typedef struct {
     } pbrmr;
     L_textureinfo normal_tex;
     L_textureinfo occlusion_tex;
+    L_num emissive_fac[3];
+    L_textureinfo emissive_tex;
     L_bool double_sided;
     L_str name;
   } *v;
@@ -1304,6 +1306,7 @@ static int parse_materials(FILE *file, L_symbol *symbol,
   materials->v[index].normal_tex.scale = 1.0;
   materials->v[index].occlusion_tex.index = YF_INT_MIN;
   materials->v[index].occlusion_tex.strength = 1.0;
+  materials->v[index].emissive_tex.index = YF_INT_MIN;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1364,6 +1367,19 @@ static int parse_materials(FILE *file, L_symbol *symbol,
         } else if (strcmp("occlusionTexture", symbol->tokens) == 0) {
           if (parse_textureinfo(file, symbol,
                 &materials->v[index].occlusion_tex) != 0)
+            return -1;
+        } else if (strcmp("emissiveFactor", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* [ */
+          for (size_t i = 0; i < 3; ++i) {
+            if (parse_num(file, symbol, materials->v[index].emissive_fac+i)
+                != 0)
+              return -1;
+          }
+          next_symbol(file, symbol); /* ] */
+        } else if (strcmp("emissiveTexture", symbol->tokens) == 0) {
+          if (parse_textureinfo(file, symbol,
+                &materials->v[index].emissive_tex) != 0)
             return -1;
         } else if (strcmp("doubleSided", symbol->tokens) == 0) {
           if (parse_bool(file, symbol, &materials->v[index].double_sided) != 0)
@@ -2005,6 +2021,15 @@ static void print_gltf(const L_gltf *gltf) {
         gltf->materials.v[i].occlusion_tex.tex_coord);
     printf("   strength: %.9f\n",
         gltf->materials.v[i].occlusion_tex.strength);
+    printf("   emissiveFactor: [%.9f, %.9f, %.9f]\n",
+        gltf->materials.v[i].emissive_fac[0],
+        gltf->materials.v[i].emissive_fac[1],
+        gltf->materials.v[i].emissive_fac[2]);
+    puts("  emissiveTexture:");
+    printf("   index: %lld\n",
+        gltf->materials.v[i].emissive_tex.index);
+    printf("   texCoord: %lld\n",
+        gltf->materials.v[i].emissive_tex.tex_coord);
     printf("  doubleSided: %d\n", gltf->materials.v[i].double_sided);
   }
 
