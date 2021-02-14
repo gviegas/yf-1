@@ -41,6 +41,9 @@ typedef struct {
    is equal to 'YF_SYMBOL_ERR' - the global error variable is not set. */
 static int next_symbol(FILE *file, L_symbol *symbol);
 
+/* Type defining a string. */
+typedef char *L_str;
+
 /* Type defining an integer number. */
 typedef long long L_int;
 #define YF_INT_MIN LLONG_MIN
@@ -53,10 +56,10 @@ typedef int L_bool;
 
 /* Type defining the 'glTF.asset' property. */
 typedef struct {
-  char *copyright;
-  char *generator;
-  char *version;
-  char *min_version;
+  L_str copyright;
+  L_str generator;
+  L_str version;
+  L_str min_version;
 } L_asset;
 
 /* Type defining the 'glTF.scenes' property. */
@@ -64,7 +67,7 @@ typedef struct {
   struct {
     L_int *nodes;
     size_t node_n;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_scenes;
@@ -89,7 +92,7 @@ typedef struct {
     L_int skin;
     YF_float *weights;
     size_t weight_n;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_nodes;
@@ -138,7 +141,7 @@ typedef struct {
     L_primitives primitives;
     YF_float *weights;
     size_t weight_n;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_meshes;
@@ -152,7 +155,7 @@ typedef struct {
       YF_float roughness_fac;
     } pbrmr;
     L_bool double_sided;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_materials;
@@ -188,7 +191,7 @@ typedef struct {
       YF_mat3 m3;
       YF_mat4 m4;
     } min, max;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_accessors;
@@ -200,7 +203,7 @@ typedef struct {
     L_int byte_off;
     L_int byte_len;
     L_int byte_strd;
-    char *name;
+    L_str name;
   } *v;
   size_t n;
 } L_bufferviews;
@@ -209,8 +212,8 @@ typedef struct {
 typedef struct {
   struct {
     L_int byte_len;
-    char *uri;
-    char *name;
+    L_str uri;
+    L_str name;
   } *v;
   size_t n;
 } L_buffers;
