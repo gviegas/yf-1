@@ -1529,14 +1529,8 @@ static int parse_bufferviews(FILE *file, L_symbol *symbol,
           if (parse_int(file, symbol, &bufferviews->v[index].byte_strd) != 0)
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
-          next_symbol(file, symbol); /* : */
-          next_symbol(file, symbol);
-          bufferviews->v[index].name = malloc(1+strlen(symbol->tokens));
-          if (bufferviews->v[index].name == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
+          if (parse_str(file, symbol, &bufferviews->v[index].name) != 0)
             return -1;
-          }
-          strcpy(bufferviews->v[index].name, symbol->tokens);
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
