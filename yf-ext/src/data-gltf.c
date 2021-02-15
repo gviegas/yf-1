@@ -298,6 +298,15 @@ typedef struct {
   size_t n;
 } L_buffers;
 
+/* Type defining the 'glTF.textures' property. */
+typedef struct {
+  struct {
+    L_int sampler;
+    L_int source;
+  } *v;
+  size_t n;
+} L_textures;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
