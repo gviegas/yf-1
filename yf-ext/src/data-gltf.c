@@ -99,7 +99,32 @@ typedef struct {
   size_t n;
 } L_nodes;
 
-/* Type defining the 'gltf.meshes.primitives.targets' property. */
+/* Type defining the 'glTF.cameras' property. */
+typedef struct {
+  struct {
+#define YF_GLTF_CAMERA_PERSP 0
+#define YF_GLTF_CAMERA_ORTHO 1
+    int type;
+    union {
+      struct {
+        L_num yfov;
+        L_num aspect_ratio;
+        L_num znear;
+        L_num zfar;
+      } persp;
+      struct {
+        L_num xmag;
+        L_num ymag;
+        L_num znear;
+        L_num zfar;
+      } ortho;
+    };
+    L_str name;
+  } *v;
+  size_t n;
+} L_cameras;
+
+/* Type defining the 'glTF.meshes.primitives.targets' property. */
 typedef struct {
   struct {
     L_int position;
@@ -279,6 +304,7 @@ typedef struct {
   L_int scene;
   L_scenes scenes;
   L_nodes nodes;
+  L_cameras cameras;
   L_meshes meshes;
   L_skins skins;
   L_materials materials;
@@ -333,6 +359,10 @@ static int parse_scenes(FILE *file, L_symbol *symbol,
 /* Parses the 'glTF.nodes' property. */
 static int parse_nodes(FILE *file, L_symbol *symbol,
     size_t index, void *nodes_p);
+
+/* Parses the 'glTF.cameras' property. */
+static int parse_cameras(FILE *file, L_symbol *symbol,
+    size_t index, void *cameras_p);
 
 /* Parses the 'glTF.meshes.primitives.targets' property. */
 static int parse_targets(FILE *file, L_symbol *symbol,
@@ -815,6 +845,11 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
                 &gltf->nodes.n, sizeof *gltf->nodes.v, parse_nodes,
                 &gltf->nodes) != 0)
             return -1;
+        } else if (strcmp("cameras", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&gltf->cameras.v,
+                &gltf->cameras.n, sizeof *gltf->cameras.v, parse_cameras,
+                &gltf->cameras) != 0)
+            return -1;
         } else if (strcmp("meshes", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->meshes.v,
                 &gltf->meshes.n, sizeof *gltf->meshes.v, parse_meshes,
@@ -1065,6 +1100,127 @@ static int parse_nodes(FILE *file, L_symbol *symbol,
           }
           return 0;
         }
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_cameras(FILE *file, L_symbol *symbol,
+    size_t index, void *cameras_p)
+{
+  L_cameras *cameras = cameras_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(cameras != NULL);
+  assert(index < cameras->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("type", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          if (strcmp("perspective", symbol->tokens) == 0) {
+            cameras->v[index].type = YF_GLTF_CAMERA_PERSP;
+          } else if (strcmp("orthographic", symbol->tokens) == 0) {
+            cameras->v[index].type = YF_GLTF_CAMERA_ORTHO;
+          } else {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+          }
+        } else if (strcmp("perspective", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* { */
+          do {
+            switch (next_symbol(file, symbol)) {
+              case YF_SYMBOL_STR:
+                if (strcmp("yfov", symbol->tokens) == 0) {
+                  if (parse_num(file, symbol, &cameras->v[index].persp.yfov)
+                      != 0)
+                    return -1;
+                } else if (strcmp("aspectRatio", symbol->tokens) == 0) {
+                  if (parse_num(file, symbol,
+                        &cameras->v[index].persp.aspect_ratio) != 0)
+                    return -1;
+                } else if (strcmp("znear", symbol->tokens) == 0) {
+                  if (parse_num(file, symbol, &cameras->v[index].persp.znear)
+                      != 0)
+                    return -1;
+                } else if (strcmp("zfar", symbol->tokens) == 0) {
+                  if (parse_num(file, symbol, &cameras->v[index].persp.zfar)
+                      != 0)
+                    return -1;
+                } else {
+                  if (consume_prop(file, symbol) != 0)
+                    return -1;
+                }
+                break;
+
+              case YF_SYMBOL_OP:
+                break;
+
+              default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
+        } else if (strcmp("orthographic", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* { */
+          do {
+            switch (next_symbol(file, symbol)) {
+              case YF_SYMBOL_STR:
+                if (strcmp("xmag", symbol->tokens) == 0) {
+                  if (parse_num(file, symbol, &cameras->v[index].ortho.xmag)
+                      != 0)
+                    return -1;
+                } else if (strcmp("ymag", symbol->tokens) == 0) {
+                  if (parse_num(file, symbol, &cameras->v[index].ortho.ymag)
+                      != 0)
+                    return -1;
+                } else if (strcmp("znear", symbol->tokens) == 0) {
+                  if (parse_num(file, symbol, &cameras->v[index].ortho.znear)
+                      != 0)
+                    return -1;
+                } else if (strcmp("zfar", symbol->tokens) == 0) {
+                  if (parse_num(file, symbol, &cameras->v[index].ortho.zfar)
+                      != 0)
+                    return -1;
+                } else {
+                  if (consume_prop(file, symbol) != 0)
+                    return -1;
+                }
+                break;
+
+              case YF_SYMBOL_OP:
+                break;
+
+              default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
+        } else if (strcmp("name", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &cameras->v[index].name) != 0)
+            return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
         break;
 
       default:
@@ -2152,6 +2308,25 @@ static void print_gltf(const L_gltf *gltf) {
     for (size_t j = 0; j < gltf->nodes.v[i].weight_n; ++j)
       printf("%.9f ", gltf->nodes.v[i].weights[j]);
     puts("]");
+  }
+
+  puts("glTF.cameras:");
+  printf(" n: %lu\n", gltf->cameras.n);
+  for (size_t i = 0; i < gltf->cameras.n; ++i) {
+    printf(" camera '%s':\n", gltf->cameras.v[i].name);
+    if (gltf->cameras.v[i].type == YF_GLTF_CAMERA_PERSP) {
+      puts("  pespective:");
+      printf("   yfov: %.9f\n", gltf->cameras.v[i].persp.yfov);
+      printf("   aspectRatio: %.9f\n", gltf->cameras.v[i].persp.aspect_ratio);
+      printf("   znear: %.9f\n", gltf->cameras.v[i].persp.znear);
+      printf("   zfar: %.9f\n", gltf->cameras.v[i].persp.zfar);
+    } else {
+      puts("  orthographic:");
+      printf("   xmag: %.9f\n", gltf->cameras.v[i].ortho.xmag);
+      printf("   ymag: %.9f\n", gltf->cameras.v[i].ortho.ymag);
+      printf("   znear: %.9f\n", gltf->cameras.v[i].ortho.znear);
+      printf("   zfar: %.9f\n", gltf->cameras.v[i].ortho.zfar);
+    }
   }
 
   puts("glTF.meshes:");
