@@ -355,6 +355,7 @@ typedef struct {
   L_buffers buffers;
   L_textures textures;
   L_images images;
+  L_samplers samplers;
   /* TODO: Other properties. */
 } L_gltf;
 
@@ -945,6 +946,11 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
           if (parse_array(file, symbol, (void **)&gltf->images.v,
                 &gltf->images.n, sizeof *gltf->images.v, parse_images,
                 &gltf->images) != 0)
+            return -1;
+        } else if (strcmp("samplers", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&gltf->samplers.v,
+                &gltf->samplers.n, sizeof *gltf->samplers.v, parse_samplers,
+                &gltf->samplers) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
@@ -2768,5 +2774,14 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  bufferView: %lld\n", gltf->images.v[i].buffer_view);
   }
 
+  puts("glTF.samplers:");
+  printf(" n: %lu\n", gltf->samplers.n);
+  for (size_t i = 0; i < gltf->samplers.n; ++i) {
+    printf(" sampler '%s':\n", gltf->samplers.v[i].name);
+    printf("  minFilter: %lld\n", gltf->samplers.v[i].min_filter);
+    printf("  magFilter: %lld\n", gltf->samplers.v[i].mag_filter);
+    printf("  wrapS: %lld\n", gltf->samplers.v[i].wrap_s);
+    printf("  wrapT: %lld\n", gltf->samplers.v[i].wrap_t);
+  }
 }
 #endif
