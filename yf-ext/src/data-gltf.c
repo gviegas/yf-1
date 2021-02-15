@@ -337,6 +337,9 @@ static int parse_textureinfo(FILE *file, L_symbol *symbol,
 static int parse_materials(FILE *file, L_symbol *symbol,
     size_t index, void *materials_p);
 
+/* Parses the 'glTF.accessors.sparse' property. */
+static int parse_sparse(FILE *file, L_symbol *symbol, L_sparse *sparse);
+
 /* Parses the 'glTF.accessors' property. */
 static int parse_accessors(FILE *file, L_symbol *symbol,
     size_t index, void *accessors_p);
@@ -1425,6 +1428,93 @@ static int parse_materials(FILE *file, L_symbol *symbol,
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &materials->v[index].name) != 0)
             return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_sparse(FILE *file, L_symbol *symbol, L_sparse *sparse) {
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(sparse != NULL);
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("count", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &sparse->count) != 0)
+            return -1;
+        } else if (strcmp("indices", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* { */
+          do {
+            switch (next_symbol(file, symbol)) {
+              case YF_SYMBOL_STR:
+                if (strcmp("bufferView", symbol->tokens) == 0) {
+                  if (parse_int(file, symbol, &sparse->indices.buffer_view)
+                      != 0)
+                    return -1;
+                } else if (strcmp("byteOffset", symbol->tokens) == 0) {
+                  if (parse_int(file, symbol, &sparse->indices.byte_off) != 0)
+                    return -1;
+                } else if (strcmp("componentType", symbol->tokens) == 0) {
+                  if (parse_int(file, symbol, &sparse->indices.comp_type) != 0)
+                    return -1;
+                } else {
+                  if (consume_prop(file, symbol) != 0)
+                    return -1;
+                }
+                break;
+
+              case YF_SYMBOL_OP:
+                break;
+
+              default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
+        } else if (strcmp("values", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* { */
+          do {
+            switch (next_symbol(file, symbol)) {
+              case YF_SYMBOL_STR:
+                if (strcmp("bufferView", symbol->tokens) == 0) {
+                  if (parse_int(file, symbol, &sparse->values.buffer_view) != 0)
+                    return -1;
+                } else if (strcmp("byteOffset", symbol->tokens) == 0) {
+                  if (parse_int(file, symbol, &sparse->values.byte_off) != 0)
+                    return -1;
+                } else {
+                  if (consume_prop(file, symbol) != 0)
+                    return -1;
+                }
+                break;
+
+              case YF_SYMBOL_OP:
+                break;
+
+              default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
