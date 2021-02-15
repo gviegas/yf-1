@@ -455,6 +455,10 @@ static int parse_textures(FILE *file, L_symbol *symbol,
 static int parse_images(FILE *file, L_symbol *symbol,
     size_t index, void *images_p);
 
+/* Parses the 'glTF.samplers' property. */
+static int parse_samplers(FILE *file, L_symbol *symbol,
+    size_t index, void *samplers_p);
+
 /* Loads a single mesh from glTF contents. */
 static int load_meshdt(const L_gltf *gltf, YF_meshdt *data);
 
@@ -2099,6 +2103,59 @@ static int parse_images(FILE *file, L_symbol *symbol,
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &images->v[index].name) != 0)
+            return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_samplers(FILE *file, L_symbol *symbol,
+    size_t index, void *samplers_p)
+{
+  L_samplers *samplers = samplers_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(samplers != NULL);
+  assert(index < samplers->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  samplers->v[index].wrap_s = YF_GLTF_WRAP_REPEAT;
+  samplers->v[index].wrap_t = YF_GLTF_WRAP_REPEAT;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("minFilter", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &samplers->v[index].min_filter) != 0)
+            return -1;
+        } else if (strcmp("magFilter", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &samplers->v[index].mag_filter) != 0)
+            return -1;
+        } else if (strcmp("wrapS", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &samplers->v[index].wrap_s) != 0)
+            return -1;
+        } else if (strcmp("wrapT", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &samplers->v[index].wrap_t) != 0)
+            return -1;
+        } else if (strcmp("name", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &samplers->v[index].name) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
