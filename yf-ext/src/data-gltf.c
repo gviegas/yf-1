@@ -181,6 +181,23 @@ typedef struct {
   size_t n;
 } L_materials;
 
+/* Type defining the 'glTF.accessors.sparse' property. */
+typedef struct {
+  L_int count;
+  struct {
+    L_int buffer_view;
+    L_int byte_off;
+#define YF_GLTF_COMP_UBYTE  5121
+#define YF_GLTF_COMP_USHORT 5123
+#define YF_GLTF_COMP_UINT   5125
+    L_int comp_type;
+  } indices;
+  struct {
+    L_int buffer_view;
+    L_int byte_off;
+  } values;
+} L_sparse;
+
 /* Type defining the 'glTF.accessors' property. */
 typedef struct {
   struct {
