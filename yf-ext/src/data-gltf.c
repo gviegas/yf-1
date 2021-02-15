@@ -218,6 +218,22 @@ typedef struct {
   size_t n;
 } L_materials;
 
+/* Type defining the 'glTF.animations.channels' property. */
+typedef struct {
+  struct {
+    L_int sampler;
+    struct {
+      L_int node;
+#define YF_GLTF_PATH_XLATE  0
+#define YF_GLTF_PATH_ROTATE 1
+#define YF_GLTF_PATH_SCALE  2
+#define YF_GLTF_PATH_WEIGHT 3
+      int path;
+    } target;
+  } *v;
+  size_t n;
+} L_channels;
+
 /* Type defining the 'glTF.animations' property. */
 typedef struct {
   struct {
