@@ -298,6 +298,16 @@ typedef struct {
   size_t n;
 } L_buffers;
 
+/* Type defining the 'glTF.textures' property. */
+typedef struct {
+  struct {
+    L_int sampler;
+    L_int source;
+    L_str name;
+  } *v;
+  size_t n;
+} L_textures;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
@@ -311,6 +321,7 @@ typedef struct {
   L_accessors accessors;
   L_bufferviews bufferviews;
   L_buffers buffers;
+  L_textures textures;
   /* TODO: Other properties. */
 } L_gltf;
 
@@ -402,6 +413,10 @@ static int parse_bufferviews(FILE *file, L_symbol *symbol,
 /* Parses the 'glTF.buffers' property. */
 static int parse_buffers(FILE *file, L_symbol *symbol,
     size_t index, void *buffers_p);
+
+/* Parses the 'glTF.textures' property. */
+static int parse_textures(FILE *file, L_symbol *symbol,
+    size_t index, void *textures_p);
 
 /* Loads a single mesh from glTF contents. */
 static int load_meshdt(const L_gltf *gltf, YF_meshdt *data);
@@ -879,6 +894,11 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
           if (parse_array(file, symbol, (void **)&gltf->buffers.v,
                 &gltf->buffers.n, sizeof *gltf->buffers.v, parse_buffers,
                 &gltf->buffers) != 0)
+            return -1;
+        } else if (strcmp("textures", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&gltf->textures.v,
+                &gltf->textures.n, sizeof *gltf->textures.v, parse_textures,
+                &gltf->textures) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
@@ -1963,6 +1983,52 @@ static int parse_buffers(FILE *file, L_symbol *symbol,
   return 0;
 }
 
+static int parse_textures(FILE *file, L_symbol *symbol,
+    size_t index, void *textures_p)
+{
+  L_textures *textures = textures_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(textures != NULL);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  textures->v[index].sampler = YF_INT_MIN;
+  textures->v[index].source = YF_INT_MIN;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("sampler", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &textures->v[index].sampler) != 0)
+            return -1;
+        } else if (strcmp("source", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &textures->v[index].source) != 0)
+            return -1;
+        } else if (strcmp("name", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &textures->v[index].name) != 0)
+            return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
 static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
   assert(gltf != NULL);
   assert(data != NULL);
@@ -2242,6 +2308,10 @@ static void deinit_gltf(L_gltf *gltf) {
     free(gltf->buffers.v[i].name);
   }
   free(gltf->buffers.v);
+
+  for (size_t i = 0; i < gltf->textures.n; ++i)
+    free(gltf->textures.v[i].name);
+  free(gltf->textures.v);
 }
 
 
@@ -2524,6 +2594,14 @@ static void print_gltf(const L_gltf *gltf) {
     printf(" buffer '%s':\n", gltf->buffers.v[i].name);
     printf("  byteLength: %lld\n", gltf->buffers.v[i].byte_len);
     printf("  uri: %s\n", gltf->buffers.v[i].uri);
+  }
+
+  puts("glTF.textures:");
+  printf(" n: %lu\n", gltf->textures.n);
+  for (size_t i = 0; i < gltf->textures.n; ++i) {
+    printf(" texture '%s':\n", gltf->textures.v[i].name);
+    printf("  sampler: %lld\n", gltf->textures.v[i].sampler);
+    printf("  source: %lld\n", gltf->textures.v[i].source);
   }
 }
 #endif
