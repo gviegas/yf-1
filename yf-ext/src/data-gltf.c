@@ -476,6 +476,10 @@ static int parse_materials(FILE *file, L_symbol *symbol,
 static int parse_channels(FILE *file, L_symbol *symbol,
     size_t index, void *channels_p);
 
+/* Parses the 'glTF.animations.samplers' property. */
+static int parse_asamplers(FILE *file, L_symbol *symbol,
+    size_t index, void *asamplers_p);
+
 /* Parses the 'glTF.animations' property. */
 static int parse_animations(FILE *file, L_symbol *symbol,
     size_t index, void *animations_p);
@@ -1861,6 +1865,58 @@ static int parse_channels(FILE *file, L_symbol *symbol,
                 return -1;
             }
           } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_asamplers(FILE *file, L_symbol *symbol,
+    size_t index, void *asamplers_p)
+{
+  L_asamplers *asamplers = asamplers_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(asamplers != NULL);
+  assert(index < asamplers->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("input", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &asamplers->v[index].input) != 0)
+            return -1;
+        } else if (strcmp("output", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &asamplers->v[index].output) != 0)
+            return -1;
+        } else if (strcmp("interpolation", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          if (strcmp("STEP", symbol->tokens) == 0) {
+            asamplers->v[index].interpolation = YF_GLTF_ERP_STEP;
+          } else if (strcmp("CUBICSPLINE", symbol->tokens) == 0) {
+            asamplers->v[index].interpolation = YF_GLTF_ERP_CUBIC;
+          } else if (strcmp("LINEAR", symbol->tokens) != 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+          }
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
