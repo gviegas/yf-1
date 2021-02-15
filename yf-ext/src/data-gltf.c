@@ -148,6 +148,18 @@ typedef struct {
   size_t n;
 } L_meshes;
 
+/* Type defining the 'glTF.skins' property. */
+typedef struct {
+  struct {
+    L_int inv_bind_matrices;
+    L_int skeleton;
+    L_int *joints;
+    size_t joint_n;
+    L_str name;
+  } *v;
+  size_t n;
+} L_skins;
+
 /* Type defining the 'glTF.*.textureInfo' property. */
 typedef struct {
   L_int index;
