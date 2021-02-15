@@ -148,6 +148,18 @@ typedef struct {
   size_t n;
 } L_meshes;
 
+/* Type defining the 'glTF.skins' property. */
+typedef struct {
+  struct {
+    L_int inv_bind_matrices;
+    L_int skeleton;
+    L_int *joints;
+    size_t joint_n;
+    L_str name;
+  } *v;
+  size_t n;
+} L_skins;
+
 /* Type defining the 'glTF.*.textureInfo' property. */
 typedef struct {
   L_int index;
@@ -268,6 +280,7 @@ typedef struct {
   L_scenes scenes;
   L_nodes nodes;
   L_meshes meshes;
+  L_skins skins;
   L_materials materials;
   L_accessors accessors;
   L_bufferviews bufferviews;
@@ -332,6 +345,10 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
 /* Parses the 'glTF.meshes' property. */
 static int parse_meshes(FILE *file, L_symbol *symbol,
     size_t index, void *meshes_p);
+
+/* Parses the 'glTF.skins' property. */
+static int parse_skins(FILE *file, L_symbol *symbol,
+    size_t index, void *skins_p);
 
 /* Parses the 'glTF.*.textureInfo property. */
 static int parse_textureinfo(FILE *file, L_symbol *symbol,
@@ -803,6 +820,11 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
                 &gltf->meshes.n, sizeof *gltf->meshes.v, parse_meshes,
                 &gltf->meshes) != 0)
             return -1;
+        } else if (strcmp("skins", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&gltf->skins.v,
+                &gltf->skins.n, sizeof *gltf->skins.v, parse_skins,
+                &gltf->skins) != 0)
+            return -1;
         } else if (strcmp("materials", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->materials.v,
                 &gltf->materials.n, sizeof *gltf->materials.v, parse_materials,
@@ -1197,7 +1219,7 @@ static int parse_primitives(FILE *file, L_symbol *symbol,
                 (void **)&primitives->v[index].targets.v,
                 &primitives->v[index].targets.n,
                 sizeof *primitives->v[index].targets.v,
-                parse_targets, (void *)&primitives->v[index].targets) != 0)
+                parse_targets, &primitives->v[index].targets) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
@@ -1239,7 +1261,7 @@ static int parse_meshes(FILE *file, L_symbol *symbol,
                 (void **)&meshes->v[index].primitives.v,
                 &meshes->v[index].primitives.n,
                 sizeof *meshes->v[index].primitives.v,
-                parse_primitives, (void *)&meshes->v[index].primitives) != 0)
+                parse_primitives, &meshes->v[index].primitives) != 0)
             return -1;
         } else if (strcmp("weights", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&meshes->v[index].weights,
@@ -1248,6 +1270,58 @@ static int parse_meshes(FILE *file, L_symbol *symbol,
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &meshes->v[index].name) != 0)
+            return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_skins(FILE *file, L_symbol *symbol,
+    size_t index, void *skins_p)
+{
+  L_skins *skins = skins_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(skins != NULL);
+  assert(index < skins->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  skins->v[index].inv_bind_matrices = YF_INT_MIN;
+  skins->v[index].skeleton = YF_INT_MIN;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("inverseBindMatrices", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &skins->v[index].inv_bind_matrices) != 0)
+            return -1;
+        } else if (strcmp("skeleton", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &skins->v[index].skeleton) != 0)
+            return -1;
+        } else if (strcmp("joints", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&skins->v[index].joints,
+                &skins->v[index].joint_n, sizeof *skins->v[index].joints,
+                parse_int_array, &skins->v[index].joints) != 0)
+            return -1;
+        } else if (strcmp("name", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &skins->v[index].name) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
@@ -2123,6 +2197,18 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  weights: [ ");
     for (size_t j = 0; j < gltf->meshes.v[i].weight_n; ++j)
       printf("%.9f ", gltf->meshes.v[i].weights[j]);
+    puts("]");
+  }
+
+  puts("glTF.skins:");
+  printf(" n: %lu\n", gltf->skins.n);
+  for (size_t i = 0; i < gltf->skins.n; ++i) {
+    printf(" skin '%s':\n", gltf->skins.v[i].name);
+    printf("  inverseBindMatrices: %lld\n", gltf->skins.v[i].inv_bind_matrices);
+    printf("  skeleton: %lld\n", gltf->skins.v[i].skeleton);
+    printf("  joints: [ ");
+    for (size_t j = 0; j < gltf->skins.v[i].joint_n; ++j)
+      printf("%lld ", gltf->skins.v[i].joints[j]);
     puts("]");
   }
 
