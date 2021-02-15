@@ -212,6 +212,7 @@ typedef struct {
       L_num m3[9];
       L_num m4[16];
     } min, max;
+    L_bool normalized;
     L_str name;
   } *v;
   size_t n;
@@ -1493,6 +1494,9 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
             if (symbol->symbol == YF_SYMBOL_OP && symbol->tokens[0] == ']')
               break;
           }
+        } else if (strcmp("normalized", symbol->tokens) == 0) {
+          if (parse_bool(file, symbol, &accessors->v[index].normalized) != 0)
+            return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &accessors->v[index].name) != 0)
             return -1;
@@ -2052,7 +2056,8 @@ static void print_gltf(const L_gltf *gltf) {
         gltf->materials.v[i].emissive_tex.tex_coord);
     printf("  alphaMode: %d\n", gltf->materials.v[i].alpha_mode);
     printf("  alphaCutoff: %.9f\n", gltf->materials.v[i].alpha_cutoff);
-    printf("  doubleSided: %d\n", gltf->materials.v[i].double_sided);
+    printf("  doubleSided: %s\n",
+        gltf->materials.v[i].double_sided ? "true" : "false");
   }
 
   puts("glTF.accessors:");
@@ -2064,26 +2069,27 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  count: %lld\n", gltf->accessors.v[i].count);
     printf("  componenType: %lld\n", gltf->accessors.v[i].comp_type);
     printf("  type: %d\n", gltf->accessors.v[i].type);
+    size_t comp_n = 0;
     switch (gltf->accessors.v[i].type) {
       case YF_GLTF_TYPE_SCALAR:
-        printf("  min: %.9f\n", gltf->accessors.v[i].min.s);
-        printf("  max: %.9f\n", gltf->accessors.v[i].max.s);
+        comp_n = 1;
         break;
       case YF_GLTF_TYPE_VEC2:
-        printf("  min: [%.9f, %.9f]\n",
-            gltf->accessors.v[i].min.v2[0], gltf->accessors.v[i].min.v2[1]);
-        printf("  max: [%.9f, %.9f]\n",
-            gltf->accessors.v[i].max.v2[0], gltf->accessors.v[i].max.v2[1]);
+        comp_n = 2;
         break;
       case YF_GLTF_TYPE_VEC3:
-        printf("  min: [%.9f, %.9f, %.9f]\n",
-            gltf->accessors.v[i].min.v3[0], gltf->accessors.v[i].min.v3[1],
-            gltf->accessors.v[i].min.v3[2]);
-        printf("  max: [%.9f, %.9f, %.9f]\n",
-            gltf->accessors.v[i].max.v3[0], gltf->accessors.v[i].max.v3[1],
-            gltf->accessors.v[i].max.v3[2]);
+        comp_n = 3;
         break;
       case YF_GLTF_TYPE_VEC4:
+      case YF_GLTF_TYPE_MAT2:
+        comp_n = 4;
+        break;
+      case YF_GLTF_TYPE_MAT3:
+        comp_n = 9;
+        break;
+      case YF_GLTF_TYPE_MAT4:
+        comp_n = 16;
+        break;
         printf("  min: [%.9f, %.9f, %.9f, %.9f]\n",
             gltf->accessors.v[i].min.v4[0], gltf->accessors.v[i].min.v4[1],
             gltf->accessors.v[i].min.v4[2], gltf->accessors.v[i].min.v4[3]);
@@ -2091,9 +2097,21 @@ static void print_gltf(const L_gltf *gltf) {
             gltf->accessors.v[i].max.v4[0], gltf->accessors.v[i].max.v4[1],
             gltf->accessors.v[i].max.v4[2], gltf->accessors.v[i].max.v4[3]);
         break;
-      default:
-        puts("  missing min/max output...");
     }
+    if (comp_n > 1) {
+      printf("  min: [ ");
+      for (size_t j = 0; j < comp_n; ++j)
+        printf("%.9f ", gltf->accessors.v[i].min.m4[j]);
+      printf("]\n  max: [ ");
+      for (size_t j = 0; j < comp_n; ++j)
+        printf("%.9f ", gltf->accessors.v[i].max.m4[j]);
+      puts("]");
+    } else {
+      printf("  min: %.9f\n", gltf->accessors.v[i].min.s);
+      printf("  max: %.9f\n", gltf->accessors.v[i].max.s);
+    }
+    printf("  normalized: %s\n",
+        gltf->accessors.v[i].normalized ? "true" : "false");
   }
 
   puts("glTF.bufferViews:");
