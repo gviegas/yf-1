@@ -319,6 +319,27 @@ typedef struct {
   size_t n;
 } L_images;
 
+/* Type defining the 'glTF.samplers' property. */
+typedef struct {
+  struct {
+#define YF_GLTF_FILTER_NEAREST 9728
+#define YF_GLTF_FILTER_LINEAR  9729
+#define YF_GLTF_FILTER_NRMIPNR 9984
+#define YF_GLTF_FILTER_LNMIPNR 9985
+#define YF_GLTF_FILTER_NRMIPLN 9986
+#define YF_GLTF_FILTER_LNMIPLN 9987
+    L_int min_filter;
+    L_int mag_filter;
+#define YF_GLTF_WRAP_CLAMP  33071
+#define YF_GLTF_WRAP_MIRROR 33648
+#define YF_GLTF_WRAP_REPEAT 10497
+    L_int wrap_s;
+    L_int wrap_t;
+    L_str name;
+  } *v;
+  size_t n;
+} L_samplers;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
