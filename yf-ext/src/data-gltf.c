@@ -308,6 +308,17 @@ typedef struct {
   size_t n;
 } L_textures;
 
+/* Type defining the 'glTF.images' property. */
+typedef struct {
+  struct {
+    L_str uri;
+    L_str mime_type;
+    L_int buffer_view;
+    L_str name;
+  } *v;
+  size_t n;
+} L_images;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
