@@ -2684,6 +2684,13 @@ static void deinit_gltf(L_gltf *gltf) {
     free(gltf->materials.v[i].name);
   free(gltf->materials.v);
 
+  for (size_t i = 0; i < gltf->animations.n; ++i) {
+    free(gltf->animations.v[i].channels.v);
+    free(gltf->animations.v[i].samplers.v);
+    free(gltf->animations.v[i].name);
+  }
+  free(gltf->animations.v);
+
   for (size_t i = 0; i < gltf->accessors.n; ++i)
     free(gltf->accessors.v[i].name);
   free(gltf->accessors.v);
