@@ -429,6 +429,10 @@ static int parse_buffers(FILE *file, L_symbol *symbol,
 static int parse_textures(FILE *file, L_symbol *symbol,
     size_t index, void *textures_p);
 
+/* Parses the 'glTF.images' property. */
+static int parse_images(FILE *file, L_symbol *symbol,
+    size_t index, void *images_p);
+
 /* Loads a single mesh from glTF contents. */
 static int load_meshdt(const L_gltf *gltf, YF_meshdt *data);
 
@@ -2019,6 +2023,55 @@ static int parse_textures(FILE *file, L_symbol *symbol,
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &textures->v[index].name) != 0)
+            return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_images(FILE *file, L_symbol *symbol,
+    size_t index, void *images_p)
+{
+  L_images *images = images_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(images != NULL);
+  assert(index < images->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  images->v[index].buffer_view = YF_INT_MAX;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("uri", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &images->v[index].uri) != 0)
+            return -1;
+        } else if (strcmp("mimeType", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &images->v[index].mime_type) != 0)
+            return -1;
+        } else if (strcmp("bufferView", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &images->v[index].buffer_view) != 0)
+            return -1;
+        } else if (strcmp("name", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &images->v[index].name) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
