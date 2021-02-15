@@ -2382,6 +2382,13 @@ static void deinit_gltf(L_gltf *gltf) {
   for (size_t i = 0; i < gltf->textures.n; ++i)
     free(gltf->textures.v[i].name);
   free(gltf->textures.v);
+
+  for (size_t i = 0; i < gltf->images.n; ++i) {
+    free(gltf->images.v[i].uri);
+    free(gltf->images.v[i].mime_type);
+    free(gltf->images.v[i].name);
+  }
+  free(gltf->images.v);
 }
 
 
