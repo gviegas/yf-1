@@ -218,6 +218,16 @@ typedef struct {
   size_t n;
 } L_materials;
 
+/* Type defining the 'glTF.animations' property. */
+typedef struct {
+  struct {
+    /* TODO: '.channels' */
+    /* TODO: '.samplers' */
+    L_str name;
+  } *v;
+  size_t n;
+} L_animations;
+
 /* Type defining the 'glTF.accessors.sparse' property. */
 typedef struct {
   L_int count;
@@ -350,13 +360,13 @@ typedef struct {
   L_meshes meshes;
   L_skins skins;
   L_materials materials;
+  L_animations animations;
   L_accessors accessors;
   L_bufferviews bufferviews;
   L_buffers buffers;
   L_textures textures;
   L_images images;
   L_samplers samplers;
-  /* TODO: Other properties. */
 } L_gltf;
 
 /* Consumes the current property.
@@ -432,6 +442,10 @@ static int parse_textureinfo(FILE *file, L_symbol *symbol,
 /* Parses the 'glTF.materials' property. */
 static int parse_materials(FILE *file, L_symbol *symbol,
     size_t index, void *materials_p);
+
+/* Parses the 'glTF.animations' property. */
+static int parse_animations(FILE *file, L_symbol *symbol,
+    size_t index, void *animations_p);
 
 /* Parses the 'glTF.accessors.sparse' property. */
 static int parse_sparse(FILE *file, L_symbol *symbol, L_sparse *sparse);
@@ -921,6 +935,11 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
           if (parse_array(file, symbol, (void **)&gltf->materials.v,
                 &gltf->materials.n, sizeof *gltf->materials.v, parse_materials,
                 &gltf->materials) != 0)
+            return -1;
+        } else if (strcmp("animations", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&gltf->animations.v,
+                &gltf->animations.n, sizeof *gltf->animations.v,
+                parse_animations, &gltf->animations) != 0)
             return -1;
         } else if (strcmp("accessors", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->accessors.v,
@@ -1733,6 +1752,48 @@ static int parse_materials(FILE *file, L_symbol *symbol,
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &materials->v[index].name) != 0)
+            return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_animations(FILE *file, L_symbol *symbol,
+    size_t index, void *animations_p)
+{
+  L_animations *animations = animations_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(animations != NULL);
+  assert(index < animations->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("channels", symbol->tokens) == 0) {
+          /* TODO */
+        } else if (strcmp("samplers", symbol->tokens) == 0) {
+          /* TODO */
+        } else if (strcmp("name", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &animations->v[index].name) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
@@ -2673,6 +2734,13 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  alphaCutoff: %.9f\n", gltf->materials.v[i].alpha_cutoff);
     printf("  doubleSided: %s\n",
         gltf->materials.v[i].double_sided ? "true" : "false");
+  }
+
+  puts("glTF.animations:");
+  printf(" n: %lu\n", gltf->animations.n);
+  for (size_t i = 0; i < gltf->animations.n; ++i) {
+    printf(" animation '%s':\n", gltf->animations.v[i].name);
+    /* TODO */
   }
 
   puts("glTF.accessors:");
