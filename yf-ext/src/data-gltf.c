@@ -250,8 +250,8 @@ typedef struct {
 /* Type defining the 'glTF.animations' property. */
 typedef struct {
   struct {
-    /* TODO: '.channels' */
-    /* TODO: '.samplers' */
+    L_channels channels;
+    L_asamplers samplers;
     L_str name;
   } *v;
   size_t n;
@@ -1953,9 +1953,19 @@ static int parse_animations(FILE *file, L_symbol *symbol,
     switch (next_symbol(file, symbol)) {
       case YF_SYMBOL_STR:
         if (strcmp("channels", symbol->tokens) == 0) {
-          /* TODO */
+          if (parse_array(file, symbol,
+                (void **)&animations->v[index].channels.v,
+                &animations->v[index].channels.n,
+                sizeof *animations->v[index].channels.v,
+                parse_channels, &animations->v[index].channels) != 0)
+            return -1;
         } else if (strcmp("samplers", symbol->tokens) == 0) {
-          /* TODO */
+          if (parse_array(file, symbol,
+                (void **)&animations->v[index].samplers.v,
+                &animations->v[index].samplers.n,
+                sizeof *animations->v[index].samplers.v,
+                parse_asamplers, &animations->v[index].samplers) != 0)
+            return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &animations->v[index].name) != 0)
             return -1;
@@ -2904,7 +2914,26 @@ static void print_gltf(const L_gltf *gltf) {
   printf(" n: %lu\n", gltf->animations.n);
   for (size_t i = 0; i < gltf->animations.n; ++i) {
     printf(" animation '%s':\n", gltf->animations.v[i].name);
-    /* TODO */
+    puts("  channels:");
+    printf("  n: %lu\n", gltf->animations.v[i].channels.n);
+    for (size_t j = 0; j < gltf->animations.v[i].channels.n; ++j) {
+      printf("  channel #%lu:\n", j);
+      printf("   sampler: %lld\n", gltf->animations.v[i].channels.v[j].sampler);
+      puts("   target:");
+      printf("    node: %lld\n",
+          gltf->animations.v[i].channels.v[j].target.node);
+      printf("    path: %d\n",
+          gltf->animations.v[i].channels.v[j].target.path);
+    }
+    puts("  samplers:");
+    printf("  n: %lu\n", gltf->animations.v[i].samplers.n);
+    for (size_t j = 0; j < gltf->animations.v[i].samplers.n; ++j) {
+      printf("  channel #%lu:\n", j);
+      printf("   input: %lld\n", gltf->animations.v[i].samplers.v[j].input);
+      printf("   output: %lld\n", gltf->animations.v[i].samplers.v[j].output);
+      printf("   interpolation: %d\n",
+          gltf->animations.v[i].samplers.v[j].interpolation);
+    }
   }
 
   puts("glTF.accessors:");
