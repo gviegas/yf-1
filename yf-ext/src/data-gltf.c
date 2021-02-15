@@ -319,6 +319,27 @@ typedef struct {
   size_t n;
 } L_images;
 
+/* Type defining the 'glTF.samplers' property. */
+typedef struct {
+  struct {
+#define YF_GLTF_FILTER_NEAREST 9728
+#define YF_GLTF_FILTER_LINEAR  9729
+#define YF_GLTF_FILTER_NRMIPNR 9984
+#define YF_GLTF_FILTER_LNMIPNR 9985
+#define YF_GLTF_FILTER_NRMIPLN 9986
+#define YF_GLTF_FILTER_LNMIPLN 9987
+    L_int min_filter;
+    L_int mag_filter;
+#define YF_GLTF_WRAP_CLAMP  33071
+#define YF_GLTF_WRAP_MIRROR 33648
+#define YF_GLTF_WRAP_REPEAT 10497
+    L_int wrap_s;
+    L_int wrap_t;
+    L_str name;
+  } *v;
+  size_t n;
+} L_samplers;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
@@ -334,6 +355,7 @@ typedef struct {
   L_buffers buffers;
   L_textures textures;
   L_images images;
+  L_samplers samplers;
   /* TODO: Other properties. */
 } L_gltf;
 
@@ -433,6 +455,10 @@ static int parse_textures(FILE *file, L_symbol *symbol,
 /* Parses the 'glTF.images' property. */
 static int parse_images(FILE *file, L_symbol *symbol,
     size_t index, void *images_p);
+
+/* Parses the 'glTF.samplers' property. */
+static int parse_samplers(FILE *file, L_symbol *symbol,
+    size_t index, void *samplers_p);
 
 /* Loads a single mesh from glTF contents. */
 static int load_meshdt(const L_gltf *gltf, YF_meshdt *data);
@@ -920,6 +946,11 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
           if (parse_array(file, symbol, (void **)&gltf->images.v,
                 &gltf->images.n, sizeof *gltf->images.v, parse_images,
                 &gltf->images) != 0)
+            return -1;
+        } else if (strcmp("samplers", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&gltf->samplers.v,
+                &gltf->samplers.n, sizeof *gltf->samplers.v, parse_samplers,
+                &gltf->samplers) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
@@ -2099,6 +2130,59 @@ static int parse_images(FILE *file, L_symbol *symbol,
   return 0;
 }
 
+static int parse_samplers(FILE *file, L_symbol *symbol,
+    size_t index, void *samplers_p)
+{
+  L_samplers *samplers = samplers_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(samplers != NULL);
+  assert(index < samplers->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  samplers->v[index].wrap_s = YF_GLTF_WRAP_REPEAT;
+  samplers->v[index].wrap_t = YF_GLTF_WRAP_REPEAT;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("minFilter", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &samplers->v[index].min_filter) != 0)
+            return -1;
+        } else if (strcmp("magFilter", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &samplers->v[index].mag_filter) != 0)
+            return -1;
+        } else if (strcmp("wrapS", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &samplers->v[index].wrap_s) != 0)
+            return -1;
+        } else if (strcmp("wrapT", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &samplers->v[index].wrap_t) != 0)
+            return -1;
+        } else if (strcmp("name", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &samplers->v[index].name) != 0)
+            return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
 static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
   assert(gltf != NULL);
   assert(data != NULL);
@@ -2389,6 +2473,10 @@ static void deinit_gltf(L_gltf *gltf) {
     free(gltf->images.v[i].name);
   }
   free(gltf->images.v);
+
+  for (size_t i = 0; i < gltf->samplers.n; ++i)
+    free(gltf->samplers.v[i].name);
+  free(gltf->samplers.v);
 }
 
 
@@ -2690,5 +2778,14 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  bufferView: %lld\n", gltf->images.v[i].buffer_view);
   }
 
+  puts("glTF.samplers:");
+  printf(" n: %lu\n", gltf->samplers.n);
+  for (size_t i = 0; i < gltf->samplers.n; ++i) {
+    printf(" sampler '%s':\n", gltf->samplers.v[i].name);
+    printf("  minFilter: %lld\n", gltf->samplers.v[i].min_filter);
+    printf("  magFilter: %lld\n", gltf->samplers.v[i].mag_filter);
+    printf("  wrapS: %lld\n", gltf->samplers.v[i].wrap_s);
+    printf("  wrapT: %lld\n", gltf->samplers.v[i].wrap_t);
+  }
 }
 #endif
