@@ -333,6 +333,7 @@ typedef struct {
   L_bufferviews bufferviews;
   L_buffers buffers;
   L_textures textures;
+  L_images images;
   /* TODO: Other properties. */
 } L_gltf;
 
@@ -914,6 +915,11 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
           if (parse_array(file, symbol, (void **)&gltf->textures.v,
                 &gltf->textures.n, sizeof *gltf->textures.v, parse_textures,
                 &gltf->textures) != 0)
+            return -1;
+        } else if (strcmp("images", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&gltf->images.v,
+                &gltf->images.n, sizeof *gltf->images.v, parse_images,
+                &gltf->images) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
@@ -2056,7 +2062,7 @@ static int parse_images(FILE *file, L_symbol *symbol,
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
-  images->v[index].buffer_view = YF_INT_MAX;
+  images->v[index].buffer_view = YF_INT_MIN;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -2667,5 +2673,15 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  sampler: %lld\n", gltf->textures.v[i].sampler);
     printf("  source: %lld\n", gltf->textures.v[i].source);
   }
+
+  puts("glTF.images:");
+  printf(" n: %lu\n", gltf->images.n);
+  for (size_t i = 0; i < gltf->images.n; ++i) {
+    printf(" image '%s':\n", gltf->images.v[i].name);
+    printf("  uri: %s\n", gltf->images.v[i].uri);
+    printf("  mimeType: %s\n", gltf->images.v[i].mime_type);
+    printf("  bufferView: %lld\n", gltf->images.v[i].buffer_view);
+  }
+
 }
 #endif
