@@ -459,6 +459,10 @@ static int parse_textureinfo(FILE *file, L_symbol *symbol,
 static int parse_materials(FILE *file, L_symbol *symbol,
     size_t index, void *materials_p);
 
+/* Parses the 'glTF.animations.channels' property. */
+static int parse_channels(FILE *file, L_symbol *symbol,
+    size_t index, void *channels_p);
+
 /* Parses the 'glTF.animations' property. */
 static int parse_animations(FILE *file, L_symbol *symbol,
     size_t index, void *animations_p);
@@ -1769,6 +1773,81 @@ static int parse_materials(FILE *file, L_symbol *symbol,
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &materials->v[index].name) != 0)
             return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_channels(FILE *file, L_symbol *symbol,
+    size_t index, void *channels_p)
+{
+  L_channels *channels = channels_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(channels != NULL);
+  assert(index < channels->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("sampler", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &channels->v[index].sampler) != 0)
+            return -1;
+        } else if (strcmp("target", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* { */
+          do {
+            switch (next_symbol(file, symbol)) {
+              case YF_SYMBOL_STR:
+                if (strcmp("node", symbol->tokens) == 0) {
+                  if (parse_int(file, symbol, &channels->v[index].target.node)
+                      != 0)
+                    return -1;
+                } else if (strcmp("path", symbol->tokens) == 0) {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  if (strcmp("rotation", symbol->tokens) == 0) {
+                    channels->v[index].target.path = YF_GLTF_PATH_ROTATE;
+                  } else if (strcmp("scale", symbol->tokens) == 0) {
+                    channels->v[index].target.path = YF_GLTF_PATH_SCALE;
+                  } else if (strcmp("weights", symbol->tokens) == 0) {
+                    channels->v[index].target.path = YF_GLTF_PATH_WEIGHT;
+                  } else if (strcmp("translation", symbol->tokens) != 0) {
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    return -1;
+                  }
+                } else {
+                  if (consume_prop(file, symbol) != 0)
+                    return -1;
+                }
+                break;
+
+              case YF_SYMBOL_OP:
+                break;
+
+              default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
         } else {
           if (consume_prop(file, symbol) != 0)
             return -1;
