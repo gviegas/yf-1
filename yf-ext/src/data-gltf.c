@@ -2473,6 +2473,10 @@ static void deinit_gltf(L_gltf *gltf) {
     free(gltf->images.v[i].name);
   }
   free(gltf->images.v);
+
+  for (size_t i = 0; i < gltf->samplers.n; ++i)
+    free(gltf->samplers.v[i].name);
+  free(gltf->samplers.v);
 }
 
 
