@@ -230,6 +230,7 @@ typedef struct {
       L_num m4[16];
     } min, max;
     L_bool normalized;
+    L_sparse sparse;
     L_str name;
   } *v;
   size_t n;
@@ -1548,6 +1549,8 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
 
   accessors->v[index].buffer_view = YF_INT_MIN;
+  accessors->v[index].sparse.indices.buffer_view = YF_INT_MIN;
+  accessors->v[index].sparse.values.buffer_view = YF_INT_MIN;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -1603,6 +1606,9 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
           }
         } else if (strcmp("normalized", symbol->tokens) == 0) {
           if (parse_bool(file, symbol, &accessors->v[index].normalized) != 0)
+            return -1;
+        } else if (strcmp("sparse", symbol->tokens) == 0) {
+          if (parse_sparse(file, symbol, &accessors->v[index].sparse) != 0)
             return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &accessors->v[index].name) != 0)
@@ -2219,6 +2225,19 @@ static void print_gltf(const L_gltf *gltf) {
     }
     printf("  normalized: %s\n",
         gltf->accessors.v[i].normalized ? "true" : "false");
+    puts("  sparse:");
+    puts("   indices:");
+    printf("    bufferView: %lld\n",
+        gltf->accessors.v[i].sparse.indices.buffer_view);
+    printf("    byteOffset: %lld\n",
+        gltf->accessors.v[i].sparse.indices.byte_off);
+    printf("    componenType: %lld\n",
+        gltf->accessors.v[i].sparse.indices.comp_type);
+    puts("   values:");
+    printf("    bufferView: %lld\n",
+        gltf->accessors.v[i].sparse.values.buffer_view);
+    printf("    byteOffset: %lld\n",
+        gltf->accessors.v[i].sparse.values.byte_off);
   }
 
   puts("glTF.bufferViews:");
