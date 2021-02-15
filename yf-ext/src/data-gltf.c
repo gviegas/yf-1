@@ -304,6 +304,7 @@ typedef struct {
   L_int scene;
   L_scenes scenes;
   L_nodes nodes;
+  L_cameras cameras;
   L_meshes meshes;
   L_skins skins;
   L_materials materials;
@@ -843,6 +844,11 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
           if (parse_array(file, symbol, (void **)&gltf->nodes.v,
                 &gltf->nodes.n, sizeof *gltf->nodes.v, parse_nodes,
                 &gltf->nodes) != 0)
+            return -1;
+        } else if (strcmp("cameras", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&gltf->cameras.v,
+                &gltf->cameras.n, sizeof *gltf->cameras.v, parse_cameras,
+                &gltf->cameras) != 0)
             return -1;
         } else if (strcmp("meshes", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->meshes.v,
@@ -2302,6 +2308,25 @@ static void print_gltf(const L_gltf *gltf) {
     for (size_t j = 0; j < gltf->nodes.v[i].weight_n; ++j)
       printf("%.9f ", gltf->nodes.v[i].weights[j]);
     puts("]");
+  }
+
+  puts("glTF.cameras:");
+  printf(" n: %lu\n", gltf->cameras.n);
+  for (size_t i = 0; i < gltf->cameras.n; ++i) {
+    printf(" camera '%s':\n", gltf->cameras.v[i].name);
+    if (gltf->cameras.v[i].type == YF_GLTF_CAMERA_PERSP) {
+      puts("  pespective:");
+      printf("   yfov: %.9f\n", gltf->cameras.v[i].persp.yfov);
+      printf("   aspectRatio: %.9f\n", gltf->cameras.v[i].persp.aspect_ratio);
+      printf("   znear: %.9f\n", gltf->cameras.v[i].persp.znear);
+      printf("   zfar: %.9f\n", gltf->cameras.v[i].persp.zfar);
+    } else {
+      puts("  orthographic:");
+      printf("   xmag: %.9f\n", gltf->cameras.v[i].ortho.xmag);
+      printf("   ymag: %.9f\n", gltf->cameras.v[i].ortho.ymag);
+      printf("   znear: %.9f\n", gltf->cameras.v[i].ortho.znear);
+      printf("   zfar: %.9f\n", gltf->cameras.v[i].ortho.zfar);
+    }
   }
 
   puts("glTF.meshes:");
