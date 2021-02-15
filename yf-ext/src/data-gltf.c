@@ -243,6 +243,9 @@ typedef struct {
     L_int byte_off;
     L_int byte_len;
     L_int byte_strd;
+#define YF_GLTF_TARGET_BUF     34962
+#define YF_GLTF_TARGET_ELEMBUF 34963
+    L_int target;
     L_str name;
   } *v;
   size_t n;
@@ -1660,6 +1663,9 @@ static int parse_bufferviews(FILE *file, L_symbol *symbol,
         } else if (strcmp("byteStride", symbol->tokens) == 0) {
           if (parse_int(file, symbol, &bufferviews->v[index].byte_strd) != 0)
             return -1;
+        } else if (strcmp("target", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &bufferviews->v[index].target) != 0)
+            return -1;
         } else if (strcmp("name", symbol->tokens) == 0) {
           if (parse_str(file, symbol, &bufferviews->v[index].name) != 0)
             return -1;
@@ -2248,6 +2254,7 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  byteOffset: %lld\n", gltf->bufferviews.v[i].byte_off);
     printf("  byteLength: %lld\n", gltf->bufferviews.v[i].byte_len);
     printf("  byteStride: %lld\n", gltf->bufferviews.v[i].byte_strd);
+    printf("  target: %lld\n", gltf->bufferviews.v[i].target);
   }
 
   puts("glTF.buffers:");
