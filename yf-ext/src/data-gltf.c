@@ -234,6 +234,19 @@ typedef struct {
   size_t n;
 } L_channels;
 
+/* Type defining the 'glTF.animations.samplers' property. */
+typedef struct {
+  struct {
+    L_int input;
+    L_int output;
+#define YF_GLTF_ERP_LINEAR 0
+#define YF_GLTF_ERP_STEP   1
+#define YF_GLTF_ERP_CUBIC  2
+    int interpolation;
+  } *v;
+  size_t n;
+} L_asamplers;
+
 /* Type defining the 'glTF.animations' property. */
 typedef struct {
   struct {
