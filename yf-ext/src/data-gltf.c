@@ -280,6 +280,7 @@ typedef struct {
   L_scenes scenes;
   L_nodes nodes;
   L_meshes meshes;
+  L_skins skins;
   L_materials materials;
   L_accessors accessors;
   L_bufferviews bufferviews;
@@ -819,6 +820,11 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
                 &gltf->meshes.n, sizeof *gltf->meshes.v, parse_meshes,
                 &gltf->meshes) != 0)
             return -1;
+        } else if (strcmp("skins", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&gltf->skins.v,
+                &gltf->skins.n, sizeof *gltf->skins.v, parse_skins,
+                &gltf->skins) != 0)
+            return -1;
         } else if (strcmp("materials", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->materials.v,
                 &gltf->materials.n, sizeof *gltf->materials.v, parse_materials,
@@ -1296,6 +1302,9 @@ static int parse_skins(FILE *file, L_symbol *symbol,
   assert(index < skins->n);
   assert(symbol->symbol == YF_SYMBOL_OP);
   assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  skins->v[index].inv_bind_matrices = YF_INT_MIN;
+  skins->v[index].skeleton = YF_INT_MIN;
 
   do {
     switch (next_symbol(file, symbol)) {
@@ -2188,6 +2197,18 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  weights: [ ");
     for (size_t j = 0; j < gltf->meshes.v[i].weight_n; ++j)
       printf("%.9f ", gltf->meshes.v[i].weights[j]);
+    puts("]");
+  }
+
+  puts("glTF.skins:");
+  printf(" n: %lu\n", gltf->skins.n);
+  for (size_t i = 0; i < gltf->skins.n; ++i) {
+    printf(" skin '%s':\n", gltf->skins.v[i].name);
+    printf("  inverseBindMatrices: %lld\n", gltf->skins.v[i].inv_bind_matrices);
+    printf("  skeleton: %lld\n", gltf->skins.v[i].skeleton);
+    printf("  joints: [ ");
+    for (size_t j = 0; j < gltf->skins.v[i].joint_n; ++j)
+      printf("%lld ", gltf->skins.v[i].joints[j]);
     puts("]");
   }
 
