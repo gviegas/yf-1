@@ -99,7 +99,32 @@ typedef struct {
   size_t n;
 } L_nodes;
 
-/* Type defining the 'gltf.meshes.primitives.targets' property. */
+/* Type defining the 'glTF.cameras' property. */
+typedef struct {
+  struct {
+#define YF_GLTF_CAMERA_PERSP 0
+#define YF_GLTF_CAMERA_ORTHO 1
+    int type;
+    union {
+      struct {
+        L_num yfov;
+        L_num aspect_ratio;
+        L_num znear;
+        L_num zfar;
+      } persp;
+      struct {
+        L_num xmag;
+        L_num ymag;
+        L_num znear;
+        L_num zfar;
+      } ortho;
+    };
+    L_str name;
+  } *v;
+  size_t n;
+} L_cameras;
+
+/* Type defining the 'glTF.meshes.primitives.targets' property. */
 typedef struct {
   struct {
     L_int position;
