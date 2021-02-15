@@ -218,6 +218,45 @@ typedef struct {
   size_t n;
 } L_materials;
 
+/* Type defining the 'glTF.animations.channels' property. */
+typedef struct {
+  struct {
+    L_int sampler;
+    struct {
+      L_int node;
+#define YF_GLTF_PATH_XLATE  0
+#define YF_GLTF_PATH_ROTATE 1
+#define YF_GLTF_PATH_SCALE  2
+#define YF_GLTF_PATH_WEIGHT 3
+      int path;
+    } target;
+  } *v;
+  size_t n;
+} L_channels;
+
+/* Type defining the 'glTF.animations.samplers' property. */
+typedef struct {
+  struct {
+    L_int input;
+    L_int output;
+#define YF_GLTF_ERP_LINEAR 0
+#define YF_GLTF_ERP_STEP   1
+#define YF_GLTF_ERP_CUBIC  2
+    int interpolation;
+  } *v;
+  size_t n;
+} L_asamplers;
+
+/* Type defining the 'glTF.animations' property. */
+typedef struct {
+  struct {
+    L_channels channels;
+    L_asamplers samplers;
+    L_str name;
+  } *v;
+  size_t n;
+} L_animations;
+
 /* Type defining the 'glTF.accessors.sparse' property. */
 typedef struct {
   L_int count;
@@ -350,13 +389,13 @@ typedef struct {
   L_meshes meshes;
   L_skins skins;
   L_materials materials;
+  L_animations animations;
   L_accessors accessors;
   L_bufferviews bufferviews;
   L_buffers buffers;
   L_textures textures;
   L_images images;
   L_samplers samplers;
-  /* TODO: Other properties. */
 } L_gltf;
 
 /* Consumes the current property.
@@ -432,6 +471,18 @@ static int parse_textureinfo(FILE *file, L_symbol *symbol,
 /* Parses the 'glTF.materials' property. */
 static int parse_materials(FILE *file, L_symbol *symbol,
     size_t index, void *materials_p);
+
+/* Parses the 'glTF.animations.channels' property. */
+static int parse_channels(FILE *file, L_symbol *symbol,
+    size_t index, void *channels_p);
+
+/* Parses the 'glTF.animations.samplers' property. */
+static int parse_asamplers(FILE *file, L_symbol *symbol,
+    size_t index, void *asamplers_p);
+
+/* Parses the 'glTF.animations' property. */
+static int parse_animations(FILE *file, L_symbol *symbol,
+    size_t index, void *animations_p);
 
 /* Parses the 'glTF.accessors.sparse' property. */
 static int parse_sparse(FILE *file, L_symbol *symbol, L_sparse *sparse);
@@ -921,6 +972,11 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
           if (parse_array(file, symbol, (void **)&gltf->materials.v,
                 &gltf->materials.n, sizeof *gltf->materials.v, parse_materials,
                 &gltf->materials) != 0)
+            return -1;
+        } else if (strcmp("animations", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&gltf->animations.v,
+                &gltf->animations.n, sizeof *gltf->animations.v,
+                parse_animations, &gltf->animations) != 0)
             return -1;
         } else if (strcmp("accessors", symbol->tokens) == 0) {
           if (parse_array(file, symbol, (void **)&gltf->accessors.v,
@@ -1754,6 +1810,185 @@ static int parse_materials(FILE *file, L_symbol *symbol,
   return 0;
 }
 
+static int parse_channels(FILE *file, L_symbol *symbol,
+    size_t index, void *channels_p)
+{
+  L_channels *channels = channels_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(channels != NULL);
+  assert(index < channels->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("sampler", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &channels->v[index].sampler) != 0)
+            return -1;
+        } else if (strcmp("target", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol); /* { */
+          do {
+            switch (next_symbol(file, symbol)) {
+              case YF_SYMBOL_STR:
+                if (strcmp("node", symbol->tokens) == 0) {
+                  if (parse_int(file, symbol, &channels->v[index].target.node)
+                      != 0)
+                    return -1;
+                } else if (strcmp("path", symbol->tokens) == 0) {
+                  next_symbol(file, symbol); /* : */
+                  next_symbol(file, symbol);
+                  if (strcmp("rotation", symbol->tokens) == 0) {
+                    channels->v[index].target.path = YF_GLTF_PATH_ROTATE;
+                  } else if (strcmp("scale", symbol->tokens) == 0) {
+                    channels->v[index].target.path = YF_GLTF_PATH_SCALE;
+                  } else if (strcmp("weights", symbol->tokens) == 0) {
+                    channels->v[index].target.path = YF_GLTF_PATH_WEIGHT;
+                  } else if (strcmp("translation", symbol->tokens) != 0) {
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    return -1;
+                  }
+                } else {
+                  if (consume_prop(file, symbol) != 0)
+                    return -1;
+                }
+                break;
+
+              case YF_SYMBOL_OP:
+                break;
+
+              default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+          } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_asamplers(FILE *file, L_symbol *symbol,
+    size_t index, void *asamplers_p)
+{
+  L_asamplers *asamplers = asamplers_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(asamplers != NULL);
+  assert(index < asamplers->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("input", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &asamplers->v[index].input) != 0)
+            return -1;
+        } else if (strcmp("output", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &asamplers->v[index].output) != 0)
+            return -1;
+        } else if (strcmp("interpolation", symbol->tokens) == 0) {
+          next_symbol(file, symbol); /* : */
+          next_symbol(file, symbol);
+          if (strcmp("STEP", symbol->tokens) == 0) {
+            asamplers->v[index].interpolation = YF_GLTF_ERP_STEP;
+          } else if (strcmp("CUBICSPLINE", symbol->tokens) == 0) {
+            asamplers->v[index].interpolation = YF_GLTF_ERP_CUBIC;
+          } else if (strcmp("LINEAR", symbol->tokens) != 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+          }
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
+static int parse_animations(FILE *file, L_symbol *symbol,
+    size_t index, void *animations_p)
+{
+  L_animations *animations = animations_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(animations != NULL);
+  assert(index < animations->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("channels", symbol->tokens) == 0) {
+          if (parse_array(file, symbol,
+                (void **)&animations->v[index].channels.v,
+                &animations->v[index].channels.n,
+                sizeof *animations->v[index].channels.v,
+                parse_channels, &animations->v[index].channels) != 0)
+            return -1;
+        } else if (strcmp("samplers", symbol->tokens) == 0) {
+          if (parse_array(file, symbol,
+                (void **)&animations->v[index].samplers.v,
+                &animations->v[index].samplers.n,
+                sizeof *animations->v[index].samplers.v,
+                parse_asamplers, &animations->v[index].samplers) != 0)
+            return -1;
+        } else if (strcmp("name", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &animations->v[index].name) != 0)
+            return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
 static int parse_sparse(FILE *file, L_symbol *symbol, L_sparse *sparse) {
   assert(!feof(file));
   assert(symbol != NULL);
@@ -2449,6 +2684,13 @@ static void deinit_gltf(L_gltf *gltf) {
     free(gltf->materials.v[i].name);
   free(gltf->materials.v);
 
+  for (size_t i = 0; i < gltf->animations.n; ++i) {
+    free(gltf->animations.v[i].channels.v);
+    free(gltf->animations.v[i].samplers.v);
+    free(gltf->animations.v[i].name);
+  }
+  free(gltf->animations.v);
+
   for (size_t i = 0; i < gltf->accessors.n; ++i)
     free(gltf->accessors.v[i].name);
   free(gltf->accessors.v);
@@ -2673,6 +2915,32 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  alphaCutoff: %.9f\n", gltf->materials.v[i].alpha_cutoff);
     printf("  doubleSided: %s\n",
         gltf->materials.v[i].double_sided ? "true" : "false");
+  }
+
+  puts("glTF.animations:");
+  printf(" n: %lu\n", gltf->animations.n);
+  for (size_t i = 0; i < gltf->animations.n; ++i) {
+    printf(" animation '%s':\n", gltf->animations.v[i].name);
+    puts("  channels:");
+    printf("  n: %lu\n", gltf->animations.v[i].channels.n);
+    for (size_t j = 0; j < gltf->animations.v[i].channels.n; ++j) {
+      printf("  channel #%lu:\n", j);
+      printf("   sampler: %lld\n", gltf->animations.v[i].channels.v[j].sampler);
+      puts("   target:");
+      printf("    node: %lld\n",
+          gltf->animations.v[i].channels.v[j].target.node);
+      printf("    path: %d\n",
+          gltf->animations.v[i].channels.v[j].target.path);
+    }
+    puts("  samplers:");
+    printf("  n: %lu\n", gltf->animations.v[i].samplers.n);
+    for (size_t j = 0; j < gltf->animations.v[i].samplers.n; ++j) {
+      printf("  channel #%lu:\n", j);
+      printf("   input: %lld\n", gltf->animations.v[i].samplers.v[j].input);
+      printf("   output: %lld\n", gltf->animations.v[i].samplers.v[j].output);
+      printf("   interpolation: %d\n",
+          gltf->animations.v[i].samplers.v[j].interpolation);
+    }
   }
 
   puts("glTF.accessors:");
