@@ -2308,6 +2308,10 @@ static void deinit_gltf(L_gltf *gltf) {
     free(gltf->buffers.v[i].name);
   }
   free(gltf->buffers.v);
+
+  for (size_t i = 0; i < gltf->textures.n; ++i)
+    free(gltf->textures.v[i].name);
+  free(gltf->textures.v);
 }
 
 
