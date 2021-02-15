@@ -308,6 +308,17 @@ typedef struct {
   size_t n;
 } L_textures;
 
+/* Type defining the 'glTF.images' property. */
+typedef struct {
+  struct {
+    L_str uri;
+    L_str mime_type;
+    L_int buffer_view;
+    L_str name;
+  } *v;
+  size_t n;
+} L_images;
+
 /* Type defining the root glTF object. */
 typedef struct {
   L_asset asset;
@@ -322,6 +333,7 @@ typedef struct {
   L_bufferviews bufferviews;
   L_buffers buffers;
   L_textures textures;
+  L_images images;
   /* TODO: Other properties. */
 } L_gltf;
 
@@ -417,6 +429,10 @@ static int parse_buffers(FILE *file, L_symbol *symbol,
 /* Parses the 'glTF.textures' property. */
 static int parse_textures(FILE *file, L_symbol *symbol,
     size_t index, void *textures_p);
+
+/* Parses the 'glTF.images' property. */
+static int parse_images(FILE *file, L_symbol *symbol,
+    size_t index, void *images_p);
 
 /* Loads a single mesh from glTF contents. */
 static int load_meshdt(const L_gltf *gltf, YF_meshdt *data);
@@ -899,6 +915,11 @@ static int parse_gltf(FILE *file, L_symbol *symbol, L_gltf *gltf) {
           if (parse_array(file, symbol, (void **)&gltf->textures.v,
                 &gltf->textures.n, sizeof *gltf->textures.v, parse_textures,
                 &gltf->textures) != 0)
+            return -1;
+        } else if (strcmp("images", symbol->tokens) == 0) {
+          if (parse_array(file, symbol, (void **)&gltf->images.v,
+                &gltf->images.n, sizeof *gltf->images.v, parse_images,
+                &gltf->images) != 0)
             return -1;
         } else {
           if (consume_prop(file, symbol) != 0)
@@ -2029,6 +2050,55 @@ static int parse_textures(FILE *file, L_symbol *symbol,
   return 0;
 }
 
+static int parse_images(FILE *file, L_symbol *symbol,
+    size_t index, void *images_p)
+{
+  L_images *images = images_p;
+
+  assert(!feof(file));
+  assert(symbol != NULL);
+  assert(images != NULL);
+  assert(index < images->n);
+  assert(symbol->symbol == YF_SYMBOL_OP);
+  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+
+  images->v[index].buffer_view = YF_INT_MIN;
+
+  do {
+    switch (next_symbol(file, symbol)) {
+      case YF_SYMBOL_STR:
+        if (strcmp("uri", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &images->v[index].uri) != 0)
+            return -1;
+        } else if (strcmp("mimeType", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &images->v[index].mime_type) != 0)
+            return -1;
+        } else if (strcmp("bufferView", symbol->tokens) == 0) {
+          if (parse_int(file, symbol, &images->v[index].buffer_view) != 0)
+            return -1;
+        } else if (strcmp("name", symbol->tokens) == 0) {
+          if (parse_str(file, symbol, &images->v[index].name) != 0)
+            return -1;
+        } else {
+          if (consume_prop(file, symbol) != 0)
+            return -1;
+        }
+        break;
+
+      case YF_SYMBOL_OP:
+        if (symbol->tokens[0] == '}')
+          return 0;
+        break;
+
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+  } while (1);
+
+  return 0;
+}
+
 static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
   assert(gltf != NULL);
   assert(data != NULL);
@@ -2312,6 +2382,13 @@ static void deinit_gltf(L_gltf *gltf) {
   for (size_t i = 0; i < gltf->textures.n; ++i)
     free(gltf->textures.v[i].name);
   free(gltf->textures.v);
+
+  for (size_t i = 0; i < gltf->images.n; ++i) {
+    free(gltf->images.v[i].uri);
+    free(gltf->images.v[i].mime_type);
+    free(gltf->images.v[i].name);
+  }
+  free(gltf->images.v);
 }
 
 
@@ -2603,5 +2680,15 @@ static void print_gltf(const L_gltf *gltf) {
     printf("  sampler: %lld\n", gltf->textures.v[i].sampler);
     printf("  source: %lld\n", gltf->textures.v[i].source);
   }
+
+  puts("glTF.images:");
+  printf(" n: %lu\n", gltf->images.n);
+  for (size_t i = 0; i < gltf->images.n; ++i) {
+    printf(" image '%s':\n", gltf->images.v[i].name);
+    printf("  uri: %s\n", gltf->images.v[i].uri);
+    printf("  mimeType: %s\n", gltf->images.v[i].mime_type);
+    printf("  bufferView: %lld\n", gltf->images.v[i].buffer_view);
+  }
+
 }
 #endif
