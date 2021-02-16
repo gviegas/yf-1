@@ -578,7 +578,6 @@ static int next_symbol(FILE *file, L_symbol *symbol) {
       /* XXX: Delim. quotation marks not stored. */
       do {
         c = getc(file);
-        /* TODO: Handle escape characters. */
         symbol->tokens[i] = c;
         if (c == '"') {
           symbol->symbol = YF_SYMBOL_STR;
@@ -587,6 +586,18 @@ static int next_symbol(FILE *file, L_symbol *symbol) {
         if (c == EOF) {
           symbol->symbol = YF_SYMBOL_ERR;
           break;
+        }
+        if (c == '\\') {
+          c = getc(file);
+          if (c == '"') {
+            symbol->tokens[i] = '\"';
+          } else if (c == '\\') {
+            symbol->tokens[i] = '\\';
+          } else {
+            /* TODO: Other escape sequences. */
+            symbol->symbol = YF_SYMBOL_ERR;
+            break;
+          }
         }
       } while (++i < YF_MAXTOKENS-1);
       break;
