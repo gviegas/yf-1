@@ -615,7 +615,7 @@ static int next_symbol(FILE *file, L_symbol *symbol) {
     case '9':
       while (++i < YF_MAXTOKENS-1) {
         c = getc(file);
-        if (isxdigit(c) || c == '.') {
+        if (isxdigit(c) || c == '.' || c == '-' || c == '+') {
           symbol->tokens[i] = c;
           continue;
         }
