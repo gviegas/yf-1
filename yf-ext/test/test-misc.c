@@ -23,10 +23,15 @@ struct L_vars {
   YF_view view;
   YF_scene scn;
   YF_model mdl;
+  YF_node quad_node;
+  YF_node labl_node;
   YF_quad quads[3];
   YF_label labls[4];
 
   struct {
+    int move[4];
+    int turn[4];
+    int toggle[2];
     int quit;
   } input;
 };
@@ -36,10 +41,37 @@ static struct L_vars l_vars = {0};
 static void on_key(int key, int state,
     YF_UNUSED unsigned mod_mask, YF_UNUSED void *arg)
 {
-  if (state == YF_KEYSTATE_RELEASED)
-    return;
-
   switch (key) {
+    case YF_KEY_W:
+      l_vars.input.move[0] = state;
+      break;
+    case YF_KEY_S:
+      l_vars.input.move[1] = state;
+      break;
+    case YF_KEY_A:
+      l_vars.input.move[2] = state;
+      break;
+    case YF_KEY_D:
+      l_vars.input.move[3] = state;
+      break;
+    case YF_KEY_UP:
+      l_vars.input.turn[0] = state;
+      break;
+    case YF_KEY_DOWN:
+      l_vars.input.turn[1] = state;
+      break;
+    case YF_KEY_LEFT:
+      l_vars.input.turn[2] = state;
+      break;
+    case YF_KEY_RIGHT:
+      l_vars.input.turn[3] = state;
+      break;
+    case YF_KEY_1:
+      l_vars.input.toggle[0] = state;
+      break;
+    case YF_KEY_2:
+      l_vars.input.toggle[1] = state;
+      break;
     default:
       l_vars.input.quit = 1;
   }
@@ -54,15 +86,41 @@ static void update(double elapsed_time) {
     yf_view_stop(l_vars.view);
   }
 
-  static YF_float rx = 0.0;
-  static YF_float ry = 0.0;
-  rx += elapsed_time;
-  ry += elapsed_time*1.5;
+  YF_camera cam = yf_scene_getcam(l_vars.scn);
+  static const YF_float md = 1.0;
+  static const YF_float td = 0.1;
 
-  YF_mat4 m1, m2;
-  yf_mat4_rotx(m1, rx);
-  yf_mat4_roty(m2, ry);
-  yf_mat4_mul(*yf_model_getxform(l_vars.mdl), m1, m2);
+  if (l_vars.input.move[0])
+    yf_camera_movef(cam, md);
+  if (l_vars.input.move[1])
+    yf_camera_moveb(cam, md);
+  if (l_vars.input.move[2])
+    yf_camera_movel(cam, md);
+  if (l_vars.input.move[3])
+    yf_camera_mover(cam, md);
+  if (l_vars.input.turn[0])
+    yf_camera_turnu(cam, td);
+  if (l_vars.input.turn[1])
+    yf_camera_turnd(cam, td);
+  if (l_vars.input.turn[2])
+    yf_camera_turnl(cam, td);
+  if (l_vars.input.turn[3])
+    yf_camera_turnr(cam, td);
+
+  if (l_vars.input.toggle[0]) {
+    if (yf_node_descends(l_vars.quad_node, yf_scene_getnode(l_vars.scn)))
+      yf_node_drop(l_vars.quad_node);
+    else
+      yf_node_insert(yf_scene_getnode(l_vars.scn), l_vars.quad_node);
+    l_vars.input.toggle[0] = 0;
+  }
+  if (l_vars.input.toggle[1]) {
+    if (yf_node_descends(l_vars.labl_node, yf_scene_getnode(l_vars.scn)))
+      yf_node_drop(l_vars.labl_node);
+    else
+      yf_node_insert(yf_scene_getnode(l_vars.scn), l_vars.labl_node);
+    l_vars.input.toggle[1] = 0;
+  }
 }
 
 /* Tests miscellany. */
@@ -78,6 +136,12 @@ int yf_test_misc(void) {
 
   l_vars.scn = yf_scene_init();
   assert(l_vars.scn != NULL);
+
+  l_vars.quad_node = yf_node_init();
+  assert(l_vars.quad_node != NULL);
+
+  l_vars.labl_node = yf_node_init();
+  assert(l_vars.labl_node != NULL);
 
   YF_mesh mesh = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.gltf");
   assert(mesh != NULL);
@@ -120,9 +184,9 @@ int yf_test_misc(void) {
     (*m)[0] = (i+1)*0.65;
     (*m)[5] = (i+1)*0.65;
 
-    yf_node_insert(yf_scene_getnode(l_vars.scn),
-        yf_quad_getnode(l_vars.quads[i]));
+    yf_node_insert(l_vars.quad_node, yf_quad_getnode(l_vars.quads[i]));
   }
+  yf_node_insert(yf_scene_getnode(l_vars.scn), l_vars.quad_node);
 
   const size_t labl_n = sizeof l_vars.labls / sizeof l_vars.labls[0];
   for (size_t i = 0; i < labl_n; ++i) {
@@ -137,9 +201,9 @@ int yf_test_misc(void) {
     (*m)[12] = i*-0.15;
     (*m)[13] = i*-0.15;
 
-    yf_node_insert(yf_scene_getnode(l_vars.scn),
-        yf_label_getnode(l_vars.labls[i]));
+    yf_node_insert(l_vars.labl_node, yf_label_getnode(l_vars.labls[i]));
   }
+  yf_node_insert(yf_scene_getnode(l_vars.scn), l_vars.labl_node);
 
   yf_scene_setcolor(l_vars.scn, YF_COLOR_DARKGREY);
   yf_view_setscene(l_vars.view, l_vars.scn);
@@ -150,6 +214,8 @@ int yf_test_misc(void) {
   yf_view_deinit(l_vars.view);
   yf_scene_deinit(l_vars.scn);
   yf_window_deinit(l_vars.win);
+  yf_node_deinit(l_vars.quad_node);
+  yf_node_deinit(l_vars.labl_node);
 
   yf_model_deinit(l_vars.mdl);
   for (size_t i = 0; i < quad_n; ++i)
