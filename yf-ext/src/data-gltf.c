@@ -89,7 +89,7 @@ typedef struct {
     unsigned xform_mask;
     union {
       L_num matrix[16];
-      struct { L_num t[3]; L_num r[4]; L_num s[3]; } trs;
+      struct { L_num t[3], r[4], s[3]; } trs;
     };
     L_int skin;
     L_num *weights;
@@ -1773,11 +1773,13 @@ static int parse_materials(FILE *file, L_symbol *symbol,
         } else if (strcmp("alphaMode", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
-          if (strcmp("MASK", symbol->tokens) == 0) {
+          if (strcmp("OPAQUE", symbol->tokens) == 0) {
+            materials->v[index].alpha_mode = YF_GLTF_ALPHA_OPAQUE;
+          } else if (strcmp("MASK", symbol->tokens) == 0) {
             materials->v[index].alpha_mode = YF_GLTF_ALPHA_MASK;
           } else if (strcmp("BLEND", symbol->tokens) == 0) {
             materials->v[index].alpha_mode = YF_GLTF_ALPHA_BLEND;
-          } else if (strcmp("OPAQUE", symbol->tokens) != 0) {
+          } else {
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
           }
@@ -1841,13 +1843,15 @@ static int parse_channels(FILE *file, L_symbol *symbol,
                 } else if (strcmp("path", symbol->tokens) == 0) {
                   next_symbol(file, symbol); /* : */
                   next_symbol(file, symbol);
-                  if (strcmp("rotation", symbol->tokens) == 0) {
+                  if (strcmp("translation", symbol->tokens) == 0) {
+                    channels->v[index].target.path = YF_GLTF_PATH_XLATE;
+                  } else if (strcmp("rotation", symbol->tokens) == 0) {
                     channels->v[index].target.path = YF_GLTF_PATH_ROTATE;
                   } else if (strcmp("scale", symbol->tokens) == 0) {
                     channels->v[index].target.path = YF_GLTF_PATH_SCALE;
                   } else if (strcmp("weights", symbol->tokens) == 0) {
                     channels->v[index].target.path = YF_GLTF_PATH_WEIGHT;
-                  } else if (strcmp("translation", symbol->tokens) != 0) {
+                  } else {
                     yf_seterr(YF_ERR_INVFILE, __func__);
                     return -1;
                   }
@@ -1909,11 +1913,13 @@ static int parse_asamplers(FILE *file, L_symbol *symbol,
         } else if (strcmp("interpolation", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
-          if (strcmp("STEP", symbol->tokens) == 0) {
+          if (strcmp("LINEAR", symbol->tokens) == 0) {
+            asamplers->v[index].interpolation = YF_GLTF_ERP_LINEAR;
+          } else if (strcmp("STEP", symbol->tokens) == 0) {
             asamplers->v[index].interpolation = YF_GLTF_ERP_STEP;
           } else if (strcmp("CUBICSPLINE", symbol->tokens) == 0) {
             asamplers->v[index].interpolation = YF_GLTF_ERP_CUBIC;
-          } else if (strcmp("LINEAR", symbol->tokens) != 0) {
+          } else {
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
           }
@@ -2110,20 +2116,24 @@ static int parse_accessors(FILE *file, L_symbol *symbol,
         } else if (strcmp("type", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol);
-          if (strcmp("SCALAR", symbol->tokens) == 0)
+          if (strcmp("SCALAR", symbol->tokens) == 0) {
             accessors->v[index].type = YF_GLTF_TYPE_SCALAR;
-          else if (strcmp("VEC2", symbol->tokens) == 0)
+          } else if (strcmp("VEC2", symbol->tokens) == 0) {
             accessors->v[index].type = YF_GLTF_TYPE_VEC2;
-          else if (strcmp("VEC3", symbol->tokens) == 0)
+          } else if (strcmp("VEC3", symbol->tokens) == 0) {
             accessors->v[index].type = YF_GLTF_TYPE_VEC3;
-          else if (strcmp("VEC4", symbol->tokens) == 0)
+          } else if (strcmp("VEC4", symbol->tokens) == 0) {
             accessors->v[index].type = YF_GLTF_TYPE_VEC4;
-          else if (strcmp("MAT2", symbol->tokens) == 0)
+          } else if (strcmp("MAT2", symbol->tokens) == 0) {
             accessors->v[index].type = YF_GLTF_TYPE_MAT2;
-          else if (strcmp("MAT3", symbol->tokens) == 0)
+          } else if (strcmp("MAT3", symbol->tokens) == 0) {
             accessors->v[index].type = YF_GLTF_TYPE_MAT3;
-          else if (strcmp("MAT4", symbol->tokens) == 0)
+          } else if (strcmp("MAT4", symbol->tokens) == 0) {
             accessors->v[index].type = YF_GLTF_TYPE_MAT4;
+          } else {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+          }
         } else if (strcmp("min", symbol->tokens) == 0) {
           next_symbol(file, symbol); /* : */
           next_symbol(file, symbol); /* [ */
