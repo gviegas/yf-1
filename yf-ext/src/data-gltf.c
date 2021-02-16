@@ -2671,6 +2671,10 @@ static void deinit_gltf(L_gltf *gltf) {
   }
   free(gltf->nodes.v);
 
+  for (size_t i = 0; i < gltf->cameras.n; ++i)
+    free(gltf->cameras.v[i].name);
+  free(gltf->cameras.v);
+
   for (size_t i = 0; i < gltf->meshes.n; ++i) {
     for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; ++j)
       free(gltf->meshes.v[i].primitives.v[j].targets.v);
@@ -2679,6 +2683,12 @@ static void deinit_gltf(L_gltf *gltf) {
     free(gltf->meshes.v[i].name);
   }
   free(gltf->meshes.v);
+
+  for (size_t i = 0; i < gltf->skins.n; ++i) {
+    free(gltf->skins.v[i].joints);
+    free(gltf->skins.v[i].name);
+  }
+  free(gltf->skins.v);
 
   for (size_t i = 0; i < gltf->materials.n; ++i)
     free(gltf->materials.v[i].name);
