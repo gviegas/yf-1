@@ -41,7 +41,6 @@ typedef struct {
 struct YF_particle_o {
   YF_node node;
   unsigned count;
-  YF_mat4 xform;
   YF_psys sys;
   YF_vpart *pts;
   L_pstate *sts;
@@ -70,7 +69,6 @@ YF_particle yf_particle_init(unsigned count) {
   }
   yf_node_setobj(part->node, YF_NODEOBJ_PARTICLE, part);
   part->count = count;
-  yf_mat4_iden(part->xform);
 
   part->sys.emitter.norm[0] = 0.0;
   part->sys.emitter.norm[1] = -1.0;
@@ -108,11 +106,6 @@ YF_particle yf_particle_init(unsigned count) {
 YF_node yf_particle_getnode(YF_particle part) {
   assert(part != NULL);
   return part->node;
-}
-
-YF_mat4 *yf_particle_getxform(YF_particle part) {
-  assert(part != NULL);
-  return &part->xform;
 }
 
 YF_psys *yf_particle_getsys(YF_particle part) {

@@ -18,7 +18,6 @@
 
 struct YF_quad_o {
   YF_node node;
-  YF_mat4 xform;
   YF_vquad verts[4];
   YF_mesh mesh;
   YF_texture tex;
@@ -47,7 +46,6 @@ YF_quad yf_quad_init(void) {
     return NULL;
   }
   yf_node_setobj(quad->node, YF_NODEOBJ_QUAD, quad);
-  yf_mat4_iden(quad->xform);
 
   if (init_rect(quad) != 0) {
     yf_quad_deinit(quad);
@@ -59,11 +57,6 @@ YF_quad yf_quad_init(void) {
 YF_node yf_quad_getnode(YF_quad quad) {
   assert(quad != NULL);
   return quad->node;
-}
-
-YF_mat4 *yf_quad_getxform(YF_quad quad) {
-  assert(quad != NULL);
-  return &quad->xform;
 }
 
 YF_mesh yf_quad_getmesh(YF_quad quad) {

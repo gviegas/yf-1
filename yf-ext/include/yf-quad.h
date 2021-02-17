@@ -11,7 +11,6 @@
 #include <yf/com/yf-defs.h>
 
 #include "yf-node.h"
-#include "yf-matrix.h"
 #include "yf-mesh.h"
 #include "yf-texture.h"
 
@@ -37,14 +36,6 @@ YF_quad yf_quad_init(void);
  * @return: The quad's node.
  */
 YF_node yf_quad_getnode(YF_quad quad);
-
-/**
- * Gets the transformation matrix of a quad.
- *
- * @param quad: The quad.
- * @return: The quad's transformation matrix.
- */
-YF_mat4 *yf_quad_getxform(YF_quad quad);
 
 /**
  * Gets the mesh of a quad.

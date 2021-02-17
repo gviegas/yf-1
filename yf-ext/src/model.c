@@ -15,7 +15,6 @@
 
 struct YF_model_o {
   YF_node node;
-  YF_mat4 xform;
   YF_mesh mesh;
   YF_texture tex;
   /* TODO: Other model properties. */
@@ -32,18 +31,12 @@ YF_model yf_model_init(void) {
     return NULL;
   }
   yf_node_setobj(mdl->node, YF_NODEOBJ_MODEL, mdl);
-  yf_mat4_iden(mdl->xform);
   return mdl;
 }
 
 YF_node yf_model_getnode(YF_model mdl) {
   assert(mdl != NULL);
   return mdl->node;
-}
-
-YF_mat4 *yf_model_getxform(YF_model mdl) {
-  assert(mdl != NULL);
-  return &mdl->xform;
 }
 
 YF_mesh yf_model_getmesh(YF_model mdl) {

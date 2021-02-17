@@ -142,7 +142,8 @@ int yf_test_particle(void) {
   assert(l_vars.tex != NULL);
 
   yf_particle_settex(l_vars.part, l_vars.tex);
-  yf_mat4_scale(*yf_particle_getxform(l_vars.part), 0.5, 1.0, 0.25);
+  yf_mat4_scale(*yf_node_getxform(yf_particle_getnode(l_vars.part)),
+      0.5, 1.0, 0.25);
 
   yf_node_insert(yf_scene_getnode(l_vars.scn),
       yf_particle_getnode(l_vars.part));
