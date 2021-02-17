@@ -355,12 +355,15 @@ static void update_rect(YF_label labl) {
 static int copy_glyphs(YF_label labl) {
   assert(labl != NULL);
   assert(labl->font != NULL);
-  assert(labl->str != NULL);
   assert(labl->pend_mask & YF_PEND_RZ);
 
-  const size_t len = wcslen(labl->str);
-  if (len == 0)
-    return 0;
+  const wchar_t *str;
+  if (labl->str == NULL)
+    str = L"(nil)";
+  else if (wcslen(labl->str) == 0)
+    str = L"(empty)";
+  else
+    str = labl->str;
 
-  return yf_font_rasterize(labl->font, labl->str, labl->pt, YF_DPI, &labl->rz);
+  return yf_font_rasterize(labl->font, str, labl->pt, YF_DPI, &labl->rz);
 }
