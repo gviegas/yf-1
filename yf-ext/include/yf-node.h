@@ -12,6 +12,8 @@
 
 #include <yf/com/yf-defs.h>
 
+#include "yf-matrix.h"
+
 YF_DECLS_BEGIN
 
 /**
@@ -87,10 +89,18 @@ int yf_node_isleaf(YF_node node);
 /**
  * Gets the length of a node's subgraph.
  *
- * @param: The node.
+ * @param node: The node.
  * @return: The length of the subgraph. This value will be at least one.
  */
 size_t yf_node_getlen(YF_node node);
+
+/**
+ * Gets the transformation matrix of a node.
+ *
+ * @param node: The node.
+ * @return: The node's transformation matrix.
+ */
+YF_mat4 *yf_node_getxform(YF_node node);
 
 /**
  * Gets the object that a given node represents.
