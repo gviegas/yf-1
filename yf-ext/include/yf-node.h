@@ -103,6 +103,28 @@ size_t yf_node_getlen(YF_node node);
 YF_mat4 *yf_node_getxform(YF_node node);
 
 /**
+ * Gets the name of a node.
+ *
+ * @param node: The node.
+ * @param dst: The destination for the name.
+ * @param n: The number of characters that the destination buffer can contain.
+ *  Must be at least one.
+ * @return: If the length of the name exceeds 'n', returns 'NULL'.
+ *  Otherwise, returns 'dst'.
+ */
+char *yf_node_getname(YF_node node, char *dst, size_t n);
+
+/**
+ * Sets the name for a node.
+ *
+ * @param node: The node.
+ * @param name: The name to set. Can be 'NULL'.
+ * @return: On success, returns zero. Otherwise, a non-zero value is returned
+ *  and the global error is set to indicate the cause.
+ */
+int yf_node_setname(YF_node node, const char *name);
+
+/**
  * Gets the object that a given node represents.
  *
  * @param node: The node.
