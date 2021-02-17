@@ -63,8 +63,8 @@ typedef struct {
    The 'rz' structure will contain the texture range for a bitmap 'str'.
    When the 'tex' member of 'rz' refers to a valid texture, this function
    assumes that the current range is no longer needed. */
-int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
-    YF_fontrz *rz);
+int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
+    uint16_t dpi, YF_fontrz *rz);
 
 /* Yields a texture range obtained from a call to 'yf_font_rasterize'.
    This function must be called when the texture range is not needed anymore.

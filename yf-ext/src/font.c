@@ -90,8 +90,8 @@ YF_font yf_font_initdt(const YF_fontdt *data) {
   return font;
 }
 
-int yf_font_rasterize(YF_font font, wchar_t *str, uint16_t pt, uint16_t dpi,
-    YF_fontrz *rz)
+int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
+    uint16_t dpi, YF_fontrz *rz)
 {
   assert(font != NULL);
   assert(str != NULL && wcslen(str) != 0);
