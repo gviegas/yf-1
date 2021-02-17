@@ -2,7 +2,7 @@
  * YF
  * node.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -18,6 +18,7 @@ struct YF_node_o {
   YF_node next_sibl;
   YF_node child;
   size_t n;
+  YF_mat4 xform;
   int nodeobj;
   void *obj;
 };
@@ -33,6 +34,7 @@ YF_node yf_node_init(void) {
   node->next_sibl = NULL;
   node->child = NULL;
   node->n = 1;
+  yf_mat4_iden(node->xform);
   node->nodeobj = YF_NODEOBJ_NONE;
   node->obj = NULL;
   return node;
@@ -161,6 +163,11 @@ int yf_node_isleaf(YF_node node) {
 size_t yf_node_getlen(YF_node node) {
   assert(node != NULL);
   return node->n;
+}
+
+YF_mat4 *yf_node_getxform(YF_node node) {
+  assert(node != NULL);
+  return &node->xform;
 }
 
 int yf_node_getobj(YF_node node, void **obj) {
