@@ -123,12 +123,14 @@ void yf_label_setfont(YF_label labl, YF_font font) {
 
 wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n) {
   assert(labl != NULL);
-  assert(dst != NULL && n > 0);
+  assert(dst != NULL);
+  assert(n > 0);
 
   if (labl->str == NULL) {
     dst[0] = L'\0';
     return dst;
   }
+
   if (wcslen(labl->str) < n)
     return wcscpy(dst, labl->str);
   return NULL;
@@ -140,19 +142,27 @@ int yf_label_setstr(YF_label labl, const wchar_t *str) {
   if (str == NULL) {
     free(labl->str);
     labl->str = NULL;
+    labl->pend_mask |= YF_PEND_RZ;
     return 0;
   }
 
-  const size_t n = labl->str == NULL ? 0 : wcslen(labl->str);
-  const size_t new_n = wcslen(str);
-
-  if (n != new_n) {
-    void *tmp = realloc(labl->str, sizeof(wchar_t) * (new_n + 1));
-    if (tmp != NULL) {
-      labl->str = tmp;
-    } else if (n < new_n) {
+  const size_t len = wcslen(str);
+  if (labl->str == NULL) {
+    labl->str = malloc(sizeof(wchar_t) * (1+len));
+    if (labl->str == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;
+    }
+  } else {
+    const size_t cur_len = wcslen(labl->str);
+    if (cur_len != len) {
+      void *tmp = realloc(labl->str, sizeof(wchar_t) * (1+len));
+      if (tmp != NULL) {
+        labl->str = tmp;
+      } else if (cur_len < len) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+      }
     }
   }
   wcscpy(labl->str, str);
