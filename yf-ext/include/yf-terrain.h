@@ -11,7 +11,6 @@
 #include <yf/com/yf-defs.h>
 
 #include "yf-node.h"
-#include "yf-matrix.h"
 #include "yf-mesh.h"
 #include "yf-texture.h"
 
@@ -39,14 +38,6 @@ YF_terrain yf_terrain_init(unsigned width, unsigned depth);
  * @return: The terrain's node.
  */
 YF_node yf_terrain_getnode(YF_terrain terr);
-
-/**
- * Gets the transformation matrix of a terrain.
- *
- * @param terr: The terrain.
- * @return: The terrain's transformation matrix.
- */
-YF_mat4 *yf_terrain_getxform(YF_terrain terr);
 
 /**
  * Gets the mesh of a terrain.

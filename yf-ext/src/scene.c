@@ -1042,7 +1042,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       sz = obj_n * YF_INSTSZ_MDL;
       for (unsigned i = 0; i < obj_n; ++i) {
         YF_model mdl = ((YF_model *)objs)[i];
-        m = yf_model_getxform(mdl);
+        m = yf_node_getxform(yf_model_getnode(mdl));
         yf_mat4_mul(mv, *v, *m);
         /* model matrix */
         if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
@@ -1065,7 +1065,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       sz = obj_n * YF_INSTSZ_TERR;
       {
         YF_terrain terr = ((YF_terrain *)objs)[0];
-        m = yf_terrain_getxform(terr);
+        m = yf_node_getxform(yf_terrain_getnode(terr));
         yf_mat4_mul(mv, *v, *m);
         /* model matrix */
         if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
@@ -1088,7 +1088,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       sz = obj_n * YF_INSTSZ_PART;
       {
         YF_particle part = ((YF_particle *)objs)[0];
-        m = yf_particle_getxform(part);
+        m = yf_node_getxform(yf_particle_getnode(part));
         yf_mat4_mul(mv, *v, *m);
         /* model matrix */
         if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
@@ -1111,7 +1111,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       sz = obj_n * YF_INSTSZ_QUAD;
       {
         YF_quad quad = ((YF_quad *)objs)[0];
-        m = yf_quad_getxform(quad);
+        m = yf_node_getxform(yf_quad_getnode(quad));
         yf_mat4_mul(mv, *v, *m);
         const YF_rect *rect = yf_quad_getrect(quad);
         const float dim[2] = {rect->size.width, rect->size.height};
@@ -1140,7 +1140,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
       sz = obj_n * YF_INSTSZ_LABL;
       {
         YF_label labl = ((YF_label *)objs)[0];
-        m = yf_label_getxform(labl);
+        m = yf_node_getxform(yf_label_getnode(labl));
         yf_mat4_mul(mv, *v, *m);
         const YF_dim2 udim = yf_label_getdim(labl);
         const float dim[2] = {udim.width, udim.height};

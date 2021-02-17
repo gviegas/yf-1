@@ -2,7 +2,7 @@
  * YF
  * yf-particle.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_PARTICLE_H
@@ -11,7 +11,6 @@
 #include <yf/com/yf-defs.h>
 
 #include "yf-node.h"
-#include "yf-matrix.h"
 #include "yf-mesh.h"
 #include "yf-texture.h"
 
@@ -65,14 +64,6 @@ YF_particle yf_particle_init(unsigned count);
  * @return: The particle system's node.
  */
 YF_node yf_particle_getnode(YF_particle part);
-
-/**
- * Gets the transformation matrix of a particle system.
- *
- * @param part: The particle system.
- * @return: The particle system's transformation matrix.
- */
-YF_mat4 *yf_particle_getxform(YF_particle part);
 
 /**
  * Gets the parameters of a particle system.

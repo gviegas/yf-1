@@ -19,7 +19,6 @@ struct YF_terrain_o {
   YF_node node;
   unsigned width;
   unsigned depth;
-  YF_mat4 xform;
   YF_mesh mesh;
   YF_texture hmap;
   YF_texture tex;
@@ -47,7 +46,6 @@ YF_terrain yf_terrain_init(unsigned width, unsigned depth) {
   yf_node_setobj(terr->node, YF_NODEOBJ_TERRAIN, terr);
   terr->width = width;
   terr->depth = depth;
-  yf_mat4_iden(terr->xform);
 
   if (init_grid(terr) != 0) {
     yf_terrain_deinit(terr);
@@ -59,11 +57,6 @@ YF_terrain yf_terrain_init(unsigned width, unsigned depth) {
 YF_node yf_terrain_getnode(YF_terrain terr) {
   assert(terr != NULL);
   return terr->node;
-}
-
-YF_mat4 *yf_terrain_getxform(YF_terrain terr) {
-  assert(terr != NULL);
-  return &terr->xform;
 }
 
 YF_mesh yf_terrain_getmesh(YF_terrain terr) {

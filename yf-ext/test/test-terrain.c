@@ -127,7 +127,8 @@ int yf_test_terrain(void) {
 
   yf_terrain_sethmap(l_vars.terr, l_vars.hmap);
   yf_terrain_settex(l_vars.terr, l_vars.tex);
-  yf_mat4_scale(*yf_terrain_getxform(l_vars.terr), 3.0, 3.0, 3.0);
+  yf_mat4_scale(*yf_node_getxform(yf_terrain_getnode(l_vars.terr)),
+      3.0, 3.0, 3.0);
 
   yf_node_insert(yf_scene_getnode(l_vars.scn), yf_terrain_getnode(l_vars.terr));
   yf_camera_place(yf_scene_getcam(l_vars.scn), YF_CAMO);

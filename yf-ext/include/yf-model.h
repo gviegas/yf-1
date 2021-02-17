@@ -2,7 +2,7 @@
  * YF
  * yf-model.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_MODEL_H
@@ -11,7 +11,6 @@
 #include <yf/com/yf-defs.h>
 
 #include "yf-node.h"
-#include "yf-matrix.h"
 #include "yf-mesh.h"
 #include "yf-texture.h"
 
@@ -37,14 +36,6 @@ YF_model yf_model_init(void);
  * @return: The model's node.
  */
 YF_node yf_model_getnode(YF_model mdl);
-
-/**
- * Gets the transformation matrix of a model.
- *
- * @param mdl: The model.
- * @return: The model's transformation matrix.
- */
-YF_mat4 *yf_model_getxform(YF_model mdl);
 
 /**
  * Gets the mesh of a model.

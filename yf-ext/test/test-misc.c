@@ -179,7 +179,7 @@ int yf_test_misc(void) {
       yf_quad_setrect(l_vars.quads[i], &rect);
     }
 
-    YF_mat4 *m = yf_quad_getxform(l_vars.quads[i]);
+    YF_mat4 *m = yf_node_getxform(yf_quad_getnode(l_vars.quads[i]));
     (*m)[12] = i*0.2;
     (*m)[0] = (i+1)*0.65;
     (*m)[5] = (i+1)*0.65;
@@ -197,7 +197,7 @@ int yf_test_misc(void) {
     yf_label_setstr(l_vars.labls[i], L"label");
     yf_label_setpt(l_vars.labls[i], 24+i*12);
 
-    YF_mat4 *m = yf_label_getxform(l_vars.labls[i]);
+    YF_mat4 *m = yf_node_getxform(yf_label_getnode(l_vars.labls[i]));
     (*m)[12] = i*-0.15;
     (*m)[13] = i*-0.15;
 

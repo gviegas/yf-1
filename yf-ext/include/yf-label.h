@@ -13,7 +13,6 @@
 #include <yf/com/yf-defs.h>
 
 #include "yf-node.h"
-#include "yf-matrix.h"
 #include "yf-mesh.h"
 #include "yf-texture.h"
 #include "yf-font.h"
@@ -40,14 +39,6 @@ YF_label yf_label_init(void);
  * @return: The label's node.
  */
 YF_node yf_label_getnode(YF_label labl);
-
-/**
- * Gets the transformation matrix of a label.
- *
- * @param labl: The label.
- * @return: The label's transformation matrix.
- */
-YF_mat4 *yf_label_getxform(YF_label labl);
 
 /**
  * Gets the mesh of a label.

@@ -29,7 +29,6 @@
 
 struct YF_label_o {
   YF_node node;
-  YF_mat4 xform;
   YF_vlabl verts[4];
   YF_mesh mesh;
   YF_fontrz rz;
@@ -64,7 +63,6 @@ YF_label yf_label_init(void) {
     return NULL;
   }
   yf_node_setobj(labl->node, YF_NODEOBJ_LABEL, labl);
-  yf_mat4_iden(labl->xform);
   labl->pt = 16;
   labl->pend_mask = YF_PEND_RZ;
 
@@ -78,11 +76,6 @@ YF_label yf_label_init(void) {
 YF_node yf_label_getnode(YF_label labl) {
   assert(labl != NULL);
   return labl->node;
-}
-
-YF_mat4 *yf_label_getxform(YF_label labl) {
-  assert(labl != NULL);
-  return &labl->xform;
 }
 
 YF_mesh yf_label_getmesh(YF_label labl) {

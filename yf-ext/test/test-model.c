@@ -169,7 +169,8 @@ static void update(double elapsed_time) {
   YF_vec3 axis = {0.7071, -0.7071, 0.0};
   yf_mat4_rot(rot, ang, axis);
   for (unsigned i = 0; i < YF_MDLN; ++i)
-    yf_mat4_mul(*yf_model_getxform(l_vars.mdl[i]), l_xforms[i], rot);
+    yf_mat4_mul(*yf_node_getxform(yf_model_getnode(l_vars.mdl[i])),
+        l_xforms[i], rot);
 }
 
 /* Tests model rendering. */
