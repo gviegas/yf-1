@@ -6,6 +6,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include <yf/com/yf-error.h>
@@ -19,6 +20,7 @@ struct YF_node_o {
   YF_node child;
   size_t n;
   YF_mat4 xform;
+  char *name;
   int nodeobj;
   void *obj;
 };
@@ -35,6 +37,7 @@ YF_node yf_node_init(void) {
   node->child = NULL;
   node->n = 1;
   yf_mat4_iden(node->xform);
+  node->name = NULL;
   node->nodeobj = YF_NODEOBJ_NONE;
   node->obj = NULL;
   return node;
@@ -170,8 +173,56 @@ YF_mat4 *yf_node_getxform(YF_node node) {
   return &node->xform;
 }
 
+char *yf_node_getname(YF_node node, char *dst, size_t n) {
+  assert(node != NULL);
+  assert(dst != NULL);
+  assert(n > 0);
+
+  if (node->name == NULL) {
+    dst[0] = '\0';
+    return dst;
+  }
+
+  if (strlen(node->name) < n)
+    return strcpy(dst, node->name);
+  return NULL;
+}
+
+int yf_node_setname(YF_node node, const char *name) {
+  assert(node != NULL);
+
+  if (name == NULL) {
+    free(node->name);
+    node->name = NULL;
+    return 0;
+  }
+
+  const size_t len = strlen(name);
+  if (node->name == NULL) {
+    node->name = malloc(1+len);
+    if (node->name == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      return -1;
+    }
+  } else {
+    const size_t cur_len = strlen(node->name);
+    if (cur_len != len) {
+      void *tmp = realloc(node->name, 1+len);
+      if (tmp != NULL) {
+        node->name = tmp;
+      } else if (cur_len < len) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+      }
+    }
+  }
+  strcpy(node->name, name);
+  return 0;
+}
+
 int yf_node_getobj(YF_node node, void **obj) {
   assert(node != NULL);
+
   if (obj != NULL)
     *obj = node->obj;
   return node->nodeobj;
@@ -181,6 +232,7 @@ void yf_node_deinit(YF_node node) {
   if (node != NULL) {
     yf_node_drop(node);
     yf_node_prune(node);
+    free(node->name);
     free(node);
   }
 }
