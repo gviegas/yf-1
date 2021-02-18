@@ -199,6 +199,17 @@ void yf_vec4_rotqx(YF_vec4 q, YF_float angle);
 void yf_vec4_rotqy(YF_vec4 q, YF_float angle);
 void yf_vec4_rotqz(YF_vec4 q, YF_float angle);
 
+/**
+ * Multiplies two quaternions.
+ *
+ * The last element is the scalar.
+ *
+ * @param dst: The destination quaternion.
+ * @param q1: The first quaternion.
+ * @param q2: The second quaternion.
+ */
+void yf_vec4_mulq(YF_vec4 dst, const YF_vec4 q1, const YF_vec4 q2);
+
 YF_DECLS_END
 
 #endif /* YF_YF_VECTOR_H */

@@ -317,3 +317,17 @@ void yf_vec4_rotqz(YF_vec4 q, YF_float angle) {
   q[0] = q[1] = 0.0f;
 #endif
 }
+
+void yf_vec4_mulq(YF_vec4 dst, const YF_vec4 q1, const YF_vec4 q2) {
+  const YF_float q1r = q1[3];
+  const YF_float q2r = q2[3];
+  const YF_vec3 q1v = {q1[0], q1[1], q1[2]};
+  const YF_vec3 q2v = {q2[0], q2[1], q2[2]};
+  YF_vec3 v, u;
+  yf_vec3_muls(v, q2v, q1r);
+  yf_vec3_muls(u, q1v, q2r);
+  yf_vec3_addi(v, u);
+  yf_vec3_cross(u, q1v, q2v);
+  yf_vec3_add(dst, v, u);
+  dst[3] = q1r * q2r - yf_vec3_dot(q1v, q2v);
+}
