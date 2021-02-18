@@ -2,7 +2,7 @@
  * YF
  * yf-vector.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_VECTOR_H
@@ -175,6 +175,29 @@ void yf_vec4_normi(YF_vec4 v);
  */
 void yf_vec3_cross(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b);
 void yf_vec4_cross(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b);
+
+/**
+ * Computes a quaternion rotation for a given axis.
+ *
+ * The last element of 'q' is the scalar.
+ *
+ * @param q: The destination quaternion.
+ * @param angle: The rotation angle, in radians.
+ * @param axis: The rotation axis.
+ */
+void yf_vec4_rotq(YF_vec4 q, YF_float angle, const YF_vec3 axis);
+
+/**
+ * Computes a quaternion rotation for the x-, y-, or z-axis.
+ *
+ * The last element of 'q' is the scalar.
+ *
+ * @param q: The destination quaternion.
+ * @param angle: The rotation angle, in radians.
+ */
+void yf_vec4_rotqx(YF_vec4 q, YF_float angle);
+void yf_vec4_rotqy(YF_vec4 q, YF_float angle);
+void yf_vec4_rotqz(YF_vec4 q, YF_float angle);
 
 YF_DECLS_END
 
