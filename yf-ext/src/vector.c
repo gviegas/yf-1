@@ -319,15 +319,22 @@ void yf_vec4_rotqz(YF_vec4 q, YF_float angle) {
 }
 
 void yf_vec4_mulq(YF_vec4 dst, const YF_vec4 q1, const YF_vec4 q2) {
-  const YF_float q1r = q1[3];
-  const YF_float q2r = q2[3];
-  const YF_vec3 q1v = {q1[0], q1[1], q1[2]};
-  const YF_vec3 q2v = {q2[0], q2[1], q2[2]};
   YF_vec3 v, u;
-  yf_vec3_muls(v, q2v, q1r);
-  yf_vec3_muls(u, q1v, q2r);
+  yf_vec3_muls(v, q2, q1[3]);
+  yf_vec3_muls(u, q1, q2[3]);
   yf_vec3_addi(v, u);
-  yf_vec3_cross(u, q1v, q2v);
+  yf_vec3_cross(u, q1, q2);
   yf_vec3_add(dst, v, u);
-  dst[3] = q1r * q2r - yf_vec3_dot(q1v, q2v);
+  dst[3] = q1[3] * q2[3] - yf_vec3_dot(q1, q2);
+}
+
+void yf_vec4_mulqi(YF_vec4 dst, const YF_vec4 q) {
+  const YF_float r = dst[3] * q[3] - yf_vec3_dot(dst, q);
+  YF_vec3 v, u;
+  yf_vec3_cross(v, dst, q);
+  yf_vec3_mulsi(dst, q[3]);
+  yf_vec3_muls(u, q, dst[3]);
+  yf_vec3_addi(dst, u);
+  yf_vec3_addi(dst, v);
+  dst[3] = r;
 }
