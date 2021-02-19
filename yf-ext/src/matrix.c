@@ -371,6 +371,71 @@ void yf_mat4_rotz(YF_mat4 m, YF_float angle) {
   m[5] = c;
 }
 
+void yf_mat3_rotq(YF_mat3 m, const YF_vec4 q) {
+  const YF_float xw = q[0] * q[3];
+  const YF_float xx = q[0] * q[0];
+  const YF_float xy = q[0] * q[1];
+  const YF_float xz = q[0] * q[2];
+  const YF_float yw = q[1] * q[3];
+  const YF_float yy = q[1] * q[1];
+  const YF_float yz = q[1] * q[2];
+  const YF_float zw = q[2] * q[3];
+  const YF_float zz = q[2] * q[2];
+#ifdef YF_USE_FLOAT64
+  const YF_float one = 1.0;
+  const YF_float two = 2.0;
+#else
+  const YF_float one = 1.0f;
+  const YF_float two = 2.0f;
+#endif
+  m[0] = one - two * (yy - zz);
+  m[1] = two * (xy - zw);
+  m[2] = two * (xz + yw);
+  m[3] = two * (xy + zw);
+  m[4] = one - two * (xx - zz);
+  m[5] = two * (yz - xw);
+  m[6] = two * (xz - yw);
+  m[7] = two * (yz + xw);
+  m[8] = one - two * (xx - yy);
+}
+
+void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q) {
+  const YF_float xw = q[0] * q[3];
+  const YF_float xx = q[0] * q[0];
+  const YF_float xy = q[0] * q[1];
+  const YF_float xz = q[0] * q[2];
+  const YF_float yw = q[1] * q[3];
+  const YF_float yy = q[1] * q[1];
+  const YF_float yz = q[1] * q[2];
+  const YF_float zw = q[2] * q[3];
+  const YF_float zz = q[2] * q[2];
+#ifdef YF_USE_FLOAT64
+  const YF_float one = 1.0;
+  const YF_float two = 2.0;
+  const YF_float zero = 0.0;
+#else
+  const YF_float one = 1.0f;
+  const YF_float two = 2.0f;
+  const YF_float zero = 0.0f;
+#endif
+  m[0] = one - two * (yy - zz);
+  m[1] = two * (xy - zw);
+  m[2] = two * (xz + yw);
+  m[3] = zero;
+  m[4] = two * (xy + zw);
+  m[5] = one - two * (xx - zz);
+  m[6] = two * (yz - xw);
+  m[7] = zero;
+  m[8] = two * (xz - yw);
+  m[9] = two * (yz + xw);
+  m[10] = one - two * (xx - yy);
+  m[11] = zero;
+  m[12] = zero;
+  m[13] = zero;
+  m[14] = zero;
+  m[15] = one;
+}
+
 void yf_mat3_scale(YF_mat3 m, YF_float sx, YF_float sy, YF_float sz) {
   memset(m, 0, sizeof(YF_mat3));
   m[0] = sx;
