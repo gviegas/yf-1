@@ -126,7 +126,7 @@ void yf_mat3_rot(YF_mat3 m, YF_float angle, const YF_vec3 axis);
 void yf_mat4_rot(YF_mat4 m, YF_float angle, const YF_vec3 axis);
 
 /**
- * Computes a rotation matrix for the x, y or z-axis.
+ * Computes a rotation matrix for the x-, y- or z-axis.
  *
  * @param m: The destination matrix.
  * @param angle: The rotation angle, in radians.
@@ -137,6 +137,15 @@ void yf_mat3_rotz(YF_mat3 m, YF_float angle);
 void yf_mat4_rotx(YF_mat4 m, YF_float angle);
 void yf_mat4_roty(YF_mat4 m, YF_float angle);
 void yf_mat4_rotz(YF_mat4 m, YF_float angle);
+
+/**
+ * Computes a rotation matrix from a quaternion rotation.
+ *
+ * @param m: The destination matrix.
+ * @param q: The quaternion rotation.
+ */
+void yf_mat3_rotq(YF_mat3 m, const YF_vec4 q);
+void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q);
 
 /**
  * Computes a scaling matrix.
