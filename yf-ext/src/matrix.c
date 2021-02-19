@@ -372,15 +372,17 @@ void yf_mat4_rotz(YF_mat4 m, YF_float angle) {
 }
 
 void yf_mat3_rotq(YF_mat3 m, const YF_vec4 q) {
-  const YF_float xw = q[0] * q[3];
-  const YF_float xx = q[0] * q[0];
-  const YF_float xy = q[0] * q[1];
-  const YF_float xz = q[0] * q[2];
-  const YF_float yw = q[1] * q[3];
-  const YF_float yy = q[1] * q[1];
-  const YF_float yz = q[1] * q[2];
-  const YF_float zw = q[2] * q[3];
-  const YF_float zz = q[2] * q[2];
+  YF_vec4 u;
+  yf_vec4_norm(u, q);
+  const YF_float xw = u[0] * u[3];
+  const YF_float xx = u[0] * u[0];
+  const YF_float xy = u[0] * u[1];
+  const YF_float xz = u[0] * u[2];
+  const YF_float yw = u[1] * u[3];
+  const YF_float yy = u[1] * u[1];
+  const YF_float yz = u[1] * u[2];
+  const YF_float zw = u[2] * u[3];
+  const YF_float zz = u[2] * u[2];
 #ifdef YF_USE_FLOAT64
   const YF_float one = 1.0;
   const YF_float two = 2.0;
@@ -400,15 +402,17 @@ void yf_mat3_rotq(YF_mat3 m, const YF_vec4 q) {
 }
 
 void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q) {
-  const YF_float xw = q[0] * q[3];
-  const YF_float xx = q[0] * q[0];
-  const YF_float xy = q[0] * q[1];
-  const YF_float xz = q[0] * q[2];
-  const YF_float yw = q[1] * q[3];
-  const YF_float yy = q[1] * q[1];
-  const YF_float yz = q[1] * q[2];
-  const YF_float zw = q[2] * q[3];
-  const YF_float zz = q[2] * q[2];
+  YF_vec4 u;
+  yf_vec4_norm(u, q);
+  const YF_float xw = u[0] * u[3];
+  const YF_float xx = u[0] * u[0];
+  const YF_float xy = u[0] * u[1];
+  const YF_float xz = u[0] * u[2];
+  const YF_float yw = u[1] * u[3];
+  const YF_float yy = u[1] * u[1];
+  const YF_float yz = u[1] * u[2];
+  const YF_float zw = u[2] * u[3];
+  const YF_float zz = u[2] * u[2];
 #ifdef YF_USE_FLOAT64
   const YF_float one = 1.0;
   const YF_float two = 2.0;
