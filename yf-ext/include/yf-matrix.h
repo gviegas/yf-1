@@ -169,7 +169,7 @@ void yf_mat4_scale(YF_mat4 m, YF_float sx, YF_float sy, YF_float sz);
 void yf_mat4_xlate(YF_mat4 m, YF_float tx, YF_float ty, YF_float tz);
 
 /**
- * Computes a 'Look At' (camera/view) matrix.
+ * Computes a view matrix.
  *
  * @param m: The destination matrix.
  * @param eye: The eye (origin) vector.
@@ -183,10 +183,10 @@ void yf_mat4_lookat(YF_mat4 m, const YF_vec3 eye, const YF_vec3 center,
  * Computes a perspective projection matrix.
  *
  * @param m: The destination matrix.
- * @param yfov: The y field of view.
- * @param aspect: The aspect ratio.
- * @param znear: The z near (min. depth) value.
- * @param zfar: The z far (max. depth) value.
+ * @param yfov: The vertical field of view.
+ * @param aspect: The aspect ratio of the field of view.
+ * @param znear: The distance to the near clipping plane.
+ * @param zfar: The distance to the far clipping plane.
  */
 void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
     YF_float znear, YF_float zfar);
@@ -195,8 +195,8 @@ void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
  * Computes an orthographic projection matrix.
  *
  * @param m: The destination matrix.
- * @param xmag: The horizontal magnification.
- * @param ymag: The vertical magnification.
+ * @param xmag: The horizontal magnification of the view.
+ * @param ymag: The vertical magnification of the view.
  * @param znear: The distance to the near clipping plane.
  * @param zfar: The distance to the far clipping plane.
  */
