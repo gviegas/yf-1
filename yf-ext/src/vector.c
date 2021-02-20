@@ -11,34 +11,34 @@
 #include "vector.h"
 
 #ifdef YF_USE_FLOAT64
-# define YF_FLTISEQ(a, b) (fabs(a-b) < 1e-15)
+# define YF_FLT_ISEQ(a, b) (fabs(a-b) < 1e-15)
 #else
-# define YF_FLTISEQ(a, b) (fabsf(a-b) < 1e-6)
+# define YF_FLT_ISEQ(a, b) (fabsf(a-b) < 1e-6)
 #endif
 
-#define YF_VECISEQ(r, a, b, n) do { \
+#define YF_VEC_ISEQ(r, a, b, n) do { \
   for (unsigned i = 0; i < n; ++i) { \
-    if (!(r = YF_FLTISEQ(a[i], b[i]))) \
+    if (!(r = YF_FLT_ISEQ(a[i], b[i]))) \
       break; \
   } } while (0);
 
-#define YF_VECSET(v, s, n) do { \
+#define YF_VEC_SET(v, s, n) do { \
   for (unsigned i = 0; i < n; ++i) \
     v[i] = s; } while (0)
 
-#define YF_VECSUB(dst, a, b, n) do { \
+#define YF_VEC_SUB(dst, a, b, n) do { \
   for (unsigned i = 0; i < n; ++i) \
     dst[i] = a[i] - b[i]; } while (0)
 
-#define YF_VECADD(dst, a, b, n) do { \
+#define YF_VEC_ADD(dst, a, b, n) do { \
   for (unsigned i = 0; i < n; ++i) \
     dst[i] = a[i] + b[i]; } while (0)
 
-#define YF_VECMULS(dst, v, s, n) do { \
+#define YF_VEC_MULS(dst, v, s, n) do { \
   for (unsigned i = 0; i < n; ++i) \
     dst[i] = v[i] * s; } while (0)
 
-#define YF_VECDOT(r, a, b, n) do { \
+#define YF_VEC_DOT(r, a, b, n) do { \
   r = 0.0; \
   for (unsigned i = 0; i < n; ++i) \
     r += a[i] * b[i]; } while (0)
@@ -46,52 +46,52 @@
 int yf_vec2_iszero(const YF_vec2 v) {
   static const YF_vec2 zero = {0.0, 0.0};
   int r;
-  YF_VECISEQ(r, v, zero, 2);
+  YF_VEC_ISEQ(r, v, zero, 2);
   return r;
 }
 
 int yf_vec3_iszero(const YF_vec3 v) {
   static const YF_vec3 zero = {0.0, 0.0, 0.0};
   int r;
-  YF_VECISEQ(r, v, zero, 3);
+  YF_VEC_ISEQ(r, v, zero, 3);
   return r;
 }
 
 int yf_vec4_iszero(const YF_vec4 v) {
   static const YF_vec4 zero = {0.0, 0.0, 0.0, 0.0};
   int r;
-  YF_VECISEQ(r, v, zero, 4);
+  YF_VEC_ISEQ(r, v, zero, 4);
   return r;
 }
 
 int yf_vec2_iseq(const YF_vec2 a, const YF_vec2 b) {
   int r;
-  YF_VECISEQ(r, a, b, 2);
+  YF_VEC_ISEQ(r, a, b, 2);
   return r;
 }
 
 int yf_vec3_iseq(const YF_vec3 a, const YF_vec3 b) {
   int r;
-  YF_VECISEQ(r, a, b, 3);
+  YF_VEC_ISEQ(r, a, b, 3);
   return r;
 }
 
 int yf_vec4_iseq(const YF_vec4 a, const YF_vec4 b) {
   int r;
-  YF_VECISEQ(r, a, b, 4);
+  YF_VEC_ISEQ(r, a, b, 4);
   return r;
 }
 
 void yf_vec2_set(YF_vec2 v, YF_float s) {
-  YF_VECSET(v, s, 2);
+  YF_VEC_SET(v, s, 2);
 }
 
 void yf_vec3_set(YF_vec3 v, YF_float s) {
-  YF_VECSET(v, s, 3);
+  YF_VEC_SET(v, s, 3);
 }
 
 void yf_vec4_set(YF_vec4 v, YF_float s) {
-  YF_VECSET(v, s, 4);
+  YF_VEC_SET(v, s, 4);
 }
 
 void yf_vec2_copy(YF_vec2 dst, const YF_vec2 v) {
@@ -107,92 +107,92 @@ void yf_vec4_copy(YF_vec4 dst, const YF_vec4 v) {
 }
 
 void yf_vec2_sub(YF_vec2 dst, const YF_vec2 a, const YF_vec2 b) {
-  YF_VECSUB(dst, a, b, 2);
+  YF_VEC_SUB(dst, a, b, 2);
 }
 
 void yf_vec3_sub(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b) {
-  YF_VECSUB(dst, a, b, 3);
+  YF_VEC_SUB(dst, a, b, 3);
 }
 
 void yf_vec4_sub(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b) {
-  YF_VECSUB(dst, a, b, 4);
+  YF_VEC_SUB(dst, a, b, 4);
 }
 
 void yf_vec2_subi(YF_vec2 dst, const YF_vec2 v) {
-  YF_VECSUB(dst, dst, v, 2);
+  YF_VEC_SUB(dst, dst, v, 2);
 }
 
 void yf_vec3_subi(YF_vec3 dst, const YF_vec3 v) {
-  YF_VECSUB(dst, dst, v, 3);
+  YF_VEC_SUB(dst, dst, v, 3);
 }
 
 void yf_vec4_subi(YF_vec4 dst, const YF_vec4 v) {
-  YF_VECSUB(dst, dst, v, 4);
+  YF_VEC_SUB(dst, dst, v, 4);
 }
 
 void yf_vec2_add(YF_vec2 dst, const YF_vec2 a, const YF_vec2 b) {
-  YF_VECADD(dst, a, b, 2);
+  YF_VEC_ADD(dst, a, b, 2);
 }
 
 void yf_vec3_add(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b) {
-  YF_VECADD(dst, a, b, 3);
+  YF_VEC_ADD(dst, a, b, 3);
 }
 
 void yf_vec4_add(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b) {
-  YF_VECADD(dst, a, b, 4);
+  YF_VEC_ADD(dst, a, b, 4);
 }
 
 void yf_vec2_addi(YF_vec2 dst, const YF_vec2 v) {
-  YF_VECADD(dst, dst, v, 2);
+  YF_VEC_ADD(dst, dst, v, 2);
 }
 
 void yf_vec3_addi(YF_vec3 dst, const YF_vec3 v) {
-  YF_VECADD(dst, dst, v, 3);
+  YF_VEC_ADD(dst, dst, v, 3);
 }
 
 void yf_vec4_addi(YF_vec4 dst, const YF_vec4 v) {
-  YF_VECADD(dst, dst, v, 4);
+  YF_VEC_ADD(dst, dst, v, 4);
 }
 
 void yf_vec2_muls(YF_vec2 dst, const YF_vec2 v, YF_float s) {
-  YF_VECMULS(dst, v, s, 2);
+  YF_VEC_MULS(dst, v, s, 2);
 }
 
 void yf_vec3_muls(YF_vec3 dst, const YF_vec3 v, YF_float s) {
-  YF_VECMULS(dst, v, s, 3);
+  YF_VEC_MULS(dst, v, s, 3);
 }
 
 void yf_vec4_muls(YF_vec4 dst, const YF_vec4 v, YF_float s) {
-  YF_VECMULS(dst, v, s, 4);
+  YF_VEC_MULS(dst, v, s, 4);
 }
 
 void yf_vec2_mulsi(YF_vec2 dst, YF_float s) {
-  YF_VECMULS(dst, dst, s, 2);
+  YF_VEC_MULS(dst, dst, s, 2);
 }
 
 void yf_vec3_mulsi(YF_vec3 dst, YF_float s) {
-  YF_VECMULS(dst, dst, s, 3);
+  YF_VEC_MULS(dst, dst, s, 3);
 }
 
 void yf_vec4_mulsi(YF_vec4 dst, YF_float s) {
-  YF_VECMULS(dst, dst, s, 4);
+  YF_VEC_MULS(dst, dst, s, 4);
 }
 
 YF_float yf_vec2_dot(const YF_vec2 a, const YF_vec2 b) {
   YF_float r;
-  YF_VECDOT(r, a, b, 2);
+  YF_VEC_DOT(r, a, b, 2);
   return r;
 }
 
 YF_float yf_vec3_dot(const YF_vec3 a, const YF_vec3 b) {
   YF_float r;
-  YF_VECDOT(r, a, b, 3);
+  YF_VEC_DOT(r, a, b, 3);
   return r;
 }
 
 YF_float yf_vec4_dot(const YF_vec4 a, const YF_vec4 b) {
   YF_float r;
-  YF_VECDOT(r, a, b, 4);
+  YF_VEC_DOT(r, a, b, 4);
   return r;
 }
 
@@ -222,17 +222,17 @@ YF_float yf_vec4_len(const YF_vec4 v) {
 
 void yf_vec2_norm(YF_vec2 dst, const YF_vec2 v) {
   const YF_float s = 1.0 / yf_vec2_len(v);
-  YF_VECMULS(dst, v, s, 2);
+  YF_VEC_MULS(dst, v, s, 2);
 }
 
 void yf_vec3_norm(YF_vec3 dst, const YF_vec3 v) {
   const YF_float s = 1.0 / yf_vec3_len(v);
-  YF_VECMULS(dst, v, s, 3);
+  YF_VEC_MULS(dst, v, s, 3);
 }
 
 void yf_vec4_norm(YF_vec4 dst, const YF_vec4 v) {
   const YF_float s = 1.0 / yf_vec4_len(v);
-  YF_VECMULS(dst, v, s, 4);
+  YF_VEC_MULS(dst, v, s, 4);
 }
 
 void yf_vec2_normi(YF_vec2 v) {
@@ -248,9 +248,9 @@ void yf_vec4_normi(YF_vec4 v) {
 }
 
 void yf_vec3_cross(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b) {
-  dst[0] = a[1] * b[2] - b[1] * a[2];
-  dst[1] = a[2] * b[0] - b[2] * a[0];
-  dst[2] = a[0] * b[1] - b[0] * a[1];
+  dst[0] = a[1] * b[2] - a[2] * b[1];
+  dst[1] = a[2] * b[0] - a[0] * b[2];
+  dst[2] = a[0] * b[1] - a[1] * b[0];
 }
 
 void yf_vec4_cross(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b) {
