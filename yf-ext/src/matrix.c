@@ -372,17 +372,6 @@ void yf_mat4_rot(YF_mat4 m, YF_float angle, const YF_vec3 axis) {
 }
 
 void yf_mat3_rotq(YF_mat3 m, const YF_vec4 q) {
-  YF_vec4 u;
-  yf_vec4_norm(u, q);
-  const YF_float xw = u[0] * u[3];
-  const YF_float xx = u[0] * u[0];
-  const YF_float xy = u[0] * u[1];
-  const YF_float xz = u[0] * u[2];
-  const YF_float yw = u[1] * u[3];
-  const YF_float yy = u[1] * u[1];
-  const YF_float yz = u[1] * u[2];
-  const YF_float zw = u[2] * u[3];
-  const YF_float zz = u[2] * u[2];
 #ifdef YF_USE_FLOAT64
   const YF_float one = 1.0;
   const YF_float two = 2.0;
@@ -390,29 +379,29 @@ void yf_mat3_rotq(YF_mat3 m, const YF_vec4 q) {
   const YF_float one = 1.0f;
   const YF_float two = 2.0f;
 #endif
-  m[0] = one - two * (yy - zz);
-  m[1] = two * (xy - zw);
-  m[2] = two * (xz + yw);
-  m[3] = two * (xy + zw);
-  m[4] = one - two * (xx - zz);
-  m[5] = two * (yz - xw);
-  m[6] = two * (xz - yw);
-  m[7] = two * (yz + xw);
-  m[8] = one - two * (xx - yy);
+  YF_vec4 u;
+  yf_vec4_norm(u, q);
+  const YF_float two_xw = two * u[0] * u[3];
+  const YF_float two_xx = two * u[0] * u[0];
+  const YF_float two_xy = two * u[0] * u[1];
+  const YF_float two_xz = two * u[0] * u[2];
+  const YF_float two_yw = two * u[1] * u[3];
+  const YF_float two_yy = two * u[1] * u[1];
+  const YF_float two_yz = two * u[1] * u[2];
+  const YF_float two_zw = two * u[2] * u[3];
+  const YF_float two_zz = two * u[2] * u[2];
+  m[0] = one - two_yy - two_zz;
+  m[1] = two_xy - two_zw;
+  m[2] = two_xz + two_yw;
+  m[3] = two_xy + two_zw;
+  m[4] = one - two_xx - two_zz;
+  m[5] = two_yz - two_xw;
+  m[6] = two_xz - two_yw;
+  m[7] = two_yz + two_xw;
+  m[8] = one - two_xx - two_yy;
 }
 
 void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q) {
-  YF_vec4 u;
-  yf_vec4_norm(u, q);
-  const YF_float xw = u[0] * u[3];
-  const YF_float xx = u[0] * u[0];
-  const YF_float xy = u[0] * u[1];
-  const YF_float xz = u[0] * u[2];
-  const YF_float yw = u[1] * u[3];
-  const YF_float yy = u[1] * u[1];
-  const YF_float yz = u[1] * u[2];
-  const YF_float zw = u[2] * u[3];
-  const YF_float zz = u[2] * u[2];
 #ifdef YF_USE_FLOAT64
   const YF_float one = 1.0;
   const YF_float two = 2.0;
@@ -422,17 +411,28 @@ void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q) {
   const YF_float two = 2.0f;
   const YF_float zero = 0.0f;
 #endif
-  m[0] = one - two * (yy - zz);
-  m[1] = two * (xy - zw);
-  m[2] = two * (xz + yw);
+  YF_vec4 u;
+  yf_vec4_norm(u, q);
+  const YF_float two_xw = two * u[0] * u[3];
+  const YF_float two_xx = two * u[0] * u[0];
+  const YF_float two_xy = two * u[0] * u[1];
+  const YF_float two_xz = two * u[0] * u[2];
+  const YF_float two_yw = two * u[1] * u[3];
+  const YF_float two_yy = two * u[1] * u[1];
+  const YF_float two_yz = two * u[1] * u[2];
+  const YF_float two_zw = two * u[2] * u[3];
+  const YF_float two_zz = two * u[2] * u[2];
+  m[0] = one - two_yy - two_zz;
+  m[1] = two_xy - two_zw;
+  m[2] = two_xz + two_yw;
   m[3] = zero;
-  m[4] = two * (xy + zw);
-  m[5] = one - two * (xx - zz);
-  m[6] = two * (yz - xw);
+  m[4] = two_xy + two_zw;
+  m[5] = one - two_xx - two_zz;
+  m[6] = two_yz - two_xw;
   m[7] = zero;
-  m[8] = two * (xz - yw);
-  m[9] = two * (yz + xw);
-  m[10] = one - two * (xx - yy);
+  m[8] = two_xz - two_yw;
+  m[9] = two_yz + two_xw;
+  m[10] = one - two_xx - two_yy;
   m[11] = zero;
   m[12] = zero;
   m[13] = zero;
