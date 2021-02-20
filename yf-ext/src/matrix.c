@@ -311,64 +311,68 @@ void yf_mat4_rotz(YF_mat4 m, YF_float angle) {
 }
 
 void yf_mat3_rot(YF_mat3 m, YF_float angle, const YF_vec3 axis) {
-  YF_vec3 v;
-  yf_vec3_norm(v, axis);
-  const YF_float x = v[0];
-  const YF_float y = v[1];
-  const YF_float z = v[2];
 #ifdef YF_USE_FLOAT64
   const YF_float c = cos(angle);
   const YF_float s = sin(angle);
-  const YF_float one = 1.0;
+  const YF_float one_minus_c = 1.0 - c;
 #else
   const YF_float c = cosf(angle);
   const YF_float s = sinf(angle);
-  const YF_float one = 1.0f;
+  const YF_float one_minus_c = 1.0f - c;
 #endif
-  m[0] = c + (one - c) * x*x;
-  m[1] = (one - c) * x*y + s*z;
-  m[2] = (one - c) * x*z - s*y;
-  m[3] = (one - c) * x*y - s*z;
-  m[4] = c + (one - c) * y*y;
-  m[5] = (one - c) * y*z + s*x;
-  m[6] = (one - c) * x*z + s*y;
-  m[7] = (one - c) * y*z - s*x;
-  m[8] = c + (one - c) * z*z;
+  YF_vec3 v;
+  yf_vec3_norm(v, axis);
+  const YF_float xx = v[0] * v[0];
+  const YF_float xy = v[0] * v[1];
+  const YF_float xz = v[0] * v[2];
+  const YF_float yy = v[1] * v[1];
+  const YF_float yz = v[1] * v[2];
+  const YF_float zz = v[2] * v[2];
+  const YF_float sx = s * v[0];
+  const YF_float sy = s * v[1];
+  const YF_float sz = s * v[2];
+  m[0] = c + one_minus_c * xx;
+  m[1] = one_minus_c * xy + sz;
+  m[2] = one_minus_c * xz - sy;
+  m[3] = one_minus_c * xy - sz;
+  m[4] = c + one_minus_c * yy;
+  m[5] = one_minus_c * yz + sx;
+  m[6] = one_minus_c * xz + sy;
+  m[7] = one_minus_c * yz - sx;
+  m[8] = c + one_minus_c * zz;
 }
 
 void yf_mat4_rot(YF_mat4 m, YF_float angle, const YF_vec3 axis) {
-  YF_vec3 v;
-  yf_vec3_norm(v, axis);
-  const YF_float x = v[0];
-  const YF_float y = v[1];
-  const YF_float z = v[2];
 #ifdef YF_USE_FLOAT64
   const YF_float c = cos(angle);
   const YF_float s = sin(angle);
-  const YF_float one = 1.0;
-  const YF_float zero = 0.0;
+  const YF_float one_minus_c = 1.0 - c;
 #else
   const YF_float c = cosf(angle);
   const YF_float s = sinf(angle);
-  const YF_float one = 1.0f;
-  const YF_float zero = 0.0f;
+  const YF_float one_minus_c = 1.0f - c;
 #endif
-  m[0] = c + (one - c) * x*x;
-  m[1] = (one - c) * x*y + s*z;
-  m[2] = (one - c) * x*z - s*y;
-  m[3] = zero;
-  m[4] = (one - c) * x*y - s*z;
-  m[5] = c + (one - c) * y*y;
-  m[6] = (one - c) * y*z + s*x;
-  m[7] = zero;
-  m[8] = (one - c) * x*z + s*y;
-  m[9] = (one - c) * y*z - s*x;
-  m[10] = c + (one - c) * z*z;
-  m[11] = zero;
-  m[12] = zero;
-  m[13] = zero;
-  m[14] = zero;
-  m[15] = one;
+  YF_vec3 v;
+  yf_vec3_norm(v, axis);
+  const YF_float xx = v[0] * v[0];
+  const YF_float xy = v[0] * v[1];
+  const YF_float xz = v[0] * v[2];
+  const YF_float yy = v[1] * v[1];
+  const YF_float yz = v[1] * v[2];
+  const YF_float zz = v[2] * v[2];
+  const YF_float sx = s * v[0];
+  const YF_float sy = s * v[1];
+  const YF_float sz = s * v[2];
+  yf_mat4_iden(m);
+  m[0] = c + one_minus_c * xx;
+  m[1] = one_minus_c * xy + sz;
+  m[2] = one_minus_c * xz - sy;
+  m[4] = one_minus_c * xy - sz;
+  m[5] = c + one_minus_c * yy;
+  m[6] = one_minus_c * yz + sx;
+  m[8] = one_minus_c * xz + sy;
+  m[9] = one_minus_c * yz - sx;
+  m[10] = c + one_minus_c * zz;
 }
 
 void yf_mat3_rotq(YF_mat3 m, const YF_vec4 q) {
@@ -405,11 +409,9 @@ void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q) {
 #ifdef YF_USE_FLOAT64
   const YF_float one = 1.0;
   const YF_float two = 2.0;
-  const YF_float zero = 0.0;
 #else
   const YF_float one = 1.0f;
   const YF_float two = 2.0f;
-  const YF_float zero = 0.0f;
 #endif
   YF_vec4 u;
   yf_vec4_norm(u, q);
@@ -422,22 +424,16 @@ void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q) {
   const YF_float two_yz = two * u[1] * u[2];
   const YF_float two_zw = two * u[2] * u[3];
   const YF_float two_zz = two * u[2] * u[2];
+  yf_mat4_iden(m);
   m[0] = one - two_yy - two_zz;
   m[1] = two_xy - two_zw;
   m[2] = two_xz + two_yw;
-  m[3] = zero;
   m[4] = two_xy + two_zw;
   m[5] = one - two_xx - two_zz;
   m[6] = two_yz - two_xw;
-  m[7] = zero;
   m[8] = two_xz - two_yw;
   m[9] = two_yz + two_xw;
   m[10] = one - two_xx - two_yy;
-  m[11] = zero;
-  m[12] = zero;
-  m[13] = zero;
-  m[14] = zero;
-  m[15] = one;
 }
 
 void yf_mat3_scale(YF_mat3 m, YF_float sx, YF_float sy, YF_float sz) {
