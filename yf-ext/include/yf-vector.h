@@ -177,20 +177,10 @@ void yf_vec3_cross(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b);
 void yf_vec4_cross(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b);
 
 /**
- * Computes a quaternion rotation for a given axis.
- *
- * The last component is the scalar.
- *
- * @param q: The destination quaternion.
- * @param angle: The rotation angle, in radians.
- * @param axis: The rotation axis.
- */
-void yf_vec4_rotq(YF_vec4 q, YF_float angle, const YF_vec3 axis);
-
-/**
  * Computes a quaternion rotation for the x-, y-, or z-axis.
  *
- * The last component is the scalar.
+ * The quaternion is encoded in a 'vec4' as follows:
+ *  (r, v) : (vec4[3], vec4[0-2])
  *
  * @param q: The destination quaternion.
  * @param angle: The rotation angle, in radians.
@@ -200,9 +190,22 @@ void yf_vec4_rotqy(YF_vec4 q, YF_float angle);
 void yf_vec4_rotqz(YF_vec4 q, YF_float angle);
 
 /**
+ * Computes a quaternion rotation for a given axis.
+ *
+ * The quaternion is encoded in a 'vec4' as follows:
+ *  (r, v) : (vec4[3], vec4[0-2])
+ *
+ * @param q: The destination quaternion.
+ * @param angle: The rotation angle, in radians.
+ * @param axis: The rotation axis.
+ */
+void yf_vec4_rotq(YF_vec4 q, YF_float angle, const YF_vec3 axis);
+
+/**
  * Multiplies two quaternions.
  *
- * The last component is the scalar.
+ * The quaternion is encoded in a 'vec4' as follows:
+ *  (r, v) : (vec4[3], vec4[0-2])
  *
  * @param dst: The destination quaternion.
  * @param q1: The first quaternion.
@@ -213,7 +216,8 @@ void yf_vec4_mulq(YF_vec4 dst, const YF_vec4 q1, const YF_vec4 q2);
 /**
  * Multiplies a destination quaternion by another.
  *
- * The last component is the scalar.
+ * The quaternion is encoded in a 'vec4' as follows:
+ *  (r, v) : (vec4[3], vec4[0-2])
  *
  * @param dst: The destination quaternion.
  * @param q: The other quaternion.

@@ -258,24 +258,6 @@ void yf_vec4_cross(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b) {
   dst[3] = 1.0;
 }
 
-void yf_vec4_rotq(YF_vec4 q, YF_float angle, const YF_vec3 axis) {
-  YF_vec3 v;
-  yf_vec3_norm(v, axis);
-#ifdef YF_USE_FLOAT64
-  const YF_float a = angle * 0.5;
-  const YF_float c = cos(a);
-  const YF_float s = sin(a);
-#else
-  const YF_float a = angle * 0.5f;
-  const YF_float c = cosf(a);
-  const YF_float s = sinf(a);
-#endif
-  q[3] = c;
-  q[0] = s * v[0];
-  q[1] = s * v[1];
-  q[2] = s * v[2];
-}
-
 void yf_vec4_rotqx(YF_vec4 q, YF_float angle) {
 #ifdef YF_USE_FLOAT64
   const YF_float a = angle * 0.5;
@@ -316,6 +298,24 @@ void yf_vec4_rotqz(YF_vec4 q, YF_float angle) {
   q[2] = sinf(a);
   q[0] = q[1] = 0.0f;
 #endif
+}
+
+void yf_vec4_rotq(YF_vec4 q, YF_float angle, const YF_vec3 axis) {
+  YF_vec3 v;
+  yf_vec3_norm(v, axis);
+#ifdef YF_USE_FLOAT64
+  const YF_float a = angle * 0.5;
+  const YF_float c = cos(a);
+  const YF_float s = sin(a);
+#else
+  const YF_float a = angle * 0.5f;
+  const YF_float c = cosf(a);
+  const YF_float s = sinf(a);
+#endif
+  q[3] = c;
+  q[0] = s * v[0];
+  q[1] = s * v[1];
+  q[2] = s * v[2];
 }
 
 void yf_vec4_mulq(YF_vec4 dst, const YF_vec4 q1, const YF_vec4 q2) {
