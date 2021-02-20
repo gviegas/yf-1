@@ -10,13 +10,13 @@
 
 #include "matrix.h"
 
-#define YF_MATSET(m, s, cn, rn) do { \
+#define YF_MAT_SET(m, s, cn, rn) do { \
   for (unsigned i = 0; i < cn; ++i) { \
     for (unsigned j = 0; j < rn; ++j) \
       m[i*rn+j] = s; \
   } } while (0)
 
-#define YF_MATXPOSE(dst, m, n) do { \
+#define YF_MAT_XPOSE(dst, m, n) do { \
   for (unsigned i = 0; i < n; ++i) { \
     dst[i*(n+1)] = m[i*(n+1)]; \
     for (unsigned j = i + 1; j < n; ++j) { \
@@ -25,19 +25,19 @@
     } \
   } } while (0)
 
-#define YF_MATSUB(dst, a, b, cn, rn) do { \
+#define YF_MAT_SUB(dst, a, b, cn, rn) do { \
   for (unsigned i = 0; i < cn; ++i) { \
     for (unsigned j = 0; j < rn; ++j) \
       dst[i*rn+j] = a[i*rn+j] - b[i*rn+j]; \
   } } while (0)
 
-#define YF_MATADD(dst, a, b, cn, rn) do { \
+#define YF_MAT_ADD(dst, a, b, cn, rn) do { \
   for (unsigned i = 0; i < cn; ++i) { \
     for (unsigned j = 0; j < rn; ++j) \
       dst[i*rn+j] = a[i*rn+j] + b[i*rn+j]; \
   } } while (0)
 
-#define YF_MATMUL(dst, a, b, cn, rn, n) do { \
+#define YF_MAT_MUL(dst, a, b, cn, rn, n) do { \
   for (unsigned i = 0; i < cn; ++i) { \
     for (unsigned j = 0; j < rn; ++j) { \
       dst[i*rn+j] = 0.0; \
@@ -46,7 +46,7 @@
     } \
   } } while (0)
 
-#define YF_MATMULV(dst, m, v, n) do { \
+#define YF_MAT_MULV(dst, m, v, n) do { \
   for (unsigned i = 0; i < n; ++i) { \
     dst[i] = 0.0; \
     for (unsigned j = 0; j < n; ++j) \
@@ -81,15 +81,15 @@ void yf_mat4_iden(YF_mat4 m) {
 }
 
 void yf_mat2_set(YF_mat2 m, YF_float s) {
-  YF_MATSET(m, s, 2, 2);
+  YF_MAT_SET(m, s, 2, 2);
 }
 
 void yf_mat3_set(YF_mat3 m, YF_float s) {
-  YF_MATSET(m, s, 3, 3);
+  YF_MAT_SET(m, s, 3, 3);
 }
 
 void yf_mat4_set(YF_mat4 m, YF_float s) {
-  YF_MATSET(m, s, 4, 4);
+  YF_MAT_SET(m, s, 4, 4);
 }
 
 void yf_mat2_copy(YF_mat2 dst, const YF_mat2 m) {
@@ -105,63 +105,63 @@ void yf_mat4_copy(YF_mat4 dst, const YF_mat4 m) {
 }
 
 void yf_mat2_xpose(YF_mat2 dst, const YF_mat2 m) {
-  YF_MATXPOSE(dst, m, 2);
+  YF_MAT_XPOSE(dst, m, 2);
 }
 
 void yf_mat3_xpose(YF_mat3 dst, const YF_mat3 m) {
-  YF_MATXPOSE(dst, m, 3);
+  YF_MAT_XPOSE(dst, m, 3);
 }
 
 void yf_mat4_xpose(YF_mat4 dst, const YF_mat4 m) {
-  YF_MATXPOSE(dst, m, 4);
+  YF_MAT_XPOSE(dst, m, 4);
 }
 
 void yf_mat2_sub(YF_mat2 dst, const YF_mat2 a, const YF_mat2 b) {
-  YF_MATSUB(dst, a, b, 2, 2);
+  YF_MAT_SUB(dst, a, b, 2, 2);
 }
 
 void yf_mat3_sub(YF_mat3 dst, const YF_mat3 a, const YF_mat3 b) {
-  YF_MATSUB(dst, a, b, 3, 3);
+  YF_MAT_SUB(dst, a, b, 3, 3);
 }
 
 void yf_mat4_sub(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b) {
-  YF_MATSUB(dst, a, b, 4, 4);
+  YF_MAT_SUB(dst, a, b, 4, 4);
 }
 
 void yf_mat2_add(YF_mat2 dst, const YF_mat2 a, const YF_mat2 b) {
-  YF_MATADD(dst, a, b, 2, 2);
+  YF_MAT_ADD(dst, a, b, 2, 2);
 }
 
 void yf_mat3_add(YF_mat3 dst, const YF_mat3 a, const YF_mat3 b) {
-  YF_MATADD(dst, a, b, 3, 3);
+  YF_MAT_ADD(dst, a, b, 3, 3);
 }
 
 void yf_mat4_add(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b) {
-  YF_MATADD(dst, a, b, 4, 4);
+  YF_MAT_ADD(dst, a, b, 4, 4);
 }
 
 void yf_mat2_mul(YF_mat2 dst, const YF_mat2 a, const YF_mat2 b) {
-  YF_MATMUL(dst, a, b, 2, 2, 2);
+  YF_MAT_MUL(dst, a, b, 2, 2, 2);
 }
 
 void yf_mat3_mul(YF_mat3 dst, const YF_mat3 a, const YF_mat3 b) {
-  YF_MATMUL(dst, a, b, 3, 3, 3);
+  YF_MAT_MUL(dst, a, b, 3, 3, 3);
 }
 
 void yf_mat4_mul(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b) {
-  YF_MATMUL(dst, a, b, 4, 4, 4);
+  YF_MAT_MUL(dst, a, b, 4, 4, 4);
 }
 
 void yf_mat2_mulv(YF_vec2 dst, const YF_mat2 m, const YF_vec2 v) {
-  YF_MATMULV(dst, m, v, 2);
+  YF_MAT_MULV(dst, m, v, 2);
 }
 
 void yf_mat3_mulv(YF_vec3 dst, const YF_mat3 m, const YF_vec3 v) {
-  YF_MATMULV(dst, m, v, 3);
+  YF_MAT_MULV(dst, m, v, 3);
 }
 
 void yf_mat4_mulv(YF_vec4 dst, const YF_mat4 m, const YF_vec4 v) {
-  YF_MATMULV(dst, m, v, 4);
+  YF_MAT_MULV(dst, m, v, 4);
 }
 
 void yf_mat2_inv(YF_mat2 dst, const YF_mat2 m) {
