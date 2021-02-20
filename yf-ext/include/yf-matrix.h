@@ -192,18 +192,16 @@ void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
     YF_float znear, YF_float zfar);
 
 /**
- * Computes an 'Ortho' (non-perspective) matrix.
+ * Computes an orthographic projection matrix.
  *
  * @param m: The destination matrix.
- * @param left: The left side value.
- * @param right: The right side value.
- * @param top: The top value.
- * @param bottom: The bottom value.
- * @param znear: The z near (min. depth) value.
- * @param zfar: The z far (max. depth) value.
+ * @param xmag: The horizontal magnification.
+ * @param ymag: The vertical magnification.
+ * @param znear: The distance to the near clipping plane.
+ * @param zfar: The distance to the far clipping plane.
  */
-void yf_mat4_ortho(YF_mat4 m, YF_float left, YF_float right,
-    YF_float top, YF_float bottom, YF_float znear, YF_float zfar);
+void yf_mat4_ortho(YF_mat4 m, YF_float xmag, YF_float ymag,
+    YF_float znear, YF_float zfar);
 
 YF_DECLS_END
 

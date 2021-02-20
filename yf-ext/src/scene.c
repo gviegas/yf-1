@@ -1005,7 +1005,7 @@ static int copy_glob(YF_scene scn) {
   /* projection matrix (ortho.) */
   /* TODO: This matrix should be taken from the camera. */
   YF_mat4 ortho;
-  yf_mat4_ortho(ortho, -1.0, 1.0, -1.0, 1.0, 0.0, -1.0);
+  yf_mat4_ortho(ortho, 1.0, 1.0, 0.0, -1.0);
   if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, ortho, sizeof ortho) != 0)
     return -1;
   l_vars.buf_off += sizeof(YF_mat4);
