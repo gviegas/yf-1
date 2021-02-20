@@ -220,67 +220,6 @@ void yf_mat4_inv(YF_mat4 dst, const YF_mat4 m) {
   dst[15] = (+s3 * m[8]  - s1 * m[9]  + s0 * m[10]) * idet;
 }
 
-void yf_mat3_rot(YF_mat3 m, YF_float angle, const YF_vec3 axis) {
-  YF_vec3 v;
-  yf_vec3_norm(v, axis);
-  const YF_float x = v[0];
-  const YF_float y = v[1];
-  const YF_float z = v[2];
-#ifdef YF_USE_FLOAT64
-  const YF_float c = cos(angle);
-  const YF_float s = sin(angle);
-  const YF_float one = 1.0;
-#else
-  const YF_float c = cosf(angle);
-  const YF_float s = sinf(angle);
-  const YF_float one = 1.0f;
-#endif
-  m[0] = c + (one - c) * x*x;
-  m[1] = (one - c) * x*y + s*z;
-  m[2] = (one - c) * x*z - s*y;
-  m[3] = (one - c) * x*y - s*z;
-  m[4] = c + (one - c) * y*y;
-  m[5] = (one - c) * y*z + s*x;
-  m[6] = (one - c) * x*z + s*y;
-  m[7] = (one - c) * y*z - s*x;
-  m[8] = c + (one - c) * z*z;
-}
-
-void yf_mat4_rot(YF_mat4 m, YF_float angle, const YF_vec3 axis) {
-  YF_vec3 v;
-  yf_vec3_norm(v, axis);
-  const YF_float x = v[0];
-  const YF_float y = v[1];
-  const YF_float z = v[2];
-#ifdef YF_USE_FLOAT64
-  const YF_float c = cos(angle);
-  const YF_float s = sin(angle);
-  const YF_float one = 1.0;
-  const YF_float zero = 0.0;
-#else
-  const YF_float c = cosf(angle);
-  const YF_float s = sinf(angle);
-  const YF_float one = 1.0f;
-  const YF_float zero = 0.0f;
-#endif
-  m[0] = c + (one - c) * x*x;
-  m[1] = (one - c) * x*y + s*z;
-  m[2] = (one - c) * x*z - s*y;
-  m[3] = zero;
-  m[4] = (one - c) * x*y - s*z;
-  m[5] = c + (one - c) * y*y;
-  m[6] = (one - c) * y*z + s*x;
-  m[7] = zero;
-  m[8] = (one - c) * x*z + s*y;
-  m[9] = (one - c) * y*z - s*x;
-  m[10] = c + (one - c) * z*z;
-  m[11] = zero;
-  m[12] = zero;
-  m[13] = zero;
-  m[14] = zero;
-  m[15] = one;
-}
-
 void yf_mat3_rotx(YF_mat3 m, YF_float angle) {
 #ifdef YF_USE_FLOAT64
   const YF_float c = cos(angle);
@@ -369,6 +308,67 @@ void yf_mat4_rotz(YF_mat4 m, YF_float angle) {
   m[1] = s;
   m[4] = -s;
   m[5] = c;
+}
+
+void yf_mat3_rot(YF_mat3 m, YF_float angle, const YF_vec3 axis) {
+  YF_vec3 v;
+  yf_vec3_norm(v, axis);
+  const YF_float x = v[0];
+  const YF_float y = v[1];
+  const YF_float z = v[2];
+#ifdef YF_USE_FLOAT64
+  const YF_float c = cos(angle);
+  const YF_float s = sin(angle);
+  const YF_float one = 1.0;
+#else
+  const YF_float c = cosf(angle);
+  const YF_float s = sinf(angle);
+  const YF_float one = 1.0f;
+#endif
+  m[0] = c + (one - c) * x*x;
+  m[1] = (one - c) * x*y + s*z;
+  m[2] = (one - c) * x*z - s*y;
+  m[3] = (one - c) * x*y - s*z;
+  m[4] = c + (one - c) * y*y;
+  m[5] = (one - c) * y*z + s*x;
+  m[6] = (one - c) * x*z + s*y;
+  m[7] = (one - c) * y*z - s*x;
+  m[8] = c + (one - c) * z*z;
+}
+
+void yf_mat4_rot(YF_mat4 m, YF_float angle, const YF_vec3 axis) {
+  YF_vec3 v;
+  yf_vec3_norm(v, axis);
+  const YF_float x = v[0];
+  const YF_float y = v[1];
+  const YF_float z = v[2];
+#ifdef YF_USE_FLOAT64
+  const YF_float c = cos(angle);
+  const YF_float s = sin(angle);
+  const YF_float one = 1.0;
+  const YF_float zero = 0.0;
+#else
+  const YF_float c = cosf(angle);
+  const YF_float s = sinf(angle);
+  const YF_float one = 1.0f;
+  const YF_float zero = 0.0f;
+#endif
+  m[0] = c + (one - c) * x*x;
+  m[1] = (one - c) * x*y + s*z;
+  m[2] = (one - c) * x*z - s*y;
+  m[3] = zero;
+  m[4] = (one - c) * x*y - s*z;
+  m[5] = c + (one - c) * y*y;
+  m[6] = (one - c) * y*z + s*x;
+  m[7] = zero;
+  m[8] = (one - c) * x*z + s*y;
+  m[9] = (one - c) * y*z - s*x;
+  m[10] = c + (one - c) * z*z;
+  m[11] = zero;
+  m[12] = zero;
+  m[13] = zero;
+  m[14] = zero;
+  m[15] = one;
 }
 
 void yf_mat3_rotq(YF_mat3 m, const YF_vec4 q) {

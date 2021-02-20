@@ -116,16 +116,6 @@ void yf_mat3_inv(YF_mat3 dst, const YF_mat3 m);
 void yf_mat4_inv(YF_mat4 dst, const YF_mat4 m);
 
 /**
- * Computes a rotation matrix for a given axis.
- *
- * @param m: The destination matrix.
- * @param angle: The rotation angle, in radians.
- * @param axis: The rotation axis.
- */
-void yf_mat3_rot(YF_mat3 m, YF_float angle, const YF_vec3 axis);
-void yf_mat4_rot(YF_mat4 m, YF_float angle, const YF_vec3 axis);
-
-/**
  * Computes a rotation matrix for the x-, y- or z-axis.
  *
  * @param m: The destination matrix.
@@ -137,6 +127,16 @@ void yf_mat3_rotz(YF_mat3 m, YF_float angle);
 void yf_mat4_rotx(YF_mat4 m, YF_float angle);
 void yf_mat4_roty(YF_mat4 m, YF_float angle);
 void yf_mat4_rotz(YF_mat4 m, YF_float angle);
+
+/**
+ * Computes a rotation matrix for a given axis.
+ *
+ * @param m: The destination matrix.
+ * @param angle: The rotation angle, in radians.
+ * @param axis: The rotation axis.
+ */
+void yf_mat3_rot(YF_mat3 m, YF_float angle, const YF_vec3 axis);
+void yf_mat4_rot(YF_mat4 m, YF_float angle, const YF_vec3 axis);
 
 /**
  * Computes a rotation matrix from a quaternion rotation.
@@ -185,8 +185,8 @@ void yf_mat4_lookat(YF_mat4 m, const YF_vec3 eye, const YF_vec3 center,
  * @param m: The destination matrix.
  * @param yfov: The y field of view.
  * @param aspect: The aspect ratio.
- * @param znear: The z near (min depth) value.
- * @param zfar: The z far (max depth) value.
+ * @param znear: The z near (min. depth) value.
+ * @param zfar: The z far (max. depth) value.
  */
 void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
     YF_float znear, YF_float zfar);
@@ -199,8 +199,8 @@ void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
  * @param right: The right side value.
  * @param top: The top value.
  * @param bottom: The bottom value.
- * @param znear: The z near (min depth) value.
- * @param zfar: The z far (max depth) value.
+ * @param znear: The z near (min. depth) value.
+ * @param zfar: The z far (max. depth) value.
  */
 void yf_mat4_ortho(YF_mat4 m, YF_float left, YF_float right,
     YF_float top, YF_float bottom, YF_float znear, YF_float zfar);
