@@ -19,7 +19,7 @@
 #define YF_FOV_MAX (YF_float)M_PI_4
 
 #define YF_TURNX_MIN (YF_float)0.0001
-#define YF_TURNX_MAX (YF_float)3.14149265358979323846 /* pi - 0.0001 */
+#define YF_TURNX_MAX (YF_float)(M_PI-0.0001)
 
 struct YF_camera_o {
   YF_vec3 pos;
