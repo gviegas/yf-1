@@ -71,7 +71,7 @@ YF_particle yf_particle_init(unsigned count) {
   part->count = count;
 
   part->sys.emitter.norm[0] = 0.0;
-  part->sys.emitter.norm[1] = -1.0;
+  part->sys.emitter.norm[1] = 1.0;
   part->sys.emitter.norm[2] = 0.0;
   part->sys.emitter.size = 1.0;
   part->sys.lifetime.duration_min = 0.1;
@@ -89,12 +89,12 @@ YF_particle yf_particle_init(unsigned count) {
   part->sys.color.max[1] = 1.0;
   part->sys.color.max[2] = 1.0;
   part->sys.color.max[3] = 1.0;
-  part->sys.velocity.min[0] = 0.0;
+  part->sys.velocity.min[0] = -0.1;
   part->sys.velocity.min[1] = -0.1;
-  part->sys.velocity.min[2] = 0.0;
-  part->sys.velocity.max[0] = 0.0;
-  part->sys.velocity.max[1] = -0.01;
-  part->sys.velocity.max[2] = 0.0;
+  part->sys.velocity.min[2] = -0.1;
+  part->sys.velocity.max[0] = 0.1;
+  part->sys.velocity.max[1] = 0.1;
+  part->sys.velocity.max[2] = 0.1;
 
   if (init_points(part) != 0) {
     yf_particle_deinit(part);
