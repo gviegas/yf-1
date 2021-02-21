@@ -38,6 +38,8 @@ struct L_vars {
   struct {
     int quit;
     int swap;
+    int move[4];
+    int turn[4];
     float speed;
   } input;
 };
@@ -123,12 +125,9 @@ static const YF_mat4 l_xforms[] = {
 static void on_key(int key, int state,
     YF_UNUSED unsigned mod_mask, YF_UNUSED void *arg)
 {
-  if (state == YF_KEYSTATE_RELEASED)
-    return;
-
   switch (key) {
     case YF_KEY_SPACE:
-      l_vars.input.swap = 1;
+      l_vars.input.swap = state;
       break;
     case YF_KEY_1:
       l_vars.input.speed -= 0.25f;
@@ -136,8 +135,32 @@ static void on_key(int key, int state,
     case YF_KEY_2:
       l_vars.input.speed += 0.25f;
       break;
+    case YF_KEY_W:
+      l_vars.input.move[0] = state;
+      break;
+    case YF_KEY_S:
+      l_vars.input.move[1] = state;
+      break;
+    case YF_KEY_A:
+      l_vars.input.move[2] = state;
+      break;
+    case YF_KEY_D:
+      l_vars.input.move[3] = state;
+      break;
+    case YF_KEY_UP:
+      l_vars.input.turn[0] = state;
+      break;
+    case YF_KEY_DOWN:
+      l_vars.input.turn[1] = state;
+      break;
+    case YF_KEY_LEFT:
+      l_vars.input.turn[2] = state;
+      break;
+    case YF_KEY_RIGHT:
+      l_vars.input.turn[3] = state;
+      break;
     default:
-      l_vars.input.quit = 1;
+      l_vars.input.quit |= state;
   }
 }
 
@@ -171,6 +194,28 @@ static void update(double elapsed_time) {
   for (unsigned i = 0; i < YF_MDLN; ++i)
     yf_mat4_mul(*yf_node_getxform(yf_model_getnode(l_vars.mdl[i])),
         l_xforms[i], rot);
+
+  /* Update camera */
+  YF_camera cam = yf_scene_getcam(l_vars.scn[scn_i]);
+  static const YF_float md = 0.65;
+  static const YF_float td = 0.05;
+
+  if (l_vars.input.move[0])
+    yf_camera_movef(cam, md);
+  if (l_vars.input.move[1])
+    yf_camera_moveb(cam, md);
+  if (l_vars.input.move[2])
+    yf_camera_movel(cam, md);
+  if (l_vars.input.move[3])
+    yf_camera_mover(cam, md);
+  if (l_vars.input.turn[0])
+    yf_camera_turnu(cam, td);
+  if (l_vars.input.turn[1])
+    yf_camera_turnd(cam, td);
+  if (l_vars.input.turn[2])
+    yf_camera_turnl(cam, td);
+  if (l_vars.input.turn[3])
+    yf_camera_turnr(cam, td);
 }
 
 /* Tests model rendering. */
