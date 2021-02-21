@@ -153,11 +153,11 @@ static int init_grid(YF_terrain terr) {
   float x0, z0;
   float pos_off;
   if (wdt > dep) {
-    x0 = -1.0f;
+    x0 = 1.0f;
     z0 = (float)dep / (float)wdt;
     pos_off = 2.0f / (float)wdt;
   } else {
-    x0 = -(float)wdt / (float)dep;
+    x0 = (float)wdt / (float)dep;
     z0 = 1.0f;
     pos_off = 2.0f / (float)dep;
   }
@@ -168,7 +168,7 @@ static int init_grid(YF_terrain terr) {
   unsigned k;
   YF_vterr *vdt = data.v.data;
   for (unsigned i = 0; i <= wdt; ++i) {
-    x = x0 + pos_off * (float)i;
+    x = x0 - pos_off * (float)i;
     s = tc_off * (float)i;
     for (unsigned j = 0; j <= dep; ++j) {
       z = z0 - pos_off * (float)j;
@@ -180,7 +180,7 @@ static int init_grid(YF_terrain terr) {
       vdt[k].tc[0] = s;
       vdt[k].tc[1] = t;
       vdt[k].norm[0] = 0.0f;
-      vdt[k].norm[1] = -1.0f;
+      vdt[k].norm[1] = 1.0f;
       vdt[k].norm[2] = 0.0f;
     }
   }

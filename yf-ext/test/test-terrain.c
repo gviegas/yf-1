@@ -17,7 +17,7 @@
 #define YF_WINH 600
 #define YF_WINT "Terrain"
 #define YF_FPS  30
-#define YF_CAMO (YF_vec3){0.0, 12.0, 8.0}
+#define YF_CAMO (YF_vec3){3.0, 20.0, 8.0}
 #define YF_CAMT (YF_vec3){0}
 
 /* Local variables. */
@@ -116,7 +116,7 @@ int yf_test_terrain(void) {
   l_vars.scn = yf_scene_init();
   assert(l_vars.scn != NULL);
 
-  l_vars.terr = yf_terrain_init(72, 64);
+  l_vars.terr = yf_terrain_init(100, 100);
   assert(l_vars.terr != NULL);
 
   l_vars.hmap = yf_texture_init(YF_FILETYPE_BMP, "tmp/hmap.bmp");
