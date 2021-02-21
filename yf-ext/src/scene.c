@@ -29,11 +29,11 @@
 #endif
 
 #ifdef YF_USE_FLOAT64
-# define YF_CAMORIG (YF_vec3){0.0, 0.0, -10.0}
+# define YF_CAMORIG (YF_vec3){-20.0, 20.0, 20.0}
 # define YF_CAMTGT  (YF_vec3){0.0, 0.0, 0.0}
 # define YF_CAMASP  1.0
 #else
-# define YF_CAMORIG (YF_vec3){0.0f, 0.0f, -10.0f}
+# define YF_CAMORIG (YF_vec3){-20.0f, 20.0f, 20.0f}
 # define YF_CAMTGT  (YF_vec3){0.0f, 0.0f, 0.0f}
 # define YF_CAMASP  1.0f
 #endif

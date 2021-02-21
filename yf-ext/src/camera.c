@@ -19,7 +19,7 @@
 #define YF_FOV_MAX (YF_float)M_PI_4
 
 #define YF_TURNX_MIN (YF_float)0.0001
-#define YF_TURNX_MAX (YF_float)3.14149265358979323846 /* pi - 0.0001 */
+#define YF_TURNX_MAX (YF_float)(M_PI-0.0001)
 
 struct YF_camera_o {
   YF_vec3 pos;
@@ -38,7 +38,7 @@ struct YF_camera_o {
 };
 
 /* World's 'up' vector. */
-static const YF_vec3 l_wld_u = {0.0, -1.0, 0.0};
+static const YF_vec3 l_wld_u = {0.0, 1.0, 0.0};
 
 /* Updates the camera's view matrix. */
 static void update_view(YF_camera cam);

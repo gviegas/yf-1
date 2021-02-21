@@ -69,13 +69,16 @@ static void on_key(int key, int state,
       l_vars.input.once = state;
       break;
     case YF_KEY_R:
-      l_vars.input.rgb[0] = state;
+      if (state)
+        l_vars.input.rgb[0] = ~l_vars.input.rgb[0];
       break;
     case YF_KEY_G:
-      l_vars.input.rgb[1] = state;
+      if (state)
+        l_vars.input.rgb[1] = ~l_vars.input.rgb[1];
       break;
     case YF_KEY_B:
-      l_vars.input.rgb[2] = state;
+      if (state)
+        l_vars.input.rgb[2] = ~l_vars.input.rgb[2];
       break;
     default:
       l_vars.input.quit |= state;
@@ -114,9 +117,9 @@ static void update(double elapsed_time) {
 
   YF_psys *sys = yf_particle_getsys(l_vars.part);
   sys->lifetime.once = l_vars.input.once;
-  sys->color.max[0] = 1.0-l_vars.input.rgb[0];
-  sys->color.max[1] = 1.0-l_vars.input.rgb[1];
-  sys->color.max[2] = 1.0-l_vars.input.rgb[2];
+  sys->color.max[0] = l_vars.input.rgb[0] ? 0.0 : 1.0;
+  sys->color.max[1] = l_vars.input.rgb[1] ? 0.0 : 1.0;
+  sys->color.max[2] = l_vars.input.rgb[2] ? 0.0 : 1.0;
 
   yf_particle_simulate(l_vars.part, elapsed_time);
 }
@@ -145,8 +148,22 @@ int yf_test_particle(void) {
   yf_mat4_scale(*yf_node_getxform(yf_particle_getnode(l_vars.part)),
       0.5, 1.0, 0.25);
 
+  YF_psys *sys = yf_particle_getsys(l_vars.part);
+  sys->velocity.min[1] = -0.001;
+  sys->velocity.max[1] = 0.25;
+  sys->lifetime.spawn_min = 0.1;
+  sys->lifetime.spawn_max = 0.5;
+  sys->lifetime.duration_min = 0.75;
+  sys->lifetime.duration_max = 2.5;
+
   yf_node_insert(yf_scene_getnode(l_vars.scn),
       yf_particle_getnode(l_vars.part));
+
+  YF_camera cam = yf_scene_getcam(l_vars.scn);
+  const YF_vec3 pos = {0.0, 0.0, 20.0};
+  const YF_vec3 tgt = {0.0, 6.0, 0.0};
+  yf_camera_place(cam, pos);
+  yf_camera_point(cam, tgt);
 
   yf_view_setscene(l_vars.view, l_vars.scn);
 
