@@ -505,6 +505,25 @@ void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
   m[14] = (two * zfar * znear) / (znear - zfar);
 }
 
+void yf_mat4_infpersp(YF_mat4 m, YF_float yfov, YF_float aspect,
+    YF_float znear)
+{
+#ifdef YF_USE_FLOAT64
+  const YF_float one = 1.0;
+  const YF_float two = 2.0;
+  const YF_float ct = one / tan(yfov * 0.5);
+#else
+  const YF_float one = 1.0f;
+  const YF_float two = 2.0f;
+  const YF_float ct = one / tanf(yfov * 0.5f);
+#endif
+  memset(m, 0, sizeof(YF_mat4));
+  m[0] = ct / aspect;
+  m[5] = ct;
+  m[10] = m[11] = -one;
+  m[14] = -two * znear;
+}
+
 void yf_mat4_ortho(YF_mat4 m, YF_float xmag, YF_float ymag,
     YF_float znear, YF_float zfar)
 {
