@@ -17,8 +17,6 @@
 #define YF_WINH 600
 #define YF_WINT "Terrain"
 #define YF_FPS  30
-#define YF_CAMO (YF_vec3){3.0, 20.0, 8.0}
-#define YF_CAMT (YF_vec3){0}
 
 /* Local variables. */
 struct L_vars {
@@ -131,8 +129,12 @@ int yf_test_terrain(void) {
       3.0, 3.0, 3.0);
 
   yf_node_insert(yf_scene_getnode(l_vars.scn), yf_terrain_getnode(l_vars.terr));
-  yf_camera_place(yf_scene_getcam(l_vars.scn), YF_CAMO);
-  yf_camera_point(yf_scene_getcam(l_vars.scn), YF_CAMT);
+
+  YF_camera cam = yf_scene_getcam(l_vars.scn);
+  const YF_vec3 pos = {3.0, 20.0, 8.0};
+  const YF_vec3 tgt = {0};
+  yf_camera_place(cam, pos);
+  yf_camera_point(cam, tgt);
 
   yf_view_setscene(l_vars.view, l_vars.scn);
 

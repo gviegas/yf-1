@@ -239,8 +239,8 @@ int yf_test_misc(void) {
   yf_node_insert(yf_scene_getnode(l_vars.scn), l_vars.labl_node);
 
   YF_camera cam = yf_scene_getcam(l_vars.scn);
-  YF_vec3 pos = {-4.0, 6.0, 15.0};
-  YF_vec3 tgt = {0};
+  const YF_vec3 pos = {-4.0, 6.0, 15.0};
+  const YF_vec3 tgt = {0};
   yf_camera_place(cam, pos);
   yf_camera_point(cam, tgt);
 
