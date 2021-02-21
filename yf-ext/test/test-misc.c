@@ -77,7 +77,7 @@ static void on_key(int key, int state,
       l_vars.input.toggle = state;
       break;
     default:
-      l_vars.input.quit = 1;
+      l_vars.input.quit |= state;
   }
 }
 
@@ -181,10 +181,10 @@ int yf_test_misc(void) {
   l_vars.labl_node = yf_node_init();
   assert(l_vars.labl_node != NULL);
 
-  YF_mesh mesh = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.gltf");
+  YF_mesh mesh = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model2.gltf");
   assert(mesh != NULL);
 
-  YF_texture texs[] = {yf_texture_init(YF_FILETYPE_BMP, "tmp/cube_alt.bmp")};
+  YF_texture texs[] = {yf_texture_init(YF_FILETYPE_BMP, "tmp/model2.bmp")};
   const size_t tex_n = sizeof texs / sizeof texs[0];
   for (size_t i = 0; i < tex_n; ++i)
     assert(texs[i] != NULL);
@@ -239,7 +239,7 @@ int yf_test_misc(void) {
   yf_node_insert(yf_scene_getnode(l_vars.scn), l_vars.labl_node);
 
   YF_camera cam = yf_scene_getcam(l_vars.scn);
-  YF_vec3 pos = {4.0, -6.0, -15.0};
+  YF_vec3 pos = {-4.0, -6.0, 15.0};
   YF_vec3 tgt = {0};
   yf_camera_place(cam, pos);
   yf_camera_point(cam, tgt);
