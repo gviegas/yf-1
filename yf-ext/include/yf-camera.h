@@ -22,7 +22,7 @@ typedef struct YF_camera_o *YF_camera;
 /**
  * Initializes a new camera.
  *
- * The negative y-axis is used as the fixed world 'up' vector (0,-1,0).
+ * The positive y-axis is used as the fixed world 'up' vector (0, 1 ,0).
  *
  * NOTE: The camera's origin and target must differ, otherwise a division
  * by zero will occur.

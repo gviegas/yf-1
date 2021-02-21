@@ -17,7 +17,7 @@
 #define YF_WINH 600
 #define YF_WINT "Terrain"
 #define YF_FPS  30
-#define YF_CAMO (YF_vec3){0.0, -20.0, -10.0}
+#define YF_CAMO (YF_vec3){0.0, 12.0, 8.0}
 #define YF_CAMT (YF_vec3){0}
 
 /* Local variables. */
