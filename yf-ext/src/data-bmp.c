@@ -297,7 +297,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
 
   /* pixel data can be either bottom-up or top-down */
   int32_t from, to, inc;
-#ifdef YF_FLIP_TEXTURE
+#ifdef YF_FLIP_TEX
   if (h > -1) {
     from = 0;
     to = h;
