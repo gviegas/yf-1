@@ -357,7 +357,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
   verts = NULL;
 
   /* index data */
-  if (vtx_n > 65536) {
+  if (vtx_n > 65535) {
     if (idx_n < idx_cap) {
       unsigned *tmp = realloc(inds, idx_n * sizeof *inds);
       if (tmp != NULL)
