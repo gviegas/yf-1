@@ -166,25 +166,31 @@ void yf_quad_deinit(YF_quad quad) {
 static int init_rect(YF_quad quad) {
   assert(quad != NULL);
 
+#ifdef YF_FLIP_TEX
+# define YF_TEX_T 0.0
+#else
+# define YF_TEX_T 1.0
+#endif
+
   static const YF_vquad verts[4] = {
     {
       .pos = {-1.0, -1.0, 0.5},
-      .tc = {0.0, 1.0},
+      .tc = {0.0, 1.0-YF_TEX_T},
       .clr = {1.0, 1.0, 1.0, 1.0}
     },
     {
       .pos = {-1.0, 1.0, 0.5},
-      .tc = {0.0, 0.0},
+      .tc = {0.0, YF_TEX_T},
       .clr = {1.0, 1.0, 1.0, 1.0}
     },
     {
       .pos = {1.0, 1.0, 0.5},
-      .tc = {1.0, 0.0},
+      .tc = {1.0, YF_TEX_T},
       .clr = {1.0, 1.0, 1.0, 1.0}
     },
     {
       .pos = {1.0, -1.0, 0.5},
-      .tc = {1.0, 1.0},
+      .tc = {1.0, 1.0-YF_TEX_T},
       .clr = {1.0, 1.0, 1.0, 1.0}
     }
   };
@@ -222,17 +228,23 @@ static void update_rect(YF_quad quad) {
       t1 = quad->rect.size.height / hgt + t0;
     }
 
+#ifdef YF_FLIP_TEX
+    const YF_float tmp = t0;
+    t0 = t1;
+    t1 = tmp;
+#endif
+
     quad->verts[0].tc[0] = s0;
-    quad->verts[0].tc[1] = t1;
+    quad->verts[0].tc[1] = t0;
 
     quad->verts[1].tc[0] = s0;
-    quad->verts[1].tc[1] = t0;
+    quad->verts[1].tc[1] = t1;
 
     quad->verts[2].tc[0] = s1;
-    quad->verts[2].tc[1] = t0;
+    quad->verts[2].tc[1] = t1;
 
     quad->verts[3].tc[0] = s1;
-    quad->verts[3].tc[1] = t1;
+    quad->verts[3].tc[1] = t0;
   }
 
   const YF_slice range = {0, 4};
