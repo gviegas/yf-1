@@ -104,10 +104,10 @@ static int init_grid(YF_terrain terr) {
   data.v.vtype = YF_VTYPE_TERR;
   data.v.n = (wdt+1) * (dep+1);
   data.i.n = wdt * dep * 6;
-  if (data.v.n > 65536)
-    data.i.stride = sizeof(unsigned);
-  else
+  if (data.v.n < 65535)
     data.i.stride = sizeof(unsigned short);
+  else
+    data.i.stride = sizeof(unsigned);
 
   data.v.data = malloc(data.v.n * sizeof(YF_vterr));
   data.i.data = malloc(data.i.n * data.i.stride);
@@ -118,36 +118,27 @@ static int init_grid(YF_terrain terr) {
     return -1;
   }
 
-  if (data.i.stride == sizeof(unsigned)) {
-    unsigned *inds = data.i.data;
-    unsigned idx = 0;
-    unsigned k;
-    for (unsigned i = 0; i < wdt; ++i) {
-      for (unsigned j = 0; j < dep; ++j) {
-        k = (dep+1) * i + j;
-        inds[idx++] = k;
-        inds[idx++] = k+1;
-        inds[idx++] = k+dep+2;
-        inds[idx++] = k;
-        inds[idx++] = k+dep+2;
-        inds[idx++] = k+dep+1;
-      }
-    }
-  } else {
+#define YF_GRID_CPYI() do { \
+  unsigned idx = 0; \
+  unsigned k; \
+  for (unsigned i = 0; i < wdt; ++i) { \
+    for (unsigned j = 0; j < dep; ++j) { \
+      k = (dep+1) * i + j; \
+      inds[idx++] = k; \
+      inds[idx++] = k+1; \
+      inds[idx++] = k+dep+2; \
+      inds[idx++] = k; \
+      inds[idx++] = k+dep+2; \
+      inds[idx++] = k+dep+1; \
+    } \
+  } } while (0)
+
+  if (data.i.stride != sizeof(unsigned)) {
     unsigned short *inds = data.i.data;
-    unsigned idx = 0;
-    unsigned k;
-    for (unsigned i = 0; i < wdt; ++i) {
-      for (unsigned j = 0; j < dep; ++j) {
-        k = (dep+1) * i + j;
-        inds[idx++] = k;
-        inds[idx++] = k+1;
-        inds[idx++] = k+dep+2;
-        inds[idx++] = k;
-        inds[idx++] = k+dep+2;
-        inds[idx++] = k+dep+1;
-      }
-    }
+    YF_GRID_CPYI();
+  } else {
+    unsigned *inds = data.i.data;
+    YF_GRID_CPYI();
   }
 
   float x0, z0;

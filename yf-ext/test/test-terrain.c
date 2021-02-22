@@ -114,7 +114,7 @@ int yf_test_terrain(void) {
   l_vars.scn = yf_scene_init();
   assert(l_vars.scn != NULL);
 
-  l_vars.terr = yf_terrain_init(100, 100);
+  l_vars.terr = yf_terrain_init(160, 160);
   assert(l_vars.terr != NULL);
 
   l_vars.hmap = yf_texture_init(YF_FILETYPE_BMP, "tmp/hmap.bmp");
@@ -131,7 +131,7 @@ int yf_test_terrain(void) {
   yf_node_insert(yf_scene_getnode(l_vars.scn), yf_terrain_getnode(l_vars.terr));
 
   YF_camera cam = yf_scene_getcam(l_vars.scn);
-  const YF_vec3 pos = {3.0, 20.0, 8.0};
+  const YF_vec3 pos = {-2.0, 20.0, 10.0};
   const YF_vec3 tgt = {0};
   yf_camera_place(cam, pos);
   yf_camera_point(cam, tgt);
