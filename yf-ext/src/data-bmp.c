@@ -293,19 +293,31 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
     fclose(file);
     return -1;
   }
+  unsigned char *scln = NULL;
+
+  /* pixel data can be either bottom-up or top-down */
   int32_t from, to, inc;
+#ifdef YF_FLIP_TEXTURE
   if (h > -1) {
-    /* pixel data is stored bottom-up */
     from = 0;
     to = h;
     inc = 1;
   } else {
-    /* pixel data is stored top-down */
     from = -h-1;
     to = -1;
     inc = -1;
   }
-  unsigned char *scln = NULL;
+#else
+  if (h > -1) {
+    from = h-1;
+    to = -1;
+    inc = -1;
+  } else {
+    from = 0;
+    to = -h;
+    inc = 1;
+  }
+#endif
 
   switch (bpp) {
     case 16: {
