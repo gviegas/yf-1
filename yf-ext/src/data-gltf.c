@@ -512,7 +512,7 @@ static int parse_samplers(FILE *file, L_symbol *symbol,
     size_t index, void *samplers_p);
 
 /* Loads a single mesh from glTF contents. */
-static int load_meshdt(const L_gltf *gltf, YF_meshdt *data);
+static int load_meshdt(const L_gltf *gltf, const char *path, YF_meshdt *data);
 
 /* Deinitializes glTF contents. */
 static void deinit_gltf(L_gltf *gltf);
@@ -550,9 +550,9 @@ int yf_loadgltf(const char *pathname, YF_meshdt *data) {
     return -1;
   }
 
-  char *rel_path = NULL;
-  YF_PATHOF(pathname, rel_path);
-  if (rel_path == NULL) {
+  char *path = NULL;
+  YF_PATHOF(pathname, path);
+  if (path == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
@@ -583,7 +583,7 @@ int yf_loadgltf(const char *pathname, YF_meshdt *data) {
   print_gltf(&gltf);
 #endif
 
-  if (load_meshdt(&gltf, data) != 0) {
+  if (load_meshdt(&gltf, path, data) != 0) {
     deinit_gltf(&gltf);
     fclose(file);
     return -1;
@@ -591,7 +591,7 @@ int yf_loadgltf(const char *pathname, YF_meshdt *data) {
 
   deinit_gltf(&gltf);
   fclose(file);
-  free(rel_path);
+  free(path);
   return 0;
 }
 
@@ -2470,8 +2470,9 @@ static int parse_samplers(FILE *file, L_symbol *symbol,
   return 0;
 }
 
-static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
+static int load_meshdt(const L_gltf *gltf, const char *path, YF_meshdt *data) {
   assert(gltf != NULL);
+  assert(path != NULL);
   assert(data != NULL);
 
   if (gltf->accessors.n == 0 || gltf->bufferviews.n == 0 ||
@@ -2538,7 +2539,17 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
       if (file != NULL)
         fclose(file);
       buf_id = attrs[i].buffer;
-      file = fopen(gltf->buffers.v[buf_id].uri, "r");
+      /* TODO: Check if the URI refers to a relative pathname. */
+      char *pathname = NULL;
+      YF_PATHCAT(path, gltf->buffers.v[buf_id].uri, pathname);
+      if (pathname == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(verts);
+        free(inds);
+        return -1;
+      }
+      file = fopen(pathname, "r");
+      free(pathname);
       if (file == NULL) {
         yf_seterr(YF_ERR_NOFILE, __func__);
         free(verts);
@@ -2682,7 +2693,17 @@ static int load_meshdt(const L_gltf *gltf, YF_meshdt *data) {
 
     if (buf_id != idx.buffer) {
       fclose(file);
-      file = fopen(gltf->buffers.v[idx.buffer].uri, "r");
+      /* TODO: Check if the URI refers to a relative pathname. */
+      char *pathname = NULL;
+      YF_PATHCAT(path, gltf->buffers.v[idx.buffer].uri, pathname);
+      if (pathname == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(verts);
+        free(inds);
+        return -1;
+      }
+      file = fopen(pathname, "r");
+      free(pathname);
       if (file == NULL) {
         yf_seterr(YF_ERR_NOFILE, __func__);
         free(verts);
