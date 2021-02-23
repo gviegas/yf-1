@@ -521,9 +521,29 @@ static void deinit_gltf(L_gltf *gltf);
 static void print_gltf(const L_gltf *gltf);
 #endif
 
+#define YF_PATHOF(pathname, path) do { \
+  const char *last = strrchr(pathname, '/'); \
+  if (last != NULL) { \
+    const size_t len = 1 + last - (pathname); \
+    path = malloc(1+len); \
+    if ((path) != NULL) { \
+      memcpy(path, pathname, len); \
+      (path)[len] = '\0'; \
+    } \
+  } else { \
+    path = ""; \
+  } } while (0)
+
 int yf_loadgltf(const char *pathname, YF_meshdt *data) {
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
+    return -1;
+  }
+
+  char *rel_path = NULL;
+  YF_PATHOF(pathname, rel_path);
+  if (rel_path == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
 
@@ -561,6 +581,7 @@ int yf_loadgltf(const char *pathname, YF_meshdt *data) {
 
   deinit_gltf(&gltf);
   fclose(file);
+  free(rel_path);
   return 0;
 }
 
