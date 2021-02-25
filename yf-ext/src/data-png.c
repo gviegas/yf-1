@@ -43,9 +43,6 @@ static_assert(offsetof(L_ihdr, interlace) == YF_PNG_IHDRSZ-1, "!offsetof");
 
 /* Palette. */
 #define YF_PNG_PLTE YF_PNG_MAKETYPE('P', 'L', 'T', 'E')
-typedef struct {
-  uint8_t *entries[3];
-} L_plte;
 
 /* Image data. */
 #define YF_PNG_IDAT YF_PNG_MAKETYPE('I', 'D', 'A', 'T')
@@ -115,6 +112,8 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
   //////////
 
   /* process chunks */
+  uint8_t *plte = NULL;
+  size_t plte_sz = 0;
   do {
     if (fread(&info, sizeof info, 1, file) < 1) {
       yf_seterr(YF_ERR_NOMEM, __func__);
@@ -125,17 +124,46 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
     info.len = be32toh(info.len);
     info.type = be32toh(info.type);
 
+    /* PLTE */
     if (info.type == YF_PNG_PLTE) {
-      /* TODO */
+      if (ihdr.color_type == 0 || ihdr.color_type == 4 ||
+          info.len == 0 || info.len % 3 != 0 || plte != NULL)
+      {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        free(plte);
+        fclose(file);
+        return -1;
+      }
+      plte = malloc(info.len);
+      if (plte == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        fclose(file);
+        return -1;
+      }
+      if (fread(plte, info.len, 1, file) < 1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        free(plte);
+        fclose(file);
+        return -1;
+      }
+      plte_sz = info.len;
+
+    /* IDAT */
     } else if (info.type == YF_PNG_IDAT) {
       /* TODO */
+
+    /* IEND */
     } else if (info.type == YF_PNG_IEND) {
       /* TODO */
       break;
+
+    /* unsupported */
     } else if (critical) {
       yf_seterr(YF_ERR_UNSUP, __func__);
       fclose(file);
       return -1;
+
+    /* unknown */
     } else {
       if (fseek(file, info.len, SEEK_CUR) != 0) {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -154,6 +182,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
 
   /* TODO... */
 
+  free(plte);
   fclose(file);
   return 0;
 }
