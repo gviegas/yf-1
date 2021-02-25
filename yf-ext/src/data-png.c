@@ -53,6 +53,28 @@ static_assert(offsetof(L_ihdr, interlace) == YF_PNG_IHDRSZ-1, "!offsetof");
 /* PNG file signature. */
 static const uint8_t l_sign[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 
+/* CRC table. */
+static uint32_t l_crctab[256] = {0};
+/* TODO: Atomic. */
+static int l_crcdone = 0;
+
+#define YF_PNG_INITCRC() do { \
+  if (!l_crcdone) { \
+    for (uint32_t i = 0; i < 256; ++i) { \
+      uint32_t crc = i, j = 8; \
+      while (j--) \
+        crc = (crc & 1) ? (0xedb88320 ^ (crc >> 1)) : (crc >> 1); \
+      l_crctab[i] = crc; \
+    } \
+    l_crcdone = 1; \
+  } } while (0)
+
+#define YF_PNG_CALCCRC(crc, data, len) do { \
+  crc = ~0U; \
+  for (size_t i = 0; i < (len); ++i) \
+    crc = l_crctab[((crc) ^ (data)[i]) & 0xff] ^ ((crc) >> 8); \
+  crc ^= ~0U; } while (0)
+
 int yf_loadpng(const char *pathname, YF_texdt *data) {
   assert(pathname != NULL);
   assert(data != NULL);
@@ -71,6 +93,8 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
     fclose(file);
     return -1;
   }
+
+  YF_PNG_INITCRC();
 
   struct { uint32_t len, type; } info;
   static_assert(sizeof info == 8);
