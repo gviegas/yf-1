@@ -110,7 +110,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
     return -1;
   }
   size_t var_sz = YF_PNG_VARSZ;
-  uint32_t len, type, crc;
+  uint32_t len, type, crc, crc_res;
 
   YF_PNG_INITCRC();
 
@@ -141,22 +141,21 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
     fclose(file);
     return -1;
   }
-  /* TODO: Calculate CRC. */
+  crc = be32toh(crc);
+  YF_PNG_CALCCRC(crc_res, (uint8_t *)(&chunk->type), len+sizeof chunk->type);
+  if (crc != crc_res) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    free(chunk);
+    fclose(file);
+    return -1;
+  }
 
   L_ihdr ihdr;
   memcpy(&ihdr, chunk->var, len);
   ihdr.width = be32toh(ihdr.width);
   ihdr.height = be32toh(ihdr.height);
 
-  //////////
-  printf("\n%u %c%c%c%c\n", len, type & 0xff, (type >> 8) & 0xff,
-      (type >> 16) & 0xff, (type >> 24) & 0xff);
-  printf("\n%ux%u, %x, %x, %x, %x, %x\n", ihdr.width, ihdr.height,
-      ihdr.bit_depth, ihdr.color_type, ihdr.compression, ihdr.filter,
-      ihdr.interlace);
-  //////////
-
-  /* process chunks */
+  /* chunk processing */
   uint8_t *plte = NULL;
   size_t plte_sz = 0;
   uint8_t *idat = NULL;
@@ -286,7 +285,16 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
       fclose(file);
       return -1;
     }
-    /* TODO: Calculate CRC. */
+    crc = be32toh(crc);
+    YF_PNG_CALCCRC(crc_res, (uint8_t *)(&chunk->type), len+sizeof chunk->type);
+    if (crc != crc_res) {
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      free(idat);
+      free(plte);
+      free(chunk);
+      fclose(file);
+      return -1;
+    }
   } while (1);
 
   /* TODO... */
