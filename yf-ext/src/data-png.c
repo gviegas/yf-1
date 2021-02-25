@@ -27,6 +27,15 @@
 #define YF_PNG_MAKETYPE(c1, c2, c3, c4) \
   ((c1 << 24) | (c2 << 16) | (c3 << 8) | c4)
 
+/* Chunk. */
+typedef struct {
+  uint32_t len;
+  uint32_t type;
+  uint8_t var[];
+} L_chunk;
+#define YF_PNG_VARSZ 4096
+static_assert(sizeof(L_chunk) == 8, "!sizeof");
+
 /* Image header. */
 #define YF_PNG_IHDR YF_PNG_MAKETYPE('I', 'H', 'D', 'R')
 typedef struct {
@@ -94,42 +103,54 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
     return -1;
   }
 
+  L_chunk *chunk = malloc(sizeof(L_chunk)+YF_PNG_VARSZ);
+  if (chunk == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    fclose(file);
+    return -1;
+  }
+  size_t var_sz = YF_PNG_VARSZ;
+  uint32_t len, type, crc;
+
   YF_PNG_INITCRC();
 
-  struct { uint32_t len, type; } info;
-  static_assert(sizeof info == 8);
-
   /* IHDR */
-  if (fread(&info, sizeof info, 1, file) < 1) {
+  if (fread(chunk, sizeof(L_chunk), 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
+    free(chunk);
     fclose(file);
     return -1;
   }
-  info.len = be32toh(info.len);
-  info.type = be32toh(info.type);
+  len = be32toh(chunk->len);
+  type = be32toh(chunk->type);
 
-  L_ihdr ihdr;
-  if (info.type != YF_PNG_IHDR || info.len != YF_PNG_IHDRSZ ||
-      fread(&ihdr, YF_PNG_IHDRSZ, 1, file) < 1)
+  static_assert(YF_PNG_IHDRSZ <= YF_PNG_VARSZ);
+
+  if (type != YF_PNG_IHDR || len != YF_PNG_IHDRSZ ||
+      fread(chunk->var, len, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
+    free(chunk);
     fclose(file);
     return -1;
   }
-  ihdr.width = be32toh(ihdr.width);
-  ihdr.height = be32toh(ihdr.height);
 
-  uint32_t crc;
   if (fread(&crc, sizeof crc, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
+    free(chunk);
     fclose(file);
     return -1;
   }
   /* TODO: Calculate CRC. */
 
+  L_ihdr ihdr;
+  memcpy(&ihdr, chunk->var, len);
+  ihdr.width = be32toh(ihdr.width);
+  ihdr.height = be32toh(ihdr.height);
+
   //////////
-  printf("\n%u %c%c%c%c\n", info.len, info.type & 0xff, (info.type >> 8) & 0xff,
-      (info.type >> 16) & 0xff, (info.type >> 24) & 0xff);
+  printf("\n%u %c%c%c%c\n", len, type & 0xff, (type >> 8) & 0xff,
+      (type >> 16) & 0xff, (type >> 24) & 0xff);
   printf("\n%ux%u, %x, %x, %x, %x, %x\n", ihdr.width, ihdr.height,
       ihdr.bit_depth, ihdr.color_type, ihdr.compression, ihdr.filter,
       ihdr.interlace);
@@ -140,84 +161,128 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
   size_t plte_sz = 0;
   uint8_t *idat = NULL;
   size_t idat_sz = 0;
+
   do {
-    if (fread(&info, sizeof info, 1, file) < 1) {
+    if (fread(chunk, sizeof(L_chunk), 1, file) < 1) {
       yf_seterr(YF_ERR_NOMEM, __func__);
+      free(chunk);
       fclose(file);
       return -1;
     }
-    const int critical = !(info.type & 0x20);
-    info.len = be32toh(info.len);
-    info.type = be32toh(info.type);
+    const int critical = !(chunk->type & 0x20);
+    len = be32toh(chunk->len);
+    type = be32toh(chunk->type);
+
+    if (len > var_sz) {
+      const size_t new_sz = sizeof(L_chunk)+len;
+      void *tmp = realloc(chunk, new_sz);
+      if (tmp != NULL) {
+        chunk = tmp;
+        var_sz = new_sz;
+      } else if (critical) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(idat);
+        free(plte);
+        free(chunk);
+        fclose(file);
+        return -1;
+      } else if (fseek(file, len+sizeof crc, SEEK_CUR) != 0) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        free(idat);
+        free(plte);
+        free(chunk);
+        fclose(file);
+        return -1;
+      } else {
+        continue;
+      }
+    }
 
     /* IEND */
-    if (info.type == YF_PNG_IEND) {
+    if (type == YF_PNG_IEND) {
       break;
 
     /* no data */
-    } else if (info.len == 0) {
+    } else if (len == 0) {
 
     /* PLTE */
-    } else if (info.type == YF_PNG_PLTE) {
-      if (ihdr.color_type == 0 || ihdr.color_type == 4 ||
-          info.len == 0 || info.len % 3 != 0 || plte != NULL)
+    } else if (type == YF_PNG_PLTE) {
+      if (ihdr.color_type == 0 || ihdr.color_type == 4 || len % 3 != 0 ||
+          plte != NULL || idat != NULL)
       {
         yf_seterr(YF_ERR_INVFILE, __func__);
+        free(idat);
         free(plte);
+        free(chunk);
         fclose(file);
         return -1;
       }
-      plte = malloc(info.len);
+      if (fread(chunk->var, len, 1, file) < 1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        free(plte);
+        free(chunk);
+        fclose(file);
+        return -1;
+      }
+      plte = malloc(len);
       if (plte == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         fclose(file);
         return -1;
       }
-      if (fread(plte, info.len, 1, file) < 1) {
+      memcpy(plte, chunk->var, len);
+      plte_sz = len;
+
+    /* IDAT */
+    } else if (type == YF_PNG_IDAT) {
+      if (fread(chunk->var, len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
+        free(idat);
         free(plte);
+        free(chunk);
         fclose(file);
         return -1;
       }
-      plte_sz = info.len;
-
-    /* IDAT */
-    } else if (info.type == YF_PNG_IDAT) {
-      void *tmp = realloc(idat, idat_sz+info.len);
+      void *tmp = realloc(idat, idat_sz+len);
       if (tmp == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         free(idat);
         free(plte);
+        free(chunk);
         fclose(file);
         return -1;
       }
       idat = tmp;
-      if (fread(idat+idat_sz, info.len, 1, file) < 1) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        free(idat);
-        free(plte);
-        fclose(file);
-        return -1;
-      }
-      idat_sz += info.len;
+      memcpy(idat+idat_sz, chunk->var, len);
+      idat_sz += len;
 
     /* unsupported */
     } else if (critical) {
       yf_seterr(YF_ERR_UNSUP, __func__);
+      free(idat);
+      free(plte);
+      free(chunk);
       fclose(file);
       return -1;
 
     /* unknown */
     } else {
-      if (fseek(file, info.len, SEEK_CUR) != 0) {
+      if (fseek(file, len+sizeof crc, SEEK_CUR) != 0) {
         yf_seterr(YF_ERR_INVFILE, __func__);
+        free(idat);
+        free(plte);
+        free(chunk);
         fclose(file);
         return -1;
       }
+      continue;
     }
 
     if (fread(&crc, sizeof crc, 1, file) < 1) {
       yf_seterr(YF_ERR_INVFILE, __func__);
+      free(idat);
+      free(plte);
+      free(chunk);
       fclose(file);
       return -1;
     }
@@ -228,6 +293,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
 
   free(idat);
   free(plte);
+  free(chunk);
   fclose(file);
   return 0;
 }
