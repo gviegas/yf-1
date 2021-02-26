@@ -424,6 +424,84 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
   assert(png != NULL);
   assert(data != NULL);
 
+  struct {
+    uint8_t cm:4, cinfo:4;
+    uint8_t fcheck:5, fdict:1, flevel:2;
+  } zhdr;
+  static_assert(sizeof zhdr == 2, "!sizeof");
+
+  memcpy(&zhdr, png->idat, 2);
+  if (zhdr.cm != 8 || zhdr.cinfo > 7 || zhdr.fdict != 0 ||
+      ((png->idat[0]<<8)+png->idat[1]) % 31 != 0)
+  {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    return -1;
+  }
+
+  size_t off = 2;
+  uint8_t bfinal, btype;
+
+  do {
+    bfinal = png->idat[off] & 1;
+    btype = png->idat[off] & 6;
+
+    if (btype == 0) {
+      /* no compression */
+      uint16_t len, nlen;
+      memcpy(&len, &png->idat[++off], sizeof len);
+      off += sizeof len;
+      memcpy(&nlen, &png->idat[off], sizeof nlen);
+      off += sizeof nlen;
+      if (len & nlen) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+      }
+      len = be16toh(len);
+      /* TODO */
+
+    } else {
+      if (btype == 1) {
+        /* fixed H. codes */
+        /* TODO */
+      } else if (btype == 2) {
+        /* dynamic H. codes */
+        /* TODO */
+      } else {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+      }
+      uint32_t val = 0;
+      do {
+        /* TODO: Decode literal/length. */
+        if (val < 256) {
+          /* literal */
+          /* TODO */
+        } else if (val > 256) {
+          /* reference */
+          /* TODO: Decode distance. */
+          /* TODO */
+        } else {
+          /* end of block */
+          break;
+        }
+      } while (1);
+    }
+  } while (!bfinal);
+
+  //////////
+  printf("\n[%s]\n\n", __func__);
+
+  printf("ihdr:\n wxh: %ux%u\n bd: %x\n ct: %x\n cm: %x\n fm: %x\n im: %x\n\n",
+      png->ihdr->width, png->ihdr->height, png->ihdr->bit_depth,
+      png->ihdr->color_type, png->ihdr->compression, png->ihdr->filter,
+      png->ihdr->interlace);
+  printf("plte (%p):\n size: %lu\n\n", (void *)png->plte, png->plte_sz);
+  printf("idat (%p):\n size: %lu\n\n", (void *)png->idat, png->idat_sz);
+
+  printf("zhdr:\n cm: %x\n cinfo: %x\n fcheck: %x\n fdict: %x\n flevel: %x\n\n",
+      zhdr.cm, zhdr.cinfo, zhdr.fcheck, zhdr.fdict, zhdr.flevel);
+  //////////
+
   /* TODO */
   return 0;
 }
