@@ -155,6 +155,19 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
   ihdr.width = be32toh(ihdr.width);
   ihdr.height = be32toh(ihdr.height);
 
+  if (ihdr.width == 0 || ihdr.height == 0 ||
+      (ihdr.bit_depth != 1 && ihdr.bit_depth != 2 && ihdr.bit_depth != 4 &&
+        ihdr.bit_depth != 8 && ihdr.bit_depth != 16) ||
+      (ihdr.color_type != 0 && ihdr.color_type != 2 && ihdr.color_type != 3 &&
+        ihdr.color_type != 4 && ihdr.color_type != 6) ||
+      ihdr.compression != 0 || ihdr.filter != 0 || ihdr.interlace > 1)
+  {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    free(chunk);
+    fclose(file);
+    return -1;
+  }
+
   /* chunk processing */
   uint8_t *plte = NULL;
   size_t plte_sz = 0;
@@ -297,11 +310,93 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
     }
   } while (1);
 
+  free(chunk);
+  fclose(file);
+
+  if (idat == NULL) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    free(plte);
+    return -1;
+  }
+
+  /* data processing */
+  switch (ihdr.color_type) {
+    case 0:
+      /* greyscale */
+      /* TODO */
+      break;
+
+    case 2:
+      /* rgb */
+      switch (ihdr.bit_depth) {
+        case 8:
+        case 16:
+          /* TODO */
+          break;
+        default:
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          free(idat);
+          free(plte);
+          return -1;
+      }
+      break;
+
+    case 3:
+      /* palette indices */
+      if (plte == NULL) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        free(idat);
+        return -1;
+      }
+      switch (ihdr.bit_depth) {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+          /* TODO */
+          break;
+        default:
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          free(idat);
+          free(plte);
+          return -1;
+      }
+      break;
+
+    case 4:
+      /* greyscale w/ alpha */
+      switch (ihdr.bit_depth) {
+        case 8:
+        case 16:
+          /* TODO */
+          break;
+        default:
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          free(idat);
+          free(plte);
+          return -1;
+      }
+      break;
+
+    case 6:
+      /* rgba */
+      switch (ihdr.bit_depth) {
+        case 8:
+        case 16:
+          /* TODO */
+          break;
+        default:
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          free(idat);
+          free(plte);
+          return -1;
+      }
+      break;
+  }
+
   /* TODO... */
 
   free(idat);
   free(plte);
-  free(chunk);
-  fclose(file);
   return 0;
 }
