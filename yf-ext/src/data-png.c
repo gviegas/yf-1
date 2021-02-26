@@ -84,6 +84,18 @@ static int l_crcdone = 0;
     crc = l_crctab[((crc) ^ (data)[i]) & 0xff] ^ ((crc) >> 8); \
   crc ^= ~0U; } while (0)
 
+/* Processed PNG chunks. */
+typedef struct {
+  L_ihdr *ihdr;
+  uint8_t *plte;
+  size_t plte_sz;
+  uint8_t *idat;
+  size_t idat_sz;
+} L_png;
+
+/* Loads texture data from processed chunks. */
+static int load_texdt(const L_png *png, YF_texdt *data);
+
 int yf_loadpng(const char *pathname, YF_texdt *data) {
   assert(pathname != NULL);
   assert(data != NULL);
@@ -320,10 +332,19 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
   }
 
   /* data processing */
+  const L_png png = {
+    .ihdr = &ihdr,
+    .plte = plte,
+    .plte_sz = plte_sz,
+    .idat = idat,
+    .idat_sz = idat_sz
+  };
+  int r;
+
   switch (ihdr.color_type) {
     case 0:
       /* greyscale */
-      /* TODO */
+      r = load_texdt(&png, data);
       break;
 
     case 2:
@@ -331,7 +352,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
       switch (ihdr.bit_depth) {
         case 8:
         case 16:
-          /* TODO */
+          r = load_texdt(&png, data);
           break;
         default:
           yf_seterr(YF_ERR_INVFILE, __func__);
@@ -353,7 +374,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
         case 2:
         case 4:
         case 8:
-          /* TODO */
+          r = load_texdt(&png, data);
           break;
         default:
           yf_seterr(YF_ERR_INVFILE, __func__);
@@ -368,7 +389,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
       switch (ihdr.bit_depth) {
         case 8:
         case 16:
-          /* TODO */
+          r = load_texdt(&png, data);
           break;
         default:
           yf_seterr(YF_ERR_INVFILE, __func__);
@@ -383,7 +404,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
       switch (ihdr.bit_depth) {
         case 8:
         case 16:
-          /* TODO */
+          r = load_texdt(&png, data);
           break;
         default:
           yf_seterr(YF_ERR_INVFILE, __func__);
@@ -394,9 +415,15 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
       break;
   }
 
-  /* TODO... */
-
   free(idat);
   free(plte);
+  return r;
+}
+
+static int load_texdt(const L_png *png, YF_texdt *data) {
+  assert(png != NULL);
+  assert(data != NULL);
+
+  /* TODO */
   return 0;
 }
