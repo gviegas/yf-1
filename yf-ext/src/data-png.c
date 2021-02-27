@@ -12,6 +12,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include <yf/com/yf-util.h>
 #include <yf/com/yf-error.h>
 #include <yf/core/yf-image.h>
 
@@ -95,6 +96,9 @@ typedef struct {
 
 /* Loads texture data from processed chunks. */
 static int load_texdt(const L_png *png, YF_texdt *data);
+
+/* Generates Huffman codes from a sequence of code lengths. */
+static int gen_codes(const uint8_t *lengths, size_t length_n, uint32_t *codes);
 
 int yf_loadpng(const char *pathname, YF_texdt *data) {
   assert(pathname != NULL);
@@ -476,10 +480,12 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         if (val < 256) {
           /* literal */
           /* TODO */
+          break;
         } else if (val > 256) {
           /* reference */
           /* TODO: Decode distance. */
           /* TODO */
+          break;
         } else {
           /* end of block */
           break;
@@ -503,5 +509,45 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
   //////////
 
   /* TODO */
+  return 0;
+}
+
+static int gen_codes(const uint8_t *lengths, size_t length_n, uint32_t *codes) {
+  assert(lengths != NULL);
+  assert(length_n > 0);
+  assert(codes != NULL);
+
+  /* max. bit length */
+  size_t len_max = 0;
+  for (size_t i = 0; i < length_n; ++i)
+    len_max = YF_MAX(len_max, lengths[i]);
+
+  if (len_max == 0) {
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return -1;
+  }
+
+  /* bit length count */
+  uint8_t len_count[len_max+1];
+  memset(len_count, 0, len_max+1);
+  for (size_t i = 0; i < length_n; ++i)
+    len_count[lengths[i]]++;
+
+  /* initial codes */
+  uint32_t code = 0;
+  uint32_t next_code[len_max+1];
+  memset(next_code, 0, (len_max+1)*sizeof next_code[0]);
+  for (size_t bits = 1; bits <= len_max; ++bits) {
+    code = (code+len_count[bits-1]) << 1;
+    next_code[bits] = code;
+  }
+
+  /* code gen. */
+  memset(codes, 0, length_n*sizeof *codes);
+  for (size_t i = 0; i < length_n; i++) {
+    uint8_t len = lengths[i];
+    if (len != 0)
+      codes[i] = next_code[len]++;
+  }
   return 0;
 }
