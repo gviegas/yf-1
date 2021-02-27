@@ -478,16 +478,49 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       /* TODO */
 
     } else {
+      uint32_t literals[288];
+      uint32_t distances[32];
+
       if (btype == 1) {
         /* fixed H. codes */
+        uint8_t lengths[288+32];
+        memset(lengths, 8, 144);
+        memset(lengths+144, 9, 112);
+        memset(lengths+256, 7, 24);
+        memset(lengths+280, 8, 8);
+        memset(lengths+288, 5, 32);
+        if (gen_codes(lengths, 288, literals) != 0 ||
+            gen_codes(lengths+288, 32, distances) != 0)
+          return -1;
+
+        //////////
+        puts("#literals:");
+        for (size_t i = 0; i < 288; ++i) {
+          printf(" b");
+          for (int j = lengths[i]-1; j >= 0; --j)
+            printf("%d", literals[i]>>j&1);
+          printf(" (0x%x)\n", literals[i]);
+        }
+        puts("#distances:");
+        for (size_t i = 0; i < 32; ++i) {
+          printf(" b");
+          for (int j = lengths[i+288]-1; j >= 0; --j)
+            printf("%d", distances[i]>>j&1);
+          printf(" (0x%x)\n", distances[i]);
+        }
+        //////////
+
         /* TODO */
+
       } else if (btype == 2) {
         /* dynamic H. codes */
         /* TODO */
+
       } else {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
       }
+
       uint32_t val = 0;
       do {
         /* TODO: Decode literal/length. */
