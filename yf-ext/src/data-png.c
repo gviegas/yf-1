@@ -442,17 +442,31 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
     return -1;
   }
 
-  size_t off = 2;
+#define YF_NEXTBIT(x, pos) do { \
+  const uint32_t b = (png->idat[off] & (1<<bit_off)) != 0; \
+  x |= b << (pos); \
+  if (++bit_off == 8) { \
+    bit_off = 0; \
+    ++off; \
+  } } while (0);
+
+  size_t off = 2, bit_off = 0;
   uint8_t bfinal, btype;
 
   do {
-    bfinal = png->idat[off] & 1;
-    btype = png->idat[off] & 6;
+    bfinal = btype = 0;
+    YF_NEXTBIT(bfinal, 0);
+    YF_NEXTBIT(btype, 0);
+    YF_NEXTBIT(btype, 1);
 
     if (btype == 0) {
       /* no compression */
       uint16_t len, nlen;
-      memcpy(&len, &png->idat[++off], sizeof len);
+      if (bit_off != 0) {
+        bit_off = 0;
+        ++off;
+      }
+      memcpy(&len, &png->idat[off], sizeof len);
       off += sizeof len;
       memcpy(&nlen, &png->idat[off], sizeof nlen);
       off += sizeof nlen;
@@ -510,6 +524,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
 
   /* TODO */
   return 0;
+#undef YF_NEXTBIT
 }
 
 static int gen_codes(const uint8_t *lengths, size_t length_n, uint32_t *codes) {
