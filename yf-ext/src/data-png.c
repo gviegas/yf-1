@@ -97,8 +97,19 @@ typedef struct {
 /* Loads texture data from processed chunks. */
 static int load_texdt(const L_png *png, YF_texdt *data);
 
-/* Generates Huffman codes from a sequence of code lengths. */
-static int gen_codes(const uint8_t *lengths, size_t length_n, uint32_t *codes);
+/* Code tree. */
+typedef struct {
+  int32_t leaf;
+  union {
+    uint16_t next[2];
+    uint32_t value;
+  };
+} L_tree;
+
+/* Generates Huffman codes from a sequence of code lengths and returns its
+   tree representation. */
+static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
+    uint32_t *codes);
 
 int yf_loadpng(const char *pathname, YF_texdt *data) {
   assert(pathname != NULL);
@@ -478,8 +489,8 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       /* TODO */
 
     } else {
-      uint32_t literals[288];
-      uint32_t distances[32];
+      struct { uint32_t codes[288]; L_tree *tree; } literal = {0};
+      struct { uint32_t codes[32]; L_tree *tree; } distance = {0};
 
       if (btype == 1) {
         /* fixed H. codes */
@@ -489,24 +500,29 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         memset(lengths+256, 7, 24);
         memset(lengths+280, 8, 8);
         memset(lengths+288, 5, 32);
-        if (gen_codes(lengths, 288, literals) != 0 ||
-            gen_codes(lengths+288, 32, distances) != 0)
+
+        literal.tree = gen_codes(lengths, 288, literal.codes);
+        distance.tree = gen_codes(lengths+288, 32, distance.codes);
+        if (literal.tree == NULL || distance.tree == NULL) {
+          free(literal.tree);
+          free(distance.tree);
           return -1;
+        }
 
         //////////
-        puts("#literals:");
+        puts("#literal:");
         for (size_t i = 0; i < 288; ++i) {
           printf(" b");
           for (int j = lengths[i]-1; j >= 0; --j)
-            printf("%d", literals[i]>>j&1);
-          printf(" (0x%x)\n", literals[i]);
+            printf("%d", literal.codes[i]>>j&1);
+          printf(" (0x%x)\n", literal.codes[i]);
         }
-        puts("#distances:");
+        puts("#distance:");
         for (size_t i = 0; i < 32; ++i) {
           printf(" b");
           for (int j = lengths[i+288]-1; j >= 0; --j)
-            printf("%d", distances[i]>>j&1);
-          printf(" (0x%x)\n", distances[i]);
+            printf("%d", distance.codes[i]>>j&1);
+          printf(" (0x%x)\n", distance.codes[i]);
         }
         //////////
 
@@ -560,7 +576,9 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
 #undef YF_NEXTBIT
 }
 
-static int gen_codes(const uint8_t *lengths, size_t length_n, uint32_t *codes) {
+static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
+    uint32_t *codes)
+{
   assert(lengths != NULL);
   assert(length_n > 0);
   assert(codes != NULL);
@@ -572,7 +590,7 @@ static int gen_codes(const uint8_t *lengths, size_t length_n, uint32_t *codes) {
 
   if (len_max == 0) {
     yf_seterr(YF_ERR_INVARG, __func__);
-    return -1;
+    return NULL;
   }
 
   /* bit length count */
@@ -597,5 +615,42 @@ static int gen_codes(const uint8_t *lengths, size_t length_n, uint32_t *codes) {
     if (len != 0)
       codes[i] = next_code[len]++;
   }
-  return 0;
+
+  /* tree creation */
+  /* XXX: Cannot allocate upfront for large bit lengths. */
+  assert(len_max < 16);
+  size_t tree_n = length_n + (1<<(len_max+1)) - 1;
+  L_tree *tree = calloc(tree_n, sizeof *tree);
+  if (tree == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return NULL;
+  }
+
+  size_t idx = 0;
+  for (size_t i = 0; i < length_n; ++i) {
+    size_t cur = 0;
+    for (int j = lengths[i]-1; j >= 0; --j) {
+      uint8_t bit = codes[i]>>j&1;
+      if (tree[cur].next[bit] == 0)
+        tree[cur].next[bit] = ++idx;
+      cur = tree[cur].next[bit];
+    }
+    tree[idx].leaf = 1;
+    tree[idx].value = i;
+  }
+
+  if ((idx+1) < tree_n) {
+    void *tmp = realloc(tree, (idx+1)*sizeof *tree);
+    if (tmp != NULL)
+      tree = tmp;
+  }
+
+  //////////
+  printf("\n[tree] (idx: %lu, tree_n: %lu)\n", idx, tree_n);
+  for (size_t i = 0; i <= idx; ++i)
+    printf(" #%lu (leaf: %d  next: %u|%u  value: %u)\n", i,
+        tree[i].leaf, tree[i].next[0], tree[i].next[1], tree[i].value);
+  //////////
+
+  return tree;
 }
