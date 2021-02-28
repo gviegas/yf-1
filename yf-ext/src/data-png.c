@@ -530,6 +530,40 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
 
       } else if (btype == 2) {
         /* dynamic H. codes */
+        uint8_t lengths[19+288+32] = {0};
+
+        struct { uint16_t hlit:5, hdist:5, hclen:4; } bhdr = {0};
+        for (size_t i = 0; i < 5; ++i)
+          YF_NEXTBIT(bhdr.hlit, i);
+        for (size_t i = 0; i < 5; ++i)
+          YF_NEXTBIT(bhdr.hdist, i);
+        for (size_t i = 0; i < 4; ++i)
+          YF_NEXTBIT(bhdr.hclen, i);
+
+        const size_t llen = bhdr.hlit+257;
+        const size_t dlen = bhdr.hdist+1;
+        const size_t clen = bhdr.hclen+4;
+
+        const uint8_t clen_map[] = {
+          16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
+        };
+        for (size_t i = 0; i < bhdr.hclen+4U; ++i) {
+          uint8_t len = 0;
+          YF_NEXTBIT(len, 0);
+          YF_NEXTBIT(len, 1);
+          YF_NEXTBIT(len, 2);
+          lengths[clen_map[i]] = len;
+        }
+
+        //////////
+        printf("hlit: %x\n", bhdr.hlit);
+        printf("hdist: %x\n", bhdr.hdist);
+        printf("hclen: %x\n", bhdr.hclen);
+        for (size_t i = 0; i < clen; ++i)
+          printf(" #%lu: %u\n", i, lengths[i]);
+        exit(0);
+        //////////
+
         /* TODO */
 
       } else {
@@ -554,6 +588,9 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
           break;
         }
       } while (1);
+
+      free(literal.tree);
+      free(distance.tree);
     }
   } while (!bfinal);
 
