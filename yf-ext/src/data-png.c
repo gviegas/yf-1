@@ -605,6 +605,16 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
           } while (ranges[i].len_n > 0);
         }
 
+        free(clength.tree);
+
+        literal.tree = gen_codes(lengths+19, bhdr.hlit+257, literal.codes);
+        distance.tree = gen_codes(lengths+19+288, bhdr.hdist+1, distance.codes);
+        if (literal.tree == NULL || distance.tree == NULL) {
+          free(literal.tree);
+          free(distance.tree);
+          return -1;
+        }
+
         //////////
         printf("hlit: %x\n", bhdr.hlit);
         printf("hdist: %x\n", bhdr.hdist);
