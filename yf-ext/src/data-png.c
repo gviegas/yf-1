@@ -354,81 +354,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
     .idat = idat,
     .idat_sz = idat_sz
   };
-  int r;
-
-  switch (ihdr.color_type) {
-    case 0:
-      /* greyscale */
-      r = load_texdt(&png, data);
-      break;
-
-    case 2:
-      /* rgb */
-      switch (ihdr.bit_depth) {
-        case 8:
-        case 16:
-          r = load_texdt(&png, data);
-          break;
-        default:
-          yf_seterr(YF_ERR_INVFILE, __func__);
-          free(idat);
-          free(plte);
-          return -1;
-      }
-      break;
-
-    case 3:
-      /* palette indices */
-      if (plte == NULL) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        free(idat);
-        return -1;
-      }
-      switch (ihdr.bit_depth) {
-        case 1:
-        case 2:
-        case 4:
-        case 8:
-          r = load_texdt(&png, data);
-          break;
-        default:
-          yf_seterr(YF_ERR_INVFILE, __func__);
-          free(idat);
-          free(plte);
-          return -1;
-      }
-      break;
-
-    case 4:
-      /* greyscale w/ alpha */
-      switch (ihdr.bit_depth) {
-        case 8:
-        case 16:
-          r = load_texdt(&png, data);
-          break;
-        default:
-          yf_seterr(YF_ERR_INVFILE, __func__);
-          free(idat);
-          free(plte);
-          return -1;
-      }
-      break;
-
-    case 6:
-      /* rgba */
-      switch (ihdr.bit_depth) {
-        case 8:
-        case 16:
-          r = load_texdt(&png, data);
-          break;
-        default:
-          yf_seterr(YF_ERR_INVFILE, __func__);
-          free(idat);
-          free(plte);
-          return -1;
-      }
-      break;
-  }
+  const int r = load_texdt(&png, data);
 
   free(idat);
   free(plte);
@@ -439,6 +365,99 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
   assert(png != NULL);
   assert(data != NULL);
 
+  /* image format */
+  const uint8_t bit_depth = png->ihdr->bit_depth;
+  int pixfmt;
+  uint8_t channels;
+
+  switch (png->ihdr->color_type) {
+    case 0:
+      /* greyscale */
+      switch (png->ihdr->bit_depth) {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+          pixfmt = YF_PIXFMT_R8UNORM;
+          break;
+        case 16:
+          pixfmt = YF_PIXFMT_R16UNORM;
+          break;
+      }
+      channels = 1;
+      break;
+
+    case 2:
+      /* rgb */
+      switch (png->ihdr->bit_depth) {
+        case 8:
+          pixfmt = YF_PIXFMT_RGB8SRGB;
+          break;
+        case 16:
+          yf_seterr(YF_ERR_UNSUP, __func__);
+          return -1;
+        default:
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          return -1;
+      }
+      channels = 3;
+      break;
+
+    case 3:
+      /* palette indices */
+      if (png->plte == NULL) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+      }
+      switch (png->ihdr->bit_depth) {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+          pixfmt = YF_PIXFMT_RGB8SRGB;
+          break;
+        default:
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          return -1;
+      }
+      channels = 3;
+      break;
+
+    case 4:
+      /* greyscale w/ alpha */
+      switch (png->ihdr->bit_depth) {
+        case 8:
+          pixfmt = YF_PIXFMT_RG8UNORM;
+          break;
+        case 16:
+          pixfmt = YF_PIXFMT_RG16UNORM;
+          break;
+        default:
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          return -1;
+      }
+      channels = 2;
+      break;
+
+    case 6:
+      /* rgba */
+      switch (png->ihdr->bit_depth) {
+        case 8:
+          pixfmt = YF_PIXFMT_RGBA8SRGB;
+          break;
+        case 16:
+          /* TODO */
+          yf_seterr(YF_ERR_UNSUP, __func__);
+          return -1;
+        default:
+          yf_seterr(YF_ERR_INVFILE, __func__);
+          return -1;
+      }
+      channels = 4;
+      break;
+  }
+
+  /* datastream */
   struct {
     uint8_t cm:4, cinfo:4;
     uint8_t fcheck:5, fdict:1, flevel:2;
