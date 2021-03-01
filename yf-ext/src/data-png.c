@@ -540,9 +540,11 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         for (size_t i = 0; i < 4; ++i)
           YF_NEXTBIT(bhdr.hclen, i);
 
-        const size_t llen = bhdr.hlit+257;
-        const size_t dlen = bhdr.hdist+1;
-        const size_t clen = bhdr.hclen+4;
+        /*
+        const size_t lit_n = bhdr.hlit+257;
+        const size_t dist_n = bhdr.hdist+1;
+        const size_t clen_n = bhdr.hclen+4;
+        */
 
         const uint8_t clen_map[] = {
           16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
@@ -555,13 +557,17 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
           lengths[clen_map[i]] = len;
         }
 
+        struct { uint32_t codes[19]; L_tree *tree; } clength;
+        clength.tree = gen_codes(lengths, 19, clength.codes);
+        if (clength.tree == NULL)
+          return -1;
+
         //////////
         printf("hlit: %x\n", bhdr.hlit);
         printf("hdist: %x\n", bhdr.hdist);
         printf("hclen: %x\n", bhdr.hclen);
-        for (size_t i = 0; i < clen; ++i)
+        for (size_t i = 0; i < 19; ++i)
           printf(" #%lu: %u\n", i, lengths[i]);
-        exit(0);
         //////////
 
         /* TODO */
@@ -654,9 +660,9 @@ static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
   }
 
   /* tree creation */
-  /* XXX: Cannot allocate upfront for large bit lengths. */
-  assert(len_max < 16);
-  size_t tree_n = length_n + (1<<(len_max+1)) - 1;
+  size_t tree_n = 1;
+  for (size_t i = 1; i <= len_max; ++i)
+    tree_n += len_count[i]*i;
   L_tree *tree = calloc(tree_n, sizeof *tree);
   if (tree == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -665,6 +671,8 @@ static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
 
   size_t idx = 0;
   for (size_t i = 0; i < length_n; ++i) {
+    if (lengths[i] == 0)
+      continue;
     size_t cur = 0;
     for (int j = lengths[i]-1; j >= 0; --j) {
       uint8_t bit = codes[i]>>j&1;
@@ -684,9 +692,19 @@ static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
 
   //////////
   printf("\n[tree] (idx: %lu, tree_n: %lu)\n", idx, tree_n);
-  for (size_t i = 0; i <= idx; ++i)
-    printf(" #%lu (leaf: %d  next: %u|%u  value: %u)\n", i,
-        tree[i].leaf, tree[i].next[0], tree[i].next[1], tree[i].value);
+  for (size_t i = 0; i <= idx; ++i) {
+    if (tree[i].leaf)
+      printf(" #%lu (value: %u)\n", i, tree[i].value);
+    else
+      printf(" #%lu (next: %u|%u)\n", i, tree[i].next[0], tree[i].next[1]);
+  }
+  printf("\n[codes]\n");
+  for (size_t i = 0; i < length_n; ++i) {
+    printf(" #%lu  b", i);
+    for (int8_t j = lengths[i]-1; j >= 0; --j)
+      printf("%d", codes[i]>>j&1);
+    puts("");
+  }
   //////////
 
   return tree;
