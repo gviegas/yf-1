@@ -540,12 +540,6 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         for (size_t i = 0; i < 4; ++i)
           YF_NEXTBIT(bhdr.hclen, i);
 
-        /*
-        const size_t lit_n = bhdr.hlit+257;
-        const size_t dist_n = bhdr.hdist+1;
-        const size_t clen_n = bhdr.hclen+4;
-        */
-
         const uint8_t clen_map[] = {
           16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
         };
@@ -562,11 +556,60 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         if (clength.tree == NULL)
           return -1;
 
+        /* literal and distance lengths decoding */
+        struct { int32_t len_n; uint32_t len_off; } ranges[2] = {
+          {bhdr.hlit+257, 19},
+          {bhdr.hdist+1, 19+288}
+        };
+        for (size_t i = 0; i < 2; ++i) {
+          do {
+            uint16_t idx = 0;
+            do {
+              uint8_t bit = 0;
+              YF_NEXTBIT(bit, 0);
+              idx = clength.tree[idx].next[bit];
+            } while (!clength.tree[idx].leaf);
+            uint32_t val = clength.tree[idx].value;
+            if (val < 16) {
+              lengths[ranges[i].len_off++] = val;
+              --ranges[i].len_n;
+            } else if (val == 16) {
+              uint8_t rep = 0;
+              YF_NEXTBIT(rep, 0);
+              YF_NEXTBIT(rep, 1);
+              rep += 3;
+              memset(lengths+ranges[i].len_off, lengths[ranges[i].len_off-1],
+                  rep*sizeof *lengths);
+              ranges[i].len_off += rep;
+              ranges[i].len_n -= rep;
+            } else if (val == 17) {
+              uint8_t rep = 0;
+              YF_NEXTBIT(rep, 0);
+              YF_NEXTBIT(rep, 1);
+              YF_NEXTBIT(rep, 2);
+              rep += 3;
+              memset(lengths+ranges[i].len_off, 0, rep*sizeof *lengths);
+              ranges[i].len_off += rep;
+              ranges[i].len_n -= rep;
+            } else if (val == 18) {
+              uint8_t rep = 0;
+              for (size_t i = 0; i < 7; ++i)
+                YF_NEXTBIT(rep, i);
+              rep += 11;
+              memset(lengths+ranges[i].len_off, 0, rep*sizeof *lengths);
+              ranges[i].len_off += rep;
+              ranges[i].len_n -= rep;
+            } else {
+              assert(0);
+            }
+          } while (ranges[i].len_n > 0);
+        }
+
         //////////
         printf("hlit: %x\n", bhdr.hlit);
         printf("hdist: %x\n", bhdr.hdist);
         printf("hclen: %x\n", bhdr.hclen);
-        for (size_t i = 0; i < 19; ++i)
+        for (size_t i = 0; i < sizeof lengths; ++i)
           printf(" #%lu: %u\n", i, lengths[i]);
         //////////
 
