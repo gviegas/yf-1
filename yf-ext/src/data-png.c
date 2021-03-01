@@ -630,18 +630,61 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         return -1;
       }
 
-      uint32_t val = 0;
+      /* data decoding */
       do {
-        /* TODO: Decode literal/length. */
+        uint16_t idx = 0;
+        do {
+          uint8_t bit = 0;
+          YF_NEXTBIT(bit, 0);
+          idx = literal.tree[idx].next[bit];
+        } while (!literal.tree[idx].leaf);
+        uint32_t val = literal.tree[idx].value;
+
         if (val < 256) {
           /* literal */
           /* TODO */
           break;
+
         } else if (val > 256) {
-          /* reference */
-          /* TODO: Decode distance. */
+          /* <length, distance> pair */
+          uint16_t len;
+          if (val <= 264) {
+            len = 10-(264-val);
+          } else if (val <= 284) {
+            const size_t v = val+4-265;
+            const size_t bn = v>>2;
+            const size_t rem = v&3;
+            uint8_t ex = 0;
+            for (size_t i = 0; i < bn; ++i)
+              YF_NEXTBIT(ex, i);
+            len = (1<<(bn+2))+(rem<<bn)+ex+3;
+            assert(len < 258);
+          } else {
+            len = 258;
+          }
+
+          idx = 0;
+          do {
+            uint8_t bit = 0;
+            YF_NEXTBIT(bit, 0);
+            idx = distance.tree[idx].value;
+          } while (!distance.tree[idx].leaf);
+          val = distance.tree[idx].value;
+
+          uint16_t dist;
+          if (val <= 3) {
+            dist = val+1;
+          } else {
+            const size_t bn = (val>>1)-1;
+            uint16_t ex = 0;
+            for (size_t i = 0; i < bn; ++i)
+              YF_NEXTBIT(ex, i);
+            dist = val&1 ? (3<<bn)+ex+1 : (2<<bn)+ex+1;
+          }
+
           /* TODO */
           break;
+
         } else {
           /* end of block */
           break;
