@@ -492,6 +492,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
+  size_t buf_off = 0;
 
   do {
     bfinal = btype = 0;
@@ -643,7 +644,6 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       }
 
       /* data decoding */
-      size_t buf_off = 0;
       do {
         uint16_t idx = 0;
         do {
@@ -709,6 +709,73 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       free(distance.tree);
     }
   } while (!bfinal);
+
+  /* filter reversion */
+  const uint8_t bypp = YF_MAX(1, (channels*bit_depth)>>3);
+  for (size_t i = 0; i < height; ++i) {
+    switch (buf[i*scln_len]) {
+      case 0:
+        /* none */
+        break;
+      case 1:
+        /* sub */
+        for (size_t j = 1+bypp; j < scln_len-1; ++j) {
+          const size_t k = i*scln_len+j;
+          buf[k] += buf[k-bypp];
+        }
+        break;
+      case 2:
+        /* up */
+        if (i > 0) {
+          for (size_t j = 1; j < scln_len-1; ++j) {
+            const size_t k = i*scln_len+j;
+            buf[k] += buf[k-scln_len];
+          }
+        }
+        break;
+      case 3:
+        /* avg */
+        if (i > 0) {
+          for (size_t j = 1+bypp; j < scln_len-1; ++j) {
+            const size_t k = i*scln_len+j;
+            const uint16_t a = buf[k-bypp];
+            const uint16_t b = buf[k-scln_len];
+            buf[k] += (a+b)>>1;
+          }
+        } else {
+          for (size_t j = 1+bypp; j < scln_len-1; ++j) {
+            const size_t k = i*scln_len+j;
+            buf[k] += buf[k-bypp]>>1;
+          }
+        }
+        break;
+      case 4:
+        /* paeth */
+        if (i > 0) {
+          for (size_t j = 1+bypp; j < scln_len-1; ++j) {
+            const size_t k = i*scln_len+j;
+            const int16_t a = buf[k-bypp];
+            const int16_t b = buf[k-scln_len];
+            const int16_t c = buf[k-scln_len-bypp];
+            const int16_t p = a+b-c;
+            const uint16_t pa = abs(p-a);
+            const uint16_t pb = abs(p-b);
+            const uint16_t pc = abs(p-c);
+            buf[k] += pa<=pb && pa<=pc ? a : (pb<=pc ? b : c);
+          }
+        } else {
+          for (size_t j = 1+bypp; j < scln_len-1; ++j) {
+            const size_t k = i*scln_len+j;
+            buf[k] += buf[k-bypp];
+          }
+        }
+        break;
+      default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        free(buf);
+        return -1;
+    }
+  }
 
   /* TODO */
   return 0;
