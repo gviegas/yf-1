@@ -517,12 +517,12 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         return -1;
       }
       len = be16toh(len);
-      if (len > buf_len) {
+      if (len+buf_off > buf_len) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         free(buf);
         return -1;
       }
-      memcpy(buf, png->idat+off, len);
+      memcpy(buf+off, png->idat+off, len);
 
     /* compressed */
     } else {
@@ -777,7 +777,26 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
     }
   }
 
-  /* TODO */
+  /* tex. data */
+  if (bit_depth >= 8) {
+    for (size_t i = 0; i < height; ++i) {
+      const size_t j = i*scln_len-i;
+      memmove(buf+j, buf+j+i+1, scln_len-1);
+    }
+    void *tmp = realloc(buf, buf_len-height);
+    if (tmp != NULL)
+      buf = tmp;
+  } else {
+    /* TODO */
+    assert(0);
+    return -1;
+  }
+
+  data->data = buf;
+  data->pixfmt = pixfmt;
+  data->dim.width = width;
+  data->dim.height = height;
+
   return 0;
 #undef YF_NEXTBIT
 }
