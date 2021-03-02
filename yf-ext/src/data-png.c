@@ -492,7 +492,6 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  size_t buf_off = 0;
 
   do {
     bfinal = btype = 0;
@@ -500,8 +499,8 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
     YF_NEXTBIT(btype, 0);
     YF_NEXTBIT(btype, 1);
 
+    /* uncompressed */
     if (btype == 0) {
-      /* no compression */
       uint16_t len, nlen;
       if (bit_off != 0) {
         bit_off = 0;
@@ -522,12 +521,9 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         free(buf);
         return -1;
       }
-      for (size_t i = 0; i < height; ++i) {
-        memcpy(buf+buf_off, png->idat+off, scln_len);
-        buf_off += scln_len;
-        off += scln_len;
-      }
+      memcpy(buf, png->idat+off, len);
 
+    /* compressed */
     } else {
       struct { uint32_t codes[288]; L_tree *tree; } literal = {0};
       struct { uint32_t codes[32]; L_tree *tree; } distance = {0};
@@ -549,25 +545,6 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
           free(buf);
           return -1;
         }
-
-        //////////
-        puts("#literal:");
-        for (size_t i = 0; i < 288; ++i) {
-          printf(" b");
-          for (int j = lengths[i]-1; j >= 0; --j)
-            printf("%d", literal.codes[i]>>j&1);
-          printf(" (0x%x)\n", literal.codes[i]);
-        }
-        puts("#distance:");
-        for (size_t i = 0; i < 32; ++i) {
-          printf(" b");
-          for (int j = lengths[i+288]-1; j >= 0; --j)
-            printf("%d", distance.codes[i]>>j&1);
-          printf(" (0x%x)\n", distance.codes[i]);
-        }
-        //////////
-
-        /* TODO */
 
       } else if (btype == 2) {
         /* dynamic H. codes */
@@ -659,16 +636,6 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
           return -1;
         }
 
-        //////////
-        printf("hlit: %x\n", bhdr.hlit);
-        printf("hdist: %x\n", bhdr.hdist);
-        printf("hclen: %x\n", bhdr.hclen);
-        for (size_t i = 0; i < sizeof lengths; ++i)
-          printf(" #%lu: %u\n", i, lengths[i]);
-        //////////
-
-        /* TODO */
-
       } else {
         yf_seterr(YF_ERR_INVFILE, __func__);
         free(buf);
@@ -676,6 +643,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       }
 
       /* data decoding */
+      size_t buf_off = 0;
       do {
         uint16_t idx = 0;
         do {
@@ -711,7 +679,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
           do {
             uint8_t bit = 0;
             YF_NEXTBIT(bit, 0);
-            idx = distance.tree[idx].value;
+            idx = distance.tree[idx].next[bit];
           } while (!distance.tree[idx].leaf);
           val = distance.tree[idx].value;
 
@@ -741,20 +709,6 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       free(distance.tree);
     }
   } while (!bfinal);
-
-  //////////
-  printf("\n[%s]\n\n", __func__);
-
-  printf("ihdr:\n wxh: %ux%u\n bd: %x\n ct: %x\n cm: %x\n fm: %x\n im: %x\n\n",
-      png->ihdr->width, png->ihdr->height, png->ihdr->bit_depth,
-      png->ihdr->color_type, png->ihdr->compression, png->ihdr->filter,
-      png->ihdr->interlace);
-  printf("plte (%p):\n size: %lu\n\n", (void *)png->plte, png->plte_sz);
-  printf("idat (%p):\n size: %lu\n\n", (void *)png->idat, png->idat_sz);
-
-  printf("zhdr:\n cm: %x\n cinfo: %x\n fcheck: %x\n fdict: %x\n flevel: %x\n\n",
-      zhdr.cm, zhdr.cinfo, zhdr.fcheck, zhdr.fdict, zhdr.flevel);
-  //////////
 
   /* TODO */
   return 0;
@@ -832,7 +786,8 @@ static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
       tree = tmp;
   }
 
-  //////////
+  /* DEVEL */
+#ifdef YF_DEVEL
   printf("\n[tree] (idx: %lu, tree_n: %lu)\n", idx, tree_n);
   for (size_t i = 0; i <= idx; ++i) {
     if (tree[i].leaf)
@@ -840,14 +795,14 @@ static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
     else
       printf(" #%lu (next: %u|%u)\n", i, tree[i].next[0], tree[i].next[1]);
   }
-  printf("\n[codes]\n");
+  printf("[codes]\n");
   for (size_t i = 0; i < length_n; ++i) {
     printf(" #%lu  b", i);
     for (int8_t j = lengths[i]-1; j >= 0; --j)
       printf("%d", codes[i]>>j&1);
     puts("");
   }
-  //////////
+#endif
 
   return tree;
 }
