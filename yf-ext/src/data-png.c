@@ -687,8 +687,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
 
         if (val < 256) {
           /* literal */
-          /* TODO */
-          break;
+          buf[buf_off++] = val;
 
         } else if (val > 256) {
           /* <length, distance> pair */
@@ -727,8 +726,10 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
             dist = val&1 ? (3<<bn)+ex+1 : (2<<bn)+ex+1;
           }
 
-          /* TODO */
-          break;
+          for (size_t i = 0; i < len; ++i) {
+            buf[buf_off] = buf[buf_off-dist];
+            ++buf_off;
+          }
 
         } else {
           /* end of block */
