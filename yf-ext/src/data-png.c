@@ -366,6 +366,8 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
   assert(data != NULL);
 
   /* image format */
+  const uint32_t width = png->ihdr->width;
+  const uint32_t height = png->ihdr->height;
   const uint8_t bit_depth = png->ihdr->bit_depth;
   int pixfmt;
   uint8_t channels;
@@ -483,6 +485,15 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
   size_t off = 2, bit_off = 0;
   uint8_t bfinal, btype;
 
+  const size_t scln_len = 1+((width*channels*bit_depth+7)>>3);
+  const size_t buf_len = scln_len*height;
+  uint8_t *buf = malloc(buf_len);
+  if (buf == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  size_t buf_off = 0;
+
   do {
     bfinal = btype = 0;
     YF_NEXTBIT(bfinal, 0);
@@ -502,10 +513,20 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       off += sizeof nlen;
       if (len & nlen) {
         yf_seterr(YF_ERR_INVFILE, __func__);
+        free(buf);
         return -1;
       }
       len = be16toh(len);
-      /* TODO */
+      if (len > buf_len) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        free(buf);
+        return -1;
+      }
+      for (size_t i = 0; i < height; ++i) {
+        memcpy(buf+buf_off, png->idat+off, scln_len);
+        buf_off += scln_len;
+        off += scln_len;
+      }
 
     } else {
       struct { uint32_t codes[288]; L_tree *tree; } literal = {0};
@@ -525,6 +546,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         if (literal.tree == NULL || distance.tree == NULL) {
           free(literal.tree);
           free(distance.tree);
+          free(buf);
           return -1;
         }
 
@@ -572,8 +594,10 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
 
         struct { uint32_t codes[19]; L_tree *tree; } clength;
         clength.tree = gen_codes(lengths, 19, clength.codes);
-        if (clength.tree == NULL)
+        if (clength.tree == NULL) {
+          free(buf);
           return -1;
+        }
 
         /* literal and distance lengths decoding */
         struct { int32_t len_n; uint32_t len_off; } ranges[2] = {
@@ -631,6 +655,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         if (literal.tree == NULL || distance.tree == NULL) {
           free(literal.tree);
           free(distance.tree);
+          free(buf);
           return -1;
         }
 
@@ -646,6 +671,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
 
       } else {
         yf_seterr(YF_ERR_INVFILE, __func__);
+        free(buf);
         return -1;
       }
 
