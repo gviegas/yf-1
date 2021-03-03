@@ -12,6 +12,13 @@
 #include <string.h>
 #include <assert.h>
 
+#ifndef __STDC_NO_ATOMICS__
+# include <stdatomic.h>
+#else
+/* TODO */
+# error "Missing C11 atomics"
+#endif
+
 #include <yf/com/yf-util.h>
 #include <yf/com/yf-error.h>
 #include <yf/core/yf-image.h>
@@ -65,18 +72,20 @@ static const uint8_t l_sign[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 
 /* CRC table. */
 static uint32_t l_crctab[256] = {0};
-/* TODO: Atomic. */
-static int l_crcdone = 0;
+static atomic_flag l_crcflag = ATOMIC_FLAG_INIT;
+static int l_crcspin = 1;
 
 #define YF_PNG_INITCRC() do { \
-  if (!l_crcdone) { \
+  if (atomic_flag_test_and_set(&l_crcflag)) { \
+    while (l_crcspin) { } \
+  } else { \
     for (uint32_t i = 0; i < 256; ++i) { \
       uint32_t crc = i, j = 8; \
       while (j--) \
         crc = (crc & 1) ? (0xedb88320 ^ (crc >> 1)) : (crc >> 1); \
       l_crctab[i] = crc; \
     } \
-    l_crcdone = 1; \
+    l_crcspin = 0; \
   } } while (0)
 
 #define YF_PNG_CALCCRC(crc, data, len) do { \
@@ -190,6 +199,14 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
       ihdr.compression != 0 || ihdr.filter != 0 || ihdr.interlace > 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
+    free(chunk);
+    fclose(file);
+    return -1;
+  }
+
+  /* TODO: Decoding of interlaced images. */
+  if (ihdr.interlace != 0) {
+    yf_seterr(YF_ERR_UNSUP, __func__);
     free(chunk);
     fclose(file);
     return -1;
@@ -372,6 +389,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
   int pixfmt;
   uint8_t channels;
 
+  /* TODO: Check color profile. */
   switch (png->ihdr->color_type) {
     case 0:
       /* greyscale */
