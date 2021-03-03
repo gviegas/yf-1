@@ -719,7 +719,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         break;
       case 1:
         /* sub */
-        for (size_t j = 1+bypp; j < scln_len-1; ++j) {
+        for (size_t j = 1+bypp; j < scln_len; ++j) {
           const size_t k = i*scln_len+j;
           buf[k] += buf[k-bypp];
         }
@@ -727,7 +727,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       case 2:
         /* up */
         if (i > 0) {
-          for (size_t j = 1; j < scln_len-1; ++j) {
+          for (size_t j = 1; j < scln_len; ++j) {
             const size_t k = i*scln_len+j;
             buf[k] += buf[k-scln_len];
           }
@@ -736,14 +736,18 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       case 3:
         /* avg */
         if (i > 0) {
-          for (size_t j = 1+bypp; j < scln_len-1; ++j) {
+          for (size_t j = 1; j <= bypp; ++j) {
+            const size_t k = i*scln_len+j;
+            buf[k] += buf[k-scln_len]>>1;
+          }
+          for (size_t j = 1+bypp; j < scln_len; ++j) {
             const size_t k = i*scln_len+j;
             const uint16_t a = buf[k-bypp];
             const uint16_t b = buf[k-scln_len];
             buf[k] += (a+b)>>1;
           }
         } else {
-          for (size_t j = 1+bypp; j < scln_len-1; ++j) {
+          for (size_t j = 1+bypp; j < scln_len; ++j) {
             const size_t k = i*scln_len+j;
             buf[k] += buf[k-bypp]>>1;
           }
@@ -752,7 +756,11 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       case 4:
         /* paeth */
         if (i > 0) {
-          for (size_t j = 1+bypp; j < scln_len-1; ++j) {
+          for (size_t j = 1; j <= bypp; ++j) {
+            const size_t k = i*scln_len+j;
+            buf[k] += buf[k-scln_len];
+          }
+          for (size_t j = 1+bypp; j < scln_len; ++j) {
             const size_t k = i*scln_len+j;
             const int16_t a = buf[k-bypp];
             const int16_t b = buf[k-scln_len];
@@ -764,7 +772,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
             buf[k] += pa<=pb && pa<=pc ? a : (pb<=pc ? b : c);
           }
         } else {
-          for (size_t j = 1+bypp; j < scln_len-1; ++j) {
+          for (size_t j = 1+bypp; j < scln_len; ++j) {
             const size_t k = i*scln_len+j;
             buf[k] += buf[k-bypp];
           }
