@@ -836,9 +836,24 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       buf = tmp;
 
   } else {
-    /* TODO */
-    assert(0);
-    return -1;
+    uint8_t *tmp = malloc(width*height);
+    if (tmp == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      free(buf);
+      return -1;
+    }
+    size_t off1 = 0, off2 = 0;
+    for (size_t i = 0; i < height; ++i) {
+      ++off1;
+      for (size_t j = 0; j < width; ++j) {
+        tmp[i*width+j] = buf[off1] >> (8-bit_depth-off2) & ((1<<bit_depth)-1);
+        const div_t d = div(off2+bit_depth, 8);
+        off1 += d.quot;
+        off2 = d.rem;
+      }
+    }
+    free(buf);
+    buf = tmp;
   }
 
   data->data = buf;
