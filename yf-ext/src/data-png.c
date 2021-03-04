@@ -804,7 +804,28 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
   }
 
   /* tex. data */
-  if (bit_depth >= 8) {
+  if (png->ihdr->color_type & 1) {
+    const size_t new_len = (buf_len-height)*3;
+    void *tmp = realloc(buf, new_len);
+    if (tmp == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      free(buf);
+      return -1;
+    }
+    buf = tmp;
+    size_t rgb_off = 0;
+    size_t idx_off = new_len-buf_len;
+    memmove(buf+idx_off, buf, buf_len);
+    for (size_t i = 0; i < height; ++i) {
+      ++idx_off;
+      for (size_t j = 0; j < scln_len-1; ++j) {
+        const uint8_t idx = buf[idx_off++];
+        memcpy(buf+rgb_off, png->plte+idx, 3);
+        rgb_off += 3;
+      }
+    }
+
+  } else if (bit_depth >= 8) {
     for (size_t i = 0; i < height; ++i) {
       const size_t j = i*scln_len-i;
       memmove(buf+j, buf+j+i+1, scln_len-1);
@@ -812,6 +833,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
     void *tmp = realloc(buf, buf_len-height);
     if (tmp != NULL)
       buf = tmp;
+
   } else {
     /* TODO */
     assert(0);
