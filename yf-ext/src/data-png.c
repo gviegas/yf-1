@@ -120,6 +120,11 @@ typedef struct {
 static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
     uint32_t *codes);
 
+#ifdef YF_DEVEL
+static void print_codes(const uint8_t *lengths, size_t length_n,
+    const uint32_t *codes, const L_tree *tree, size_t tree_n, size_t tree_max);
+#endif
+
 int yf_loadpng(const char *pathname, YF_texdt *data) {
   assert(pathname != NULL);
   assert(data != NULL);
@@ -804,8 +809,9 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
     }
   }
 
-  /* tex. data */
+  /* texture data */
   if (png->ihdr->color_type & 1) {
+    /* palette indices */
     const size_t new_len = (buf_len-height)*3;
     void *tmp = realloc(buf, new_len);
     if (tmp == NULL) {
@@ -827,6 +833,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
     }
 
   } else if (bit_depth >= 8) {
+    /* rgb[a]/greyscale[a] 8/16 bit depth */
     for (size_t i = 0; i < height; ++i) {
       const size_t j = i*scln_len-i;
       memmove(buf+j, buf+j+i+1, scln_len-1);
@@ -842,6 +849,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
     }
 
   } else {
+    /* greyscale 1/2/4 bit depth */
     uint8_t *tmp = malloc(width*height);
     if (tmp == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
@@ -913,6 +921,7 @@ static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
 
   /* tree creation */
   size_t tree_n = 1;
+  /* XXX: This may overestimate considerably. */
   for (size_t i = 1; i <= len_max; ++i)
     tree_n += len_count[i]*i;
   L_tree *tree = calloc(tree_n, sizeof *tree);
@@ -942,23 +951,39 @@ static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
       tree = tmp;
   }
 
-  /* DEVEL */
 #ifdef YF_DEVEL
-  printf("\n[tree] (idx: %lu, tree_n: %lu)\n", idx, tree_n);
-  for (size_t i = 0; i <= idx; ++i) {
-    if (tree[i].leaf)
-      printf(" #%lu (value: %u)\n", i, tree[i].value);
-    else
-      printf(" #%lu (next: %u|%u)\n", i, tree[i].next[0], tree[i].next[1]);
-  }
-  printf("[codes]\n");
+  print_codes(lengths, length_n, codes, tree, idx+1, tree_n);
+#endif
+
+  return tree;
+}
+
+/*
+ * DEVEL
+ */
+
+#ifdef YF_DEVEL
+static void print_codes(const uint8_t *lengths, size_t length_n,
+    const uint32_t *codes, const L_tree *tree, size_t tree_n, size_t tree_max)
+{
+  printf("\n[YF] OUTPUT (%s):\n", __func__);
+
+  puts("[codes]");
+  printf(" n: %lu\n", length_n);
   for (size_t i = 0; i < length_n; ++i) {
     printf(" #%lu  b", i);
     for (int8_t j = lengths[i]-1; j >= 0; --j)
       printf("%d", codes[i]>>j&1);
     puts("");
   }
-#endif
 
-  return tree;
+  puts("[code tree]");
+  printf(" n/max: %lu/%lu\n", tree_n, tree_max);
+  for (size_t i = 0; i < tree_n; ++i) {
+    if (tree[i].leaf)
+      printf(" #%lu  value: %u\n", i, tree[i].value);
+    else
+      printf(" #%lu  next: %u|%u\n", i, tree[i].next[0], tree[i].next[1]);
+  }
 }
+#endif
