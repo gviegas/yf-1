@@ -834,6 +834,12 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
     void *tmp = realloc(buf, buf_len-height);
     if (tmp != NULL)
       buf = tmp;
+    if (bit_depth == 16) {
+      for (size_t i = 0; i < buf_len-height; i += 2) {
+        const uint16_t val = be16toh((buf[i+1]<<8)|buf[i]);
+        memcpy(buf+i, &val, sizeof val);
+      }
+    }
 
   } else {
     uint8_t *tmp = malloc(width*height);
