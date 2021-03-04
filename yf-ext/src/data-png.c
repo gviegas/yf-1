@@ -503,7 +503,8 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
   size_t off = 2, bit_off = 0;
   uint8_t bfinal, btype;
 
-  const size_t scln_len = 1+((width*channels*bit_depth+7)>>3);
+  const size_t scln_len =
+    png->ihdr->color_type & 1 ? 1+width : 1+((width*channels*bit_depth+7)>>3);
   const size_t buf_len = scln_len*height;
   uint8_t *buf = malloc(buf_len);
   if (buf == NULL) {
