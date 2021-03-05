@@ -737,7 +737,7 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz) {
         return -1;
       }
 
-      len = be16toh(len);
+      len = le16toh(len);
       if (len+buf_off > buf_sz) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
