@@ -580,24 +580,56 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
 
   /* texture data */
   if (png->ihdr->color_type & 1) {
-    /* palette indices */
-    const size_t new_sz = (buf_sz-height)*3;
-    void *tmp = realloc(buf, new_sz);
-    if (tmp == NULL) {
-      yf_seterr(YF_ERR_NOMEM, __func__);
-      free(buf);
-      return -1;
-    }
-    buf = tmp;
-    size_t rgb_off = 0;
-    size_t idx_off = new_sz-buf_sz;
-    memmove(buf+idx_off, buf, buf_sz);
-    for (size_t i = 0; i < height; ++i) {
-      ++idx_off;
-      for (size_t j = 0; j < scln_sz-1; ++j) {
-        const uint8_t idx = buf[idx_off++];
-        memcpy(buf+rgb_off, png->plte+idx, 3);
-        rgb_off += 3;
+    if (bit_depth == 8) {
+      /* palette indices 8 bit depth */
+      const size_t new_sz = (buf_sz-height)*3;
+      void *tmp = realloc(buf, new_sz);
+      if (tmp == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(buf);
+        return -1;
+      }
+      buf = tmp;
+      size_t rgb_off = 0;
+      size_t idx_off = new_sz-buf_sz;
+      memmove(buf+idx_off, buf, buf_sz);
+      for (size_t i = 0; i < height; ++i) {
+        ++idx_off;
+        for (size_t j = 0; j < scln_sz-1; ++j) {
+          const uint8_t idx = buf[idx_off++];
+          memcpy(buf+rgb_off, png->plte+idx, 3);
+          rgb_off += 3;
+        }
+      }
+    } else {
+      /* palette indices 1/2/4 bit depth */
+      const size_t new_sz = width*height*3;
+      void *tmp = realloc(buf, new_sz);
+      if (tmp == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(buf);
+        return -1;
+      }
+      buf = tmp;
+      size_t rgb_off = 0;
+      size_t idx_off = new_sz-buf_sz;
+      size_t bit_off = 0;
+      memmove(buf+idx_off, buf, buf_sz);
+      for (size_t i = 0; i < height; ++i) {
+        ++idx_off;
+        for (size_t j = 0; j < width; ++j) {
+          const uint8_t idx =
+            buf[idx_off] >> (8-bit_depth-bit_off) & ((1<<bit_depth)-1);
+          memcpy(buf+rgb_off, png->plte+idx, 3);
+          rgb_off += 3;
+          const div_t d = div(bit_off+bit_depth, 8);
+          idx_off += d.quot;
+          bit_off = d.rem;
+        }
+        if (bit_off != 0) {
+          bit_off = 0;
+          ++idx_off;
+        }
       }
     }
 
@@ -625,14 +657,18 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       free(buf);
       return -1;
     }
-    size_t off1 = 0, off2 = 0;
+    size_t off = 0, bit_off = 0;
     for (size_t i = 0; i < height; ++i) {
-      ++off1;
+      ++off;
       for (size_t j = 0; j < width; ++j) {
-        tmp[i*width+j] = buf[off1] >> (8-bit_depth-off2) & ((1<<bit_depth)-1);
-        const div_t d = div(off2+bit_depth, 8);
-        off1 += d.quot;
-        off2 = d.rem;
+        tmp[i*width+j] = buf[off] >> (8-bit_depth-bit_off) & ((1<<bit_depth)-1);
+        const div_t d = div(bit_off+bit_depth, 8);
+        off += d.quot;
+        bit_off = d.rem;
+      }
+      if (bit_off != 0) {
+        bit_off = 0;
+        ++off;
       }
     }
     free(buf);
