@@ -254,8 +254,8 @@ int yf_test_model(void) {
     assert(l_vars.mesh[1] != NULL);
 
     /* Create texture */
-    l_vars.tex[0] = yf_texture_init(YF_FILETYPE_BMP, "tmp/model1.bmp");
-    l_vars.tex[1] = yf_texture_init(YF_FILETYPE_BMP, "tmp/model2.bmp");
+    l_vars.tex[0] = yf_texture_init(YF_FILETYPE_PNG, "tmp/model1.png");
+    l_vars.tex[1] = yf_texture_init(YF_FILETYPE_PNG, "tmp/model2.png");
     assert(l_vars.tex[0] != NULL);
     assert(l_vars.tex[1] != NULL);
 
@@ -285,9 +285,9 @@ int yf_test_model(void) {
     /* Create texture */
     for (unsigned i = 0; i < YF_MDLN; ++i) {
       if (i&1)
-        l_vars.tex[i] = yf_texture_init(YF_FILETYPE_BMP, "tmp/model1.bmp");
+        l_vars.tex[i] = yf_texture_init(YF_FILETYPE_PNG, "tmp/model1.png");
       else
-        l_vars.tex[i] = yf_texture_init(YF_FILETYPE_BMP, "tmp/model2.bmp");
+        l_vars.tex[i] = yf_texture_init(YF_FILETYPE_PNG, "tmp/model2.png");
       assert(l_vars.tex[i] != NULL);
     }
 

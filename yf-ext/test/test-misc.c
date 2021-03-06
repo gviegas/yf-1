@@ -184,7 +184,7 @@ int yf_test_misc(void) {
   YF_mesh mesh = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model2.gltf");
   assert(mesh != NULL);
 
-  YF_texture texs[] = {yf_texture_init(YF_FILETYPE_BMP, "tmp/model2.bmp")};
+  YF_texture texs[] = {yf_texture_init(YF_FILETYPE_PNG, "tmp/model2.png")};
   const size_t tex_n = sizeof texs / sizeof texs[0];
   for (size_t i = 0; i < tex_n; ++i)
     assert(texs[i] != NULL);
