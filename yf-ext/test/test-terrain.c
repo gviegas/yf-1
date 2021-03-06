@@ -117,10 +117,10 @@ int yf_test_terrain(void) {
   l_vars.terr = yf_terrain_init(160, 160);
   assert(l_vars.terr != NULL);
 
-  l_vars.hmap = yf_texture_init(YF_FILETYPE_BMP, "tmp/hmap.bmp");
+  l_vars.hmap = yf_texture_init(YF_FILETYPE_PNG, "tmp/hmap.png");
   assert(l_vars.hmap != NULL);
 
-  l_vars.tex = yf_texture_init(YF_FILETYPE_BMP, "tmp/terrain.bmp");
+  l_vars.tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/terrain.png");
   assert(l_vars.tex != NULL);
 
   yf_terrain_sethmap(l_vars.terr, l_vars.hmap);

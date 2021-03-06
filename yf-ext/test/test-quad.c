@@ -72,7 +72,7 @@ int yf_test_quad(void) {
   l_vars.quad = yf_quad_init();
   assert(l_vars.quad != NULL);
 
-  l_vars.tex = yf_texture_init(YF_FILETYPE_BMP, "tmp/quad.bmp");
+  l_vars.tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/quad.png");
   assert(l_vars.tex != NULL);
 
   yf_quad_settex(l_vars.quad, l_vars.tex);

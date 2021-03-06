@@ -141,7 +141,7 @@ int yf_test_particle(void) {
   l_vars.part = yf_particle_init(1000);
   assert(l_vars.part != NULL);
 
-  l_vars.tex = yf_texture_init(YF_FILETYPE_BMP, "tmp/sprite.bmp");
+  l_vars.tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/sprite.png");
   assert(l_vars.tex != NULL);
 
   yf_particle_settex(l_vars.part, l_vars.tex);
