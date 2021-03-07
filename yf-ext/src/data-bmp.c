@@ -458,7 +458,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data) {
   free(scln);
 
   data->data = dt;
-  data->pixfmt = channels == 4 ? YF_PIXFMT_RGBA8SRGB : YF_PIXFMT_RGB8SRGB;
+  data->pixfmt = channels == 4 ? YF_PIXFMT_RGBA8UNORM : YF_PIXFMT_RGB8UNORM;
   data->dim.width = w;
   data->dim.height = h < 0 ? -h : h;
 
