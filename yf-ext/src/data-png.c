@@ -400,6 +400,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
   uint8_t channels;
 
   /* TODO: Check color profile. */
+  /* TODO: Check format support. */
   switch (png->ihdr->color_type) {
     case 0:
       /* greyscale */
@@ -421,11 +422,11 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       /* rgb */
       switch (png->ihdr->bit_depth) {
         case 8:
-          pixfmt = YF_PIXFMT_RGB8SRGB;
+          pixfmt = YF_PIXFMT_RGB8UNORM;
           break;
         case 16:
-          yf_seterr(YF_ERR_UNSUP, __func__);
-          return -1;
+          pixfmt = YF_PIXFMT_RGB16UNORM;
+          break;
         default:
           yf_seterr(YF_ERR_INVFILE, __func__);
           return -1;
@@ -444,7 +445,7 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
         case 2:
         case 4:
         case 8:
-          pixfmt = YF_PIXFMT_RGB8SRGB;
+          pixfmt = YF_PIXFMT_RGB8UNORM;
           break;
         default:
           yf_seterr(YF_ERR_INVFILE, __func__);
@@ -473,12 +474,11 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
       /* rgba */
       switch (png->ihdr->bit_depth) {
         case 8:
-          pixfmt = YF_PIXFMT_RGBA8SRGB;
+          pixfmt = YF_PIXFMT_RGBA8UNORM;
           break;
         case 16:
-          /* TODO */
-          yf_seterr(YF_ERR_UNSUP, __func__);
-          return -1;
+          pixfmt = YF_PIXFMT_RGBA16UNORM;
+          break;
         default:
           yf_seterr(YF_ERR_INVFILE, __func__);
           return -1;
