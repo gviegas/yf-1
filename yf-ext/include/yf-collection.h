@@ -48,7 +48,23 @@ YF_collection yf_collection_init(const char *pathname);
 void *yf_collection_getres(YF_collection coll, int collres, const char *name);
 
 /**
+ * Manages a resource using a collection.
+ *
+ * @param coll: The collection.
+ * @param collres: The 'YF_COLLRES' value indicating the type of the resource.
+ * @param name: The name to use as resource identifier.
+ * @param res: The resource to manage.
+ * @return: On success, returns zero. Otherwise, a non-zero value is returned
+ *  and the global error is set to indicate the cause.
+ */
+int yf_collection_manage(YF_collection coll, int collres, const char *name,
+    void *res);
+
+/**
  * Deinitializes a collection.
+ *
+ * This function implicitly calls 'deinit()' for every resource managed by
+ * the collection.
  *
  * @param coll: The collection to deinitialize. Can be 'NULL'.
  */
