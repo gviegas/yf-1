@@ -24,6 +24,8 @@ typedef struct YF_collection_o *YF_collection;
 #define YF_COLLRES_TEXTURE 1
 #define YF_COLLRES_FONT    2
 
+#define YF_COLLRES_N 3
+
 /**
  * Initializes a new collection.
  *
