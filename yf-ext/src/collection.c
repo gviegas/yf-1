@@ -21,6 +21,9 @@ struct YF_collection_o {
 /* Functions used by the collection sets. */
 static size_t hash_res(const void *x);
 static int cmp_res(const void *a, const void *b);
+static int unld_mesh(void *val, void *arg);
+static int unld_tex(void *val, void *arg);
+static int unld_font(void *val, void *arg);
 
 YF_collection yf_collection_init(const char *pathname) {
   YF_collection coll = calloc(1, sizeof(struct YF_collection_o));
@@ -51,8 +54,29 @@ void *yf_collection_getres(YF_collection coll, int collres, const char *name) {
 }
 
 void yf_collection_deinit(YF_collection coll) {
-  /* TODO */
-  assert(0);
+  if (coll == NULL)
+    return;
+
+  for (size_t i = 0; i < YF_COLLRES_N; ++i) {
+    if (coll->sets[i] == NULL)
+      continue;
+    switch (i) {
+      case YF_COLLRES_MESH:
+        yf_hashset_each(coll->sets[i], unld_mesh, NULL);
+        break;
+      case YF_COLLRES_TEXTURE:
+        yf_hashset_each(coll->sets[i], unld_tex, NULL);
+        break;
+      case YF_COLLRES_FONT:
+        yf_hashset_each(coll->sets[i], unld_font, NULL);
+        break;
+      default:
+        assert(0);
+    }
+    yf_hashset_deinit(coll->sets[i]);
+  }
+
+  free(coll);
 }
 
 static size_t hash_res(const void *x) {
@@ -61,6 +85,21 @@ static size_t hash_res(const void *x) {
 }
 
 static int cmp_res(const void *a, const void *b) {
+  /* TODO */
+  assert(0);
+}
+
+static int unld_mesh(void *val, void *arg) {
+  /* TODO */
+  assert(0);
+}
+
+static int unld_tex(void *val, void *arg) {
+  /* TODO */
+  assert(0);
+}
+
+static int unld_font(void *val, void *arg) {
   /* TODO */
   assert(0);
 }
