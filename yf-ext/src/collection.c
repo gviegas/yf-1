@@ -6,6 +6,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #include <yf/com/yf-hashset.h>
@@ -17,6 +18,12 @@ struct YF_collection_o {
   YF_hashset sets[YF_COLLRES_N];
   size_t n;
 };
+
+/* Type defining a managed resource. */
+typedef struct {
+  char *name;
+  void *res;
+} L_res;
 
 /* Functions used by the collection sets. */
 static size_t hash_res(const void *x);
@@ -51,6 +58,37 @@ YF_collection yf_collection_init(const char *pathname) {
 void *yf_collection_getres(YF_collection coll, int collres, const char *name) {
   /* TODO */
   assert(0);
+}
+
+int yf_collection_manage(YF_collection coll, int collres, const char *name,
+    void *res)
+{
+  assert(coll != NULL);
+  assert(collres >= 0 && collres < YF_COLLRES_N);
+  assert(name != NULL);
+  assert(res != NULL);
+
+  L_res *r = malloc(sizeof(L_res));
+  if (r == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
+  }
+  r->name = malloc(1+strlen(name));
+  if (r->name == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    free(r);
+    return -1;
+  }
+  strcpy(r->name, name);
+  r->res = res;
+
+  if (yf_hashset_insert(coll->sets[collres], r) != 0) {
+    free(r->name);
+    free(r);
+    return -1;
+  }
+  coll->n++;
+  return 0;
 }
 
 void yf_collection_deinit(YF_collection coll) {
