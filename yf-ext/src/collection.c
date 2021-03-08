@@ -13,6 +13,9 @@
 #include <yf/com/yf-error.h>
 
 #include "collection.h"
+#include "mesh.h"
+#include "texture.h"
+#include "font.h"
 
 struct YF_collection_o {
   YF_hashset sets[YF_COLLRES_N];
@@ -28,9 +31,7 @@ typedef struct {
 /* Functions used by the collection sets. */
 static size_t hash_res(const void *x);
 static int cmp_res(const void *a, const void *b);
-static int unld_mesh(void *val, void *arg);
-static int unld_tex(void *val, void *arg);
-static int unld_font(void *val, void *arg);
+static int deinit_res(void *val, void *arg);
 
 YF_collection yf_collection_init(const char *pathname) {
   YF_collection coll = calloc(1, sizeof(struct YF_collection_o));
@@ -103,19 +104,7 @@ void yf_collection_deinit(YF_collection coll) {
   for (size_t i = 0; i < YF_COLLRES_N; ++i) {
     if (coll->sets[i] == NULL)
       continue;
-    switch (i) {
-      case YF_COLLRES_MESH:
-        yf_hashset_each(coll->sets[i], unld_mesh, NULL);
-        break;
-      case YF_COLLRES_TEXTURE:
-        yf_hashset_each(coll->sets[i], unld_tex, NULL);
-        break;
-      case YF_COLLRES_FONT:
-        yf_hashset_each(coll->sets[i], unld_font, NULL);
-        break;
-      default:
-        assert(0);
-    }
+    yf_hashset_each(coll->sets[i], deinit_res, (void *)i);
     yf_hashset_deinit(coll->sets[i]);
   }
 
@@ -132,17 +121,23 @@ static int cmp_res(const void *a, const void *b) {
   assert(0);
 }
 
-static int unld_mesh(void *val, void *arg) {
-  /* TODO */
-  assert(0);
-}
+static int deinit_res(void *val, void *arg) {
+  L_res *res = val;
 
-static int unld_tex(void *val, void *arg) {
-  /* TODO */
-  assert(0);
-}
+  switch ((size_t)arg) {
+    case YF_COLLRES_MESH:
+      yf_mesh_deinit(res->res);
+      break;
+    case YF_COLLRES_TEXTURE:
+      yf_texture_deinit(res->res);
+      break;
+    case YF_COLLRES_FONT:
+      yf_font_deinit(res->res);
+      break;
+    default:
+      assert(0);
+  }
 
-static int unld_font(void *val, void *arg) {
-  /* TODO */
-  assert(0);
+  free(res->name);
+  free(res);
 }
