@@ -56,8 +56,13 @@ YF_collection yf_collection_init(const char *pathname) {
 }
 
 void *yf_collection_getres(YF_collection coll, int collres, const char *name) {
-  /* TODO */
-  assert(0);
+  assert(coll != NULL);
+  assert(collres >= 0 && collres < YF_COLLRES_N);
+  assert(name != NULL);
+
+  const L_res key = {(char *)name, NULL};
+  L_res *val = yf_hashset_search(coll->sets[collres], &key);
+  return val != NULL ? val->res : NULL;
 }
 
 int yf_collection_manage(YF_collection coll, int collres, const char *name,
