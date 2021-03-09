@@ -112,13 +112,17 @@ void yf_collection_deinit(YF_collection coll) {
 }
 
 static size_t hash_res(const void *x) {
-  /* TODO */
-  assert(0);
+  const char *str = ((const L_res *)x)->name;
+  size_t hash = 0;
+  while (*str != '\0')
+    hash += (*str++)<<(hash&0xf);
+  return hash ^ 0xb722a593;
 }
 
 static int cmp_res(const void *a, const void *b) {
-  /* TODO */
-  assert(0);
+  const char *s1 = ((const L_res *)a)->name;
+  const char *s2 = ((const L_res *)b)->name;
+  return strcmp(s1, s2);
 }
 
 static int deinit_res(void *val, void *arg) {
@@ -140,4 +144,5 @@ static int deinit_res(void *val, void *arg) {
 
   free(res->name);
   free(res);
+  return 0;
 }
