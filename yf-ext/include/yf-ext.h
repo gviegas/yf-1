@@ -12,6 +12,7 @@
  * EXT interface.
  */
 #include "yf-camera.h"
+#include "yf-collection.h"
 #include "yf-font.h"
 #include "yf-label.h"
 #include "yf-matrix.h"
