@@ -61,6 +61,17 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
     void *res);
 
 /**
+ * Checks whether or not a collection contains a given resource.
+ *
+ * @param coll: The collection.
+ * @param collres: The 'YF_COLLRES' value indicating the type of the resource.
+ * @param name: The name of the resource.
+ * @return: If 'coll' contains a resource of type 'collres' named 'name',
+ *  returns a non-zero value. Otherwise, zero is returned.
+ */
+int yf_collection_contains(YF_collection coll, int collres, const char *name);
+
+/**
  * Deinitializes a collection.
  *
  * This function implicitly calls 'deinit()' for every resource managed by
