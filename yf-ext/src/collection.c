@@ -97,6 +97,15 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
   return 0;
 }
 
+int yf_collection_contains(YF_collection coll, int collres, const char *name) {
+  assert(coll != NULL);
+  assert(collres >= 0 && collres < YF_COLLRES_N);
+  assert(name != NULL);
+
+  const L_res res = {(char *)name, NULL};
+  return yf_hashset_contains(coll->sets[collres], &res);
+}
+
 void yf_collection_deinit(YF_collection coll) {
   if (coll == NULL)
     return;
