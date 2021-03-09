@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 
 #include <yf/wsys/yf-wsys.h>
@@ -22,6 +23,7 @@ struct L_vars {
   YF_window win;
   YF_view view;
   YF_scene scn;
+  YF_collection coll;
   YF_model mdl;
   YF_node labl_node;
   YF_label labls[2];
@@ -166,6 +168,8 @@ static void update(double elapsed_time) {
 
 /* Tests miscellany. */
 int yf_test_misc(void) {
+  srand(time(NULL));
+
   YF_evtfn evtfn = {.key_kb = on_key};
   yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
@@ -181,24 +185,40 @@ int yf_test_misc(void) {
   l_vars.labl_node = yf_node_init();
   assert(l_vars.labl_node != NULL);
 
-  YF_mesh mesh = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model2.gltf");
-  assert(mesh != NULL);
+  YF_mesh mesh1 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model1.gltf");
+  assert(mesh1 != NULL);
+  YF_mesh mesh2 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model2.gltf");
+  assert(mesh2 != NULL);
 
-  YF_texture texs[] = {yf_texture_init(YF_FILETYPE_PNG, "tmp/model2.png")};
-  const size_t tex_n = sizeof texs / sizeof texs[0];
-  for (size_t i = 0; i < tex_n; ++i)
-    assert(texs[i] != NULL);
+  YF_texture tex1 = yf_texture_init(YF_FILETYPE_PNG, "tmp/model1.png");
+  assert(tex1 != NULL);
+  YF_texture tex2 = yf_texture_init(YF_FILETYPE_PNG, "tmp/model2.png");
+  assert(tex2 != NULL);
 
-  YF_font fonts[] = {yf_font_init(YF_FILETYPE_TTF, "tmp/font.ttf")};
-  const size_t font_n = sizeof fonts / sizeof fonts[0];
-  for (size_t i = 0; i < font_n; ++i)
-    assert(fonts[i] != NULL);
+  YF_font font1 = yf_font_init(YF_FILETYPE_TTF, "tmp/serif.ttf");
+  assert(font1 != NULL);
+  YF_font font2 = yf_font_init(YF_FILETYPE_TTF, "tmp/sans.ttf");
+  assert(font2 != NULL);
+
+  l_vars.coll = yf_collection_init(NULL);
+  assert(l_vars.coll != NULL);
+
+  if (yf_collection_manage(l_vars.coll, YF_COLLRES_MESH, "m1", mesh1) != 0 ||
+      yf_collection_manage(l_vars.coll, YF_COLLRES_MESH, "m2", mesh2) != 0 ||
+      yf_collection_manage(l_vars.coll, YF_COLLRES_TEXTURE, "t1", tex1) != 0 ||
+      yf_collection_manage(l_vars.coll, YF_COLLRES_TEXTURE, "t2", tex2) != 0 ||
+      yf_collection_manage(l_vars.coll, YF_COLLRES_FONT, "f1", font1) != 0 ||
+      yf_collection_manage(l_vars.coll, YF_COLLRES_FONT, "f2", font2) != 0)
+    assert(0);
 
   l_vars.mdl = yf_model_init();
   assert(l_vars.mdl != NULL);
 
-  yf_model_setmesh(l_vars.mdl, mesh);
-  yf_model_settex(l_vars.mdl, texs[0]);
+  const int mdl_num = rand()&1 ? 1 : 2;
+  yf_model_setmesh(l_vars.mdl, yf_collection_getres(l_vars.coll,
+      YF_COLLRES_MESH, mdl_num == 1 ? "m1" : "m2"));
+  yf_model_settex(l_vars.mdl, yf_collection_getres(l_vars.coll,
+      YF_COLLRES_TEXTURE, mdl_num == 1 ? "t1" : "t2"));
 
   yf_node_insert(yf_scene_getnode(l_vars.scn), yf_model_getnode(l_vars.mdl));
 
@@ -207,7 +227,8 @@ int yf_test_misc(void) {
     l_vars.labls[i] = yf_label_init();
     assert(l_vars.labls[i] != NULL);
 
-    yf_label_setfont(l_vars.labls[i], fonts[i%font_n]);
+    yf_label_setfont(l_vars.labls[i], yf_collection_getres(l_vars.coll,
+        YF_COLLRES_FONT, i == 0 ? "f1" : "f2"));
     YF_mat4 *m = yf_node_getxform(yf_label_getnode(l_vars.labls[i]));
 
     switch (i) {
@@ -259,11 +280,7 @@ int yf_test_misc(void) {
   for (size_t i = 0; i < labl_n; ++i)
     yf_label_deinit(l_vars.labls[i]);
 
-  yf_mesh_deinit(mesh);
-  for (size_t i = 0; i < tex_n; ++i)
-    yf_texture_deinit(texs[i]);
-  for (size_t i = 0; i < font_n; ++i)
-    yf_font_deinit(fonts[i]);
+  yf_collection_deinit(l_vars.coll);
 
   return 0;
 }
