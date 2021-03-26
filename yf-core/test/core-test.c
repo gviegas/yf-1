@@ -59,9 +59,11 @@ static int test(int argc, char *argv[]) {
     for (size_t i = 0; i < test_n; ++i)
       results += tests[i]() == 0;
   } else {
-    fprintf(stderr, "! No test named '%s'. Try:\n", argv[0]);
+    printf("! Error: no test named '%s'\n", argv[0]);
+    printf("\nTry one of the following:\n");
     for (size_t i = 0; i < (sizeof l_ids / sizeof l_ids[0]); ++i)
-      fprintf(stderr, "%s\n", l_ids[i]);
+      printf("* %s\n", l_ids[i]);
+    printf("\n! No tests executed\n");
     return -1;
   }
 
