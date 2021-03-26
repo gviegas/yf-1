@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     printf("\nPossible values for TEST_ID:\n");
     for (size_t i = 0; i < yf_g_test.id_n; ++i)
       printf("* %s\n", yf_g_test.ids[i]);
-    printf("\n! No tests excuted\n");
+    printf("\n! No tests executed\n");
   } else {
     yf_g_test.fn(argc-1, argv+1);
   }
