@@ -2,7 +2,7 @@
  * YF
  * wsi.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -430,11 +430,12 @@ static int query_surface(YF_wsi wsi) {
   }
 
   const VkFormat pref_fmts[] = {
-    VK_FORMAT_B8G8R8A8_SRGB,
-    VK_FORMAT_B8G8R8A8_UNORM
+    VK_FORMAT_B8G8R8A8_UNORM,
+    VK_FORMAT_B8G8R8A8_SRGB
   };
+  const size_t pref_fmt_n = sizeof pref_fmts / sizeof pref_fmts[0];
   int fmt_i = -1;
-  for (size_t i = 0; i < (sizeof pref_fmts / sizeof pref_fmts[0]); ++i) {
+  for (size_t i = 0; i < pref_fmt_n && fmt_i == -1; ++i) {
     for (size_t j = 0; j < fmt_n; ++j) {
       if (pref_fmts[i] == fmts[j].format &&
           fmts[j].colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
