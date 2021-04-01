@@ -11,7 +11,7 @@
 
 #include <yf/wsys/yf-wsys.h>
 
-#include "yf-ext.h"
+#include "yf-ngn.h"
 
 #define YF_WINW 800
 #define YF_WINH 600

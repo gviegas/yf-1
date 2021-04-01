@@ -1,6 +1,6 @@
 /*
  * YF
- * ext-test.c
+ * ngn-test.c
  *
  * Copyright © 2020-2021 Gustavo C. Viegas.
  */
@@ -178,4 +178,4 @@ static int test(int argc, char *argv[]) {
   return 0;
 }
 
-const YF_test yf_g_test = {"ext", test, l_ids, sizeof l_ids / sizeof l_ids[0]};
+const YF_test yf_g_test = {"ngn", test, l_ids, sizeof l_ids / sizeof l_ids[0]};

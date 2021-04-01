@@ -1,15 +1,15 @@
 /*
  * YF
- * yf-ext.h
+ * yf-ngn.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2021 Gustavo C. Viegas.
  */
 
-#ifndef YF_YF_EXT_H
-#define YF_YF_EXT_H
+#ifndef YF_YF_NGN_H
+#define YF_YF_NGN_H
 
 /**
- * EXT interface.
+ * NGN interface.
  */
 #include "yf-camera.h"
 #include "yf-collection.h"
@@ -27,4 +27,4 @@
 #include "yf-vector.h"
 #include "yf-view.h"
 
-#endif /* YF_YF_EXT_H */
+#endif /* YF_YF_NGN_H */
