@@ -4,7 +4,7 @@
 # YF
 # Lib.mk
 #
-# Copyright © 2020 Gustavo C. Viegas.
+# Copyright © 2020-2021 Gustavo C. Viegas.
 #
 
 SHELL := /bin/sh
@@ -15,11 +15,11 @@ SRC_DIR := src/
 ETC_DIR := etc/
 BUILD_DIR := build/
 INSTALL_DIR := /usr/local/
-INCLIB_DIR := $(INSTALL_DIR)include/yf/ext/
+INCLIB_DIR := $(INSTALL_DIR)include/yf/ngn/
 
-SO_LINK := libyf-ext.so
+SO_LINK := libyf-ngn.so
 SO_NAME := $(SO_LINK).0
-SO_FILE := $(SO_NAME).1.1
+SO_FILE := $(SO_NAME).1.0
 
 LIB_FILE := $(INSTALL_DIR)lib/$(SO_FILE)
 LIB_NAME := $(INSTALL_DIR)lib/$(SO_NAME)
@@ -41,7 +41,7 @@ LD_LIBS := -lm -lyf-com -lyf-core -lyf-wsys
 LD_FLAGS := -iquote $(INCLUDE_DIR) -iquote $(SRC_DIR)
 
 PP := $(CC) -E
-PP_FLAGS := -D YF_EXT
+PP_FLAGS := -D YF_NGN
 
 all:
 
