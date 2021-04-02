@@ -13,8 +13,7 @@
 #ifndef __STDC_NO_ATOMICS__
 # include <stdatomic.h>
 #else
-/* TODO */
-# error "Missing C11 atomics"
+# error "C11 atomics required"
 #endif
 
 #include <yf/com/yf-util.h>
@@ -113,10 +112,10 @@ YF_context yf_context_init(void) {
 }
 
 void yf_context_deinit(YF_context ctx) {
-  atomic_flag_clear(&l_flag);
-
-  if (ctx == NULL)
+  if (ctx == NULL) {
+    atomic_flag_clear(&l_flag);
     return;
+  }
 
   vkDeviceWaitIdle(ctx->device);
 
@@ -144,6 +143,8 @@ void yf_context_deinit(YF_context ctx) {
   free(ctx);
 
   yf_unldvk();
+
+  atomic_flag_clear(&l_flag);
 }
 
 static int init_instance(YF_context ctx) {

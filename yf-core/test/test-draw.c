@@ -20,7 +20,7 @@
 #define YF_WINT "Draw"
 
 /* Shared variables. */
-struct L_vars {
+struct T_vars {
   YF_context ctx;
   YF_wsi wsi;
   YF_buffer buf;
@@ -33,10 +33,10 @@ struct L_vars {
   YF_window win;
   int key;
 };
-static struct L_vars l_vars = {0};
+static struct T_vars l_vars = {0};
 
 /* Vertex type. */
-struct L_vertex {
+struct T_vertex {
   float pos[3];
   float clr[4];
 };
@@ -84,13 +84,13 @@ static void init(void) {
   /* VInput */
   const YF_vattr attrs[] = {
     {0, YF_TYPEFMT_FLOAT3, 0},
-    {1, YF_TYPEFMT_FLOAT4, offsetof(struct L_vertex, clr)}
+    {1, YF_TYPEFMT_FLOAT4, offsetof(struct T_vertex, clr)}
   };
 
   const YF_vinput vin = {
     attrs,
     sizeof attrs / sizeof attrs[0],
-    sizeof(struct L_vertex),
+    sizeof(struct T_vertex),
     YF_VRATE_VERT
   };
 
@@ -176,7 +176,7 @@ static void init(void) {
     0.0f, 0.0f, 0.0f, 1.0f
   };
 
-  const struct L_vertex verts[3] = {
+  const struct T_vertex verts[3] = {
     {{-1.0f,  1.0f, 0.5f}, {0.95f, 0.16f, 0.28f, 1.0f}},
     {{ 1.0f,  1.0f, 0.5f}, {0.73f, 0.62f, 0.31f, 1.0f}},
     {{ 0.0f, -1.0f, 0.5f}, {0.42f, 0.84f, 0.41f, 1.0f}}

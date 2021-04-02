@@ -26,7 +26,7 @@ typedef struct {
   } key;
   YF_iview *iviews;
   YF_image *imgs;
-} L_kv;
+} T_kv;
 
 /* Initializes the descriptor set layout. */
 static int init_layout(YF_dtable dtb);
@@ -34,10 +34,10 @@ static int init_layout(YF_dtable dtb);
 /* Invalidates all iviews acquired from a given image. */
 static void inval_iview(void *img, int pubsub, void *dtb);
 
-/* Hashes a 'L_kv'. */
+/* Hashes a 'T_kv'. */
 static size_t hash_kv(const void *x);
 
-/* Compares a 'L_kv' to another. */
+/* Compares a 'T_kv' to another. */
 static int cmp_kv(const void *a, const void *b);
 
 YF_dtable yf_dtable_init(YF_context ctx, const YF_dentry *entries,
@@ -170,31 +170,31 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n) {
   }
   for (unsigned i = 0; i < dtb->entry_n; ++i) {
     switch (dtb->entries[i].dtype) {
-      case YF_DTYPE_IMAGE:
-      case YF_DTYPE_SAMPLED:
-      case YF_DTYPE_ISAMPLER:
-        for (unsigned j = 0; j < n; ++j) {
-          L_kv *kv = calloc(1, sizeof(L_kv));
-          if (kv == NULL) {
-            yf_dtable_dealloc(dtb);
-            return -1;
-          }
-          kv->iviews = calloc(dtb->entries[i].elements, sizeof *kv->iviews);
-          kv->imgs = calloc(dtb->entries[i].elements, sizeof *kv->imgs);
-          if (kv->iviews == NULL || kv->imgs == NULL) {
-            yf_dtable_dealloc(dtb);
-            free(kv->iviews);
-            free(kv->imgs);
-            free(kv);
-            return -1;
-          }
-          kv->key.alloc_i = j;
-          kv->key.entry_i = i;
-          yf_hashset_insert(dtb->iviews, kv);
+    case YF_DTYPE_IMAGE:
+    case YF_DTYPE_SAMPLED:
+    case YF_DTYPE_ISAMPLER:
+      for (unsigned j = 0; j < n; ++j) {
+        T_kv *kv = calloc(1, sizeof(T_kv));
+        if (kv == NULL) {
+          yf_dtable_dealloc(dtb);
+          return -1;
         }
-        break;
-      default:
-        break;
+        kv->iviews = calloc(dtb->entries[i].elements, sizeof *kv->iviews);
+        kv->imgs = calloc(dtb->entries[i].elements, sizeof *kv->imgs);
+        if (kv->iviews == NULL || kv->imgs == NULL) {
+          yf_dtable_dealloc(dtb);
+          free(kv->iviews);
+          free(kv->imgs);
+          free(kv);
+          return -1;
+        }
+        kv->key.alloc_i = j;
+        kv->key.entry_i = i;
+        yf_hashset_insert(dtb->iviews, kv);
+      }
+      break;
+    default:
+      break;
     }
   }
 
@@ -208,7 +208,7 @@ void yf_dtable_dealloc(YF_dtable dtb) {
     return;
 
   YF_iter it = YF_NILIT;
-  L_kv *kv;
+  T_kv *kv;
   do {
     kv = yf_hashset_next(dtb->iviews, &it);
     if (YF_IT_ISNIL(it))
@@ -291,16 +291,16 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
     .pTexelBufferView = NULL
   };
   switch (entry->dtype) {
-    case YF_DTYPE_UNIFORM:
-      ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-      break;
-    case YF_DTYPE_MUTABLE:
-      ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
-      free(buf_infos);
-      return -1;
+  case YF_DTYPE_UNIFORM:
+    ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    break;
+  case YF_DTYPE_MUTABLE:
+    ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    free(buf_infos);
+    return -1;
   }
   vkUpdateDescriptorSets(dtb->ctx->device, 1, &ds_wr, 0, NULL);
 
@@ -346,8 +346,8 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
     return -1;
   }
 
-  const L_kv k = {{alloc_i, entry_i}, NULL, NULL};
-  L_kv *kv = yf_hashset_search(dtb->iviews, &k);
+  const T_kv k = {{alloc_i, entry_i}, NULL, NULL};
+  T_kv *kv = yf_hashset_search(dtb->iviews, &k);
   assert(kv != NULL);
   const YF_slice lvl = {0, 1};
   YF_slice lay = {0, 1};
@@ -387,19 +387,19 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
     .pTexelBufferView = NULL
   };
   switch (entry->dtype) {
-    case YF_DTYPE_IMAGE:
-      ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-      break;
-    case YF_DTYPE_SAMPLED:
-      ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-      break;
-    case YF_DTYPE_ISAMPLER:
-      ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
-      free(img_infos);
-      return -1;
+  case YF_DTYPE_IMAGE:
+    ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    break;
+  case YF_DTYPE_SAMPLED:
+    ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    break;
+  case YF_DTYPE_ISAMPLER:
+    ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    free(img_infos);
+    return -1;
   }
   vkUpdateDescriptorSets(dtb->ctx->device, 1, &ds_wr, 0, NULL);
 
@@ -453,39 +453,39 @@ static int init_layout(YF_dtable dtb) {
     bindings[i].descriptorCount = dtb->entries[i].elements;
     bindings[i].stageFlags = VK_SHADER_STAGE_ALL;
     switch (dtb->entries[i].dtype) {
-      case YF_DTYPE_UNIFORM:
-        bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        bindings[i].pImmutableSamplers = NULL;
-        dtb->count.unif += dtb->entries[i].elements;
-        continue;
-      case YF_DTYPE_MUTABLE:
-        bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-        bindings[i].pImmutableSamplers = NULL;
-        dtb->count.mut += dtb->entries[i].elements;
-        continue;
-      case YF_DTYPE_IMAGE:
-        bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-        bindings[i].pImmutableSamplers = NULL;
-        dtb->count.img += dtb->entries[i].elements;
-        continue;
-      case YF_DTYPE_SAMPLED:
-        bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        bindings[i].pImmutableSamplers = NULL;
-        dtb->count.sampd += dtb->entries[i].elements;
-        continue;
-      case YF_DTYPE_SAMPLER:
-        bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-        dtb->count.sampr += dtb->entries[i].elements;
-        break;
-      case YF_DTYPE_ISAMPLER:
-        bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        dtb->count.isamp += dtb->entries[i].elements;
-        break;
-      default:
-        yf_seterr(YF_ERR_INVARG, __func__);
-        free(bindings);
-        free(samplers);
-        return -1;
+    case YF_DTYPE_UNIFORM:
+      bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      bindings[i].pImmutableSamplers = NULL;
+      dtb->count.unif += dtb->entries[i].elements;
+      continue;
+    case YF_DTYPE_MUTABLE:
+      bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+      bindings[i].pImmutableSamplers = NULL;
+      dtb->count.mut += dtb->entries[i].elements;
+      continue;
+    case YF_DTYPE_IMAGE:
+      bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+      bindings[i].pImmutableSamplers = NULL;
+      dtb->count.img += dtb->entries[i].elements;
+      continue;
+    case YF_DTYPE_SAMPLED:
+      bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+      bindings[i].pImmutableSamplers = NULL;
+      dtb->count.sampd += dtb->entries[i].elements;
+      continue;
+    case YF_DTYPE_SAMPLER:
+      bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+      dtb->count.sampr += dtb->entries[i].elements;
+      break;
+    case YF_DTYPE_ISAMPLER:
+      bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      dtb->count.isamp += dtb->entries[i].elements;
+      break;
+    default:
+      yf_seterr(YF_ERR_INVARG, __func__);
+      free(bindings);
+      free(samplers);
+      return -1;
     }
     /* YF_DTYPE_SAMPLER or YF_DTYPE_ISAMPLER */
     if (samp_i + dtb->entries[i].elements > samp_n) {
@@ -542,7 +542,7 @@ static void inval_iview(void *img, int pubsub, void *dtb) {
   /* XXX: This may end up being too slow if images are destroyed often. */
   YF_hashset iviews = ((YF_dtable)dtb)->iviews;
   YF_iter it = YF_NILIT;
-  L_kv *kv = NULL;
+  T_kv *kv = NULL;
   while ((kv = yf_hashset_next(iviews, &it)) != NULL) {
     const unsigned n = ((YF_dtable)dtb)->entries[kv->key.entry_i].elements;
     for (unsigned i = 0; i < n; ++i) {
@@ -553,15 +553,15 @@ static void inval_iview(void *img, int pubsub, void *dtb) {
 }
 
 static size_t hash_kv(const void *x) {
-  const L_kv *kv = x;
+  const T_kv *kv = x;
   const size_t h1 = kv->key.alloc_i << 10;
   const size_t h2 = kv->key.entry_i & 0x3ff;
   return (h1 | h2) ^ 0xc5749e25;
 }
 
 static int cmp_kv(const void *a, const void *b) {
-  const L_kv *kv1 = a;
-  const L_kv *kv2 = b;
+  const T_kv *kv1 = a;
+  const T_kv *kv2 = b;
   return (kv1->key.alloc_i != kv2->key.alloc_i) ||
     (kv1->key.entry_i != kv2->key.entry_i);
 }

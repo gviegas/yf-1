@@ -27,7 +27,7 @@ typedef struct {
     YF_slice levels;
   } key;
   unsigned count;
-} L_priv;
+} T_priv;
 
 /* Deallocates a staging buffer. */
 static void dealloc_stgbuf(int res, void *arg);
@@ -114,23 +114,23 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
 
   int limit = 0;
   switch (img->type) {
-    case VK_IMAGE_TYPE_1D:
-      limit = dim.width > lim->image.dim_1d_max;
-      break;
-    case VK_IMAGE_TYPE_2D:
-      /* TODO: Check limit for cube-compatible images. */
-      limit =
-        dim.width > lim->image.dim_2d_max ||
-        dim.height >lim->image.dim_2d_max;
-      break;
-    case VK_IMAGE_TYPE_3D:
-      limit =
-        dim.width > lim->image.dim_3d_max ||
-        dim.height > lim->image.dim_3d_max ||
-        dim.depth > lim->image.dim_3d_max;
-      break;
-    default:
-      break;
+  case VK_IMAGE_TYPE_1D:
+    limit = dim.width > lim->image.dim_1d_max;
+    break;
+  case VK_IMAGE_TYPE_2D:
+    /* TODO: Check limit for cube-compatible images. */
+    limit =
+      dim.width > lim->image.dim_2d_max ||
+      dim.height > lim->image.dim_2d_max;
+    break;
+  case VK_IMAGE_TYPE_3D:
+    limit =
+      dim.width > lim->image.dim_3d_max ||
+      dim.height > lim->image.dim_3d_max ||
+      dim.depth > lim->image.dim_3d_max;
+    break;
+  default:
+    break;
   }
   if (limit) {
     yf_seterr(YF_ERR_LIMIT, __func__);
@@ -345,30 +345,30 @@ YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
   YF_PIXFMT_ASPECT(img->pixfmt, img->aspect);
 
   switch (type) {
-    case VK_IMAGE_TYPE_1D:
-      if (layers > 1)
-        img->view_type = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-      else
-        img->view_type = VK_IMAGE_VIEW_TYPE_1D;
-      break;
-    case VK_IMAGE_TYPE_2D:
-      if (layers > 1)
-        img->view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-      else
-        img->view_type = VK_IMAGE_VIEW_TYPE_2D;
-      break;
-    case VK_IMAGE_TYPE_3D:
-      if (layers > 1) {
-        yf_seterr(YF_ERR_INVARG, __func__);
-        yf_image_deinit(img);
-        return NULL;
-      }
-      img->view_type = VK_IMAGE_VIEW_TYPE_3D;
-      break;
-    default:
+  case VK_IMAGE_TYPE_1D:
+    if (layers > 1)
+      img->view_type = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
+    else
+      img->view_type = VK_IMAGE_VIEW_TYPE_1D;
+    break;
+  case VK_IMAGE_TYPE_2D:
+    if (layers > 1)
+      img->view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    else
+      img->view_type = VK_IMAGE_VIEW_TYPE_2D;
+    break;
+  case VK_IMAGE_TYPE_3D:
+    if (layers > 1) {
       yf_seterr(YF_ERR_INVARG, __func__);
       yf_image_deinit(img);
       return NULL;
+    }
+    img->view_type = VK_IMAGE_VIEW_TYPE_3D;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    yf_image_deinit(img);
+    return NULL;
   }
 
   return img;
@@ -382,7 +382,7 @@ int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
   assert(levels.n > 0 && levels.i + levels.n <= img->levels);
   assert(iview != NULL);
 
-  const L_priv priv = {{layers, levels}, 0};
+  const T_priv priv = {{layers, levels}, 0};
   const YF_iview key = {(void *)&priv, VK_NULL_HANDLE};
   YF_iview *iv = yf_hashset_search(img->iviews, &key);
 
@@ -437,7 +437,7 @@ int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
     }
   }
 
-  ((L_priv *)iv->priv)->count++;
+  ((T_priv *)iv->priv)->count++;
   *iview = *iv;
   return 0;
 }
@@ -450,7 +450,7 @@ void yf_image_ungetiview(YF_image img, YF_iview *iview) {
   if (iv == NULL)
     return;
 
-  L_priv *priv = iv->priv;
+  T_priv *priv = iv->priv;
   if (--priv->count == 0) {
     vkDestroyImageView(img->ctx->device, iv->view, NULL);
     yf_hashset_remove(img->iviews, iv);
@@ -495,15 +495,15 @@ static void dealloc_stgbuf(int res, void *arg) {
 }
 
 static size_t hash_iview(const void *x) {
-  const L_priv *pv = ((YF_iview *)x)->priv;
+  const T_priv *pv = ((YF_iview *)x)->priv;
   const size_t h1 = (pv->key.layers.n << 16) | (pv->key.layers.i & 0xffff);
   const size_t h2 = (pv->key.levels.n << 5) | (pv->key.levels.i & 0x1f);
   return ((h1 << 10) | (h2 & 0x3ff)) ^ 0x88864753;
 }
 
 static int cmp_iview(const void *a, const void *b) {
-  const L_priv *pv1 = ((YF_iview *)a)->priv;
-  const L_priv *pv2 = ((YF_iview *)b)->priv;
+  const T_priv *pv1 = ((YF_iview *)a)->priv;
+  const T_priv *pv2 = ((YF_iview *)b)->priv;
   return (pv1->key.layers.i != pv2->key.layers.i) ||
     (pv1->key.layers.n != pv2->key.layers.n) ||
     (pv1->key.levels.i != pv2->key.levels.i) ||
