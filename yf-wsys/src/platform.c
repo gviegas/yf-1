@@ -2,7 +2,7 @@
  * YF
  * platform.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -50,27 +50,27 @@ int yf_getplatform(void) {
 
 void yf_getwinimp(YF_win_imp *imp) {
   switch (yf_getplatform()) {
-    case YF_PLATFORM_WAYLAND:
-      /* TODO */
-      assert(0);
-    case YF_PLATFORM_XCB:
-      *imp = yf_g_winxcb;
-      break;
-    default:
-      assert(0);
+  case YF_PLATFORM_WAYLAND:
+    /* TODO */
+    assert(0);
+  case YF_PLATFORM_XCB:
+    *imp = yf_g_winxcb;
+    break;
+  default:
+    assert(0);
   }
 }
 
 void yf_getevtimp(YF_evt_imp *imp) {
   switch (yf_getplatform()) {
-    case YF_PLATFORM_WAYLAND:
-      /* TODO */
-      assert(0);
-    case YF_PLATFORM_XCB:
-      *imp = yf_g_evtxcb;
-      break;
-    default:
-      assert(0);
+  case YF_PLATFORM_WAYLAND:
+    /* TODO */
+    assert(0);
+  case YF_PLATFORM_XCB:
+    *imp = yf_g_evtxcb;
+    break;
+  default:
+    assert(0);
   }
 }
 #else
