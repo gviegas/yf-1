@@ -2,7 +2,7 @@
  * YF
  * stage.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -21,28 +21,28 @@
 typedef struct {
   YF_hashset mods;
   YF_modid modid;
-} L_priv;
+} T_priv;
 
 /* Type defining a key/value for the module's hashset. */
 typedef struct {
   YF_modid key;
   VkShaderModule value;
-} L_kv;
+} T_kv;
 
-/* Destroys the 'L_priv' data stored in a given context. */
+/* Destroys the 'T_priv' data stored in a given context. */
 static void destroy_priv(YF_context ctx);
 
-/* Hashes a 'L_kv'. */
+/* Hashes a 'T_kv'. */
 static size_t hash_kv(const void *x);
 
-/* Compares a 'L_kv' to another. */
+/* Compares a 'T_kv' to another. */
 static int cmp_kv(const void *a, const void *b);
 
 int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod) {
   assert(ctx != NULL);
   assert(pathname != NULL);
 
-  L_priv *priv = ctx->stg.priv;
+  T_priv *priv = ctx->stg.priv;
   if (priv == NULL) {
     if ((ctx->stg.priv = malloc(sizeof *priv)) == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
@@ -87,7 +87,7 @@ int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod) {
   }
   fclose(f);
 
-  L_kv *kv = malloc(sizeof(L_kv));
+  T_kv *kv = malloc(sizeof(T_kv));
   if (kv == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     free(buf);
@@ -122,9 +122,9 @@ void yf_unldmod(YF_context ctx, YF_modid mod) {
   if (ctx->stg.priv == NULL)
     return;
 
-  L_priv *priv = ctx->stg.priv;
-  L_kv key = {mod, VK_NULL_HANDLE};
-  L_kv *kv = yf_hashset_search(priv->mods, &key);
+  T_priv *priv = ctx->stg.priv;
+  T_kv key = {mod, VK_NULL_HANDLE};
+  T_kv *kv = yf_hashset_search(priv->mods, &key);
   if (kv != NULL) {
     yf_hashset_remove(priv->mods, kv);
     vkDestroyShaderModule(ctx->device, kv->value, NULL);
@@ -138,9 +138,9 @@ VkShaderModule yf_getmod(YF_context ctx, YF_modid mod) {
   if (ctx->stg.priv == NULL)
     return VK_NULL_HANDLE;
 
-  L_priv *priv = ctx->stg.priv;
-  L_kv key = {mod, VK_NULL_HANDLE};
-  L_kv *kv = yf_hashset_search(priv->mods, &key);
+  T_priv *priv = ctx->stg.priv;
+  T_kv key = {mod, VK_NULL_HANDLE};
+  T_kv *kv = yf_hashset_search(priv->mods, &key);
   if (kv != NULL)
     return kv->value;
   return VK_NULL_HANDLE;
@@ -152,7 +152,7 @@ static void destroy_priv(YF_context ctx) {
   if (ctx->stg.priv == NULL)
     return;
 
-  L_priv *priv = ctx->stg.priv;
+  T_priv *priv = ctx->stg.priv;
   YF_iter it = YF_NILIT;
   do
     free(yf_hashset_next(priv->mods, &it));
@@ -163,9 +163,9 @@ static void destroy_priv(YF_context ctx) {
 }
 
 static size_t hash_kv(const void *x) {
-  return ((L_kv *)x)->key ^ 0xe353d215;
+  return ((T_kv *)x)->key ^ 0xe353d215;
 }
 
 static int cmp_kv(const void *a, const void *b) {
-  return ((L_kv *)a)->key != ((L_kv *)b)->key;
+  return ((T_kv *)a)->key != ((T_kv *)b)->key;
 }

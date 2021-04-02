@@ -2,7 +2,7 @@
  * YF
  * yf-image.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_IMAGE_H
@@ -170,80 +170,80 @@ void yf_image_deinit(YF_image img);
  */
 #define YF_PIXFMT_SIZEOF(pf, sz) do { \
   switch (pf) { \
-    case YF_PIXFMT_R8UNORM: \
-    case YF_PIXFMT_R8SRGB: \
-    case YF_PIXFMT_R8INT: \
-    case YF_PIXFMT_R8UINT: \
-    case YF_PIXFMT_S8UINT: \
-      sz = 1; \
-      break; \
-    case YF_PIXFMT_RG8UNORM: \
-    case YF_PIXFMT_R16UNORM: \
-    case YF_PIXFMT_RG8SRGB: \
-    case YF_PIXFMT_RG8INT: \
-    case YF_PIXFMT_R16INT: \
-    case YF_PIXFMT_RG8UINT: \
-    case YF_PIXFMT_R16UINT: \
-    case YF_PIXFMT_R16FLOAT: \
-    case YF_PIXFMT_D16UNORM: \
-      sz = 2; \
-      break; \
-    case YF_PIXFMT_RGB8UNORM: \
-    case YF_PIXFMT_BGR8UNORM: \
-    case YF_PIXFMT_RGB8SRGB: \
-    case YF_PIXFMT_BGR8SRGB: \
-    case YF_PIXFMT_RGB8INT: \
-    case YF_PIXFMT_BGR8INT: \
-    case YF_PIXFMT_RGB8UINT: \
-    case YF_PIXFMT_BGR8UINT: \
-    case YF_PIXFMT_D16UNORMS8UINT: \
-      sz = 3; \
-      break; \
-    case YF_PIXFMT_RGBA8UNORM: \
-    case YF_PIXFMT_BGRA8UNORM: \
-    case YF_PIXFMT_RG16UNORM: \
-    case YF_PIXFMT_RGBA8SRGB: \
-    case YF_PIXFMT_BGRA8SRGB: \
-    case YF_PIXFMT_RGBA8INT: \
-    case YF_PIXFMT_BGRA8INT: \
-    case YF_PIXFMT_RG16INT: \
-    case YF_PIXFMT_R32INT: \
-    case YF_PIXFMT_RGBA8UINT: \
-    case YF_PIXFMT_BGRA8UINT: \
-    case YF_PIXFMT_RG16UINT: \
-    case YF_PIXFMT_R32UINT: \
-    case YF_PIXFMT_RG16FLOAT: \
-    case YF_PIXFMT_R32FLOAT: \
-    case YF_PIXFMT_D24UNORMS8UINT: \
-      sz = 4; \
-      break; \
-    case YF_PIXFMT_RGB16UNORM: \
-    case YF_PIXFMT_RGB16INT: \
-    case YF_PIXFMT_RGB16UINT: \
-    case YF_PIXFMT_RGB16FLOAT: \
-      sz = 6; \
-      break; \
-    case YF_PIXFMT_RGBA16UNORM: \
-    case YF_PIXFMT_RGBA16INT: \
-    case YF_PIXFMT_RG32INT: \
-    case YF_PIXFMT_RGBA16UINT: \
-    case YF_PIXFMT_RG32UINT: \
-    case YF_PIXFMT_RGBA16FLOAT: \
-    case YF_PIXFMT_RG32FLOAT: \
-      sz = 8; \
-      break; \
-    case YF_PIXFMT_RGB32INT: \
-    case YF_PIXFMT_RGB32UINT: \
-    case YF_PIXFMT_RGB32FLOAT: \
-      sz = 12; \
-      break; \
-    case YF_PIXFMT_RGBA32INT: \
-    case YF_PIXFMT_RGBA32UINT: \
-    case YF_PIXFMT_RGBA32FLOAT: \
-      sz = 16; \
-      break; \
-    default: \
-      sz = 0; \
+  case YF_PIXFMT_R8UNORM: \
+  case YF_PIXFMT_R8SRGB: \
+  case YF_PIXFMT_R8INT: \
+  case YF_PIXFMT_R8UINT: \
+  case YF_PIXFMT_S8UINT: \
+    sz = 1; \
+    break; \
+  case YF_PIXFMT_RG8UNORM: \
+  case YF_PIXFMT_R16UNORM: \
+  case YF_PIXFMT_RG8SRGB: \
+  case YF_PIXFMT_RG8INT: \
+  case YF_PIXFMT_R16INT: \
+  case YF_PIXFMT_RG8UINT: \
+  case YF_PIXFMT_R16UINT: \
+  case YF_PIXFMT_R16FLOAT: \
+  case YF_PIXFMT_D16UNORM: \
+    sz = 2; \
+    break; \
+  case YF_PIXFMT_RGB8UNORM: \
+  case YF_PIXFMT_BGR8UNORM: \
+  case YF_PIXFMT_RGB8SRGB: \
+  case YF_PIXFMT_BGR8SRGB: \
+  case YF_PIXFMT_RGB8INT: \
+  case YF_PIXFMT_BGR8INT: \
+  case YF_PIXFMT_RGB8UINT: \
+  case YF_PIXFMT_BGR8UINT: \
+  case YF_PIXFMT_D16UNORMS8UINT: \
+    sz = 3; \
+    break; \
+  case YF_PIXFMT_RGBA8UNORM: \
+  case YF_PIXFMT_BGRA8UNORM: \
+  case YF_PIXFMT_RG16UNORM: \
+  case YF_PIXFMT_RGBA8SRGB: \
+  case YF_PIXFMT_BGRA8SRGB: \
+  case YF_PIXFMT_RGBA8INT: \
+  case YF_PIXFMT_BGRA8INT: \
+  case YF_PIXFMT_RG16INT: \
+  case YF_PIXFMT_R32INT: \
+  case YF_PIXFMT_RGBA8UINT: \
+  case YF_PIXFMT_BGRA8UINT: \
+  case YF_PIXFMT_RG16UINT: \
+  case YF_PIXFMT_R32UINT: \
+  case YF_PIXFMT_RG16FLOAT: \
+  case YF_PIXFMT_R32FLOAT: \
+  case YF_PIXFMT_D24UNORMS8UINT: \
+    sz = 4; \
+    break; \
+  case YF_PIXFMT_RGB16UNORM: \
+  case YF_PIXFMT_RGB16INT: \
+  case YF_PIXFMT_RGB16UINT: \
+  case YF_PIXFMT_RGB16FLOAT: \
+    sz = 6; \
+    break; \
+  case YF_PIXFMT_RGBA16UNORM: \
+  case YF_PIXFMT_RGBA16INT: \
+  case YF_PIXFMT_RG32INT: \
+  case YF_PIXFMT_RGBA16UINT: \
+  case YF_PIXFMT_RG32UINT: \
+  case YF_PIXFMT_RGBA16FLOAT: \
+  case YF_PIXFMT_RG32FLOAT: \
+    sz = 8; \
+    break; \
+  case YF_PIXFMT_RGB32INT: \
+  case YF_PIXFMT_RGB32UINT: \
+  case YF_PIXFMT_RGB32FLOAT: \
+    sz = 12; \
+    break; \
+  case YF_PIXFMT_RGBA32INT: \
+  case YF_PIXFMT_RGBA32UINT: \
+  case YF_PIXFMT_RGBA32FLOAT: \
+    sz = 16; \
+    break; \
+  default: \
+    sz = 0; \
   } } while (0)
 
 YF_DECLS_END

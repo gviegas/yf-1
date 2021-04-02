@@ -2,7 +2,7 @@
  * YF
  * cmddec.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -24,6 +24,10 @@
 #include "dtable.h"
 #include "limits.h"
 #include "vk.h"
+
+#ifdef __STDC_NO_THREADS__
+# error "C11 threads required"
+#endif
 
 /* Type defining graphics decoding state. */
 typedef struct {
@@ -63,7 +67,7 @@ typedef struct {
     int pending;
     unsigned val;
   } clrsten;
-} L_gdec;
+} T_gdec;
 
 /* Type defining compute decoding state. */
 typedef struct {
@@ -79,11 +83,11 @@ typedef struct {
     int *used;
     unsigned n;
   } dtb;
-} L_cdec;
+} T_cdec;
 
 /* The current decoding states for graphics and compute. */
-static _Thread_local L_gdec *l_gdec = NULL;
-static _Thread_local L_cdec *l_cdec = NULL;
+static _Thread_local T_gdec *l_gdec = NULL;
+static _Thread_local T_cdec *l_cdec = NULL;
 
 /* Decodes a graphics command buffer. */
 static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr);
@@ -162,24 +166,24 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb) {
 
   int r = 0;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      if (l_gdec != NULL) {
-        yf_seterr(YF_ERR_INUSE, __func__);
-        r = -1;
-        break;
-      }
-      r = decode_graph(cmdb, &cmdr);
+  case YF_CMDBUF_GRAPH:
+    if (l_gdec != NULL) {
+      yf_seterr(YF_ERR_INUSE, __func__);
+      r = -1;
       break;
-    case YF_CMDBUF_COMP:
-      if (l_cdec != NULL) {
-        yf_seterr(YF_ERR_INUSE, __func__);
-        r = -1;
-        break;
-      }
-      r = decode_comp(cmdb, &cmdr);
+    }
+    r = decode_graph(cmdb, &cmdr);
+    break;
+  case YF_CMDBUF_COMP:
+    if (l_cdec != NULL) {
+      yf_seterr(YF_ERR_INUSE, __func__);
+      r = -1;
       break;
-    default:
-      assert(0);
+    }
+    r = decode_comp(cmdb, &cmdr);
+    break;
+  default:
+    assert(0);
   }
 
   if (vkEndCommandBuffer(cmdr.pool_res) != VK_SUCCESS && r == 0) {
@@ -228,50 +232,50 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr) {
   for (unsigned i = 0; i < cmdb->cmd_n; ++i) {
     cmd = &cmdb->cmds[i];
     switch (cmd->cmd) {
-      case YF_CMD_GST:
-        r = decode_gst(cmd);
-        break;
-      case YF_CMD_TGT:
-        r = decode_tgt(cmd);
-        break;
-      case YF_CMD_VPORT:
-        r = decode_vport(cmd);
-        break;
-      case YF_CMD_SCISS:
-        r = decode_sciss(cmd);
-        break;
-      case YF_CMD_DTB:
-        r = decode_dtb(YF_CMDBUF_GRAPH, cmd);
-        break;
-      case YF_CMD_VBUF:
-        r = decode_vbuf(cmd);
-        break;
-      case YF_CMD_IBUF:
-        r = decode_ibuf(cmd);
-        break;
-      case YF_CMD_CLRCOL:
-        r = decode_clrcol(cmd);
-        break;
-      case YF_CMD_CLRDEP:
-        r = decode_clrdep(cmd);
-        break;
-      case YF_CMD_CLRSTEN:
-        r = decode_clrsten(cmd);
-        break;
-      case YF_CMD_DRAW:
-        r = decode_draw(cmd);
-        break;
-      case YF_CMD_CPYBUF:
-        r = decode_cpybuf(YF_CMDBUF_GRAPH, cmd);
-        break;
-      case YF_CMD_CPYIMG:
-        r = decode_cpyimg(YF_CMDBUF_GRAPH, cmd);
-        break;
-      case YF_CMD_SYNC:
-        r = decode_sync(YF_CMDBUF_GRAPH);
-        break;
-      default:
-        assert(0);
+    case YF_CMD_GST:
+      r = decode_gst(cmd);
+      break;
+    case YF_CMD_TGT:
+      r = decode_tgt(cmd);
+      break;
+    case YF_CMD_VPORT:
+      r = decode_vport(cmd);
+      break;
+    case YF_CMD_SCISS:
+      r = decode_sciss(cmd);
+      break;
+    case YF_CMD_DTB:
+      r = decode_dtb(YF_CMDBUF_GRAPH, cmd);
+      break;
+    case YF_CMD_VBUF:
+      r = decode_vbuf(cmd);
+      break;
+    case YF_CMD_IBUF:
+      r = decode_ibuf(cmd);
+      break;
+    case YF_CMD_CLRCOL:
+      r = decode_clrcol(cmd);
+      break;
+    case YF_CMD_CLRDEP:
+      r = decode_clrdep(cmd);
+      break;
+    case YF_CMD_CLRSTEN:
+      r = decode_clrsten(cmd);
+      break;
+    case YF_CMD_DRAW:
+      r = decode_draw(cmd);
+      break;
+    case YF_CMD_CPYBUF:
+      r = decode_cpybuf(YF_CMDBUF_GRAPH, cmd);
+      break;
+    case YF_CMD_CPYIMG:
+      r = decode_cpyimg(YF_CMDBUF_GRAPH, cmd);
+      break;
+    case YF_CMD_SYNC:
+      r = decode_sync(YF_CMDBUF_GRAPH);
+      break;
+    default:
+      assert(0);
     }
     if (r != 0)
       break;
@@ -371,26 +375,26 @@ static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr) {
   for (unsigned i = 0; i < cmdb->cmd_n; ++i) {
     cmd = &cmdb->cmds[i];
     switch (cmd->cmd) {
-      case YF_CMD_CST:
-        r = decode_cst(cmd);
-        break;
-      case YF_CMD_DTB:
-        r = decode_dtb(YF_CMDBUF_COMP, cmd);
-        break;
-      case YF_CMD_DISP:
-        r = decode_disp(cmd);
-        break;
-      case YF_CMD_CPYBUF:
-        r = decode_cpybuf(YF_CMDBUF_COMP, cmd);
-        break;
-      case YF_CMD_CPYIMG:
-        r = decode_cpyimg(YF_CMDBUF_COMP, cmd);
-        break;
-      case YF_CMD_SYNC:
-        r = decode_sync(YF_CMDBUF_COMP);
-        break;
-      default:
-        assert(0);
+    case YF_CMD_CST:
+      r = decode_cst(cmd);
+      break;
+    case YF_CMD_DTB:
+      r = decode_dtb(YF_CMDBUF_COMP, cmd);
+      break;
+    case YF_CMD_DISP:
+      r = decode_disp(cmd);
+      break;
+    case YF_CMD_CPYBUF:
+      r = decode_cpybuf(YF_CMDBUF_COMP, cmd);
+      break;
+    case YF_CMD_CPYIMG:
+      r = decode_cpyimg(YF_CMDBUF_COMP, cmd);
+      break;
+    case YF_CMD_SYNC:
+      r = decode_sync(YF_CMDBUF_COMP);
+      break;
+    default:
+      assert(0);
     }
     if (r != 0)
       break;
@@ -493,34 +497,34 @@ static int decode_sciss(const YF_cmd *cmd) {
 
 static int decode_dtb(int cmdbuf, const YF_cmd *cmd) {
   switch (cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      if (cmd->dtb.index >= yf_getlimits(l_gdec->ctx)->state.dtable_max) {
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return -1;
-      }
-      l_gdec->dtb.pending = 1;
-      l_gdec->dtb.allocs[cmd->dtb.index] = cmd->dtb.alloc_i;
-      if (!l_gdec->dtb.used[cmd->dtb.index]) {
-        l_gdec->dtb.used[cmd->dtb.index] = 1;
-        l_gdec->dtb.n++;
-      }
-      break;
+  case YF_CMDBUF_GRAPH:
+    if (cmd->dtb.index >= yf_getlimits(l_gdec->ctx)->state.dtable_max) {
+      yf_seterr(YF_ERR_INVARG, __func__);
+      return -1;
+    }
+    l_gdec->dtb.pending = 1;
+    l_gdec->dtb.allocs[cmd->dtb.index] = cmd->dtb.alloc_i;
+    if (!l_gdec->dtb.used[cmd->dtb.index]) {
+      l_gdec->dtb.used[cmd->dtb.index] = 1;
+      l_gdec->dtb.n++;
+    }
+    break;
 
-    case YF_CMDBUF_COMP:
-      if (cmd->dtb.index >= yf_getlimits(l_cdec->ctx)->state.dtable_max) {
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return -1;
-      }
-      l_cdec->dtb.pending = 1;
-      l_cdec->dtb.allocs[cmd->dtb.index] = cmd->dtb.alloc_i;
-      if (!l_cdec->dtb.used[cmd->dtb.index]) {
-        l_cdec->dtb.used[cmd->dtb.index] = 1;
-        l_cdec->dtb.n++;
-      }
-      break;
+  case YF_CMDBUF_COMP:
+    if (cmd->dtb.index >= yf_getlimits(l_cdec->ctx)->state.dtable_max) {
+      yf_seterr(YF_ERR_INVARG, __func__);
+      return -1;
+    }
+    l_cdec->dtb.pending = 1;
+    l_cdec->dtb.allocs[cmd->dtb.index] = cmd->dtb.alloc_i;
+    if (!l_cdec->dtb.used[cmd->dtb.index]) {
+      l_cdec->dtb.used[cmd->dtb.index] = 1;
+      l_cdec->dtb.n++;
+    }
+    break;
 
-    default:
-      assert(0);
+  default:
+    assert(0);
   }
   return 0;
 }
@@ -541,15 +545,15 @@ static int decode_vbuf(const YF_cmd *cmd) {
 static int decode_ibuf(const YF_cmd *cmd) {
   VkIndexType idx_type;
   switch (cmd->ibuf.stride) {
-    case sizeof(unsigned):
-      idx_type = VK_INDEX_TYPE_UINT32;
-      break;
-    case sizeof(unsigned short):
-      idx_type = VK_INDEX_TYPE_UINT16;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
-      return -1;
+  case sizeof(unsigned):
+    idx_type = VK_INDEX_TYPE_UINT32;
+    break;
+  case sizeof(unsigned short):
+    idx_type = VK_INDEX_TYPE_UINT16;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return -1;
   }
   l_gdec->gdec |= YF_GDEC_IBUF;
 
@@ -783,18 +787,18 @@ static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd) {
 
   const YF_cmdres *cmdr;
   switch (cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      if (l_gdec->pass != NULL) {
-        vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
-        l_gdec->pass = NULL;
-      }
-      cmdr = l_gdec->cmdr;
-      break;
-    case YF_CMDBUF_COMP:
-      cmdr = l_cdec->cmdr;
-      break;
-    default:
-      assert(0);
+  case YF_CMDBUF_GRAPH:
+    if (l_gdec->pass != NULL) {
+      vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
+      l_gdec->pass = NULL;
+    }
+    cmdr = l_gdec->cmdr;
+    break;
+  case YF_CMDBUF_COMP:
+    cmdr = l_cdec->cmdr;
+    break;
+  default:
+    assert(0);
   }
 
   VkBufferCopy region = {
@@ -818,18 +822,18 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd) {
 
   const YF_cmdres *cmdr;
   switch (cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      if (l_gdec->pass != NULL) {
-        vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
-        l_gdec->pass = NULL;
-      }
-      cmdr = l_gdec->cmdr;
-      break;
-    case YF_CMDBUF_COMP:
-      cmdr = l_cdec->cmdr;
-      break;
-    default:
-      assert(0);
+  case YF_CMDBUF_GRAPH:
+    if (l_gdec->pass != NULL) {
+      vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
+      l_gdec->pass = NULL;
+    }
+    cmdr = l_gdec->cmdr;
+    break;
+  case YF_CMDBUF_COMP:
+    cmdr = l_cdec->cmdr;
+    break;
+  default:
+    assert(0);
   }
 
   if (cmd->cpyimg.dst->layout != VK_IMAGE_LAYOUT_GENERAL)
@@ -872,18 +876,18 @@ static int decode_sync(int cmdbuf) {
   /* TODO: Provide sync. parameters to avoid such dramatic solution. */
   const YF_cmdres *cmdr;
   switch (cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      if (l_gdec->pass != NULL) {
-        vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
-        l_gdec->pass = NULL;
-      }
-      cmdr = l_gdec->cmdr;
-      break;
-    case YF_CMDBUF_COMP:
-      cmdr = l_cdec->cmdr;
-      break;
-    default:
-      assert(0);
+  case YF_CMDBUF_GRAPH:
+    if (l_gdec->pass != NULL) {
+      vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
+      l_gdec->pass = NULL;
+    }
+    cmdr = l_gdec->cmdr;
+    break;
+  case YF_CMDBUF_COMP:
+    cmdr = l_cdec->cmdr;
+    break;
+  default:
+    assert(0);
   }
 
   VkMemoryBarrier mem_bar = {

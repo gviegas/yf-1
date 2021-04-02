@@ -2,7 +2,7 @@
  * YF
  * pass.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_PASS_H
@@ -37,14 +37,28 @@ typedef struct YF_target_o {
 
 /* Converts from a load op value. */
 #define YF_LOADOP_FROM(op, to) do { \
-  if (op == YF_LOADOP_UNDEF) to = VK_ATTACHMENT_LOAD_OP_DONT_CARE; \
-  else if (op == YF_LOADOP_LOAD) to = VK_ATTACHMENT_LOAD_OP_LOAD; \
-  else to = INT_MAX; } while (0)
+  switch (op) { \
+  case YF_LOADOP_UNDEF: \
+    to = VK_ATTACHMENT_LOAD_OP_DONT_CARE; \
+    break; \
+  case YF_LOADOP_LOAD: \
+    to = VK_ATTACHMENT_LOAD_OP_LOAD; \
+    break; \
+  default: \
+    to = INT_MAX; \
+  } } while (0)
 
 /* Converts from a store op value. */
 #define YF_STOREOP_FROM(op, to) do { \
-  if (op == YF_STOREOP_UNDEF) to = VK_ATTACHMENT_STORE_OP_DONT_CARE; \
-  else if (op == YF_STOREOP_STORE) to = VK_ATTACHMENT_STORE_OP_STORE; \
-  else to = INT_MAX; } while (0)
+  switch (op) { \
+  case YF_STOREOP_UNDEF: \
+    to = VK_ATTACHMENT_STORE_OP_DONT_CARE; \
+    break; \
+  case YF_STOREOP_STORE: \
+    to = VK_ATTACHMENT_STORE_OP_STORE; \
+    break; \
+  default: \
+    to = INT_MAX; \
+  } } while (0)
 
 #endif /* YF_PASS_H */

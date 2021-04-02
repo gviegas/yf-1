@@ -27,51 +27,51 @@ typedef struct {
   YF_cmdres cmdr;
   void (*callb)(int, void *);
   void *arg;
-} L_entry;
+} T_entry;
 
 /* Type defining queue variables. */
 typedef struct {
-  L_entry *entries;
+  T_entry *entries;
   VkCommandBuffer *buffers;
   unsigned n;
   VkSubmitInfo subm_info;
   VkQueue queue;
   VkFence fence;
-} L_qvars;
+} T_qvars;
 
 /* Type defining a command execution queue. */
 typedef struct {
   int q1_i;
   int q2_i;
-  L_qvars *q1;
-  L_qvars *q2;
+  T_qvars *q1;
+  T_qvars *q2;
   unsigned cap;
-} L_cmde;
+} T_cmde;
 
 /* Type defining execution queues stored in a context. */
 typedef struct {
-  L_cmde *cmde;
-  L_cmde *prio;
+  T_cmde *cmde;
+  T_cmde *prio;
   YF_list fences;
-} L_priv;
+} T_priv;
 
 /* Initializes a pre-allocated queue. */
-static int init_queue(YF_context ctx, L_cmde *cmde);
+static int init_queue(YF_context ctx, T_cmde *cmde);
 
 /* Enqueues commands in a queue. */
-static int enqueue_res(L_cmde *cmde, const YF_cmdres *cmdr,
+static int enqueue_res(T_cmde *cmde, const YF_cmdres *cmdr,
     void (*callb)(int res, void *arg), void *arg);
 
 /* Executes a command queue. */
-static int exec_queue(YF_context ctx, L_cmde *cmde);
+static int exec_queue(YF_context ctx, T_cmde *cmde);
 
 /* Resets a command queue. */
-static void reset_queue(YF_context ctx, L_cmde *cmde);
+static void reset_queue(YF_context ctx, T_cmde *cmde);
 
 /* Deinitializes and deallocates a queue. */
-static void deinit_queue(YF_context ctx, L_cmde *cmde);
+static void deinit_queue(YF_context ctx, T_cmde *cmde);
 
-/* Destroys the 'L_priv' data stored in a given context. */
+/* Destroys the 'T_priv' data stored in a given context. */
 static void destroy_priv(YF_context ctx);
 
 int yf_cmdexec_create(YF_context ctx, unsigned capacity) {
@@ -80,13 +80,13 @@ int yf_cmdexec_create(YF_context ctx, unsigned capacity) {
   if (ctx->cmde.priv != NULL)
     destroy_priv(ctx);
 
-  L_priv *priv = calloc(1, sizeof(L_priv));
+  T_priv *priv = calloc(1, sizeof(T_priv));
   if (priv == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  priv->cmde = calloc(1, sizeof(L_cmde));
-  priv->prio = calloc(1, sizeof(L_cmde));
+  priv->cmde = calloc(1, sizeof(T_cmde));
+  priv->prio = calloc(1, sizeof(T_cmde));
   priv->fences = yf_list_init(NULL);
   if (priv->cmde == NULL || priv->prio == NULL || priv->fences == NULL) {
     if (priv->fences != NULL) {
@@ -125,24 +125,24 @@ int yf_cmdexec_enqueue(YF_context ctx, const YF_cmdres *cmdr,
   assert(cmdr != NULL);
   assert(ctx->cmde.priv != NULL);
 
-  return enqueue_res(((L_priv *)ctx->cmde.priv)->cmde, cmdr, callb, arg);
+  return enqueue_res(((T_priv *)ctx->cmde.priv)->cmde, cmdr, callb, arg);
 }
 
 int yf_cmdexec_exec(YF_context ctx) {
   assert(ctx != NULL);
 
   if (yf_cmdexec_execprio(ctx) != 0) {
-    reset_queue(ctx, ((L_priv *)ctx->cmde.priv)->cmde);
+    reset_queue(ctx, ((T_priv *)ctx->cmde.priv)->cmde);
     return -1;
   }
-  return exec_queue(ctx, ((L_priv *)ctx->cmde.priv)->cmde);
+  return exec_queue(ctx, ((T_priv *)ctx->cmde.priv)->cmde);
 }
 
 int yf_cmdexec_execprio(YF_context ctx) {
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
-  L_priv *priv = ctx->cmde.priv;
+  T_priv *priv = ctx->cmde.priv;
   int r = 0;
 
   const size_t fence_n = yf_list_getlen(priv->fences);
@@ -190,25 +190,25 @@ void yf_cmdexec_reset(YF_context ctx) {
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
-  reset_queue(ctx, ((L_priv *)ctx->cmde.priv)->cmde);
+  reset_queue(ctx, ((T_priv *)ctx->cmde.priv)->cmde);
 }
 
 void yf_cmdexec_resetprio(YF_context ctx) {
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
-  reset_queue(ctx, ((L_priv *)ctx->cmde.priv)->prio);
+  reset_queue(ctx, ((T_priv *)ctx->cmde.priv)->prio);
 }
 
 void yf_cmdexec_waitfor(YF_context ctx, VkFence fence) {
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
-  YF_list fences = ((L_priv *)ctx->cmde.priv)->fences;
+  YF_list fences = ((T_priv *)ctx->cmde.priv)->fences;
   yf_list_insert(fences, fence);
 }
 
-static int init_queue(YF_context ctx, L_cmde *cmde) {
+static int init_queue(YF_context ctx, T_cmde *cmde) {
   assert(ctx != NULL);
   assert(cmde != NULL);
   assert(cmde->cap > 0);
@@ -228,15 +228,15 @@ static int init_queue(YF_context ctx, L_cmde *cmde) {
     ++queue_n;
   }
 
-  L_qvars **qvs[2] = {&cmde->q1, &cmde->q2};
+  T_qvars **qvs[2] = {&cmde->q1, &cmde->q2};
   for (unsigned i = 0; i < queue_n; ++i) {
-    L_qvars *qv = malloc(sizeof(L_qvars));
+    T_qvars *qv = malloc(sizeof(T_qvars));
     if (qv == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       deinit_queue(ctx, cmde);
       return -1;
     }
-    qv->entries = malloc(sizeof(L_entry) * cmde->cap);
+    qv->entries = malloc(sizeof(T_entry) * cmde->cap);
     if (qv->entries == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       deinit_queue(ctx, cmde);
@@ -279,13 +279,13 @@ static int init_queue(YF_context ctx, L_cmde *cmde) {
   return 0;
 }
 
-static int enqueue_res(L_cmde *cmde, const YF_cmdres *cmdr,
+static int enqueue_res(T_cmde *cmde, const YF_cmdres *cmdr,
     void (*callb)(int res, void *arg), void *arg)
 {
   assert(cmde != NULL);
   assert(cmdr != NULL);
 
-  L_qvars *qv = NULL;
+  T_qvars *qv = NULL;
   if (cmdr->queue_i == cmde->q1_i)
     qv = cmde->q1;
   else if (cmdr->queue_i == cmde->q2_i)
@@ -305,7 +305,7 @@ static int enqueue_res(L_cmde *cmde, const YF_cmdres *cmdr,
   return 0;
 }
 
-static int exec_queue(YF_context ctx, L_cmde *cmde) {
+static int exec_queue(YF_context ctx, T_cmde *cmde) {
   assert(ctx != NULL);
   assert(cmde != NULL);
 
@@ -313,7 +313,7 @@ static int exec_queue(YF_context ctx, L_cmde *cmde) {
      command buffers instead of multiple submissions. */
 
   int r = 0;
-  L_qvars *qvs[2] = {cmde->q1, cmde->q2};
+  T_qvars *qvs[2] = {cmde->q1, cmde->q2};
   VkFence fences[2] = {NULL, NULL};
   unsigned fence_n = 0;
   VkResult res;
@@ -355,11 +355,11 @@ static int exec_queue(YF_context ctx, L_cmde *cmde) {
   return r;
 }
 
-static void reset_queue(YF_context ctx, L_cmde *cmde) {
+static void reset_queue(YF_context ctx, T_cmde *cmde) {
   assert(ctx != NULL);
   assert(cmde != NULL);
 
-  L_qvars *qvs[2] = {cmde->q1, cmde->q2};
+  T_qvars *qvs[2] = {cmde->q1, cmde->q2};
   for (unsigned i = 0; i < 2; ++i) {
     if (qvs[i] == NULL || qvs[i]->n < 1)
       continue;
@@ -372,14 +372,14 @@ static void reset_queue(YF_context ctx, L_cmde *cmde) {
   }
 }
 
-static void deinit_queue(YF_context ctx, L_cmde *cmde) {
+static void deinit_queue(YF_context ctx, T_cmde *cmde) {
   assert(ctx != NULL);
 
   if (cmde == NULL)
     return;
 
   reset_queue(ctx, cmde);
-  L_qvars *qvs[2] = {cmde->q1, cmde->q2};
+  T_qvars *qvs[2] = {cmde->q1, cmde->q2};
   for (unsigned i = 0; i < 2; ++i) {
     if (qvs[i] != NULL) {
       vkDestroyFence(ctx->device, qvs[i]->fence, NULL);
@@ -397,7 +397,7 @@ static void destroy_priv(YF_context ctx) {
   if (ctx->cmde.priv == NULL)
     return;
 
-  L_priv *priv = ctx->cmde.priv;
+  T_priv *priv = ctx->cmde.priv;
   deinit_queue(ctx, priv->cmde);
   deinit_queue(ctx, priv->prio);
   yf_list_deinit(priv->fences);

@@ -25,34 +25,34 @@ typedef struct {
   VkCommandBuffer buffer;
   int queue_i;
   int in_use;
-} L_entry;
+} T_entry;
 
 /* Type defining a command pool. */
 typedef struct {
-  L_entry *entries;
+  T_entry *entries;
   unsigned last_i;
   unsigned curr_n;
   unsigned cap;
-} L_cmdp;
+} T_cmdp;
 
 /* Type defining command pool variables stored in a context. */
 typedef struct {
-  L_cmdp *cmdp;
+  T_cmdp *cmdp;
   YF_cmdres prio[2];
   unsigned prio_n;
   YF_list callbs;
-} L_priv;
+} T_priv;
 
 /* Type storing a callback from priority resource acquisition. */
 typedef struct {
   void (*callb)(int, void *);
   void *arg;
-} L_callb;
+} T_callb;
 
 /* Initializes the pool entries. */
-static int init_entries(YF_context ctx, L_cmdp *cmdp);
+static int init_entries(YF_context ctx, T_cmdp *cmdp);
 
-/* Destroys the 'L_priv' data stored in a given context. */
+/* Destroys the 'T_priv' data stored in a given context. */
 static void destroy_priv(YF_context ctx);
 
 int yf_cmdpool_create(YF_context ctx, unsigned capacity) {
@@ -61,12 +61,12 @@ int yf_cmdpool_create(YF_context ctx, unsigned capacity) {
   if (ctx->cmdp.priv != NULL)
     destroy_priv(ctx);
 
-  L_priv *priv = calloc(1, sizeof(L_priv));
+  T_priv *priv = calloc(1, sizeof(T_priv));
   if (priv == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  priv->cmdp = calloc(1, sizeof(L_cmdp));
+  priv->cmdp = calloc(1, sizeof(T_cmdp));
   if (priv->cmdp == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     free(priv);
@@ -103,7 +103,7 @@ int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdres *cmdr) {
   assert(cmdr != NULL);
   assert(ctx->cmdp.priv != NULL);
 
-  L_cmdp *cmdp = ((L_priv *)ctx->cmdp.priv)->cmdp;
+  T_cmdp *cmdp = ((T_priv *)ctx->cmdp.priv)->cmdp;
   if (cmdp->curr_n == cmdp->cap) {
     yf_seterr(YF_ERR_INUSE, __func__);
     return -1;
@@ -111,22 +111,22 @@ int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdres *cmdr) {
 
   int queue_i = -1;
   switch (cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      queue_i = ctx->graph_queue_i;
-      break;
-    case YF_CMDBUF_COMP:
-      queue_i = ctx->comp_queue_i;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
-      return -1;
+  case YF_CMDBUF_GRAPH:
+    queue_i = ctx->graph_queue_i;
+    break;
+  case YF_CMDBUF_COMP:
+    queue_i = ctx->comp_queue_i;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return -1;
   }
   if (queue_i == -1) {
     yf_seterr(YF_ERR_UNSUP, __func__);
     return -1;
   }
 
-  L_entry *e = NULL;
+  T_entry *e = NULL;
   for (unsigned i = 0; i < cmdp->cap; ++i) {
     e = &cmdp->entries[cmdp->last_i];
     if (!e->in_use && e->queue_i == queue_i) {
@@ -156,7 +156,7 @@ void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr) {
   if (cmdr->res_id < 0)
     return;
 
-  L_priv *priv = ctx->cmdp.priv;
+  T_priv *priv = ctx->cmdp.priv;
   assert(priv->cmdp->entries[cmdr->res_id].in_use);
 
   priv->cmdp->entries[cmdr->res_id].in_use = 0;
@@ -181,7 +181,7 @@ void yf_cmdpool_reset(YF_context ctx, YF_cmdres *cmdr) {
   if (cmdr->res_id < 0)
     return;
 
-  L_priv *priv = ctx->cmdp.priv;
+  T_priv *priv = ctx->cmdp.priv;
   /* XXX: This assumes that every resource has an exclusive pool. */
   vkResetCommandPool(ctx->device, priv->cmdp->entries[cmdr->res_id].pool,
       VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
@@ -195,18 +195,18 @@ const YF_cmdres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
   assert(ctx != NULL);
   assert(ctx->cmdp.priv != NULL);
 
-  L_priv *priv = ctx->cmdp.priv;
+  T_priv *priv = ctx->cmdp.priv;
   int queue_i = -1;
   switch (cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      queue_i = ctx->graph_queue_i;
-      break;
-    case YF_CMDBUF_COMP:
-      queue_i = ctx->comp_queue_i;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
-      return NULL;
+  case YF_CMDBUF_GRAPH:
+    queue_i = ctx->graph_queue_i;
+    break;
+  case YF_CMDBUF_COMP:
+    queue_i = ctx->comp_queue_i;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return NULL;
   }
   if (queue_i == -1) {
     yf_seterr(YF_ERR_UNSUP, __func__);
@@ -240,7 +240,7 @@ const YF_cmdres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
   }
 
   if (callb != NULL) {
-    L_callb *e = malloc(sizeof(L_callb));
+    T_callb *e = malloc(sizeof(T_callb));
     if (e == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       return NULL;
@@ -262,7 +262,7 @@ void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdres **cmdr_list,
   assert(cmdr_n != NULL);
   assert(ctx->cmdp.priv != NULL);
 
-  L_priv *priv = ctx->cmdp.priv;
+  T_priv *priv = ctx->cmdp.priv;
   if (priv->prio_n == 0) {
     *cmdr_list = NULL;
     *cmdr_n = 0;
@@ -276,7 +276,7 @@ void yf_cmdpool_notifyprio(YF_context ctx, int result) {
   assert(ctx != NULL);
   assert(ctx->cmdp.priv != NULL);
 
-  L_priv *priv = ctx->cmdp.priv;
+  T_priv *priv = ctx->cmdp.priv;
   for (unsigned i = 0; i < priv->prio_n; ++i)
     yf_cmdpool_yield(ctx, priv->prio+i);
 
@@ -284,7 +284,7 @@ void yf_cmdpool_notifyprio(YF_context ctx, int result) {
     return;
 
   YF_iter it = YF_NILIT;
-  L_callb *callb = NULL;
+  T_callb *callb = NULL;
   do {
     callb = yf_list_next(priv->callbs, &it);
     if (YF_IT_ISNIL(it))
@@ -295,11 +295,11 @@ void yf_cmdpool_notifyprio(YF_context ctx, int result) {
   yf_list_clear(priv->callbs);
 }
 
-static int init_entries(YF_context ctx, L_cmdp *cmdp) {
+static int init_entries(YF_context ctx, T_cmdp *cmdp) {
   assert(ctx != NULL);
   assert(cmdp != NULL);
 
-  cmdp->entries = calloc(cmdp->cap, sizeof(L_entry));
+  cmdp->entries = calloc(cmdp->cap, sizeof(T_entry));
   if (cmdp->entries == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
@@ -357,7 +357,7 @@ static void destroy_priv(YF_context ctx) {
   if (ctx->cmdp.priv == NULL)
     return;
 
-  L_priv *priv = ctx->cmdp.priv;
+  T_priv *priv = ctx->cmdp.priv;
   YF_iter it = YF_NILIT;
   do
     free(yf_list_next(priv->callbs, &it));

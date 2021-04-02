@@ -2,7 +2,7 @@
  * YF
  * cmdbuf.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -73,18 +73,18 @@ void yf_cmdbuf_setgstate(YF_cmdbuf cmdb, YF_gstate gst) {
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_GST;
-      cmdb->cmds[i].gst.gst = gst;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_GRAPH:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_GST;
+    cmdb->cmds[i].gst.gst = gst;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 
@@ -97,18 +97,18 @@ void yf_cmdbuf_setcstate(YF_cmdbuf cmdb, YF_cstate cst) {
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_COMP:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_CST;
-      cmdb->cmds[i].cst.cst = cst;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_COMP:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_CST;
+    cmdb->cmds[i].cst.cst = cst;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 
@@ -120,18 +120,18 @@ void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt) {
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_TGT;
-      cmdb->cmds[i].tgt.tgt = tgt;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_GRAPH:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_TGT;
+    cmdb->cmds[i].tgt.tgt = tgt;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 
@@ -146,19 +146,19 @@ void yf_cmdbuf_setvport(YF_cmdbuf cmdb, unsigned index,
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_VPORT;
-      cmdb->cmds[i].vport.index = index;
-      cmdb->cmds[i].vport.vport = *vport;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_GRAPH:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_VPORT;
+    cmdb->cmds[i].vport.index = index;
+    cmdb->cmds[i].vport.vport = *vport;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 
@@ -170,19 +170,19 @@ void yf_cmdbuf_setsciss(YF_cmdbuf cmdb, unsigned index, YF_rect rect) {
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_SCISS;
-      cmdb->cmds[i].sciss.index = index;
-      cmdb->cmds[i].sciss.rect = rect;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_GRAPH:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_SCISS;
+    cmdb->cmds[i].sciss.index = index;
+    cmdb->cmds[i].sciss.rect = rect;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 
@@ -213,20 +213,20 @@ void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_VBUF;
-      cmdb->cmds[i].vbuf.index = index;
-      cmdb->cmds[i].vbuf.buf = buf;
-      cmdb->cmds[i].vbuf.offset = offset;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_GRAPH:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_VBUF;
+    cmdb->cmds[i].vbuf.index = index;
+    cmdb->cmds[i].vbuf.buf = buf;
+    cmdb->cmds[i].vbuf.offset = offset;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 
@@ -241,20 +241,20 @@ void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset,
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_IBUF;
-      cmdb->cmds[i].ibuf.buf = buf;
-      cmdb->cmds[i].ibuf.offset = offset;
-      cmdb->cmds[i].ibuf.stride = stride;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_GRAPH:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_IBUF;
+    cmdb->cmds[i].ibuf.buf = buf;
+    cmdb->cmds[i].ibuf.offset = offset;
+    cmdb->cmds[i].ibuf.stride = stride;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 
@@ -266,19 +266,19 @@ void yf_cmdbuf_clearcolor(YF_cmdbuf cmdb, unsigned index, YF_color value) {
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_CLRCOL;
-      cmdb->cmds[i].clrcol.index = index;
-      cmdb->cmds[i].clrcol.value = value;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_GRAPH:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_CLRCOL;
+    cmdb->cmds[i].clrcol.index = index;
+    cmdb->cmds[i].clrcol.value = value;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 
@@ -290,18 +290,18 @@ void yf_cmdbuf_cleardepth(YF_cmdbuf cmdb, float value) {
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_CLRDEP;
-      cmdb->cmds[i].clrdep.value = value;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_GRAPH:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_CLRDEP;
+    cmdb->cmds[i].clrdep.value = value;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 
@@ -313,18 +313,18 @@ void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value) {
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_CLRSTEN;
-      cmdb->cmds[i].clrsten.value = value;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_GRAPH:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_CLRSTEN;
+    cmdb->cmds[i].clrsten.value = value;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 
@@ -338,23 +338,23 @@ void yf_cmdbuf_draw(YF_cmdbuf cmdb, int indexed, unsigned index_base,
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_DRAW;
-      cmdb->cmds[i].draw.indexed = indexed;
-      cmdb->cmds[i].draw.index_base = index_base;
-      cmdb->cmds[i].draw.vert_n = vert_n;
-      cmdb->cmds[i].draw.inst_n = inst_n;
-      cmdb->cmds[i].draw.vert_id = vert_id;
-      cmdb->cmds[i].draw.inst_id = inst_id;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_GRAPH:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_DRAW;
+    cmdb->cmds[i].draw.indexed = indexed;
+    cmdb->cmds[i].draw.index_base = index_base;
+    cmdb->cmds[i].draw.vert_n = vert_n;
+    cmdb->cmds[i].draw.inst_n = inst_n;
+    cmdb->cmds[i].draw.vert_id = vert_id;
+    cmdb->cmds[i].draw.inst_id = inst_id;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 
@@ -366,18 +366,18 @@ void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim) {
 
   unsigned i;
   switch (cmdb->cmdbuf) {
-    case YF_CMDBUF_COMP:
-      i = cmdb->cmd_n++;
-      if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
-        cmdb->invalid = 1;
-        return;
-      }
-      cmdb->cmds[i].cmd = YF_CMD_DISP;
-      cmdb->cmds[i].disp.dim = dim;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+  case YF_CMDBUF_COMP:
+    i = cmdb->cmd_n++;
+    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
       cmdb->invalid = 1;
+      return;
+    }
+    cmdb->cmds[i].cmd = YF_CMD_DISP;
+    cmdb->cmds[i].disp.dim = dim;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    cmdb->invalid = 1;
   }
 }
 

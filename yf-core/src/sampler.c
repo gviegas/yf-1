@@ -47,9 +47,9 @@ VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *samp) {
     assert(info.mipmapMode != INT_MAX);
 
   } else {
-    info.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    info.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    info.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     info.magFilter = VK_FILTER_NEAREST;
     info.minFilter = VK_FILTER_NEAREST;
     info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;

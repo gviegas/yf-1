@@ -100,42 +100,42 @@ int yf_wsi_next(YF_wsi wsi, int nonblocking) {
       timeout, VK_NULL_HANDLE, fence, &img_i);
 
   switch (res) {
-    case VK_SUCCESS:
+  case VK_SUCCESS:
 /*
-      if (sem_i != img_i) {
-        VkSemaphore tmp = wsi->imgs_sem[sem_i];
-        wsi->imgs_sem[sem_i] = wsi->imgs_sem[img_i];
-        wsi->imgs_sem[img_i] = tmp;
-      }
+    if (sem_i != img_i) {
+      VkSemaphore tmp = wsi->imgs_sem[sem_i];
+      wsi->imgs_sem[sem_i] = wsi->imgs_sem[img_i];
+      wsi->imgs_sem[img_i] = tmp;
+    }
 */
-      if (fence_i != img_i) {
-        VkFence tmp = wsi->imgs_fence[fence_i];
-        wsi->imgs_fence[fence_i] = wsi->imgs_fence[img_i];
-        wsi->imgs_fence[img_i] = tmp;
-      }
-      yf_cmdexec_waitfor(wsi->ctx, wsi->imgs_fence[img_i]);
-      wsi->imgs_acq[img_i] = 1;
-      break;
+    if (fence_i != img_i) {
+      VkFence tmp = wsi->imgs_fence[fence_i];
+      wsi->imgs_fence[fence_i] = wsi->imgs_fence[img_i];
+      wsi->imgs_fence[img_i] = tmp;
+    }
+    yf_cmdexec_waitfor(wsi->ctx, wsi->imgs_fence[img_i]);
+    wsi->imgs_acq[img_i] = 1;
+    break;
 
-    case VK_TIMEOUT:
-    case VK_NOT_READY:
-      yf_seterr(YF_ERR_INUSE, __func__);
-      return -1;
+  case VK_TIMEOUT:
+  case VK_NOT_READY:
+    yf_seterr(YF_ERR_INUSE, __func__);
+    return -1;
 
-    case VK_SUBOPTIMAL_KHR:
-    case VK_ERROR_OUT_OF_DATE_KHR:
-      /* TODO: Notify & recreate swapchain. */
-      yf_seterr(YF_ERR_INVWIN, __func__);
-      return -1;
+  case VK_SUBOPTIMAL_KHR:
+  case VK_ERROR_OUT_OF_DATE_KHR:
+    /* TODO: Notify & recreate swapchain. */
+    yf_seterr(YF_ERR_INVWIN, __func__);
+    return -1;
 
-    case VK_ERROR_SURFACE_LOST_KHR:
-      /* TODO: Notify & (try to) recreate surface and swapchain. */
-      yf_seterr(YF_ERR_DEVGEN, __func__);
-      return -1;
+  case VK_ERROR_SURFACE_LOST_KHR:
+    /* TODO: Notify & (try to) recreate surface and swapchain. */
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    return -1;
 
-    default:
-      yf_seterr(YF_ERR_DEVGEN, __func__);
-      return -1;
+  default:
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    return -1;
   }
 
   return img_i;
@@ -199,23 +199,23 @@ int yf_wsi_present(YF_wsi wsi, unsigned index) {
     return -1;
 
   switch (res) {
-    case VK_SUCCESS:
-      break;
+  case VK_SUCCESS:
+    break;
 
-    case VK_SUBOPTIMAL_KHR:
-    case VK_ERROR_OUT_OF_DATE_KHR:
-      /* TODO: Notify & recreate swapchain. */
-      yf_seterr(YF_ERR_INVWIN, __func__);
-      return -1;
+  case VK_SUBOPTIMAL_KHR:
+  case VK_ERROR_OUT_OF_DATE_KHR:
+    /* TODO: Notify & recreate swapchain. */
+    yf_seterr(YF_ERR_INVWIN, __func__);
+    return -1;
 
-    case VK_ERROR_SURFACE_LOST_KHR:
-      /* TODO: Notify & (try to) recreate surface and swapchain. */
-      yf_seterr(YF_ERR_DEVGEN, __func__);
-      return -1;
+  case VK_ERROR_SURFACE_LOST_KHR:
+    /* TODO: Notify & (try to) recreate surface and swapchain. */
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    return -1;
 
-    default:
-      yf_seterr(YF_ERR_DEVGEN, __func__);
-      return -1;
+  default:
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    return -1;
   }
 
   return 0;
@@ -250,16 +250,16 @@ int yf_canpresent(VkPhysicalDevice phy_dev, int queue_i) {
 # if defined(VK_USE_PLATFORM_XCB_KHR)
   /* either wayland or xcb */
   switch (plat) {
-    case YF_PLATFORM_WAYLAND:
-      /* TODO */
-      assert(0);
-    case YF_PLATFORM_XCB:
-      r = vkGetPhysicalDeviceXcbPresentationSupportKHR(phy_dev, queue_i,
-          yf_getconnxcb(), yf_getvisualxcb());
-      break;
-    default:
-      yf_seterr(YF_ERR_OTHER, __func__);
-      r = VK_FALSE;
+  case YF_PLATFORM_WAYLAND:
+    /* TODO */
+    assert(0);
+  case YF_PLATFORM_XCB:
+    r = vkGetPhysicalDeviceXcbPresentationSupportKHR(phy_dev, queue_i,
+        yf_getconnxcb(), yf_getvisualxcb());
+    break;
+  default:
+    yf_seterr(YF_ERR_OTHER, __func__);
+    r = VK_FALSE;
   }
 # else
   /* wayland */
@@ -299,27 +299,27 @@ static int init_surface(YF_wsi wsi) {
 # if defined(VK_USE_PLATFORM_XCB_KHR)
   /* either wayland or xcb */
   switch (plat) {
-    case YF_PLATFORM_WAYLAND:
-      /* TODO */
-      assert(0);
-    case YF_PLATFORM_XCB: {
-      VkXcbSurfaceCreateInfoKHR info = {
-        .sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
-        .pNext = NULL,
-        .flags = 0,
-        .connection = yf_getconnxcb(),
-        .window = yf_getwindowxcb(wsi->win),
-      };
-      res = vkCreateXcbSurfaceKHR(wsi->ctx->instance, &info, NULL,
-          &wsi->surface);
-      if (res != VK_SUCCESS) {
-        yf_seterr(YF_ERR_DEVGEN, __func__);
-        return -1;
-      }
-    } break;
-    default:
-      yf_seterr(YF_ERR_OTHER, __func__);
+  case YF_PLATFORM_WAYLAND:
+    /* TODO */
+    assert(0);
+  case YF_PLATFORM_XCB: {
+    VkXcbSurfaceCreateInfoKHR info = {
+      .sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR,
+      .pNext = NULL,
+      .flags = 0,
+      .connection = yf_getconnxcb(),
+      .window = yf_getwindowxcb(wsi->win),
+    };
+    res = vkCreateXcbSurfaceKHR(wsi->ctx->instance, &info, NULL,
+        &wsi->surface);
+    if (res != VK_SUCCESS) {
+      yf_seterr(YF_ERR_DEVGEN, __func__);
       return -1;
+    }
+  } break;
+  default:
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
   }
 # else
   /* wayland */
