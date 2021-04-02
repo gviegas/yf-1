@@ -29,7 +29,7 @@ struct YF_font_o {
 typedef struct {
   uint16_t key;
   YF_glyph val;
-} L_kv_glyph;
+} T_kv_glyph;
 
 /* Glyph hashset functions. */
 static size_t hash_glyph(const void *x);
@@ -40,17 +40,17 @@ YF_font yf_font_init(int filetype, const char *pathname) {
   YF_fontdt data = {0};
 
   switch (filetype) {
-    case YF_FILETYPE_INTERNAL:
-      /* TODO */
-      assert(0);
+  case YF_FILETYPE_INTERNAL:
+    /* TODO */
+    assert(0);
+    return NULL;
+  case YF_FILETYPE_TTF:
+    if (yf_loadsfnt(pathname, &data) != 0)
       return NULL;
-    case YF_FILETYPE_TTF:
-      if (yf_loadsfnt(pathname, &data) != 0)
-        return NULL;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
-      return NULL;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return NULL;
   }
 
   YF_font font = yf_font_initdt(&data);
@@ -112,24 +112,24 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
   size_t chr_i = 0;
   YF_off2 off = {0};
   YF_dim2 dim = {0};
-  L_kv_glyph key = {0};
+  T_kv_glyph key = {0};
   int16_t y_min, y_max;
   font->data.metrics(font->data.font, pt, dpi, NULL, &y_min, NULL, &y_max);
 
   for (size_t i = 0; i < len; ++i) {
     /* TODO: Other special characters. */
     switch (str[i]) {
-      case '\n':
-        dim.height += y_max-y_min;
-        off.x = 0;
-        off.y = dim.height;
-        continue;
-      default:
-        break;
+    case '\n':
+      dim.height += y_max-y_min;
+      off.x = 0;
+      off.y = dim.height;
+      continue;
+    default:
+      break;
     }
 
     key.key = str[i];
-    L_kv_glyph *glyph = yf_hashset_search(font->glyphs, &key);
+    T_kv_glyph *glyph = yf_hashset_search(font->glyphs, &key);
 
     if (glyph == NULL) {
       glyph = malloc(sizeof *glyph);
@@ -179,17 +179,17 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
 
   YF_texdt data;
   data.dim = dim;
-  switch (((L_kv_glyph *)yf_hashset_next(font->glyphs, NULL))->val.bpp) {
-    case 8:
-      data.pixfmt = YF_PIXFMT_R8UNORM;
-      data.data = calloc(1, dim.width * dim.height);
-      break;
-    case 16:
-      data.pixfmt = YF_PIXFMT_R16UNORM;
-      data.data = calloc(1, (dim.width * dim.height) << 1);
-      break;
-    default:
-      assert(0);
+  switch (((T_kv_glyph *)yf_hashset_next(font->glyphs, NULL))->val.bpp) {
+  case 8:
+    data.pixfmt = YF_PIXFMT_R8UNORM;
+    data.data = calloc(1, dim.width * dim.height);
+    break;
+  case 16:
+    data.pixfmt = YF_PIXFMT_R16UNORM;
+    data.data = calloc(1, (dim.width * dim.height) << 1);
+    break;
+  default:
+    assert(0);
   }
 
   if (data.data == NULL) {
@@ -205,7 +205,7 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
   const YF_off2 bias = {rz->off.x, rz->off.y + off.y};
   for (size_t i = 0; i < chr_i; ++i) {
     key.key = chrs[i].code;
-    L_kv_glyph *glyph = yf_hashset_search(font->glyphs, &key);
+    T_kv_glyph *glyph = yf_hashset_search(font->glyphs, &key);
 
     if (glyph->val.bitmap.u8 == NULL)
       continue;
@@ -230,15 +230,15 @@ void yf_font_yieldrz(YF_font font, YF_fontrz *rz) {
 }
 
 static size_t hash_glyph(const void *x) {
-  return ((L_kv_glyph *)x)->key ^ 21221;
+  return ((T_kv_glyph *)x)->key ^ 21221;
 }
 
 static int cmp_glyph(const void *a, const void *b) {
-  return ((L_kv_glyph *)a)->key - ((L_kv_glyph *)b)->key;
+  return ((T_kv_glyph *)a)->key - ((T_kv_glyph *)b)->key;
 }
 
 static int deinit_glyph(void *val, YF_UNUSED void *arg) {
-  free(((L_kv_glyph *)val)->val.bitmap.u8);
+  free(((T_kv_glyph *)val)->val.bitmap.u8);
   free(val);
   return 0;
 }

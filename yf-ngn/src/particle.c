@@ -36,14 +36,14 @@ typedef struct {
   YF_float death;
   YF_float alpha;
   YF_vec3 vel;
-} L_pstate;
+} T_pstate;
 
 struct YF_particle_o {
   YF_node node;
   unsigned count;
   YF_psys sys;
   YF_vpart *pts;
-  L_pstate *sts;
+  T_pstate *sts;
   YF_mesh mesh;
   YF_texture tex;
   /* TODO: Other particle system properties. */
@@ -134,88 +134,88 @@ void yf_particle_simulate(YF_particle part, double tm) {
   const YF_float dt = tm;
   const YF_psys *sys = &part->sys;
   YF_vpart *pt;
-  L_pstate *st;
+  T_pstate *st;
 
   for (unsigned i = 0; i < part->count; ++i) {
     pt = part->pts+i;
     st = part->sts+i;
 
     switch (st->pstate) {
-      case YF_PSTATE_UNSET:
-        pt->pos[0] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
-        pt->pos[1] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
-        pt->pos[2] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
-        pt->clr[0] = YF_LERP(sys->color.min[0], sys->color.max[0], YF_NRND);
-        pt->clr[1] = YF_LERP(sys->color.min[1], sys->color.max[1], YF_NRND);
-        pt->clr[2] = YF_LERP(sys->color.min[2], sys->color.max[2], YF_NRND);
+    case YF_PSTATE_UNSET:
+      pt->pos[0] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
+      pt->pos[1] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
+      pt->pos[2] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
+      pt->clr[0] = YF_LERP(sys->color.min[0], sys->color.max[0], YF_NRND);
+      pt->clr[1] = YF_LERP(sys->color.min[1], sys->color.max[1], YF_NRND);
+      pt->clr[2] = YF_LERP(sys->color.min[2], sys->color.max[2], YF_NRND);
+      pt->clr[3] = 0.0;
+
+      st->tm = 0.0;
+      st->alpha = YF_LERP(sys->color.min[3], sys->color.max[3], YF_NRND);
+
+      st->dur = YF_LERP(sys->lifetime.duration_min,
+          sys->lifetime.duration_max, YF_NRND);
+      st->spawn = YF_LERP(sys->lifetime.spawn_min,
+          sys->lifetime.spawn_max, YF_NRND);
+      st->death = YF_LERP(sys->lifetime.death_min,
+          sys->lifetime.death_max, YF_NRND);
+
+      st->vel[0] = YF_LERP(sys->velocity.min[0], sys->velocity.max[0],
+          YF_NRND);
+      st->vel[1] = YF_LERP(sys->velocity.min[1], sys->velocity.max[1],
+          YF_NRND);
+      st->vel[2] = YF_LERP(sys->velocity.min[2], sys->velocity.max[2],
+          YF_NRND);
+
+      st->pstate = YF_PSTATE_SPAWNING;
+      break;
+
+    case YF_PSTATE_SPAWNING:
+      if (st->tm >= st->spawn) {
+        pt->clr[3] = st->alpha;
+        st->tm -= st->spawn;
+        st->pstate = YF_PSTATE_SPAWNED;
+      } else {
+        pt->pos[0] += st->vel[0];
+        pt->pos[1] += st->vel[1];
+        pt->pos[2] += st->vel[2];
+        pt->clr[3] = st->tm / st->spawn * st->alpha;
+        st->tm += dt;
+      }
+      break;
+
+    case YF_PSTATE_SPAWNED:
+      if (st->tm >= st->dur) {
+        st->tm -= st->dur;
+        st->pstate = YF_PSTATE_DYING;
+      } else {
+        pt->pos[0] += st->vel[0];
+        pt->pos[1] += st->vel[1];
+        pt->pos[2] += st->vel[2];
+        st->tm += dt;
+      }
+      break;
+
+    case YF_PSTATE_DYING:
+      if (st->tm >= st->death) {
         pt->clr[3] = 0.0;
+        st->tm -= st->death;
+        st->pstate = YF_PSTATE_DEAD;
+      } else {
+        pt->pos[0] += st->vel[0];
+        pt->pos[1] += st->vel[1];
+        pt->pos[2] += st->vel[2];
+        pt->clr[3] = st->alpha - st->tm / st->death * st->alpha;
+        st->tm += dt;
+      }
+      break;
 
+    case YF_PSTATE_DEAD:
+      if (!sys->lifetime.once) {
         st->tm = 0.0;
-        st->alpha = YF_LERP(sys->color.min[3], sys->color.max[3], YF_NRND);
-
-        st->dur = YF_LERP(sys->lifetime.duration_min,
-            sys->lifetime.duration_max, YF_NRND);
-        st->spawn = YF_LERP(sys->lifetime.spawn_min,
-            sys->lifetime.spawn_max, YF_NRND);
-        st->death = YF_LERP(sys->lifetime.death_min,
-            sys->lifetime.death_max, YF_NRND);
-
-        st->vel[0] = YF_LERP(sys->velocity.min[0], sys->velocity.max[0],
-            YF_NRND);
-        st->vel[1] = YF_LERP(sys->velocity.min[1], sys->velocity.max[1],
-            YF_NRND);
-        st->vel[2] = YF_LERP(sys->velocity.min[2], sys->velocity.max[2],
-            YF_NRND);
-
-        st->pstate = YF_PSTATE_SPAWNING;
-        break;
-
-      case YF_PSTATE_SPAWNING:
-        if (st->tm >= st->spawn) {
-          pt->clr[3] = st->alpha;
-          st->tm -= st->spawn;
-          st->pstate = YF_PSTATE_SPAWNED;
-        } else {
-          pt->pos[0] += st->vel[0];
-          pt->pos[1] += st->vel[1];
-          pt->pos[2] += st->vel[2];
-          pt->clr[3] = st->tm / st->spawn * st->alpha;
-          st->tm += dt;
-        }
-        break;
-
-      case YF_PSTATE_SPAWNED:
-        if (st->tm >= st->dur) {
-          st->tm -= st->dur;
-          st->pstate = YF_PSTATE_DYING;
-        } else {
-          pt->pos[0] += st->vel[0];
-          pt->pos[1] += st->vel[1];
-          pt->pos[2] += st->vel[2];
-          st->tm += dt;
-        }
-        break;
-
-      case YF_PSTATE_DYING:
-        if (st->tm >= st->death) {
-          pt->clr[3] = 0.0;
-          st->tm -= st->death;
-          st->pstate = YF_PSTATE_DEAD;
-        } else {
-          pt->pos[0] += st->vel[0];
-          pt->pos[1] += st->vel[1];
-          pt->pos[2] += st->vel[2];
-          pt->clr[3] = st->alpha - st->tm / st->death * st->alpha;
-          st->tm += dt;
-        }
-        break;
-
-      case YF_PSTATE_DEAD:
-        if (!sys->lifetime.once) {
-          st->tm = 0.0;
-          st->pstate = YF_PSTATE_UNSET;
-        }
-        break;
+        st->pstate = YF_PSTATE_UNSET;
+      }
+      break;
     }
   }
 
@@ -242,14 +242,14 @@ static int init_points(YF_particle part) {
   assert(part != NULL);
 
   part->pts = malloc(sizeof(YF_vpart) * part->count);
-  part->sts = malloc(sizeof(L_pstate) * part->count);
+  part->sts = malloc(sizeof(T_pstate) * part->count);
   if (part->pts == NULL || part->sts == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
 
   const YF_vpart pt = {.pos = {0.0, 0.0, 0.5}, .clr = {1.0, 1.0, 1.0, 1.0}};
-  const L_pstate st = {YF_PSTATE_UNSET, 0.0, 0.0, 0.0, 0.0, 0.0, {0}};
+  const T_pstate st = {YF_PSTATE_UNSET, 0.0, 0.0, 0.0, 0.0, 0.0, {0}};
   for (unsigned i = 0; i < part->count; ++i) {
     memcpy(part->pts+i, &pt, sizeof pt);
     memcpy(part->sts+i, &st, sizeof st);

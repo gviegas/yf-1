@@ -28,17 +28,17 @@ typedef struct {
   char *lay_used;
   unsigned lay_n;
   unsigned lay_i;
-} L_imge;
+} T_imge;
 
 /* Type holding key & value for use in the image hashset. */
 /* TODO: Add levels and samples as key. */
 typedef struct {
   struct { int pixfmt; YF_dim2 dim; } key;
-  L_imge value;
-} L_kv;
+  T_imge value;
+} T_kv;
 
 struct YF_texture_o {
-  L_imge *imge;
+  T_imge *imge;
   unsigned layer;
 };
 
@@ -51,31 +51,31 @@ static YF_hashset l_imges = NULL;
 /* Copies texture data to image and updates texture object. */
 static int copy_data(YF_texture tex, const YF_texdt *data);
 
-/* Hashes a 'L_kv'. */
+/* Hashes a 'T_kv'. */
 static size_t hash_kv(const void *x);
 
-/* Compares a 'L_kv' to another. */
+/* Compares a 'T_kv' to another. */
 static int cmp_kv(const void *a, const void *b);
 
 YF_texture yf_texture_init(int filetype, const char *pathname) {
   YF_texdt data = {0};
 
   switch (filetype) {
-    case YF_FILETYPE_INTERNAL:
-      /* TODO */
-      assert(0);
+  case YF_FILETYPE_INTERNAL:
+    /* TODO */
+    assert(0);
+    return NULL;
+  case YF_FILETYPE_PNG:
+    if (yf_loadpng(pathname, &data) != 0)
       return NULL;
-    case YF_FILETYPE_PNG:
-      if (yf_loadpng(pathname, &data) != 0)
-        return NULL;
-      break;
-    case YF_FILETYPE_BMP:
-      if (yf_loadbmp(pathname, &data) != 0)
-        return NULL;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+    break;
+  case YF_FILETYPE_BMP:
+    if (yf_loadbmp(pathname, &data) != 0)
       return NULL;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return NULL;
   }
 
   YF_texture tex = yf_texture_initdt(&data);
@@ -98,8 +98,8 @@ void yf_texture_deinit(YF_texture tex) {
   int pixfmt;
   yf_image_getval(tex->imge->img, &pixfmt, &dim, NULL, NULL, NULL);
 
-  const L_kv key = {{pixfmt, {dim.width, dim.height}}, {0}};
-  L_kv *val = yf_hashset_search(l_imges, &key);
+  const T_kv key = {{pixfmt, {dim.width, dim.height}}, {0}};
+  T_kv *val = yf_hashset_search(l_imges, &key);
   assert(val != NULL);
 
   if (val->value.lay_n > 1) {
@@ -158,8 +158,8 @@ int yf_texture_copyres(YF_texture tex, YF_dtable dtb, unsigned alloc_i,
 }
 
 static int copy_data(YF_texture tex, const YF_texdt *data) {
-  const L_kv key = {{data->pixfmt, data->dim}, {0}};
-  L_kv *val = yf_hashset_search(l_imges, &key);
+  const T_kv key = {{data->pixfmt, data->dim}, {0}};
+  T_kv *val = yf_hashset_search(l_imges, &key);
 
   if (val == NULL) {
     if ((val = malloc(sizeof *val)) == NULL) {
@@ -257,13 +257,13 @@ static int copy_data(YF_texture tex, const YF_texdt *data) {
 }
 
 static size_t hash_kv(const void *x) {
-  const L_kv *kv = x;
+  const T_kv *kv = x;
   return kv->key.pixfmt ^ kv->key.dim.width ^ kv->key.dim.height ^ 3258114451;
 }
 
 static int cmp_kv(const void *a, const void *b) {
-  const L_kv *kv1 = a;
-  const L_kv *kv2 = b;
+  const T_kv *kv1 = a;
+  const T_kv *kv2 = b;
   return !(kv1->key.pixfmt == kv2->key.pixfmt &&
       kv1->key.dim.width == kv2->key.dim.width &&
       kv1->key.dim.height == kv2->key.dim.height);
