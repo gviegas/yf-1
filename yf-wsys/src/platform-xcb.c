@@ -225,12 +225,12 @@ typedef struct {
   int open;
   int fullscreen;
   xcb_window_t win_id;
-} L_win;
+} T_win;
 
-/* List containing the 'L_win' data of all created windows. */
+/* List containing the 'T_win' data of all created windows. */
 static YF_list l_wins = NULL;
 
-/* Gets the 'L_win' data for a given xcb window ID.
+/* Gets the 'T_win' data for a given xcb window ID.
    If not found, 'data' will contain the null value. */
 #define YF_GETWINDATA(data, id) do { \
   assert(l_wins != NULL && yf_list_getlen(l_wins) > 0); \
@@ -251,9 +251,9 @@ xcb_visualid_t yf_getvisualxcb(void) {
 xcb_window_t yf_getwindowxcb(YF_window win) {
   assert(win != NULL);
 
-  /* XXX: Consider querying the 'YF_window' for the 'L_win' data instead. */
+  /* XXX: Consider querying the 'YF_window' for the 'T_win' data instead. */
   YF_iter it = YF_NILIT;
-  L_win *data;
+  T_win *data;
   do
     data = yf_list_next(l_wins, &it);
   while (data->wrapper != win);
@@ -298,7 +298,7 @@ int yf_loadxcb(void) {
 
 void yf_unldxcb(void) {
   if (l_wins != NULL) {
-    L_win *win;
+    T_win *win;
     YF_iter it = YF_NILIT;
     for (;;) {
       win = yf_list_next(l_wins, &it);
@@ -415,7 +415,7 @@ static void *init_win(unsigned width, unsigned height, const char *title,
     return NULL;
   }
 
-  L_win *win = calloc(1, sizeof(L_win));
+  T_win *win = calloc(1, sizeof(T_win));
   if (win == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return NULL;
@@ -539,10 +539,10 @@ static int open_win(void *win) {
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
 
-  if (((L_win *)win)->open)
+  if (((T_win *)win)->open)
     return 0;
 
-  xcb_window_t win_id = ((L_win *)win)->win_id;
+  xcb_window_t win_id = ((T_win *)win)->win_id;
   xcb_void_cookie_t cookie;
   xcb_generic_error_t *err = NULL;
 
@@ -554,7 +554,7 @@ static int open_win(void *win) {
     return -1;
   }
 
-  ((L_win *)win)->open = 1;
+  ((T_win *)win)->open = 1;
   return 0;
 }
 
@@ -563,10 +563,10 @@ static int close_win(void *win) {
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
 
-  if (!((L_win *)win)->open)
+  if (!((T_win *)win)->open)
     return 0;
 
-  xcb_window_t win_id = ((L_win *)win)->win_id;
+  xcb_window_t win_id = ((T_win *)win)->win_id;
   xcb_void_cookie_t cookie;
   xcb_generic_error_t *err = NULL;
 
@@ -578,7 +578,7 @@ static int close_win(void *win) {
     return -1;
   }
 
-  ((L_win *)win)->open = 0;
+  ((T_win *)win)->open = 0;
   return 0;
 }
 
@@ -592,7 +592,7 @@ static int resize_win(void *win, unsigned width, unsigned height) {
     return -1;
   }
 
-  xcb_window_t win_id = ((L_win *)win)->win_id;
+  xcb_window_t win_id = ((T_win *)win)->win_id;
   xcb_void_cookie_t cookie;
   xcb_generic_error_t *err = NULL;
   uint32_t val_mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
@@ -607,8 +607,8 @@ static int resize_win(void *win, unsigned width, unsigned height) {
     return -1;
   }
 
-  ((L_win *)win)->width = width;
-  ((L_win *)win)->height = height;
+  ((T_win *)win)->width = width;
+  ((T_win *)win)->height = height;
   return 0;
 }
 
@@ -627,7 +627,7 @@ static int settitle_win(void *win, const char *title) {
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
 
-  xcb_window_t win_id = ((L_win *)win)->win_id;
+  xcb_window_t win_id = ((T_win *)win)->win_id;
   xcb_void_cookie_t cookie;
   xcb_generic_error_t *err = NULL;
   size_t len = title == NULL ? 0 : strnlen(title, YF_STR_MAXLEN-1);
@@ -651,14 +651,14 @@ static void getsize_win(void *win, unsigned *width, unsigned *height) {
   assert(win != NULL);
   assert(width != NULL && height != NULL);
 
-  *width = ((L_win *)win)->width;
-  *height = ((L_win *)win)->height;
+  *width = ((T_win *)win)->width;
+  *height = ((T_win *)win)->height;
 }
 
 static void deinit_win(void *win) {
   if (l_handle != NULL && yf_g_varsxcb.conn != NULL) {
     YF_UNUSED xcb_void_cookie_t unused;
-    YF_XCB_DESTROY_WINDOW(unused, yf_g_varsxcb.conn, ((L_win *)win)->win_id);
+    YF_XCB_DESTROY_WINDOW(unused, yf_g_varsxcb.conn, ((T_win *)win)->win_id);
   }
 
   yf_list_remove(l_wins, win);
@@ -683,216 +683,216 @@ static int poll_evt(unsigned evt_mask) {
     type = event->response_type & ~0x80;
 
     switch (type) {
-      case XCB_KEY_PRESS:
-      case XCB_KEY_RELEASE: {
-        if (!(mask & YF_EVT_KEYKB))
-          break;
-        xcb_key_press_event_t *key_evt = (xcb_key_press_event_t *)event;
-
-        unsigned code = key_evt->detail - 8;
-        int key = YF_KEY_FROM(code);
-
-        int state;
-        if (type == XCB_KEY_PRESS)
-          state = YF_KEYSTATE_PRESSED;
-        else
-          state = YF_KEYSTATE_RELEASED;
-
-        static uint16_t prev_evt_state = 0;
-        static unsigned prev_mod_mask = 0;
-        unsigned mod_mask = prev_mod_mask;
-
-        if (key_evt->state != prev_evt_state) {
-          mod_mask = 0;
-
-          if (key_evt->state & XCB_MOD_MASK_LOCK)
-            mod_mask |= YF_KEYMOD_CAPSLOCK;
-          if (key_evt->state & XCB_MOD_MASK_SHIFT)
-            mod_mask |= YF_KEYMOD_SHIFT;
-          if (key_evt->state & XCB_MOD_MASK_CONTROL)
-            mod_mask |= YF_KEYMOD_CTRL;
-          if (key_evt->state & XCB_MOD_MASK_1)
-            mod_mask |= YF_KEYMOD_ALT;
-
-          prev_mod_mask = mod_mask;
-          prev_evt_state = key_evt->state;
-        }
-
-        YF_evtfn fn;
-        void *arg;
-        yf_getevtfn(YF_EVT_KEYKB, &fn, &arg);
-        fn.key_kb(key, state, mod_mask, arg);
-      } break;
-
-      case XCB_BUTTON_PRESS:
-      case XCB_BUTTON_RELEASE: {
-        if (!(mask & YF_EVT_BUTTONPT))
-          break;
-        xcb_button_press_event_t *btn_evt = (xcb_button_press_event_t*)event;
-
-        int btn;
-        switch (btn_evt->detail) {
-          case XCB_BUTTON_INDEX_1:
-            btn = YF_BTN_LEFT;
-            break;
-          case XCB_BUTTON_INDEX_2:
-            btn = YF_BTN_MIDDLE;
-            break;
-          case XCB_BUTTON_INDEX_3:
-            btn = YF_BTN_RIGHT;
-            break;
-          case XCB_BUTTON_INDEX_4:
-          case XCB_BUTTON_INDEX_5:
-            /* TODO: Scroll. */
-          default:
-            btn = YF_BTN_UNKNOWN;
-        }
-
-        int state;
-        if (type == XCB_BUTTON_PRESS)
-          state = YF_BTNSTATE_PRESSED;
-        else
-          state = YF_BTNSTATE_RELEASED;
-
-        int x = btn_evt->event_x;
-        int y = btn_evt->event_y;
-
-        YF_evtfn fn;
-        void *arg;
-        yf_getevtfn(YF_EVT_BUTTONPT, &fn, &arg);
-        fn.button_pt(btn, state, x, y, arg);
-      } break;
-
-      case XCB_MOTION_NOTIFY: {
-        if (!(mask & YF_EVT_MOTIONPT))
-          break;
-        xcb_motion_notify_event_t *mot_evt = (xcb_motion_notify_event_t *)event;
-
-        int x = mot_evt->event_x;
-        int y = mot_evt->event_y;
-
-        YF_evtfn fn;
-        void *arg;
-        yf_getevtfn(YF_EVT_MOTIONPT, &fn, &arg);
-        fn.motion_pt(x, y, arg);
-      } break;
-
-      case XCB_ENTER_NOTIFY: {
-        if (!(mask & YF_EVT_ENTERPT))
-          break;
-        xcb_enter_notify_event_t *entr_evt = (xcb_enter_notify_event_t *)event;
-
-        L_win *win;
-        YF_GETWINDATA(win, entr_evt->event);
-        if (win == NULL)
-          break;
-
-        int x = entr_evt->event_x;
-        int y = entr_evt->event_y;
-
-        YF_evtfn fn;
-        void *arg;
-        yf_getevtfn(YF_EVT_ENTERPT, &fn, &arg);
-        fn.enter_pt(win->wrapper, x, y, arg);
-      } break;
-
-      case XCB_LEAVE_NOTIFY: {
-        if (!(mask & YF_EVT_LEAVEPT))
-          break;
-        xcb_leave_notify_event_t *leav_evt = (xcb_leave_notify_event_t *)event;
-
-        L_win *win;
-        YF_GETWINDATA(win, leav_evt->event);
-        if (win == NULL)
-          break;
-
-        YF_evtfn fn;
-        void *arg;
-        yf_getevtfn(YF_EVT_LEAVEPT, &fn, &arg);
-        fn.leave_pt(win->wrapper, arg);
-      } break;
-
-      case XCB_FOCUS_IN: {
-        if (!(mask & YF_EVT_ENTERKB))
-          break;
-        xcb_focus_in_event_t *foc_evt = (xcb_focus_in_event_t *)event;
-
-        L_win *win;
-        YF_GETWINDATA(win, foc_evt->event);
-        if (win == NULL)
-          break;
-
-        YF_evtfn fn;
-        void *arg;
-        yf_getevtfn(YF_EVT_ENTERKB, &fn, &arg);
-        fn.enter_kb(win->wrapper, arg);
-      } break;
-
-      case XCB_FOCUS_OUT: {
-        if (!(mask & YF_EVT_LEAVEKB))
-          break;
-        xcb_focus_out_event_t *foc_evt = (xcb_focus_out_event_t *)event;
-
-        L_win *win;
-        YF_GETWINDATA(win, foc_evt->event);
-        if (win == NULL)
-          break;
-
-        YF_evtfn fn;
-        void *arg;
-        yf_getevtfn(YF_EVT_LEAVEKB, &fn, &arg);
-        fn.leave_kb(win->wrapper, arg);
-      } break;
-
-      case XCB_EXPOSE: {
-        /* TODO */
-      } break;
-
-      case XCB_CONFIGURE_NOTIFY: {
-        if (!(mask & YF_EVT_RESIZEWD))
-          break;
-        xcb_configure_notify_event_t *conf_evt;
-        conf_evt = (xcb_configure_notify_event_t *)event;
-
-        L_win *win;
-        YF_GETWINDATA(win, conf_evt->window);
-        if (win == NULL)
-          break;
-
-        if (win->width == conf_evt->width && win->height == conf_evt->height)
-          break;
-        win->width = conf_evt->width;
-        win->height = conf_evt->height;
-
-        YF_evtfn fn;
-        void *arg;
-        yf_getevtfn(YF_EVT_RESIZEWD, &fn, &arg);
-        fn.resize_wd(win->wrapper, win->width, win->height, arg);
-      } break;
-
-      case XCB_CLIENT_MESSAGE: {
-        if (!(mask & YF_EVT_CLOSEWD))
-          break;
-        xcb_client_message_event_t *cli_evt;
-        cli_evt = (xcb_client_message_event_t *)event;
-
-        if (cli_evt->type != yf_g_varsxcb.atom.proto ||
-            cli_evt->data.data32[0] != yf_g_varsxcb.atom.del)
-          break;
-
-        L_win *win;
-        YF_GETWINDATA(win, cli_evt->window);
-        if (win == NULL)
-          break;
-
-        YF_evtfn fn;
-        void *arg;
-        yf_getevtfn(YF_EVT_CLOSEWD, &fn, &arg);
-        fn.close_wd(win->wrapper, arg);
-      } break;
-
-      default:
+    case XCB_KEY_PRESS:
+    case XCB_KEY_RELEASE: {
+      if (!(mask & YF_EVT_KEYKB))
         break;
+      xcb_key_press_event_t *key_evt = (xcb_key_press_event_t *)event;
+
+      unsigned code = key_evt->detail - 8;
+      int key = YF_KEY_FROM(code);
+
+      int state;
+      if (type == XCB_KEY_PRESS)
+        state = YF_KEYSTATE_PRESSED;
+      else
+        state = YF_KEYSTATE_RELEASED;
+
+      static uint16_t prev_evt_state = 0;
+      static unsigned prev_mod_mask = 0;
+      unsigned mod_mask = prev_mod_mask;
+
+      if (key_evt->state != prev_evt_state) {
+        mod_mask = 0;
+
+        if (key_evt->state & XCB_MOD_MASK_LOCK)
+          mod_mask |= YF_KEYMOD_CAPSLOCK;
+        if (key_evt->state & XCB_MOD_MASK_SHIFT)
+          mod_mask |= YF_KEYMOD_SHIFT;
+        if (key_evt->state & XCB_MOD_MASK_CONTROL)
+          mod_mask |= YF_KEYMOD_CTRL;
+        if (key_evt->state & XCB_MOD_MASK_1)
+          mod_mask |= YF_KEYMOD_ALT;
+
+        prev_mod_mask = mod_mask;
+        prev_evt_state = key_evt->state;
+      }
+
+      YF_evtfn fn;
+      void *arg;
+      yf_getevtfn(YF_EVT_KEYKB, &fn, &arg);
+      fn.key_kb(key, state, mod_mask, arg);
+    } break;
+
+    case XCB_BUTTON_PRESS:
+    case XCB_BUTTON_RELEASE: {
+      if (!(mask & YF_EVT_BUTTONPT))
+        break;
+      xcb_button_press_event_t *btn_evt = (xcb_button_press_event_t*)event;
+
+      int btn;
+      switch (btn_evt->detail) {
+      case XCB_BUTTON_INDEX_1:
+        btn = YF_BTN_LEFT;
+        break;
+      case XCB_BUTTON_INDEX_2:
+        btn = YF_BTN_MIDDLE;
+        break;
+      case XCB_BUTTON_INDEX_3:
+        btn = YF_BTN_RIGHT;
+        break;
+      case XCB_BUTTON_INDEX_4:
+      case XCB_BUTTON_INDEX_5:
+        /* TODO: Scroll. */
+      default:
+        btn = YF_BTN_UNKNOWN;
+      }
+
+      int state;
+      if (type == XCB_BUTTON_PRESS)
+        state = YF_BTNSTATE_PRESSED;
+      else
+        state = YF_BTNSTATE_RELEASED;
+
+      int x = btn_evt->event_x;
+      int y = btn_evt->event_y;
+
+      YF_evtfn fn;
+      void *arg;
+      yf_getevtfn(YF_EVT_BUTTONPT, &fn, &arg);
+      fn.button_pt(btn, state, x, y, arg);
+    } break;
+
+    case XCB_MOTION_NOTIFY: {
+      if (!(mask & YF_EVT_MOTIONPT))
+        break;
+      xcb_motion_notify_event_t *mot_evt = (xcb_motion_notify_event_t *)event;
+
+      int x = mot_evt->event_x;
+      int y = mot_evt->event_y;
+
+      YF_evtfn fn;
+      void *arg;
+      yf_getevtfn(YF_EVT_MOTIONPT, &fn, &arg);
+      fn.motion_pt(x, y, arg);
+    } break;
+
+    case XCB_ENTER_NOTIFY: {
+      if (!(mask & YF_EVT_ENTERPT))
+        break;
+      xcb_enter_notify_event_t *entr_evt = (xcb_enter_notify_event_t *)event;
+
+      T_win *win;
+      YF_GETWINDATA(win, entr_evt->event);
+      if (win == NULL)
+        break;
+
+      int x = entr_evt->event_x;
+      int y = entr_evt->event_y;
+
+      YF_evtfn fn;
+      void *arg;
+      yf_getevtfn(YF_EVT_ENTERPT, &fn, &arg);
+      fn.enter_pt(win->wrapper, x, y, arg);
+    } break;
+
+    case XCB_LEAVE_NOTIFY: {
+      if (!(mask & YF_EVT_LEAVEPT))
+        break;
+      xcb_leave_notify_event_t *leav_evt = (xcb_leave_notify_event_t *)event;
+
+      T_win *win;
+      YF_GETWINDATA(win, leav_evt->event);
+      if (win == NULL)
+        break;
+
+      YF_evtfn fn;
+      void *arg;
+      yf_getevtfn(YF_EVT_LEAVEPT, &fn, &arg);
+      fn.leave_pt(win->wrapper, arg);
+    } break;
+
+    case XCB_FOCUS_IN: {
+      if (!(mask & YF_EVT_ENTERKB))
+        break;
+      xcb_focus_in_event_t *foc_evt = (xcb_focus_in_event_t *)event;
+
+      T_win *win;
+      YF_GETWINDATA(win, foc_evt->event);
+      if (win == NULL)
+        break;
+
+      YF_evtfn fn;
+      void *arg;
+      yf_getevtfn(YF_EVT_ENTERKB, &fn, &arg);
+      fn.enter_kb(win->wrapper, arg);
+    } break;
+
+    case XCB_FOCUS_OUT: {
+      if (!(mask & YF_EVT_LEAVEKB))
+        break;
+      xcb_focus_out_event_t *foc_evt = (xcb_focus_out_event_t *)event;
+
+      T_win *win;
+      YF_GETWINDATA(win, foc_evt->event);
+      if (win == NULL)
+        break;
+
+      YF_evtfn fn;
+      void *arg;
+      yf_getevtfn(YF_EVT_LEAVEKB, &fn, &arg);
+      fn.leave_kb(win->wrapper, arg);
+    } break;
+
+    case XCB_EXPOSE: {
+      /* TODO */
+    } break;
+
+    case XCB_CONFIGURE_NOTIFY: {
+      if (!(mask & YF_EVT_RESIZEWD))
+        break;
+      xcb_configure_notify_event_t *conf_evt;
+      conf_evt = (xcb_configure_notify_event_t *)event;
+
+      T_win *win;
+      YF_GETWINDATA(win, conf_evt->window);
+      if (win == NULL)
+        break;
+
+      if (win->width == conf_evt->width && win->height == conf_evt->height)
+        break;
+      win->width = conf_evt->width;
+      win->height = conf_evt->height;
+
+      YF_evtfn fn;
+      void *arg;
+      yf_getevtfn(YF_EVT_RESIZEWD, &fn, &arg);
+      fn.resize_wd(win->wrapper, win->width, win->height, arg);
+    } break;
+
+    case XCB_CLIENT_MESSAGE: {
+      if (!(mask & YF_EVT_CLOSEWD))
+        break;
+      xcb_client_message_event_t *cli_evt;
+      cli_evt = (xcb_client_message_event_t *)event;
+
+      if (cli_evt->type != yf_g_varsxcb.atom.proto ||
+          cli_evt->data.data32[0] != yf_g_varsxcb.atom.del)
+        break;
+
+      T_win *win;
+      YF_GETWINDATA(win, cli_evt->window);
+      if (win == NULL)
+        break;
+
+      YF_evtfn fn;
+      void *arg;
+      yf_getevtfn(YF_EVT_CLOSEWD, &fn, &arg);
+      fn.close_wd(win->wrapper, arg);
+    } break;
+
+    default:
+      break;
     }
 
     free(event);

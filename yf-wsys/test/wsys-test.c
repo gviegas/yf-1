@@ -51,28 +51,28 @@ static void key_kb(int key, int state, unsigned mod_mask, void *data) {
     return;
 
   switch (key) {
-    case YF_KEY_ESC:
-      l_quit = 1;
-      break;
-    case YF_KEY_BACKSPACE:
-      l_close = 1;
-      break;
-    case YF_KEY_1:
-      l_mask = YF_EVT_CLOSEWD | YF_EVT_RESIZEWD;
-      break;
-    case YF_KEY_2:
-      l_mask = YF_EVT_ENTERKB | YF_EVT_LEAVEKB | YF_EVT_KEYKB;
-      break;
-    case YF_KEY_3:
-      l_mask =
-        YF_EVT_ENTERPT | YF_EVT_LEAVEPT | YF_EVT_MOTIONPT | YF_EVT_BUTTONPT;
-      break;
-    case YF_KEY_9:
-      l_mask = YF_EVT_ANY;
-      break;
-    case YF_KEY_0:
-      l_mask = YF_EVT_NONE;
-      break;
+  case YF_KEY_ESC:
+    l_quit = 1;
+    break;
+  case YF_KEY_BACKSPACE:
+    l_close = 1;
+    break;
+  case YF_KEY_1:
+    l_mask = YF_EVT_CLOSEWD | YF_EVT_RESIZEWD;
+    break;
+  case YF_KEY_2:
+    l_mask = YF_EVT_ENTERKB | YF_EVT_LEAVEKB | YF_EVT_KEYKB;
+    break;
+  case YF_KEY_3:
+    l_mask =
+      YF_EVT_ENTERPT | YF_EVT_LEAVEPT | YF_EVT_MOTIONPT | YF_EVT_BUTTONPT;
+    break;
+  case YF_KEY_9:
+    l_mask = YF_EVT_ANY;
+    break;
+  case YF_KEY_0:
+    l_mask = YF_EVT_NONE;
+    break;
   }
 }
 
@@ -97,8 +97,8 @@ static void button_pt(int btn, int state, int x, int y, void *data) {
     l_mask &= ~YF_EVT_KEYKB;
 }
 
-struct L_fn { int evt; YF_evtfn fn; };
-static const struct L_fn l_fns[] = {
+struct T_fn { int evt; YF_evtfn fn; };
+static const struct T_fn l_fns[] = {
   { YF_EVT_CLOSEWD,  {.close_wd = close_wd}   },
   { YF_EVT_RESIZEWD, {.resize_wd = resize_wd} },
   { YF_EVT_ENTERKB,  {.enter_kb = enter_kb}   },
