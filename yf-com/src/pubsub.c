@@ -19,7 +19,7 @@ typedef struct {
   const void *pub;
   unsigned pubsub_mask;
   YF_hashset subs;
-} L_pub;
+} T_pub;
 
 /* Subscriber variables. */
 typedef struct {
@@ -27,7 +27,7 @@ typedef struct {
   unsigned pubsub_mask;
   void (*callb)(void *, int, void *);
   void *arg;
-} L_sub;
+} T_sub;
 
 /* Hashset containing all publishers. */
 static YF_hashset l_pubs = NULL;
@@ -45,14 +45,14 @@ int yf_setpub(const void *pub, unsigned pubsub_mask) {
   if (l_pubs == NULL && (l_pubs = yf_hashset_init(hash_ps, cmp_ps)) == NULL)
     return -1;
 
-  const L_pub key = {pub, 0, NULL};
-  L_pub *val = yf_hashset_search(l_pubs, &key);
+  const T_pub key = {pub, 0, NULL};
+  T_pub *val = yf_hashset_search(l_pubs, &key);
 
   /* removal */
   if (pubsub_mask == YF_PUBSUB_NONE) {
     if (val != NULL) {
       yf_hashset_remove(l_pubs, val);
-      L_sub *sub;
+      T_sub *sub;
       while ((sub = yf_hashset_extract(val->subs, NULL)) != NULL)
         free(sub);
       yf_hashset_deinit(val->subs);
@@ -89,8 +89,8 @@ unsigned yf_checkpub(const void *pub) {
   if (l_pubs == NULL)
     return YF_PUBSUB_NONE;
 
-  const L_pub key = {pub, 0, NULL};
-  L_pub *val = yf_hashset_search(l_pubs, &key);
+  const T_pub key = {pub, 0, NULL};
+  T_pub *val = yf_hashset_search(l_pubs, &key);
   return val != NULL ? val->pubsub_mask : YF_PUBSUB_NONE;
 }
 
@@ -98,13 +98,13 @@ void yf_publish(const void *pub, int pubsub) {
   assert(pub != NULL);
   assert(l_pubs != NULL);
 
-  const L_pub key = {pub, 0, NULL};
-  L_pub *val = yf_hashset_search(l_pubs, &key);
+  const T_pub key = {pub, 0, NULL};
+  T_pub *val = yf_hashset_search(l_pubs, &key);
   if (val == NULL)
     return;
 
   YF_iter it = YF_NILIT;
-  L_sub *sub;
+  T_sub *sub;
   while ((sub = yf_hashset_next(val->subs, &it)) != NULL) {
     if (sub->pubsub_mask & pubsub)
       sub->callb((void *)pub, pubsub, sub->arg);
@@ -122,12 +122,12 @@ int yf_subscribe(const void *pub, const void *sub, unsigned pubsub_mask,
     return -1;
   }
 
-  const L_pub pk = {pub, 0, NULL};
-  L_pub *pv = yf_hashset_search(l_pubs, &pk);
+  const T_pub pk = {pub, 0, NULL};
+  T_pub *pv = yf_hashset_search(l_pubs, &pk);
   if (pv == NULL)
     return -1;
-  const L_sub sk = {sub, 0, NULL, NULL};
-  L_sub *sv = yf_hashset_search(pv->subs, &sk);
+  const T_sub sk = {sub, 0, NULL, NULL};
+  T_sub *sv = yf_hashset_search(pv->subs, &sk);
 
   /* removal */
   if (pubsub_mask == YF_PUBSUB_NONE) {

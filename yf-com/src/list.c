@@ -2,7 +2,7 @@
  * YF
  * list.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -12,15 +12,15 @@
 #include "error.h"
 
 /* Linked list's entry. */
-typedef struct L_entry {
-  struct L_entry *prev;
-  struct L_entry *next;
+typedef struct T_entry {
+  struct T_entry *prev;
+  struct T_entry *next;
   const void *val;
-} L_entry;
+} T_entry;
 
 struct YF_list_o {
   YF_cmpfn cmp;
-  L_entry *first;
+  T_entry *first;
   size_t n;
 };
 
@@ -42,7 +42,7 @@ YF_list yf_list_init(YF_cmpfn cmp) {
 int yf_list_insert(YF_list list, const void *val) {
   assert(list != NULL);
 
-  L_entry *e = malloc(sizeof(L_entry));
+  T_entry *e = malloc(sizeof(T_entry));
   if (e == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
@@ -68,12 +68,12 @@ int yf_list_insertat(YF_list list, YF_iter *it, const void *val) {
       it->data[1] = ~it->data[0];
     }
   } else {
-    L_entry *e = malloc(sizeof(L_entry));
+    T_entry *e = malloc(sizeof(T_entry));
     if (e == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;
     }
-    L_entry *cur = (L_entry *)it->data[0];
+    T_entry *cur = (T_entry *)it->data[0];
     e->prev = cur;
     e->next = cur->next;
     e->val = val;
@@ -87,7 +87,7 @@ int yf_list_insertat(YF_list list, YF_iter *it, const void *val) {
 int yf_list_remove(YF_list list, const void *val) {
   assert(list != NULL);
 
-  L_entry *e = list->first;
+  T_entry *e = list->first;
   while (e != NULL) {
     if (list->cmp(val, e->val) == 0) {
       if (e->prev != NULL)
@@ -116,11 +116,11 @@ void *yf_list_removeat(YF_list list, YF_iter *it) {
     return NULL;
   }
 
-  L_entry *e = NULL;
+  T_entry *e = NULL;
   if (it == NULL || YF_IT_ISNIL(*it))
     e = list->first;
   else
-    e = (L_entry *)it->data[0];
+    e = (T_entry *)it->data[0];
   if (e->prev != NULL)
     e->prev->next = e->next;
   else
@@ -142,7 +142,7 @@ void *yf_list_removeat(YF_list list, YF_iter *it) {
 int yf_list_contains(YF_list list, const void *val) {
   assert(list != NULL);
 
-  L_entry *e = list->first;
+  T_entry *e = list->first;
   while (e != NULL) {
     if (list->cmp(e->val, val) == 0)
       return 1;
@@ -165,7 +165,7 @@ void *yf_list_next(YF_list list, YF_iter *it) {
       r = (void *)list->first->val;
     }
   } else {
-    L_entry *e = (L_entry *)it->data[0];
+    T_entry *e = (T_entry *)it->data[0];
     if (e->next != NULL) {
       it->data[0] = (size_t)e->next;
       r = (void *)e->next->val;
@@ -180,7 +180,7 @@ void yf_list_each(YF_list list, int (*callb)(void *val, void *arg), void *arg) {
   assert(list != NULL);
   assert(callb != NULL);
 
-  L_entry *e = list->first;
+  T_entry *e = list->first;
   while (e != NULL) {
     if (callb((void *)e->val, arg) != 0)
       break;
@@ -198,7 +198,7 @@ void yf_list_clear(YF_list list) {
   if (list->n == 0)
     return;
 
-  L_entry *e = list->first;
+  T_entry *e = list->first;
   do {
     if (e->next == NULL) {
       free(e);
@@ -213,7 +213,7 @@ void yf_list_clear(YF_list list) {
 
 void yf_list_deinit(YF_list list) {
   if (list != NULL && list->n > 0) {
-    L_entry *e = list->first;
+    T_entry *e = list->first;
     do {
       if (e->next == NULL) {
         free(e);
