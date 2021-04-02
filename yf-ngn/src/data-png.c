@@ -40,9 +40,9 @@ typedef struct {
   uint32_t len;
   uint32_t type;
   uint8_t var[];
-} L_chunk;
+} T_chunk;
 #define YF_PNG_VARSZ 4096
-static_assert(sizeof(L_chunk) == 8, "!sizeof");
+static_assert(sizeof(T_chunk) == 8, "!sizeof");
 
 /* Image header. */
 #define YF_PNG_IHDR YF_PNG_MAKETYPE('I', 'H', 'D', 'R')
@@ -54,9 +54,9 @@ typedef struct {
   uint8_t compression;
   uint8_t filter;
   uint8_t interlace;
-} L_ihdr;
+} T_ihdr;
 #define YF_PNG_IHDRSZ 13
-static_assert(offsetof(L_ihdr, interlace) == YF_PNG_IHDRSZ-1, "!offsetof");
+static_assert(offsetof(T_ihdr, interlace) == YF_PNG_IHDRSZ-1, "!offsetof");
 
 /* Palette. */
 #define YF_PNG_PLTE YF_PNG_MAKETYPE('P', 'L', 'T', 'E')
@@ -96,15 +96,15 @@ static int l_crcspin = 1;
 
 /* Processed PNG chunks. */
 typedef struct {
-  L_ihdr *ihdr;
+  T_ihdr *ihdr;
   uint8_t *plte;
   size_t plte_sz;
   uint8_t *idat;
   size_t idat_sz;
-} L_png;
+} T_png;
 
 /* Loads texture data from processed chunks. */
-static int load_texdt(const L_png *png, YF_texdt *data);
+static int load_texdt(const T_png *png, YF_texdt *data);
 
 /* Decompresses a datastream.
    The caller must ensure that 'buf' is large enough to store the entirety of
@@ -118,16 +118,16 @@ typedef struct {
     uint16_t next[2];
     uint32_t value;
   };
-} L_tree;
+} T_tree;
 
 /* Generates Huffman codes from a sequence of code lengths and returns its
    tree representation. */
-static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
+static T_tree *gen_codes(const uint8_t *lengths, size_t length_n,
     uint32_t *codes);
 
 #ifdef YF_DEVEL
 static void print_codes(const uint8_t *lengths, size_t length_n,
-    const uint32_t *codes, const L_tree *tree, size_t tree_n, size_t tree_max);
+    const uint32_t *codes, const T_tree *tree, size_t tree_n, size_t tree_max);
 #endif
 
 int yf_loadpng(const char *pathname, YF_texdt *data) {
@@ -149,7 +149,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
     return -1;
   }
 
-  L_chunk *chunk = malloc(sizeof(L_chunk)+YF_PNG_VARSZ);
+  T_chunk *chunk = malloc(sizeof(T_chunk)+YF_PNG_VARSZ);
   if (chunk == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     fclose(file);
@@ -161,7 +161,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
   YF_PNG_INITCRC();
 
   /* IHDR */
-  if (fread(chunk, sizeof(L_chunk), 1, file) < 1) {
+  if (fread(chunk, sizeof(T_chunk), 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     free(chunk);
     fclose(file);
@@ -196,7 +196,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
     return -1;
   }
 
-  L_ihdr ihdr;
+  T_ihdr ihdr;
   memcpy(&ihdr, chunk->var, len);
   ihdr.width = be32toh(ihdr.width);
   ihdr.height = be32toh(ihdr.height);
@@ -229,7 +229,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
   size_t idat_sz = 0;
 
   do {
-    if (fread(chunk, sizeof(L_chunk), 1, file) < 1) {
+    if (fread(chunk, sizeof(T_chunk), 1, file) < 1) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       free(chunk);
       fclose(file);
@@ -240,7 +240,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
     type = be32toh(chunk->type);
 
     if (len > var_sz) {
-      const size_t new_sz = sizeof(L_chunk)+len;
+      const size_t new_sz = sizeof(T_chunk)+len;
       void *tmp = realloc(chunk, new_sz);
       if (tmp != NULL) {
         chunk = tmp;
@@ -374,7 +374,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
   }
 
   /* data processing */
-  const L_png png = {
+  const T_png png = {
     .ihdr = &ihdr,
     .plte = plte,
     .plte_sz = plte_sz,
@@ -388,7 +388,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
   return r;
 }
 
-static int load_texdt(const L_png *png, YF_texdt *data) {
+static int load_texdt(const T_png *png, YF_texdt *data) {
   assert(png != NULL);
   assert(data != NULL);
 
@@ -402,89 +402,89 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
   /* TODO: Check color profile. */
   /* TODO: Check format support. */
   switch (png->ihdr->color_type) {
-    case 0:
-      /* greyscale */
-      switch (png->ihdr->bit_depth) {
-        case 1:
-        case 2:
-        case 4:
-        case 8:
-          pixfmt = YF_PIXFMT_R8UNORM;
-          break;
-        case 16:
-          pixfmt = YF_PIXFMT_R16UNORM;
-          break;
-      }
-      channels = 1;
-      break;
-
+  case 0:
+    /* greyscale */
+    switch (png->ihdr->bit_depth) {
+    case 1:
     case 2:
-      /* rgb */
-      switch (png->ihdr->bit_depth) {
-        case 8:
-          pixfmt = YF_PIXFMT_RGB8UNORM;
-          break;
-        case 16:
-          pixfmt = YF_PIXFMT_RGB16UNORM;
-          break;
-        default:
-          yf_seterr(YF_ERR_INVFILE, __func__);
-          return -1;
-      }
-      channels = 3;
-      break;
-
-    case 3:
-      /* palette indices */
-      if (png->plte == NULL) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-      }
-      switch (png->ihdr->bit_depth) {
-        case 1:
-        case 2:
-        case 4:
-        case 8:
-          pixfmt = YF_PIXFMT_RGB8UNORM;
-          break;
-        default:
-          yf_seterr(YF_ERR_INVFILE, __func__);
-          return -1;
-      }
-      channels = 3;
-      break;
-
     case 4:
-      /* greyscale w/ alpha */
-      switch (png->ihdr->bit_depth) {
-        case 8:
-          pixfmt = YF_PIXFMT_RG8UNORM;
-          break;
-        case 16:
-          pixfmt = YF_PIXFMT_RG16UNORM;
-          break;
-        default:
-          yf_seterr(YF_ERR_INVFILE, __func__);
-          return -1;
-      }
-      channels = 2;
+    case 8:
+      pixfmt = YF_PIXFMT_R8UNORM;
       break;
+    case 16:
+      pixfmt = YF_PIXFMT_R16UNORM;
+      break;
+    }
+    channels = 1;
+    break;
 
-    case 6:
-      /* rgba */
-      switch (png->ihdr->bit_depth) {
-        case 8:
-          pixfmt = YF_PIXFMT_RGBA8UNORM;
-          break;
-        case 16:
-          pixfmt = YF_PIXFMT_RGBA16UNORM;
-          break;
-        default:
-          yf_seterr(YF_ERR_INVFILE, __func__);
-          return -1;
-      }
-      channels = 4;
+  case 2:
+    /* rgb */
+    switch (png->ihdr->bit_depth) {
+    case 8:
+      pixfmt = YF_PIXFMT_RGB8UNORM;
       break;
+    case 16:
+      pixfmt = YF_PIXFMT_RGB16UNORM;
+      break;
+    default:
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      return -1;
+    }
+    channels = 3;
+    break;
+
+  case 3:
+    /* palette indices */
+    if (png->plte == NULL) {
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      return -1;
+    }
+    switch (png->ihdr->bit_depth) {
+    case 1:
+    case 2:
+    case 4:
+    case 8:
+      pixfmt = YF_PIXFMT_RGB8UNORM;
+      break;
+    default:
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      return -1;
+    }
+    channels = 3;
+    break;
+
+  case 4:
+    /* greyscale w/ alpha */
+    switch (png->ihdr->bit_depth) {
+    case 8:
+      pixfmt = YF_PIXFMT_RG8UNORM;
+      break;
+    case 16:
+      pixfmt = YF_PIXFMT_RG16UNORM;
+      break;
+    default:
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      return -1;
+    }
+    channels = 2;
+    break;
+
+  case 6:
+    /* rgba */
+    switch (png->ihdr->bit_depth) {
+    case 8:
+      pixfmt = YF_PIXFMT_RGBA8UNORM;
+      break;
+    case 16:
+      pixfmt = YF_PIXFMT_RGBA16UNORM;
+      break;
+    default:
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      return -1;
+    }
+    channels = 4;
+    break;
   }
 
   /* decompression */
@@ -507,74 +507,74 @@ static int load_texdt(const L_png *png, YF_texdt *data) {
   const uint8_t bypp = YF_MAX(1, (channels*bit_depth)>>3);
   for (size_t i = 0; i < height; ++i) {
     switch (buf[i*scln_sz]) {
-      case 0:
-        /* none */
-        break;
-      case 1:
-        /* sub */
+    case 0:
+      /* none */
+      break;
+    case 1:
+      /* sub */
+      for (size_t j = 1+bypp; j < scln_sz; ++j) {
+        const size_t k = i*scln_sz+j;
+        buf[k] += buf[k-bypp];
+      }
+      break;
+    case 2:
+      /* up */
+      if (i > 0) {
+        for (size_t j = 1; j < scln_sz; ++j) {
+          const size_t k = i*scln_sz+j;
+          buf[k] += buf[k-scln_sz];
+        }
+      }
+      break;
+    case 3:
+      /* avg */
+      if (i > 0) {
+        for (size_t j = 1; j <= bypp; ++j) {
+          const size_t k = i*scln_sz+j;
+          buf[k] += buf[k-scln_sz]>>1;
+        }
+        for (size_t j = 1+bypp; j < scln_sz; ++j) {
+          const size_t k = i*scln_sz+j;
+          const uint16_t a = buf[k-bypp];
+          const uint16_t b = buf[k-scln_sz];
+          buf[k] += (a+b)>>1;
+        }
+      } else {
+        for (size_t j = 1+bypp; j < scln_sz; ++j) {
+          const size_t k = i*scln_sz+j;
+          buf[k] += buf[k-bypp]>>1;
+        }
+      }
+      break;
+    case 4:
+      /* paeth */
+      if (i > 0) {
+        for (size_t j = 1; j <= bypp; ++j) {
+          const size_t k = i*scln_sz+j;
+          buf[k] += buf[k-scln_sz];
+        }
+        for (size_t j = 1+bypp; j < scln_sz; ++j) {
+          const size_t k = i*scln_sz+j;
+          const int16_t a = buf[k-bypp];
+          const int16_t b = buf[k-scln_sz];
+          const int16_t c = buf[k-scln_sz-bypp];
+          const int16_t p = a+b-c;
+          const uint16_t pa = abs(p-a);
+          const uint16_t pb = abs(p-b);
+          const uint16_t pc = abs(p-c);
+          buf[k] += pa<=pb && pa<=pc ? a : (pb<=pc ? b : c);
+        }
+      } else {
         for (size_t j = 1+bypp; j < scln_sz; ++j) {
           const size_t k = i*scln_sz+j;
           buf[k] += buf[k-bypp];
         }
-        break;
-      case 2:
-        /* up */
-        if (i > 0) {
-          for (size_t j = 1; j < scln_sz; ++j) {
-            const size_t k = i*scln_sz+j;
-            buf[k] += buf[k-scln_sz];
-          }
-        }
-        break;
-      case 3:
-        /* avg */
-        if (i > 0) {
-          for (size_t j = 1; j <= bypp; ++j) {
-            const size_t k = i*scln_sz+j;
-            buf[k] += buf[k-scln_sz]>>1;
-          }
-          for (size_t j = 1+bypp; j < scln_sz; ++j) {
-            const size_t k = i*scln_sz+j;
-            const uint16_t a = buf[k-bypp];
-            const uint16_t b = buf[k-scln_sz];
-            buf[k] += (a+b)>>1;
-          }
-        } else {
-          for (size_t j = 1+bypp; j < scln_sz; ++j) {
-            const size_t k = i*scln_sz+j;
-            buf[k] += buf[k-bypp]>>1;
-          }
-        }
-        break;
-      case 4:
-        /* paeth */
-        if (i > 0) {
-          for (size_t j = 1; j <= bypp; ++j) {
-            const size_t k = i*scln_sz+j;
-            buf[k] += buf[k-scln_sz];
-          }
-          for (size_t j = 1+bypp; j < scln_sz; ++j) {
-            const size_t k = i*scln_sz+j;
-            const int16_t a = buf[k-bypp];
-            const int16_t b = buf[k-scln_sz];
-            const int16_t c = buf[k-scln_sz-bypp];
-            const int16_t p = a+b-c;
-            const uint16_t pa = abs(p-a);
-            const uint16_t pb = abs(p-b);
-            const uint16_t pc = abs(p-c);
-            buf[k] += pa<=pb && pa<=pc ? a : (pb<=pc ? b : c);
-          }
-        } else {
-          for (size_t j = 1+bypp; j < scln_sz; ++j) {
-            const size_t k = i*scln_sz+j;
-            buf[k] += buf[k-bypp];
-          }
-        }
-        break;
-      default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        free(buf);
-        return -1;
+      }
+      break;
+    default:
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      free(buf);
+      return -1;
     }
   }
 
@@ -749,8 +749,8 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz) {
 
     /* compressed */
     } else {
-      struct { uint32_t codes[288]; L_tree *tree; } literal = {0};
-      struct { uint32_t codes[32]; L_tree *tree; } distance = {0};
+      struct { uint32_t codes[288]; T_tree *tree; } literal = {0};
+      struct { uint32_t codes[32]; T_tree *tree; } distance = {0};
 
       if (btype == 1) {
         /* fixed H. codes */
@@ -792,7 +792,7 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz) {
           lengths[clen_map[i]] = len;
         }
 
-        struct { uint32_t codes[19]; L_tree *tree; } clength;
+        struct { uint32_t codes[19]; T_tree *tree; } clength;
         clength.tree = gen_codes(lengths, 19, clength.codes);
         if (clength.tree == NULL)
           return -1;
@@ -942,7 +942,7 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz) {
   return 0;
 }
 
-static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
+static T_tree *gen_codes(const uint8_t *lengths, size_t length_n,
     uint32_t *codes)
 {
   assert(lengths != NULL);
@@ -987,7 +987,7 @@ static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
   /* XXX: This may overestimate considerably. */
   for (size_t i = 1; i <= len_max; ++i)
     tree_n += len_count[i]*i;
-  L_tree *tree = calloc(tree_n, sizeof *tree);
+  T_tree *tree = calloc(tree_n, sizeof *tree);
   if (tree == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return NULL;
@@ -1027,7 +1027,7 @@ static L_tree *gen_codes(const uint8_t *lengths, size_t length_n,
 
 #ifdef YF_DEVEL
 static void print_codes(const uint8_t *lengths, size_t length_n,
-    const uint32_t *codes, const L_tree *tree, size_t tree_n, size_t tree_max)
+    const uint32_t *codes, const T_tree *tree, size_t tree_n, size_t tree_max)
 {
   printf("\n[YF] OUTPUT (%s):\n", __func__);
 

@@ -44,7 +44,7 @@ struct YF_mesh_o {
 typedef struct {
   size_t offset;
   size_t size;
-} L_memblk;
+} T_memblk;
 
 /* Global context. */
 static YF_context l_ctx = NULL;
@@ -53,7 +53,7 @@ static YF_context l_ctx = NULL;
 static YF_buffer l_buf = NULL;
 
 /* Ordered list of memory blocks available for use. */
-static L_memblk *l_blks = NULL;
+static T_memblk *l_blks = NULL;
 static size_t l_blk_n = 1;
 static size_t l_blk_cap = YF_BLKCAP;
 
@@ -70,21 +70,21 @@ YF_mesh yf_mesh_init(int filetype, const char *pathname) {
   YF_meshdt data = {0};
 
   switch (filetype) {
-    case YF_FILETYPE_INTERNAL:
-      /* TODO */
-      assert(0);
+  case YF_FILETYPE_INTERNAL:
+    /* TODO */
+    assert(0);
+    return NULL;
+  case YF_FILETYPE_GLTF:
+    if (yf_loadgltf(pathname, &data) != 0)
       return NULL;
-    case YF_FILETYPE_GLTF:
-      if (yf_loadgltf(pathname, &data) != 0)
-        return NULL;
-      break;
-    case YF_FILETYPE_OBJ:
-      if (yf_loadobj(pathname, &data) != 0)
-        return NULL;
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
+    break;
+  case YF_FILETYPE_OBJ:
+    if (yf_loadobj(pathname, &data) != 0)
       return NULL;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return NULL;
   }
 
   YF_mesh mesh = yf_mesh_initdt(&data);
@@ -117,7 +117,7 @@ void yf_mesh_deinit(YF_mesh mesh) {
     ++l_blk_n;
   } else if (blk_i == l_blk_n) {
     /* no next blocks */
-    L_memblk *prev = l_blks+blk_i-1;
+    T_memblk *prev = l_blks+blk_i-1;
     if (prev->offset + prev->size == off) {
       prev->size += sz;
     } else {
@@ -130,7 +130,7 @@ void yf_mesh_deinit(YF_mesh mesh) {
     }
   } else if (blk_i == 0) {
     /* no previous blocks */
-    L_memblk *next = l_blks;
+    T_memblk *next = l_blks;
     if (off + sz == next->offset) {
       next->offset = off;
       next->size += sz;
@@ -145,8 +145,8 @@ void yf_mesh_deinit(YF_mesh mesh) {
     }
   } else {
     /* previous & next blocks */
-    L_memblk *prev = l_blks+blk_i-1;
-    L_memblk *next = l_blks+blk_i;
+    T_memblk *prev = l_blks+blk_i-1;
+    T_memblk *next = l_blks+blk_i;
     int prev_merged = 0;
     int next_merged = 0;
     if (prev->offset + prev->size == off) {
@@ -248,25 +248,25 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data) {
   assert(data->i.n <= UINT_MAX);
 
   switch (data->v.vtype) {
-    case YF_VTYPE_MDL:
-      mesh->v.stride = sizeof(YF_vmdl);
-      break;
-    case YF_VTYPE_TERR:
-      mesh->v.stride = sizeof(YF_vterr);
-      break;
-    case YF_VTYPE_PART:
-      mesh->v.stride = sizeof(YF_vpart);
-      break;
-    case YF_VTYPE_QUAD:
-      mesh->v.stride = sizeof(YF_vquad);
-      break;
-    case YF_VTYPE_LABL:
-      mesh->v.stride = sizeof(YF_vlabl);
-      break;
-    default:
-      assert(0);
-      yf_seterr(YF_ERR_OTHER, __func__);
-      return -1;
+  case YF_VTYPE_MDL:
+    mesh->v.stride = sizeof(YF_vmdl);
+    break;
+  case YF_VTYPE_TERR:
+    mesh->v.stride = sizeof(YF_vterr);
+    break;
+  case YF_VTYPE_PART:
+    mesh->v.stride = sizeof(YF_vpart);
+    break;
+  case YF_VTYPE_QUAD:
+    mesh->v.stride = sizeof(YF_vquad);
+    break;
+  case YF_VTYPE_LABL:
+    mesh->v.stride = sizeof(YF_vlabl);
+    break;
+  default:
+    assert(0);
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
   }
 
   const size_t vtx_sz = data->v.n * mesh->v.stride;
@@ -291,7 +291,7 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data) {
     size_t new_len = buf_len + sz;
     int merge_last = 0;
     if (l_blk_n > 0) {
-      L_memblk *last = l_blks+blk_i-1;
+      T_memblk *last = l_blks+blk_i-1;
       if (last->offset + last->size == buf_len) {
         new_len -= last->size;
         merge_last = 1;
@@ -376,17 +376,17 @@ static size_t resize_buf(size_t new_len) {
 }
 
 static size_t resize_blks(size_t new_cap) {
-  if (new_cap > SIZE_MAX / sizeof(L_memblk)) {
+  if (new_cap > SIZE_MAX / sizeof(T_memblk)) {
     yf_seterr(YF_ERR_OFLOW, __func__);
     return l_blk_cap;
   }
 
-  size_t n = new_cap * sizeof(L_memblk) < SIZE_MAX ? YF_BLKCAP : new_cap;
+  size_t n = new_cap * sizeof(T_memblk) < SIZE_MAX ? YF_BLKCAP : new_cap;
   while (n < new_cap)
     n <<= 1;
 
   if (n != l_blk_cap) {
-    L_memblk *tmp = realloc(l_blks, n * sizeof(L_memblk));
+    T_memblk *tmp = realloc(l_blks, n * sizeof(T_memblk));
     if (tmp == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       n = l_blk_cap;

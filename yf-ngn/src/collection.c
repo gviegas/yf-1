@@ -26,7 +26,7 @@ struct YF_collection_o {
 typedef struct {
   char *name;
   void *res;
-} L_res;
+} T_res;
 
 /* Functions used by the collection sets. */
 static size_t hash_res(const void *x);
@@ -61,8 +61,8 @@ void *yf_collection_getres(YF_collection coll, int collres, const char *name) {
   assert(collres >= 0 && collres < YF_COLLRES_N);
   assert(name != NULL);
 
-  const L_res key = {(char *)name, NULL};
-  L_res *val = yf_hashset_search(coll->sets[collres], &key);
+  const T_res key = {(char *)name, NULL};
+  T_res *val = yf_hashset_search(coll->sets[collres], &key);
   return val != NULL ? val->res : NULL;
 }
 
@@ -74,7 +74,7 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
   assert(name != NULL);
   assert(res != NULL);
 
-  L_res *r = malloc(sizeof(L_res));
+  T_res *r = malloc(sizeof(T_res));
   if (r == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
@@ -102,7 +102,7 @@ int yf_collection_contains(YF_collection coll, int collres, const char *name) {
   assert(collres >= 0 && collres < YF_COLLRES_N);
   assert(name != NULL);
 
-  const L_res res = {(char *)name, NULL};
+  const T_res res = {(char *)name, NULL};
   return yf_hashset_contains(coll->sets[collres], &res);
 }
 
@@ -121,7 +121,7 @@ void yf_collection_deinit(YF_collection coll) {
 }
 
 static size_t hash_res(const void *x) {
-  const char *str = ((const L_res *)x)->name;
+  const char *str = ((const T_res *)x)->name;
   size_t hash = 0;
   while (*str != '\0')
     hash += (*str++)<<(hash&0xf);
@@ -129,26 +129,26 @@ static size_t hash_res(const void *x) {
 }
 
 static int cmp_res(const void *a, const void *b) {
-  const char *s1 = ((const L_res *)a)->name;
-  const char *s2 = ((const L_res *)b)->name;
+  const char *s1 = ((const T_res *)a)->name;
+  const char *s2 = ((const T_res *)b)->name;
   return strcmp(s1, s2);
 }
 
 static int deinit_res(void *val, void *arg) {
-  L_res *res = val;
+  T_res *res = val;
 
   switch ((size_t)arg) {
-    case YF_COLLRES_MESH:
-      yf_mesh_deinit(res->res);
-      break;
-    case YF_COLLRES_TEXTURE:
-      yf_texture_deinit(res->res);
-      break;
-    case YF_COLLRES_FONT:
-      yf_font_deinit(res->res);
-      break;
-    default:
-      assert(0);
+  case YF_COLLRES_MESH:
+    yf_mesh_deinit(res->res);
+    break;
+  case YF_COLLRES_TEXTURE:
+    yf_texture_deinit(res->res);
+    break;
+  case YF_COLLRES_FONT:
+    yf_font_deinit(res->res);
+    break;
+  default:
+    assert(0);
   }
 
   free(res->name);

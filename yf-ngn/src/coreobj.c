@@ -11,6 +11,8 @@
 #include "coreobj.h"
 #include "error.h"
 
+/* TODO: MT. */
+
 /* Context instance. */
 static YF_context l_ctx = NULL;
 

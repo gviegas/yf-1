@@ -28,15 +28,15 @@
 typedef struct {
   unsigned key[3];
   unsigned value;
-} L_kv;
+} T_kv;
 
-/* Hashes a 'L_kv'. */
+/* Hashes a 'T_kv'. */
 static size_t hash_kv(const void *x);
 
-/* Compares a 'L_kv' to another. */
+/* Compares a 'T_kv' to another. */
 static int cmp_kv(const void *a, const void *b);
 
-/* Deallocates a 'L_kv'. */
+/* Deallocates a 'T_kv'. */
 static int dealloc_kv(void *val, void *arg);
 
 int yf_loadobj(const char *pathname, YF_meshdt *data) {
@@ -173,174 +173,174 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
         inds = tmp;
       }
 
-      L_kv kv = {0};
-      L_kv *stored_val;
+      T_kv kv = {0};
+      T_kv *stored_val;
       unsigned face[4];
 
       switch (fmt) {
-        case YF_FACEFMT_PTN:
-          /* pos/texc/norm triangle or quad */
-          for (int i = 0; i < n/3; ++i) {
-            kv.key[0] = f[3*i] - 1;
-            kv.key[1] = f[3*i+1] - 1;
-            kv.key[2] = f[3*i+2] - 1;
-            if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
-              face[i] = stored_val->value;
-            } else {
-              if (vtx_n == vtx_cap) {
-                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
-                YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
-                if (tmp == NULL) {
-                  yf_seterr(YF_ERR_NOMEM, __func__);
-                  goto dealloc;
-                }
-                verts = tmp;
-              }
-              yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
-              yf_vec2_copy(verts[vtx_n].tc, texs[kv.key[1]]);
-              yf_vec3_copy(verts[vtx_n].norm, norms[kv.key[2]]);
-              L_kv *new_val = malloc(sizeof kv);
-              if (new_val == NULL) {
+      case YF_FACEFMT_PTN:
+        /* pos/texc/norm triangle or quad */
+        for (int i = 0; i < n/3; ++i) {
+          kv.key[0] = f[3*i] - 1;
+          kv.key[1] = f[3*i+1] - 1;
+          kv.key[2] = f[3*i+2] - 1;
+          if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
+            face[i] = stored_val->value;
+          } else {
+            if (vtx_n == vtx_cap) {
+              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
+              YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
+              if (tmp == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 goto dealloc;
               }
-              *new_val = kv;
-              new_val->value = vtx_n++;
-              yf_hashset_insert(map, new_val);
-              face[i] = new_val->value;
+              verts = tmp;
             }
+            yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
+            yf_vec2_copy(verts[vtx_n].tc, texs[kv.key[1]]);
+            yf_vec3_copy(verts[vtx_n].norm, norms[kv.key[2]]);
+            T_kv *new_val = malloc(sizeof kv);
+            if (new_val == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              goto dealloc;
+            }
+            *new_val = kv;
+            new_val->value = vtx_n++;
+            yf_hashset_insert(map, new_val);
+            face[i] = new_val->value;
           }
+        }
+        inds[idx_n++] = face[0];
+        inds[idx_n++] = face[1];
+        inds[idx_n++] = face[2];
+        if (n == 12) {
           inds[idx_n++] = face[0];
-          inds[idx_n++] = face[1];
           inds[idx_n++] = face[2];
-          if (n == 12) {
-            inds[idx_n++] = face[0];
-            inds[idx_n++] = face[2];
-            inds[idx_n++] = face[3];
-          }
-          break;
+          inds[idx_n++] = face[3];
+        }
+        break;
 
-        case YF_FACEFMT_PT:
-          /* pos/texc triangle or quad */
-          for (int i = 0; i < (n>>1); ++i) {
-            kv.key[0] = f[2*i] - 1;
-            kv.key[1] = f[2*i+1] - 1;
-            if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
-              face[i] = stored_val->value;
-            } else {
-              if (vtx_n == vtx_cap) {
-                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
-                YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
-                if (tmp == NULL) {
-                  yf_seterr(YF_ERR_NOMEM, __func__);
-                  goto dealloc;
-                }
-                verts = tmp;
-              }
-              yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
-              yf_vec2_copy(verts[vtx_n].tc, texs[kv.key[1]]);
-              yf_vec3_set(verts[vtx_n].norm, 0.0);
-              L_kv *new_val = malloc(sizeof kv);
-              if (new_val == NULL) {
+      case YF_FACEFMT_PT:
+        /* pos/texc triangle or quad */
+        for (int i = 0; i < (n>>1); ++i) {
+          kv.key[0] = f[2*i] - 1;
+          kv.key[1] = f[2*i+1] - 1;
+          if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
+            face[i] = stored_val->value;
+          } else {
+            if (vtx_n == vtx_cap) {
+              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
+              YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
+              if (tmp == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 goto dealloc;
               }
-              *new_val = kv;
-              new_val->value = vtx_n++;
-              yf_hashset_insert(map, new_val);
-              face[i] = new_val->value;
+              verts = tmp;
             }
+            yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
+            yf_vec2_copy(verts[vtx_n].tc, texs[kv.key[1]]);
+            yf_vec3_set(verts[vtx_n].norm, 0.0);
+            T_kv *new_val = malloc(sizeof kv);
+            if (new_val == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              goto dealloc;
+            }
+            *new_val = kv;
+            new_val->value = vtx_n++;
+            yf_hashset_insert(map, new_val);
+            face[i] = new_val->value;
           }
+        }
+        inds[idx_n++] = face[0];
+        inds[idx_n++] = face[1];
+        inds[idx_n++] = face[2];
+        if (n == 8) {
           inds[idx_n++] = face[0];
-          inds[idx_n++] = face[1];
           inds[idx_n++] = face[2];
-          if (n == 8) {
-            inds[idx_n++] = face[0];
-            inds[idx_n++] = face[2];
-            inds[idx_n++] = face[3];
-          }
-          break;
+          inds[idx_n++] = face[3];
+        }
+        break;
 
-        case YF_FACEFMT_PN:
-          /* pos/norm triangle or quad */
-          for (int i = 0; i < (n>>1); ++i) {
-            kv.key[0] = f[2*i] - 1;
-            kv.key[2] = f[2*i+1] - 1;
-            if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
-              face[i] = stored_val->value;
-            } else {
-              if (vtx_n == vtx_cap) {
-                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
-                YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
-                if (tmp == NULL) {
-                  yf_seterr(YF_ERR_NOMEM, __func__);
-                  goto dealloc;
-                }
-                verts = tmp;
-              }
-              yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
-              yf_vec2_set(verts[vtx_n].tc, 0.0);
-              yf_vec3_copy(verts[vtx_n].norm, norms[kv.key[2]]);
-              L_kv *new_val = malloc(sizeof kv);
-              if (new_val == NULL) {
+      case YF_FACEFMT_PN:
+        /* pos/norm triangle or quad */
+        for (int i = 0; i < (n>>1); ++i) {
+          kv.key[0] = f[2*i] - 1;
+          kv.key[2] = f[2*i+1] - 1;
+          if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
+            face[i] = stored_val->value;
+          } else {
+            if (vtx_n == vtx_cap) {
+              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
+              YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
+              if (tmp == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 goto dealloc;
               }
-              *new_val = kv;
-              new_val->value = vtx_n++;
-              yf_hashset_insert(map, new_val);
-              face[i] = new_val->value;
+              verts = tmp;
             }
+            yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
+            yf_vec2_set(verts[vtx_n].tc, 0.0);
+            yf_vec3_copy(verts[vtx_n].norm, norms[kv.key[2]]);
+            T_kv *new_val = malloc(sizeof kv);
+            if (new_val == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              goto dealloc;
+            }
+            *new_val = kv;
+            new_val->value = vtx_n++;
+            yf_hashset_insert(map, new_val);
+            face[i] = new_val->value;
           }
+        }
+        inds[idx_n++] = face[0];
+        inds[idx_n++] = face[1];
+        inds[idx_n++] = face[2];
+        if (n == 8) {
           inds[idx_n++] = face[0];
-          inds[idx_n++] = face[1];
           inds[idx_n++] = face[2];
-          if (n == 8) {
-            inds[idx_n++] = face[0];
-            inds[idx_n++] = face[2];
-            inds[idx_n++] = face[3];
-          }
-          break;
+          inds[idx_n++] = face[3];
+        }
+        break;
 
-        case YF_FACEFMT_P:
-          /* position only triangle or quad */
-          for (int i = 0; i < n; ++i) {
-            kv.key[0] = f[i] - 1;
-            if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
-              face[i] = stored_val->value;
-            } else {
-              if (vtx_n == vtx_cap) {
-                vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
-                YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
-                if (tmp == NULL) {
-                  yf_seterr(YF_ERR_NOMEM, __func__);
-                  goto dealloc;
-                }
-                verts = tmp;
-              }
-              yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
-              yf_vec2_set(verts[vtx_n].tc, 0.0);
-              yf_vec3_set(verts[vtx_n].norm, 0.0);
-              L_kv *new_val = malloc(sizeof kv);
-              if (new_val == NULL) {
+      case YF_FACEFMT_P:
+        /* position only triangle or quad */
+        for (int i = 0; i < n; ++i) {
+          kv.key[0] = f[i] - 1;
+          if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
+            face[i] = stored_val->value;
+          } else {
+            if (vtx_n == vtx_cap) {
+              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
+              YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
+              if (tmp == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 goto dealloc;
               }
-              *new_val = kv;
-              new_val->value = vtx_n++;
-              yf_hashset_insert(map, new_val);
-              face[i] = new_val->value;
+              verts = tmp;
             }
+            yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
+            yf_vec2_set(verts[vtx_n].tc, 0.0);
+            yf_vec3_set(verts[vtx_n].norm, 0.0);
+            T_kv *new_val = malloc(sizeof kv);
+            if (new_val == NULL) {
+              yf_seterr(YF_ERR_NOMEM, __func__);
+              goto dealloc;
+            }
+            *new_val = kv;
+            new_val->value = vtx_n++;
+            yf_hashset_insert(map, new_val);
+            face[i] = new_val->value;
           }
+        }
+        inds[idx_n++] = face[0];
+        inds[idx_n++] = face[1];
+        inds[idx_n++] = face[2];
+        if (n == 4) {
           inds[idx_n++] = face[0];
-          inds[idx_n++] = face[1];
           inds[idx_n++] = face[2];
-          if (n == 4) {
-            inds[idx_n++] = face[0];
-            inds[idx_n++] = face[2];
-            inds[idx_n++] = face[3];
-          }
-          break;
+          inds[idx_n++] = face[3];
+        }
+        break;
       }
     }
   }

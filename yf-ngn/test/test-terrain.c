@@ -19,7 +19,7 @@
 #define YF_FPS  30
 
 /* Local variables. */
-struct L_vars {
+struct T_vars {
   YF_window win;
   YF_view view;
   YF_scene scn;
@@ -33,39 +33,39 @@ struct L_vars {
     int quit;
   } input;
 };
-static struct L_vars l_vars = {0};
+static struct T_vars l_vars = {0};
 
 /* Handles key events. */
 static void on_key(int key, int state,
     YF_UNUSED unsigned mod_mask, YF_UNUSED void *arg)
 {
   switch (key) {
-    case YF_KEY_W:
-      l_vars.input.move[0] = state;
-      break;
-    case YF_KEY_S:
-      l_vars.input.move[1] = state;
-      break;
-    case YF_KEY_A:
-      l_vars.input.move[2] = state;
-      break;
-    case YF_KEY_D:
-      l_vars.input.move[3] = state;
-      break;
-    case YF_KEY_UP:
-      l_vars.input.turn[0] = state;
-      break;
-    case YF_KEY_DOWN:
-      l_vars.input.turn[1] = state;
-      break;
-    case YF_KEY_LEFT:
-      l_vars.input.turn[2] = state;
-      break;
-    case YF_KEY_RIGHT:
-      l_vars.input.turn[3] = state;
-      break;
-    default:
-      l_vars.input.quit |= state;
+  case YF_KEY_W:
+    l_vars.input.move[0] = state;
+    break;
+  case YF_KEY_S:
+    l_vars.input.move[1] = state;
+    break;
+  case YF_KEY_A:
+    l_vars.input.move[2] = state;
+    break;
+  case YF_KEY_D:
+    l_vars.input.move[3] = state;
+    break;
+  case YF_KEY_UP:
+    l_vars.input.turn[0] = state;
+    break;
+  case YF_KEY_DOWN:
+    l_vars.input.turn[1] = state;
+    break;
+  case YF_KEY_LEFT:
+    l_vars.input.turn[2] = state;
+    break;
+  case YF_KEY_RIGHT:
+    l_vars.input.turn[3] = state;
+    break;
+  default:
+    l_vars.input.quit |= state;
   }
 }
 

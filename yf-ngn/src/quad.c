@@ -101,23 +101,23 @@ YF_color yf_quad_getcolor(YF_quad quad, int corner) {
 
   unsigned i = 0;
   switch (corner) {
-    case YF_CORNER_TOPL:
-    case YF_CORNER_TOP:
-    case YF_CORNER_LEFT:
-    case YF_CORNER_ALL:
-      i = 0;
-      break;
-    case YF_CORNER_TOPR:
-    case YF_CORNER_RIGHT:
-      i = 3;
-      break;
-    case YF_CORNER_BOTTOML:
-    case YF_CORNER_BOTTOM:
-      i = 1;
-      break;
-    case YF_CORNER_BOTTOMR:
-      i = 2;
-      break;
+  case YF_CORNER_TOPL:
+  case YF_CORNER_TOP:
+  case YF_CORNER_LEFT:
+  case YF_CORNER_ALL:
+    i = 0;
+    break;
+  case YF_CORNER_TOPR:
+  case YF_CORNER_RIGHT:
+    i = 3;
+    break;
+  case YF_CORNER_BOTTOML:
+  case YF_CORNER_BOTTOM:
+    i = 1;
+    break;
+  case YF_CORNER_BOTTOMR:
+    i = 2;
+    break;
   }
 
   const YF_vquad *v = quad->verts+i;

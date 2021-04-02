@@ -19,7 +19,7 @@
 #define YF_FPS  60
 
 /* Local variables. */
-struct L_vars {
+struct T_vars {
   YF_window win;
   YF_view view;
   YF_scene scn;
@@ -36,50 +36,50 @@ struct L_vars {
     int quit;
   } input;
 };
-static struct L_vars l_vars = {0};
+static struct T_vars l_vars = {0};
 
 /* Handles key events. */
 static void on_key(int key, int state,
     YF_UNUSED unsigned mod_mask, YF_UNUSED void *arg)
 {
   switch (key) {
-    case YF_KEY_1:
-      l_vars.input.camera = 1;
-      yf_label_setstr(l_vars.labls[0], L"MODE: Camera");
-      break;
-    case YF_KEY_2:
-      l_vars.input.camera = 0;
-      yf_label_setstr(l_vars.labls[0], L"MODE: Object");
-      break;
-    case YF_KEY_W:
-      l_vars.input.move[0] = state;
-      break;
-    case YF_KEY_S:
-      l_vars.input.move[1] = state;
-      break;
-    case YF_KEY_A:
-      l_vars.input.move[2] = state;
-      break;
-    case YF_KEY_D:
-      l_vars.input.move[3] = state;
-      break;
-    case YF_KEY_UP:
-      l_vars.input.turn[0] = state;
-      break;
-    case YF_KEY_DOWN:
-      l_vars.input.turn[1] = state;
-      break;
-    case YF_KEY_LEFT:
-      l_vars.input.turn[2] = state;
-      break;
-    case YF_KEY_RIGHT:
-      l_vars.input.turn[3] = state;
-      break;
-    case YF_KEY_T:
-      l_vars.input.toggle = state;
-      break;
-    default:
-      l_vars.input.quit |= state;
+  case YF_KEY_1:
+    l_vars.input.camera = 1;
+    yf_label_setstr(l_vars.labls[0], L"MODE: Camera");
+    break;
+  case YF_KEY_2:
+    l_vars.input.camera = 0;
+    yf_label_setstr(l_vars.labls[0], L"MODE: Object");
+    break;
+  case YF_KEY_W:
+    l_vars.input.move[0] = state;
+    break;
+  case YF_KEY_S:
+    l_vars.input.move[1] = state;
+    break;
+  case YF_KEY_A:
+    l_vars.input.move[2] = state;
+    break;
+  case YF_KEY_D:
+    l_vars.input.move[3] = state;
+    break;
+  case YF_KEY_UP:
+    l_vars.input.turn[0] = state;
+    break;
+  case YF_KEY_DOWN:
+    l_vars.input.turn[1] = state;
+    break;
+  case YF_KEY_LEFT:
+    l_vars.input.turn[2] = state;
+    break;
+  case YF_KEY_RIGHT:
+    l_vars.input.turn[3] = state;
+    break;
+  case YF_KEY_T:
+    l_vars.input.toggle = state;
+    break;
+  default:
+    l_vars.input.quit |= state;
   }
 }
 
@@ -232,26 +232,26 @@ int yf_test_misc(void) {
     YF_mat4 *m = yf_node_getxform(yf_label_getnode(l_vars.labls[i]));
 
     switch (i) {
-      case 0:
-        yf_label_setstr(l_vars.labls[i], L"MODE: Object");
-        yf_label_setpt(l_vars.labls[i], 24);
-        (*m)[12] = -0.75;
-        (*m)[13] = -0.9;
-        break;
+    case 0:
+      yf_label_setstr(l_vars.labls[i], L"MODE: Object");
+      yf_label_setpt(l_vars.labls[i], 24);
+      (*m)[12] = -0.75;
+      (*m)[13] = -0.9;
+      break;
 
-      case 1:
-        yf_label_setstr(l_vars.labls[i], L"test-misc");
-        yf_label_setpt(l_vars.labls[i], 18);
-        yf_label_setcolor(l_vars.labls[i], YF_CORNER_ALL, YF_COLOR_BLACK);
-        (*m)[12] = 0.85;
-        (*m)[13] = 0.9;
-        break;
+    case 1:
+      yf_label_setstr(l_vars.labls[i], L"test-misc");
+      yf_label_setpt(l_vars.labls[i], 18);
+      yf_label_setcolor(l_vars.labls[i], YF_CORNER_ALL, YF_COLOR_BLACK);
+      (*m)[12] = 0.85;
+      (*m)[13] = 0.9;
+      break;
 
-      default:
-        yf_label_setstr(l_vars.labls[i], L"label");
-        yf_label_setpt(l_vars.labls[i], 24+i*12);
-        (*m)[12] = i*-0.15;
-        (*m)[13] = i*-0.15;
+    default:
+      yf_label_setstr(l_vars.labls[i], L"label");
+      yf_label_setpt(l_vars.labls[i], 24+i*12);
+      (*m)[12] = i*-0.15;
+      (*m)[13] = i*-0.15;
     }
 
     yf_node_insert(l_vars.labl_node, yf_label_getnode(l_vars.labls[i]));

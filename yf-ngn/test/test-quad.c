@@ -19,7 +19,7 @@
 #define YF_FPS  30
 
 /* Local variables. */
-struct L_vars {
+struct T_vars {
   YF_window win;
   YF_view view;
   YF_scene scn;
@@ -30,7 +30,7 @@ struct L_vars {
     int quit;
   } input;
 };
-static struct L_vars l_vars = {0};
+static struct T_vars l_vars = {0};
 
 /* Handles key events. */
 static void on_key(int key, int state,
@@ -40,8 +40,8 @@ static void on_key(int key, int state,
     return;
 
   switch (key) {
-    default:
-      l_vars.input.quit = 1;
+  default:
+    l_vars.input.quit = 1;
   }
 }
 

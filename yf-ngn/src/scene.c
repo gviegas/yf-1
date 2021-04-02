@@ -77,13 +77,13 @@ typedef struct {
   YF_list parts;
   YF_list quads;
   YF_list labls;
-} L_vars;
+} T_vars;
 
 /* Type defining an entry in the list of obtained resources. */
 typedef struct {
   int resrq;
   unsigned inst_alloc;
-} L_reso;
+} T_reso;
 
 /* Type representing key & value for use in the model sets. */
 typedef struct {
@@ -97,10 +97,10 @@ typedef struct {
   };
   unsigned mdl_n;
   unsigned mdl_cap;
-} L_kv_mdl;
+} T_kv_mdl;
 
 /* Variables' instance. */
-static L_vars l_vars = {0};
+static T_vars l_vars = {0};
 
 /* Initializes shared variables and prepares required resources. */
 static int init_vars(void);
@@ -393,32 +393,32 @@ static int init_vars(void) {
         break;
       }
       switch (i) {
-        case YF_RESRQ_MDL:
-          buf_sz += insts[i] * YF_INSTSZ_MDL;
-          break;
-        case YF_RESRQ_MDL4:
-          buf_sz += insts[i] * (YF_INSTSZ_MDL<<2);
-          break;
-        case YF_RESRQ_MDL16:
-          buf_sz += insts[i] * (YF_INSTSZ_MDL<<4);
-          break;
-        case YF_RESRQ_MDL64:
-          buf_sz += insts[i] * (YF_INSTSZ_MDL<<6);
-          break;
-        case YF_RESRQ_TERR:
-          buf_sz += insts[i] * YF_INSTSZ_TERR;
-          break;
-        case YF_RESRQ_PART:
-          buf_sz += insts[i] * YF_INSTSZ_PART;
-          break;
-        case YF_RESRQ_QUAD:
-          buf_sz += insts[i] * YF_INSTSZ_QUAD;
-          break;
-        case YF_RESRQ_LABL:
-          buf_sz += insts[i] * YF_INSTSZ_LABL;
-          break;
-        default:
-          assert(0);
+      case YF_RESRQ_MDL:
+        buf_sz += insts[i] * YF_INSTSZ_MDL;
+        break;
+      case YF_RESRQ_MDL4:
+        buf_sz += insts[i] * (YF_INSTSZ_MDL<<2);
+        break;
+      case YF_RESRQ_MDL16:
+        buf_sz += insts[i] * (YF_INSTSZ_MDL<<4);
+        break;
+      case YF_RESRQ_MDL64:
+        buf_sz += insts[i] * (YF_INSTSZ_MDL<<6);
+        break;
+      case YF_RESRQ_TERR:
+        buf_sz += insts[i] * YF_INSTSZ_TERR;
+        break;
+      case YF_RESRQ_PART:
+        buf_sz += insts[i] * YF_INSTSZ_PART;
+        break;
+      case YF_RESRQ_QUAD:
+        buf_sz += insts[i] * YF_INSTSZ_QUAD;
+        break;
+      case YF_RESRQ_LABL:
+        buf_sz += insts[i] * YF_INSTSZ_LABL;
+        break;
+      default:
+        assert(0);
       }
     }
     /* proceed if all allocations succeed */
@@ -466,102 +466,102 @@ static int traverse_scn(YF_node node, void *arg) {
   const int nodeobj = yf_node_getobj(node, &obj);
 
   switch (nodeobj) {
-    case YF_NODEOBJ_MODEL: {
-      YF_model mdl = obj;
-      L_kv_mdl key = {
-        {yf_model_getmesh(mdl), yf_model_gettex(mdl)},
-        {NULL}, 0, 0
-      };
-      L_kv_mdl *val = NULL;
-      if ((val = yf_hashset_search(l_vars.mdls, &key)) != NULL) {
-        /* model with shared resources, move to instanced drawing set */
-        YF_model *mdls = malloc(YF_INSTCAP * sizeof mdl);
+  case YF_NODEOBJ_MODEL: {
+    YF_model mdl = obj;
+    T_kv_mdl key = {
+      {yf_model_getmesh(mdl), yf_model_gettex(mdl)},
+      {NULL}, 0, 0
+    };
+    T_kv_mdl *val = NULL;
+    if ((val = yf_hashset_search(l_vars.mdls, &key)) != NULL) {
+      /* model with shared resources, move to instanced drawing set */
+      YF_model *mdls = malloc(YF_INSTCAP * sizeof mdl);
+      if (mdls == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        *(int *)arg = -1;
+        return -1;
+      }
+      yf_hashset_remove(l_vars.mdls, val);
+      if (yf_hashset_insert(l_vars.mdls_inst, val) != 0) {
+        free(mdls);
+        *(int *)arg = -1;
+        return -1;
+      }
+      mdls[0] = val->mdl;
+      mdls[1] = mdl;
+      val->mdls = mdls;
+      val->mdl_n = 2;
+      val->mdl_cap = YF_INSTCAP;
+    } else if ((val = yf_hashset_search(l_vars.mdls_inst, &key)) != NULL) {
+      /* another model for instanced drawing */
+      if (val->mdl_n == val->mdl_cap) {
+        YF_model *mdls = realloc(val->mdls, (val->mdl_cap * sizeof mdl) << 1);
         if (mdls == NULL) {
           yf_seterr(YF_ERR_NOMEM, __func__);
           *(int *)arg = -1;
           return -1;
         }
-        yf_hashset_remove(l_vars.mdls, val);
-        if (yf_hashset_insert(l_vars.mdls_inst, val) != 0) {
-          free(mdls);
-          *(int *)arg = -1;
-          return -1;
-        }
-        mdls[0] = val->mdl;
-        mdls[1] = mdl;
         val->mdls = mdls;
-        val->mdl_n = 2;
-        val->mdl_cap = YF_INSTCAP;
-      } else if ((val = yf_hashset_search(l_vars.mdls_inst, &key)) != NULL) {
-        /* another model for instanced drawing */
-        if (val->mdl_n == val->mdl_cap) {
-          YF_model *mdls = realloc(val->mdls, (val->mdl_cap * sizeof mdl) << 1);
-          if (mdls == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            *(int *)arg = -1;
-            return -1;
-          }
-          val->mdls = mdls;
-          val->mdl_cap *= 2;
-        }
-        val->mdls[val->mdl_n++] = mdl;
-      } else {
-        /* new unique model */
-        if ((val = malloc(sizeof *val)) == NULL) {
-          yf_seterr(YF_ERR_NOMEM, __func__);
-          *(int *)arg = -1;
-          return -1;
-        }
-        *val = key;
-        if (yf_hashset_insert(l_vars.mdls, val) != 0) {
-          *(int *)arg = -1;
-          return -1;
-        }
-        val->mdl = mdl;
-        val->mdl_n = 1;
-        val->mdl_cap = 1;
+        val->mdl_cap *= 2;
       }
-    } break;
-
-    case YF_NODEOBJ_TERRAIN:
-      if (yf_list_insert(l_vars.terrs, obj) != 0) {
+      val->mdls[val->mdl_n++] = mdl;
+    } else {
+      /* new unique model */
+      if ((val = malloc(sizeof *val)) == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
         *(int *)arg = -1;
         return -1;
       }
-      break;
-
-    case YF_NODEOBJ_PARTICLE:
-      if (yf_list_insert(l_vars.parts, obj) != 0) {
+      *val = key;
+      if (yf_hashset_insert(l_vars.mdls, val) != 0) {
         *(int *)arg = -1;
         return -1;
       }
-      break;
+      val->mdl = mdl;
+      val->mdl_n = 1;
+      val->mdl_cap = 1;
+    }
+  } break;
 
-    case YF_NODEOBJ_QUAD:
-      if (yf_list_insert(l_vars.quads, obj) != 0) {
-        *(int *)arg = -1;
-        return -1;
-      }
-      break;
+  case YF_NODEOBJ_TERRAIN:
+    if (yf_list_insert(l_vars.terrs, obj) != 0) {
+      *(int *)arg = -1;
+      return -1;
+    }
+    break;
 
-    case YF_NODEOBJ_LABEL:
-      if (yf_list_insert(l_vars.labls, obj) != 0) {
-        *(int *)arg = -1;
-        return -1;
-      }
-      break;
+  case YF_NODEOBJ_PARTICLE:
+    if (yf_list_insert(l_vars.parts, obj) != 0) {
+      *(int *)arg = -1;
+      return -1;
+    }
+    break;
 
-    case YF_NODEOBJ_LIGHT:
-      /* TODO */
-      assert(0);
+  case YF_NODEOBJ_QUAD:
+    if (yf_list_insert(l_vars.quads, obj) != 0) {
+      *(int *)arg = -1;
+      return -1;
+    }
+    break;
 
-    case YF_NODEOBJ_EFFECT:
-      /* TODO */
-      assert(0);
+  case YF_NODEOBJ_LABEL:
+    if (yf_list_insert(l_vars.labls, obj) != 0) {
+      *(int *)arg = -1;
+      return -1;
+    }
+    break;
 
-    default:
-      /* this is not a drawable object, nothing to do */
-      break;
+  case YF_NODEOBJ_LIGHT:
+    /* TODO */
+    assert(0);
+
+  case YF_NODEOBJ_EFFECT:
+    /* TODO */
+    assert(0);
+
+  default:
+    /* this is not a drawable object, nothing to do */
+    break;
   }
 
 #ifdef YF_DEVEL
@@ -574,11 +574,11 @@ static int render_mdl(YF_scene scn) {
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
   YF_dtable inst_dtb = NULL;
-  L_reso *reso = NULL;
+  T_reso *reso = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
   YF_iter it = YF_NILIT;
-  L_kv_mdl *val = NULL;
+  T_kv_mdl *val = NULL;
 
   do {
     val = yf_hashset_next(l_vars.mdls, &it);
@@ -587,11 +587,11 @@ static int render_mdl(YF_scene scn) {
 
     if ((gst = yf_resmgr_obtain(YF_RESRQ_MDL, &inst_alloc)) == NULL) {
       switch (yf_geterr()) {
-        case YF_ERR_INUSE:
-          /* out of resources, need to execute pending work */
-          return 0;
-        default:
-          return -1;
+      case YF_ERR_INUSE:
+        /* out of resources, need to execute pending work */
+        return 0;
+      default:
+        return -1;
       }
     }
     inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
@@ -643,11 +643,11 @@ static int render_mdl_inst(YF_scene scn) {
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
   YF_dtable inst_dtb = NULL;
-  L_reso *reso = NULL;
+  T_reso *reso = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
   YF_iter it = YF_NILIT;
-  L_kv_mdl *val = NULL;
+  T_kv_mdl *val = NULL;
   YF_list done = yf_list_init(NULL);
   if (done == NULL)
     return -1;
@@ -744,7 +744,7 @@ static int render_terr(YF_scene scn) {
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
   YF_dtable inst_dtb = NULL;
-  L_reso *reso = NULL;
+  T_reso *reso = NULL;
   YF_texture hmap = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
@@ -758,11 +758,11 @@ static int render_terr(YF_scene scn) {
 
     if ((gst = yf_resmgr_obtain(YF_RESRQ_TERR, &inst_alloc)) == NULL) {
       switch (yf_geterr()) {
-        case YF_ERR_INUSE:
-          /* out of resources, need to execute pending work */
-          return 0;
-        default:
-          return -1;
+      case YF_ERR_INUSE:
+        /* out of resources, need to execute pending work */
+        return 0;
+      default:
+        return -1;
       }
     }
     inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
@@ -810,7 +810,7 @@ static int render_part(YF_scene scn) {
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
   YF_dtable inst_dtb = NULL;
-  L_reso *reso = NULL;
+  T_reso *reso = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
   YF_iter it = YF_NILIT;
@@ -823,11 +823,11 @@ static int render_part(YF_scene scn) {
 
     if ((gst = yf_resmgr_obtain(YF_RESRQ_PART, &inst_alloc)) == NULL) {
       switch (yf_geterr()) {
-        case YF_ERR_INUSE:
-          /* out of resources, need to execute pending work */
-          return 0;
-        default:
-          return -1;
+      case YF_ERR_INUSE:
+        /* out of resources, need to execute pending work */
+        return 0;
+      default:
+        return -1;
       }
     }
     inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
@@ -869,7 +869,7 @@ static int render_quad(YF_scene scn) {
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
   YF_dtable inst_dtb = NULL;
-  L_reso* reso = NULL;
+  T_reso* reso = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
   YF_iter it = YF_NILIT;
@@ -882,11 +882,11 @@ static int render_quad(YF_scene scn) {
 
     if ((gst = yf_resmgr_obtain(YF_RESRQ_QUAD, &inst_alloc)) == NULL) {
       switch (yf_geterr()) {
-        case YF_ERR_INUSE:
-          /* out of resources, need to execute pending work */
-          return 0;
-        default:
-          return -1;
+      case YF_ERR_INUSE:
+        /* out of resources, need to execute pending work */
+        return 0;
+      default:
+        return -1;
       }
     }
     inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
@@ -928,7 +928,7 @@ static int render_labl(YF_scene scn) {
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
   YF_dtable inst_dtb = NULL;
-  L_reso *reso = NULL;
+  T_reso *reso = NULL;
   YF_texture tex = NULL;
   YF_mesh mesh = NULL;
   YF_iter it = YF_NILIT;
@@ -941,11 +941,11 @@ static int render_labl(YF_scene scn) {
 
     if ((gst = yf_resmgr_obtain(YF_RESRQ_LABL, &inst_alloc)) == NULL) {
       switch (yf_geterr()) {
-        case YF_ERR_INUSE:
-          /* out of resources, need to execute pending work */
-          return 0;
-        default:
-          return -1;
+      case YF_ERR_INUSE:
+        /* out of resources, need to execute pending work */
+        return 0;
+      default:
+        return -1;
       }
     }
     inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
@@ -1034,144 +1034,144 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
   YF_mat4 mv, *m;
 
   switch (resrq) {
-    case YF_RESRQ_MDL:
-    case YF_RESRQ_MDL4:
-    case YF_RESRQ_MDL16:
-    case YF_RESRQ_MDL64:
-      off = l_vars.buf_off;
-      sz = obj_n * YF_INSTSZ_MDL;
-      for (unsigned i = 0; i < obj_n; ++i) {
-        YF_model mdl = ((YF_model *)objs)[i];
-        m = yf_node_getxform(yf_model_getnode(mdl));
-        yf_mat4_mul(mv, *v, *m);
-        /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
-          return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
-        /* model-view matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
-          return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
-      }
+  case YF_RESRQ_MDL:
+  case YF_RESRQ_MDL4:
+  case YF_RESRQ_MDL16:
+  case YF_RESRQ_MDL64:
+    off = l_vars.buf_off;
+    sz = obj_n * YF_INSTSZ_MDL;
+    for (unsigned i = 0; i < obj_n; ++i) {
+      YF_model mdl = ((YF_model *)objs)[i];
+      m = yf_node_getxform(yf_model_getnode(mdl));
+      yf_mat4_mul(mv, *v, *m);
+      /* model matrix */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+        return -1;
+      l_vars.buf_off += sizeof(YF_mat4);
+      /* model-view matrix */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+        return -1;
+      l_vars.buf_off += sizeof(YF_mat4);
+    }
+    /* copy */
+    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+          &l_vars.buf, &off, &sz) != 0)
+      return -1;
+    break;
+
+  case YF_RESRQ_TERR:
+    assert(obj_n == 1);
+    off = l_vars.buf_off;
+    sz = obj_n * YF_INSTSZ_TERR;
+    {
+      YF_terrain terr = ((YF_terrain *)objs)[0];
+      m = yf_node_getxform(yf_terrain_getnode(terr));
+      yf_mat4_mul(mv, *v, *m);
+      /* model matrix */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+        return -1;
+      l_vars.buf_off += sizeof(YF_mat4);
+      /* model-view matrix */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+        return -1;
+      l_vars.buf_off += sizeof(YF_mat4);
       /* copy */
       if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
             &l_vars.buf, &off, &sz) != 0)
         return -1;
-      break;
+    }
+    break;
 
-    case YF_RESRQ_TERR:
-      assert(obj_n == 1);
-      off = l_vars.buf_off;
-      sz = obj_n * YF_INSTSZ_TERR;
-      {
-        YF_terrain terr = ((YF_terrain *)objs)[0];
-        m = yf_node_getxform(yf_terrain_getnode(terr));
-        yf_mat4_mul(mv, *v, *m);
-        /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
-          return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
-        /* model-view matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
-          return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
-        /* copy */
-        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
-              &l_vars.buf, &off, &sz) != 0)
-          return -1;
-      }
-      break;
+  case YF_RESRQ_PART:
+    assert(obj_n == 1);
+    off = l_vars.buf_off;
+    sz = obj_n * YF_INSTSZ_PART;
+    {
+      YF_particle part = ((YF_particle *)objs)[0];
+      m = yf_node_getxform(yf_particle_getnode(part));
+      yf_mat4_mul(mv, *v, *m);
+      /* model matrix */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+        return -1;
+      l_vars.buf_off += sizeof(YF_mat4);
+      /* model-view matrix */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+        return -1;
+      l_vars.buf_off += sizeof(YF_mat4);
+      /* copy */
+      if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+            &l_vars.buf, &off, &sz) != 0)
+        return -1;
+    }
+    break;
 
-    case YF_RESRQ_PART:
-      assert(obj_n == 1);
-      off = l_vars.buf_off;
-      sz = obj_n * YF_INSTSZ_PART;
-      {
-        YF_particle part = ((YF_particle *)objs)[0];
-        m = yf_node_getxform(yf_particle_getnode(part));
-        yf_mat4_mul(mv, *v, *m);
-        /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
-          return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
-        /* model-view matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
-          return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
-        /* copy */
-        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
-              &l_vars.buf, &off, &sz) != 0)
-          return -1;
-      }
-      break;
+  case YF_RESRQ_QUAD:
+    assert(obj_n == 1);
+    off = l_vars.buf_off;
+    sz = obj_n * YF_INSTSZ_QUAD;
+    {
+      YF_quad quad = ((YF_quad *)objs)[0];
+      m = yf_node_getxform(yf_quad_getnode(quad));
+      yf_mat4_mul(mv, *v, *m);
+      const YF_rect *rect = yf_quad_getrect(quad);
+      const float dim[2] = {rect->size.width, rect->size.height};
+      /* model matrix */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+        return -1;
+      l_vars.buf_off += sizeof(YF_mat4);
+      /* model-view matrix */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+        return -1;
+      l_vars.buf_off += sizeof(YF_mat4);
+      /* dimensions */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim, sizeof dim) != 0)
+        return -1;
+      l_vars.buf_off += 16;
+      /* copy */
+      if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+            &l_vars.buf, &off, &sz) != 0)
+        return -1;
+    }
+    break;
 
-    case YF_RESRQ_QUAD:
-      assert(obj_n == 1);
-      off = l_vars.buf_off;
-      sz = obj_n * YF_INSTSZ_QUAD;
-      {
-        YF_quad quad = ((YF_quad *)objs)[0];
-        m = yf_node_getxform(yf_quad_getnode(quad));
-        yf_mat4_mul(mv, *v, *m);
-        const YF_rect *rect = yf_quad_getrect(quad);
-        const float dim[2] = {rect->size.width, rect->size.height};
-        /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
-          return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
-        /* model-view matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
-          return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
-        /* dimensions */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim, sizeof dim) != 0)
-          return -1;
-        l_vars.buf_off += 16;
-        /* copy */
-        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
-              &l_vars.buf, &off, &sz) != 0)
-          return -1;
-      }
-      break;
+  case YF_RESRQ_LABL:
+    assert(obj_n == 1);
+    off = l_vars.buf_off;
+    sz = obj_n * YF_INSTSZ_LABL;
+    {
+      YF_label labl = ((YF_label *)objs)[0];
+      m = yf_node_getxform(yf_label_getnode(labl));
+      yf_mat4_mul(mv, *v, *m);
+      const YF_dim2 udim = yf_label_getdim(labl);
+      const float dim[2] = {udim.width, udim.height};
+      /* model matrix */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+        return -1;
+      l_vars.buf_off += sizeof(YF_mat4);
+      /* model-view matrix */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+        return -1;
+      l_vars.buf_off += sizeof(YF_mat4);
+      /* dimensions */
+      if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim, sizeof dim) != 0)
+        return -1;
+      l_vars.buf_off += 16;
+      /* copy */
+      if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+            &l_vars.buf, &off, &sz) != 0)
+        return -1;
+    }
+    break;
 
-    case YF_RESRQ_LABL:
-      assert(obj_n == 1);
-      off = l_vars.buf_off;
-      sz = obj_n * YF_INSTSZ_LABL;
-      {
-        YF_label labl = ((YF_label *)objs)[0];
-        m = yf_node_getxform(yf_label_getnode(labl));
-        yf_mat4_mul(mv, *v, *m);
-        const YF_dim2 udim = yf_label_getdim(labl);
-        const float dim[2] = {udim.width, udim.height};
-        /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
-          return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
-        /* model-view matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
-          return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
-        /* dimensions */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim, sizeof dim) != 0)
-          return -1;
-        l_vars.buf_off += 16;
-        /* copy */
-        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
-              &l_vars.buf, &off, &sz) != 0)
-          return -1;
-      }
-      break;
-
-    default:
-      assert(0);
+  default:
+    assert(0);
   }
 
   return 0;
 }
 
 static void yield_res(void) {
-  L_reso *val;
+  T_reso *val;
   while ((val = yf_list_removeat(l_vars.res_obtd, NULL)) != NULL) {
     yf_resmgr_yield(val->resrq, val->inst_alloc);
     free(val);
@@ -1194,18 +1194,18 @@ static void clear_obj(void) {
 }
 
 static size_t hash_mdl(const void *x) {
-  const L_kv_mdl *kv = x;
+  const T_kv_mdl *kv = x;
   return (size_t)kv->key.mesh ^ (size_t)kv->key.tex ^ 0x516536655d2b;
 }
 
 static int cmp_mdl(const void *a, const void *b) {
-  const L_kv_mdl *kv1 = a;
-  const L_kv_mdl *kv2 = b;
+  const T_kv_mdl *kv1 = a;
+  const T_kv_mdl *kv2 = b;
   return !(kv1->key.mesh == kv2->key.mesh && kv1->key.tex == kv2->key.tex);
 }
 
 static int dealloc_mdl(void *val, YF_UNUSED void *arg) {
-  L_kv_mdl *kv = val;
+  T_kv_mdl *kv = val;
   if (kv->mdl_n > 1)
     free(kv->mdls);
   free(val);

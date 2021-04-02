@@ -147,10 +147,10 @@ int yf_view_render(YF_view view) {
   int next = yf_wsi_next(view->wsi, 0);
   if (next < 0) {
     switch (yf_geterr()) {
-      case YF_ERR_INVWIN:
-        /* TODO: Recreate window. */
-      default:
-        assert(0);
+    case YF_ERR_INVWIN:
+      /* TODO: Recreate window. */
+    default:
+      assert(0);
     }
   }
 
@@ -161,10 +161,10 @@ int yf_view_render(YF_view view) {
 
   if (yf_wsi_present(view->wsi, next) != 0) {
     switch (yf_geterr()) {
-      case YF_ERR_INVWIN:
-        /* TODO: Recreate window. */
-      default:
-        assert(0);
+    case YF_ERR_INVWIN:
+      /* TODO: Recreate window. */
+    default:
+      assert(0);
     }
   }
 

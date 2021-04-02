@@ -40,10 +40,10 @@ typedef struct {
   char *obtained;
   unsigned n;
   unsigned i;
-} L_entry;
+} T_entry;
 
 /* List of resources, indexed by 'resrq' values. */
-static L_entry l_entries[YF_RESRQ_N] = {0};
+static T_entry l_entries[YF_RESRQ_N] = {0};
 
 /* Global descriptor table. */
 static YF_dtable l_glob = NULL;
@@ -67,19 +67,19 @@ static int init_entry(int resrq);
 static void deinit_entry(int resrq);
 
 /* Initializes the entry of a model resource. */
-static int init_mdl(L_entry *entry, unsigned elements);
+static int init_mdl(T_entry *entry, unsigned elements);
 
 /* Initializes the entry of a terrain resource. */
-static int init_terr(L_entry *entry);
+static int init_terr(T_entry *entry);
 
 /* Initializes the entry of a particle system resource. */
-static int init_part(L_entry *entry);
+static int init_part(T_entry *entry);
 
 /* Initializes the entry of a quad resource. */
-static int init_quad(L_entry *entry);
+static int init_quad(T_entry *entry);
 
 /* Initializes the entry of a label resource. */
-static int init_labl(L_entry *entry);
+static int init_labl(T_entry *entry);
 
 /* Makes a string to use as the pathname of a shader module.
    The caller is responsible for deallocating the returned string. */
@@ -229,25 +229,25 @@ static int init_entry(int resrq) {
 
   /* TODO: Consider using spec. constants to set the number of elements. */
   switch (resrq) {
-    case YF_RESRQ_MDL:
-      return init_mdl(l_entries+resrq, 1);
-    case YF_RESRQ_MDL4:
-      return init_mdl(l_entries+resrq, 4);
-    case YF_RESRQ_MDL16:
-      return init_mdl(l_entries+resrq, 16);
-    case YF_RESRQ_MDL64:
-      return init_mdl(l_entries+resrq, 64);
-    case YF_RESRQ_TERR:
-      return init_terr(l_entries+resrq);
-    case YF_RESRQ_PART:
-      return init_part(l_entries+resrq);
-    case YF_RESRQ_QUAD:
-      return init_quad(l_entries+resrq);
-    case YF_RESRQ_LABL:
-      return init_labl(l_entries+resrq);
-    default:
-      assert(0);
-      return -1;
+  case YF_RESRQ_MDL:
+    return init_mdl(l_entries+resrq, 1);
+  case YF_RESRQ_MDL4:
+    return init_mdl(l_entries+resrq, 4);
+  case YF_RESRQ_MDL16:
+    return init_mdl(l_entries+resrq, 16);
+  case YF_RESRQ_MDL64:
+    return init_mdl(l_entries+resrq, 64);
+  case YF_RESRQ_TERR:
+    return init_terr(l_entries+resrq);
+  case YF_RESRQ_PART:
+    return init_part(l_entries+resrq);
+  case YF_RESRQ_QUAD:
+    return init_quad(l_entries+resrq);
+  case YF_RESRQ_LABL:
+    return init_labl(l_entries+resrq);
+  default:
+    assert(0);
+    return -1;
   }
 }
 
@@ -272,10 +272,10 @@ static void deinit_entry(int resrq) {
   yf_dtable_deinit(yf_gstate_getdtb(l_entries[resrq].gst, YF_RESIDX_INST));
   yf_gstate_deinit(l_entries[resrq].gst);
   free(l_entries[resrq].obtained);
-  memset(l_entries+resrq, 0, sizeof(L_entry));
+  memset(l_entries+resrq, 0, sizeof(T_entry));
 }
 
-static int init_mdl(L_entry *entry, unsigned elements) {
+static int init_mdl(T_entry *entry, unsigned elements) {
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
 
@@ -368,7 +368,7 @@ static int init_mdl(L_entry *entry, unsigned elements) {
   return 0;
 }
 
-static int init_terr(L_entry *entry) {
+static int init_terr(T_entry *entry) {
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
 
@@ -462,7 +462,7 @@ static int init_terr(L_entry *entry) {
   return 0;
 }
 
-static int init_part(L_entry *entry) {
+static int init_part(T_entry *entry) {
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
 
@@ -554,7 +554,7 @@ static int init_part(L_entry *entry) {
   return 0;
 }
 
-static int init_quad(L_entry *entry) {
+static int init_quad(T_entry *entry) {
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
 
@@ -647,7 +647,7 @@ static int init_quad(L_entry *entry) {
   return 0;
 }
 
-static int init_labl(L_entry *entry) {
+static int init_labl(T_entry *entry) {
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
 
@@ -743,55 +743,55 @@ static int init_labl(L_entry *entry) {
 static char *make_shdpath(int nodeobj, int stage, unsigned elements) {
   char *obj_name = NULL;
   switch (nodeobj) {
-    case YF_NODEOBJ_MODEL:
-      obj_name = "mdl";
-      break;
-    case YF_NODEOBJ_TERRAIN:
-      obj_name = "terr";
-      break;
-    case YF_NODEOBJ_PARTICLE:
-      obj_name = "part";
-      break;
-    case YF_NODEOBJ_QUAD:
-      obj_name = "quad";
-      break;
-    case YF_NODEOBJ_LABEL:
-      obj_name = "labl";
-      break;
-    case YF_NODEOBJ_LIGHT:
-      obj_name = "lig";
-      break;
-    case YF_NODEOBJ_EFFECT:
-      obj_name = "fx";
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
-      return NULL;
+  case YF_NODEOBJ_MODEL:
+    obj_name = "mdl";
+    break;
+  case YF_NODEOBJ_TERRAIN:
+    obj_name = "terr";
+    break;
+  case YF_NODEOBJ_PARTICLE:
+    obj_name = "part";
+    break;
+  case YF_NODEOBJ_QUAD:
+    obj_name = "quad";
+    break;
+  case YF_NODEOBJ_LABEL:
+    obj_name = "labl";
+    break;
+  case YF_NODEOBJ_LIGHT:
+    obj_name = "lig";
+    break;
+  case YF_NODEOBJ_EFFECT:
+    obj_name = "fx";
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return NULL;
   }
 
   char *stg_name = NULL;
   switch (stage) {
-    case YF_STAGE_VERT:
-      stg_name = "vert";
-      break;
-    case YF_STAGE_TESC:
-      stg_name = "tesc";
-      break;
-    case YF_STAGE_TESE:
-      stg_name = "tese";
-      break;
-    case YF_STAGE_GEOM:
-      stg_name = "geom";
-      break;
-    case YF_STAGE_FRAG:
-      stg_name = "frag";
-      break;
-    case YF_STAGE_COMP:
-      stg_name = "comp";
-      break;
-    default:
-      yf_seterr(YF_ERR_INVARG, __func__);
-      return NULL;
+  case YF_STAGE_VERT:
+    stg_name = "vert";
+    break;
+  case YF_STAGE_TESC:
+    stg_name = "tesc";
+    break;
+  case YF_STAGE_TESE:
+    stg_name = "tese";
+    break;
+  case YF_STAGE_GEOM:
+    stg_name = "geom";
+    break;
+  case YF_STAGE_FRAG:
+    stg_name = "frag";
+    break;
+  case YF_STAGE_COMP:
+    stg_name = "comp";
+    break;
+  default:
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return NULL;
   }
 
   char elem_str[8] = {'\0'};
