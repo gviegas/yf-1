@@ -2,7 +2,7 @@
  * YF
  * hashset.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -30,12 +30,12 @@
 #define YF_MAXLOADF 0.75
 
 #undef YF_HASH
-#define YF_HASH(res, a, x, b, w) (res = (a*x+b) >> (YF_WBITS-w))
+#define YF_HASH(res, a, x, b, w) (res = ((a)*(x)+(b)) >> (YF_WBITS-(w)))
 
 #undef YF_LCG
 #define YF_LCG(state, xn) do { \
-  state = (0x5deece66dULL * state + 0xb) % 0x1000000000000ULL; \
-  xn = state >> 16; } while (0)
+  state = (0x5deece66dULL * (state) + 0xb) % 0x1000000000000ULL; \
+  xn = (state) >> 16; } while (0)
 
 struct YF_hashset_o {
   YF_hashfn hash;
@@ -299,7 +299,7 @@ static void make_seed(unsigned long long *seed) {
 #else
   *seed = time(NULL);
 #endif
-  *seed &= ((unsigned long long)1 << 48) - 1;
+  *seed &= (1ULL << 48) - 1;
 }
 
 static void make_factors(unsigned long long *state, size_t *a, size_t *b) {

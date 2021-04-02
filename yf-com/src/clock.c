@@ -2,7 +2,7 @@
  * YF
  * clock.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <time.h>
@@ -21,6 +21,7 @@ double yf_gettime(void) {
   assert(ts.tv_sec + 1 < DBL_MAX);
   tm = (double)ts.tv_sec + (double)ts.tv_nsec * 1.0e-9;
 #else
+/* TODO: Other platforms. */
 # error "Invalid platform"
 #endif
   return tm;
@@ -38,6 +39,7 @@ void yf_sleep(double seconds) {
     ts = ts_rem;
   }
 #else
+/* TODO: Other platforms. */
 # error "Invalid platform"
 #endif
 }
