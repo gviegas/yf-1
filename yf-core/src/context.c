@@ -16,8 +16,8 @@
 # error "C11 atomics required"
 #endif
 
-#include <yf/com/yf-util.h>
-#include <yf/com/yf-error.h>
+#include "yf/com/yf-util.h"
+#include "yf/com/yf-error.h"
 
 #include "context.h"
 #include "cmdpool.h"

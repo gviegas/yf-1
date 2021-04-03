@@ -2,7 +2,7 @@
  * YF
  * yf-buffer.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_BUFFER_H
@@ -10,7 +10,7 @@
 
 #include <stddef.h>
 
-#include <yf/com/yf-defs.h>
+#include "yf/com/yf-defs.h"
 
 #include "yf-context.h"
 

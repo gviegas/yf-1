@@ -2,12 +2,12 @@
  * YF
  * memory.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <assert.h>
 
-#include <yf/com/yf-error.h>
+#include "yf/com/yf-error.h"
 
 #include "memory.h"
 #include "context.h"

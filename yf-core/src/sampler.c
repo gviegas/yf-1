@@ -8,7 +8,7 @@
 #include <limits.h>
 #include <assert.h>
 
-#include <yf/com/yf-error.h>
+#include "yf/com/yf-error.h"
 
 #include "sampler.h"
 #include "context.h"

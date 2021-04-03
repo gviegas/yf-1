@@ -2,13 +2,13 @@
  * YF
  * yf-dtable.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_DTABLE_H
 #define YF_YF_DTABLE_H
 
-#include <yf/com/yf-defs.h>
+#include "yf/com/yf-defs.h"
 
 #include "yf-context.h"
 #include "yf-buffer.h"

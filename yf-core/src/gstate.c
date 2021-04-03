@@ -10,7 +10,7 @@
 #include <limits.h>
 #include <assert.h>
 
-#include <yf/com/yf-error.h>
+#include "yf/com/yf-error.h"
 
 #include "gstate.h"
 #include "context.h"
