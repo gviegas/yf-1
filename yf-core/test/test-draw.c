@@ -10,8 +10,8 @@
 #include <time.h>
 #include <assert.h>
 
-#include <yf/wsys/yf-event.h>
-#include <yf/wsys/yf-keyboard.h>
+#include "yf/wsys/yf-event.h"
+#include "yf/wsys/yf-keyboard.h"
 
 #include "yf-core.h"
 

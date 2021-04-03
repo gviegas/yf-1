@@ -9,8 +9,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <yf/com/yf-hashset.h>
-#include <yf/com/yf-error.h>
+#include "yf/com/yf-hashset.h"
+#include "yf/com/yf-error.h"
 
 #include "stage.h"
 #include "context.h"

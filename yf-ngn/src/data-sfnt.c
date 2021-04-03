@@ -12,18 +12,18 @@
 #include <math.h>
 #include <assert.h>
 
-#include <yf/com/yf-util.h>
-#include <yf/com/yf-hashset.h>
-#include <yf/com/yf-error.h>
-
-#include "data-sfnt.h"
-
 #ifdef _DEFAULT_SOURCE
 #include <endian.h>
 #else
 /* TODO */
 # error "Invalid platform"
 #endif
+
+#include "yf/com/yf-util.h"
+#include "yf/com/yf-hashset.h"
+#include "yf/com/yf-error.h"
+
+#include "data-sfnt.h"
 
 #define YF_SFNT_MAKETAG(c1, c2, c3, c4) \
   ((c1 << 24) | (c2 << 16) | (c3 << 8) | c4)

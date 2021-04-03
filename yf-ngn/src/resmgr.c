@@ -10,7 +10,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include <yf/com/yf-error.h>
+#include "yf/com/yf-error.h"
 
 #include "resmgr.h"
 #include "coreobj.h"

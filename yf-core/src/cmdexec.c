@@ -9,9 +9,9 @@
 #include <string.h>
 #include <assert.h>
 
-#include <yf/com/yf-util.h>
-#include <yf/com/yf-list.h>
-#include <yf/com/yf-error.h>
+#include "yf/com/yf-util.h"
+#include "yf/com/yf-list.h"
+#include "yf/com/yf-error.h"
 
 #include "cmdexec.h"
 #include "context.h"

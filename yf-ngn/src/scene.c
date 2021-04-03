@@ -8,11 +8,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <yf/com/yf-util.h>
-#include <yf/com/yf-list.h>
-#include <yf/com/yf-hashset.h>
-#include <yf/com/yf-error.h>
-#include <yf/core/yf-cmdbuf.h>
+#include "yf/com/yf-util.h"
+#include "yf/com/yf-list.h"
+#include "yf/com/yf-hashset.h"
+#include "yf/com/yf-error.h"
+#include "yf/core/yf-cmdbuf.h"
 
 #include "scene.h"
 #include "coreobj.h"

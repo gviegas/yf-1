@@ -8,7 +8,7 @@
 #ifndef YF_YF_GSTATE_H
 #define YF_YF_GSTATE_H
 
-#include <yf/com/yf-defs.h>
+#include "yf/com/yf-defs.h"
 
 #include "yf-pass.h"
 #include "yf-stage.h"

@@ -11,18 +11,18 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <yf/com/yf-util.h>
-#include <yf/com/yf-error.h>
-#include <yf/core/yf-image.h>
-
-#include "data-bmp.h"
-
 #ifdef _DEFAULT_SOURCE
 # include <endian.h>
 #else
 /* TODO */
 # error "Invalid platform"
 #endif
+
+#include "yf/com/yf-util.h"
+#include "yf/com/yf-error.h"
+#include "yf/core/yf-image.h"
+
+#include "data-bmp.h"
 
 /* Type representing the BMP file header. */
 typedef struct {

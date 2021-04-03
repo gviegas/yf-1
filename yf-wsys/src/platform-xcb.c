@@ -10,8 +10,8 @@
 #include <dlfcn.h>
 #include <assert.h>
 
-#include <yf/com/yf-list.h>
-#include <yf/com/yf-error.h>
+#include "yf/com/yf-list.h"
+#include "yf/com/yf-error.h"
 
 #include "platform-xcb.h"
 #include "yf-keyboard.h"

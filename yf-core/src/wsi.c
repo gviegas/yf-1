@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <yf/com/yf-util.h>
-#include <yf/com/yf-error.h>
-#include <yf/wsys/yf-platform.h>
+#include "yf/com/yf-util.h"
+#include "yf/com/yf-error.h"
+#include "yf/wsys/yf-platform.h"
 
 #include "wsi.h"
 #include "context.h"

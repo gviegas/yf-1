@@ -9,8 +9,8 @@
 #include <string.h>
 #include <assert.h>
 
-#include <yf/com/yf-pubsub.h>
-#include <yf/com/yf-error.h>
+#include "yf/com/yf-pubsub.h"
+#include "yf/com/yf-error.h"
 
 #include "image.h"
 #include "context.h"

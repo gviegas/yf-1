@@ -2,13 +2,13 @@
  * YF
  * yf-cmdbuf.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_CMDBUF_H
 #define YF_YF_CMDBUF_H
 
-#include <yf/com/yf-defs.h>
+#include "yf/com/yf-defs.h"
 
 #include "yf-gstate.h"
 #include "yf-cstate.h"

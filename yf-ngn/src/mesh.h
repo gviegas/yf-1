@@ -8,7 +8,7 @@
 #ifndef YF_MESH_H
 #define YF_MESH_H
 
-#include <yf/core/yf-cmdbuf.h>
+#include "yf/core/yf-cmdbuf.h"
 
 #include "yf-mesh.h"
 

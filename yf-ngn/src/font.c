@@ -10,9 +10,9 @@
 #include <wchar.h>
 #include <assert.h>
 
-#include <yf/com/yf-util.h>
-#include <yf/com/yf-hashset.h>
-#include <yf/com/yf-error.h>
+#include "yf/com/yf-util.h"
+#include "yf/com/yf-hashset.h"
+#include "yf/com/yf-error.h"
 
 #include "font.h"
 #include "data-sfnt.h"

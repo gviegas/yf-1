@@ -9,7 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include <yf/com/yf-clock.h>
+#include "yf/com/yf-clock.h"
 
 #include "test.h"
 #include "yf-wsys.h"
