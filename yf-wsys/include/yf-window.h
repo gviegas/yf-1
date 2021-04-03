@@ -2,13 +2,13 @@
  * YF
  * yf-window.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_WINDOW_H
 #define YF_YF_WINDOW_H
 
-#include <yf/com/yf-defs.h>
+#include "yf/com/yf-defs.h"
 
 YF_DECLS_BEGIN
 
