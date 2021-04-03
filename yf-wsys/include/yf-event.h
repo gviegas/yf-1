@@ -2,7 +2,7 @@
  * YF
  * yf-event.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_EVENT_H
@@ -63,7 +63,8 @@ int yf_pollevt(unsigned evt_mask);
  * Sets an event handler.
  *
  * @param evt: The 'YF_EVT' value indicating the event type.
- * @param fn: The function to set. It must match the provided 'evt' type.
+ * @param fn: The function to set. If not 'NULL', then it must match the
+ *  provided 'evt' type.
  * @param arg: The generic argument to pass on 'fn' calls. Can be 'NULL'.
  */
 void yf_setevtfn(int evt, YF_evtfn fn, void *arg);
