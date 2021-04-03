@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-#include <yf/com/yf-types.h>
+#include "yf/com/yf-types.h"
 
 #include "yf-font.h"
 #include "yf-texture.h"

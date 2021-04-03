@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <yf/wsys/yf-wsys.h>
+#include "yf/wsys/yf-wsys.h"
 
 #include "yf-ngn.h"
 

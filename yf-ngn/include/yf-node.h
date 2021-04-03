@@ -10,7 +10,7 @@
 
 #include <stddef.h>
 
-#include <yf/com/yf-defs.h>
+#include "yf/com/yf-defs.h"
 
 #include "yf-matrix.h"
 

@@ -8,7 +8,7 @@
 #ifndef YF_TEXTURE_H
 #define YF_TEXTURE_H
 
-#include <yf/core/yf-cmdbuf.h>
+#include "yf/core/yf-cmdbuf.h"
 
 #include "yf-texture.h"
 

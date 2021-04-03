@@ -8,7 +8,7 @@
 #ifndef YF_YF_PARTICLE_H
 #define YF_YF_PARTICLE_H
 
-#include <yf/com/yf-defs.h>
+#include "yf/com/yf-defs.h"
 
 #include "yf-node.h"
 #include "yf-mesh.h"

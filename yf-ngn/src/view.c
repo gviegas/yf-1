@@ -8,11 +8,11 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <yf/com/yf-clock.h>
-#include <yf/com/yf-error.h>
-#include <yf/core/yf-image.h>
-#include <yf/core/yf-wsi.h>
-#include <yf/wsys/yf-event.h>
+#include "yf/com/yf-clock.h"
+#include "yf/com/yf-error.h"
+#include "yf/core/yf-image.h"
+#include "yf/core/yf-wsi.h"
+#include "yf/wsys/yf-event.h"
 
 #include "view.h"
 #include "coreobj.h"

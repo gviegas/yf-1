@@ -10,9 +10,9 @@
 #include <time.h>
 #include <assert.h>
 
-#include <yf/com/yf-util.h>
-#include <yf/wsys/yf-event.h>
-#include <yf/wsys/yf-keyboard.h>
+#include "yf/com/yf-util.h"
+#include "yf/wsys/yf-event.h"
+#include "yf/wsys/yf-keyboard.h"
 
 #include "yf-ngn.h"
 

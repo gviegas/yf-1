@@ -19,18 +19,18 @@
 # error "Missing C11 atomics"
 #endif
 
-#include <yf/com/yf-util.h>
-#include <yf/com/yf-error.h>
-#include <yf/core/yf-image.h>
-
-#include "data-png.h"
-
 #ifdef _DEFAULT_SOURCE
 # include <endian.h>
 #else
 /* TODO */
 # error "Invalid platform"
 #endif
+
+#include "yf/com/yf-util.h"
+#include "yf/com/yf-error.h"
+#include "yf/core/yf-image.h"
+
+#include "data-png.h"
 
 #define YF_PNG_MAKETYPE(c1, c2, c3, c4) \
   ((c1 << 24) | (c2 << 16) | (c3 << 8) | c4)

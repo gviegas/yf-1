@@ -8,7 +8,7 @@
 #ifndef YF_RESMGR_H
 #define YF_RESMGR_H
 
-#include <yf/core/yf-gstate.h>
+#include "yf/core/yf-gstate.h"
 
 /* Resource requirements for node objects. */
 #define YF_RESRQ_MDL   0
