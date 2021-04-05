@@ -280,7 +280,8 @@ void yf_image_getval(YF_image img, int *pixfmt, YF_dim3 *dim,
     YF_SAMPLES_TO(img->samples, *samples);
 }
 
-void yf_image_deinit(YF_image img) {
+void yf_image_deinit(YF_image img)
+{
   if (img == NULL)
     return;
 
@@ -442,7 +443,8 @@ int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
   return 0;
 }
 
-void yf_image_ungetiview(YF_image img, YF_iview *iview) {
+void yf_image_ungetiview(YF_image img, YF_iview *iview)
+{
   assert(img != NULL);
   assert(iview != NULL);
 
@@ -460,7 +462,8 @@ void yf_image_ungetiview(YF_image img, YF_iview *iview) {
 }
 
 /* TODO: Provide more parameters for this function. */
-void yf_image_transition(YF_image img, VkCommandBuffer cbuffer) {
+void yf_image_transition(YF_image img, VkCommandBuffer cbuffer)
+{
   assert(img != NULL);
   assert(cbuffer != NULL);
 
@@ -489,19 +492,22 @@ void yf_image_transition(YF_image img, VkCommandBuffer cbuffer) {
       VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0, 0, NULL, 0, NULL, 1, &barrier);
 }
 
-static void dealloc_stgbuf(int res, void *arg) {
+static void dealloc_stgbuf(int res, void *arg)
+{
   assert(res == 0);
   yf_buffer_deinit((YF_buffer)arg);
 }
 
-static size_t hash_iview(const void *x) {
+static size_t hash_iview(const void *x)
+{
   const T_priv *pv = ((YF_iview *)x)->priv;
   const size_t h1 = (pv->key.layers.n << 16) | (pv->key.layers.i & 0xffff);
   const size_t h2 = (pv->key.levels.n << 5) | (pv->key.levels.i & 0x1f);
   return ((h1 << 10) | (h2 & 0x3ff)) ^ 0x88864753;
 }
 
-static int cmp_iview(const void *a, const void *b) {
+static int cmp_iview(const void *a, const void *b)
+{
   const T_priv *pv1 = ((YF_iview *)a)->priv;
   const T_priv *pv2 = ((YF_iview *)b)->priv;
   return (pv1->key.layers.i != pv2->key.layers.i) ||

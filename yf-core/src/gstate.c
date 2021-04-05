@@ -19,7 +19,8 @@
 #include "dtable.h"
 #include "vinput.h"
 
-YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf) {
+YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
+{
   assert(ctx != NULL);
   assert(conf != NULL);
 
@@ -359,12 +360,14 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf) {
   return gst;
 }
 
-YF_pass yf_gstate_getpass(YF_gstate gst) {
+YF_pass yf_gstate_getpass(YF_gstate gst)
+{
   assert(gst != NULL);
   return gst->pass;
 }
 
-const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage) {
+const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage)
+{
   assert(gst != NULL);
 
   for (unsigned i = 0; i < gst->stg_n; ++i) {
@@ -374,7 +377,8 @@ const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage) {
   return NULL;
 }
 
-YF_dtable yf_gstate_getdtb(YF_gstate gst, unsigned index) {
+YF_dtable yf_gstate_getdtb(YF_gstate gst, unsigned index)
+{
   assert(gst != NULL);
 
   if (index >= gst->dtb_n) {
@@ -384,7 +388,8 @@ YF_dtable yf_gstate_getdtb(YF_gstate gst, unsigned index) {
   return gst->dtbs[index];
 }
 
-void yf_gstate_deinit(YF_gstate gst) {
+void yf_gstate_deinit(YF_gstate gst)
+{
   if (gst != NULL) {
     free(gst->stgs);
     free(gst->dtbs);

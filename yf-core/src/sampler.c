@@ -13,7 +13,8 @@
 #include "sampler.h"
 #include "context.h"
 
-VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *samp) {
+VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *samp)
+{
   assert(ctx != NULL);
 
   VkSamplerCreateInfo info = {0};

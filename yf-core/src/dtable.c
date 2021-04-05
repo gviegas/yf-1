@@ -72,7 +72,8 @@ YF_dtable yf_dtable_init(YF_context ctx, const YF_dentry *entries,
   return dtb;
 }
 
-int yf_dtable_alloc(YF_dtable dtb, unsigned n) {
+int yf_dtable_alloc(YF_dtable dtb, unsigned n)
+{
   assert(dtb != NULL);
 
   if (n == dtb->set_n)
@@ -201,7 +202,8 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n) {
   return 0;
 }
 
-void yf_dtable_dealloc(YF_dtable dtb) {
+void yf_dtable_dealloc(YF_dtable dtb)
+{
   assert(dtb != NULL);
 
   if (dtb->sets == NULL)
@@ -407,7 +409,8 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
   return 0;
 }
 
-void yf_dtable_deinit(YF_dtable dtb) {
+void yf_dtable_deinit(YF_dtable dtb)
+{
   if (dtb == NULL)
     return;
 
@@ -428,7 +431,8 @@ void yf_dtable_deinit(YF_dtable dtb) {
   free(dtb);
 }
 
-static int init_layout(YF_dtable dtb) {
+static int init_layout(YF_dtable dtb)
+{
   dtb->samplers = yf_hashset_init(NULL, NULL);
   if (dtb->samplers == NULL)
     return -1;
@@ -534,7 +538,8 @@ static int init_layout(YF_dtable dtb) {
   return 0;
 }
 
-static void inval_iview(void *img, int pubsub, void *dtb) {
+static void inval_iview(void *img, int pubsub, void *dtb)
+{
   assert(img != NULL);
   assert(dtb != NULL);
   assert(pubsub == YF_PUBSUB_DEINIT);
@@ -552,14 +557,16 @@ static void inval_iview(void *img, int pubsub, void *dtb) {
   }
 }
 
-static size_t hash_kv(const void *x) {
+static size_t hash_kv(const void *x)
+{
   const T_kv *kv = x;
   const size_t h1 = kv->key.alloc_i << 10;
   const size_t h2 = kv->key.entry_i & 0x3ff;
   return (h1 | h2) ^ 0xc5749e25;
 }
 
-static int cmp_kv(const void *a, const void *b) {
+static int cmp_kv(const void *a, const void *b)
+{
   const T_kv *kv1 = a;
   const T_kv *kv2 = b;
   return (kv1->key.alloc_i != kv2->key.alloc_i) ||

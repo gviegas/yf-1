@@ -9,6 +9,10 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef __STDC_NO_THREADS__
+# error "C11 threads required"
+#endif
+
 #include "yf/com/yf-util.h"
 #include "yf/com/yf-error.h"
 
@@ -24,10 +28,6 @@
 #include "dtable.h"
 #include "limits.h"
 #include "vk.h"
-
-#ifdef __STDC_NO_THREADS__
-# error "C11 threads required"
-#endif
 
 /* Type defining graphics decoding state. */
 typedef struct {
@@ -143,8 +143,10 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd);
 /* Decodes a 'synchronize' command. */
 static int decode_sync(int cmdbuf);
 
-int yf_cmdbuf_decode(YF_cmdbuf cmdb) {
+int yf_cmdbuf_decode(YF_cmdbuf cmdb)
+{
   assert(cmdb != NULL);
+
   if (cmdb->cmd_n == 0)
     /* nothing to decode */
     return 0;
@@ -197,7 +199,8 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb) {
   return r;
 }
 
-static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr) {
+static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
+{
   l_gdec = calloc(1, sizeof *l_gdec);
   if (l_gdec == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -348,7 +351,8 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr) {
   return r;
 }
 
-static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr) {
+static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
+{
   l_cdec = calloc(1, sizeof *l_cdec);
   if (l_cdec == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -407,7 +411,8 @@ static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr) {
   return r;
 }
 
-static int decode_gst(const YF_cmd *cmd) {
+static int decode_gst(const YF_cmd *cmd)
+{
   if (cmd->gst.gst != l_gdec->gst) {
     l_gdec->gdec |= YF_GDEC_GST;
     l_gdec->gst = cmd->gst.gst;
@@ -424,7 +429,8 @@ static int decode_gst(const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_cst(const YF_cmd *cmd) {
+static int decode_cst(const YF_cmd *cmd)
+{
   if (cmd->cst.cst != l_cdec->cst) {
     l_cdec->cdec |= YF_CDEC_CST;
     l_cdec->cst = cmd->cst.cst;
@@ -435,7 +441,8 @@ static int decode_cst(const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_tgt(const YF_cmd *cmd) {
+static int decode_tgt(const YF_cmd *cmd)
+{
   if (cmd->tgt.tgt != l_gdec->tgt) {
     l_gdec->gdec |= YF_GDEC_TGT;
     l_gdec->tgt = cmd->tgt.tgt;
@@ -448,7 +455,8 @@ static int decode_tgt(const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_vport(const YF_cmd *cmd) {
+static int decode_vport(const YF_cmd *cmd)
+{
   const YF_limits *lim = yf_getlimits(l_gdec->ctx);
   if (cmd->vport.index >= lim->viewport.max ||
       cmd->vport.vport.width <= 0.0f ||
@@ -483,7 +491,8 @@ static int decode_vport(const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_sciss(const YF_cmd *cmd) {
+static int decode_sciss(const YF_cmd *cmd)
+{
   l_gdec->gdec |= YF_GDEC_SCISS;
 
   VkRect2D scissor = {
@@ -495,7 +504,8 @@ static int decode_sciss(const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_dtb(int cmdbuf, const YF_cmd *cmd) {
+static int decode_dtb(int cmdbuf, const YF_cmd *cmd)
+{
   switch (cmdbuf) {
   case YF_CMDBUF_GRAPH:
     if (cmd->dtb.index >= yf_getlimits(l_gdec->ctx)->state.dtable_max) {
@@ -529,7 +539,8 @@ static int decode_dtb(int cmdbuf, const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_vbuf(const YF_cmd *cmd) {
+static int decode_vbuf(const YF_cmd *cmd)
+{
   if (cmd->vbuf.index >= yf_getlimits(l_gdec->ctx)->state.vinput_max) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
@@ -542,7 +553,8 @@ static int decode_vbuf(const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_ibuf(const YF_cmd *cmd) {
+static int decode_ibuf(const YF_cmd *cmd)
+{
   VkIndexType idx_type;
   switch (cmd->ibuf.stride) {
   case sizeof(unsigned):
@@ -563,7 +575,8 @@ static int decode_ibuf(const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_clrcol(const YF_cmd *cmd) {
+static int decode_clrcol(const YF_cmd *cmd)
+{
   if (cmd->clrcol.index >= yf_getlimits(l_gdec->ctx)->pass.color_max) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
@@ -578,19 +591,22 @@ static int decode_clrcol(const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_clrdep(const YF_cmd *cmd) {
+static int decode_clrdep(const YF_cmd *cmd)
+{
   l_gdec->clr_pending = l_gdec->clrdep.pending = 1;
   l_gdec->clrdep.val = cmd->clrdep.value;
   return 0;
 }
 
-static int decode_clrsten(const YF_cmd *cmd) {
+static int decode_clrsten(const YF_cmd *cmd)
+{
   l_gdec->clr_pending = l_gdec->clrsten.pending = 1;
   l_gdec->clrsten.val = cmd->clrsten.value;
   return 0;
 }
 
-static int decode_draw(const YF_cmd *cmd) {
+static int decode_draw(const YF_cmd *cmd)
+{
   if ((l_gdec->gdec & YF_GDEC_PASS) != YF_GDEC_PASS) {
     yf_seterr(YF_ERR_INVCMD, __func__);
     return -1;
@@ -734,7 +750,8 @@ static int decode_draw(const YF_cmd *cmd) {
   return r;
 }
 
-static int decode_disp(const YF_cmd *cmd) {
+static int decode_disp(const YF_cmd *cmd)
+{
   assert(cmd->disp.dim.width > 0);
   assert(cmd->disp.dim.height > 0);
   assert(cmd->disp.dim.depth > 0);
@@ -780,7 +797,8 @@ static int decode_disp(const YF_cmd *cmd) {
   return r;
 }
 
-static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd) {
+static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd)
+{
   assert(cmd->cpybuf.dst->size >= cmd->cpybuf.dst_offs + cmd->cpybuf.size);
   assert(cmd->cpybuf.src->size >= cmd->cpybuf.src_offs + cmd->cpybuf.size);
   assert(cmd->cpybuf.size > 0);
@@ -813,7 +831,8 @@ static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd) {
+static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd)
+{
   assert(cmd->cpyimg.dst->layers >=
     cmd->cpyimg.dst_layer + cmd->cpyimg.layer_n);
   assert(cmd->cpyimg.src->layers >=
@@ -872,7 +891,8 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd) {
   return 0;
 }
 
-static int decode_sync(int cmdbuf) {
+static int decode_sync(int cmdbuf)
+{
   /* TODO: Provide sync. parameters to avoid such dramatic solution. */
   const YF_cmdres *cmdr;
   switch (cmdbuf) {

@@ -6,8 +6,10 @@
  */
 
 #include <stdlib.h>
+#include <limits.h>
 #include <assert.h>
 
+#include "yf/com/yf-util.h"
 #include "yf/com/yf-error.h"
 
 #include "cmdbuf.h"
@@ -19,7 +21,8 @@
 /* Grows the command list. */
 static int grow_cmds(YF_cmdbuf cmdb);
 
-YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf) {
+YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf)
+{
   assert(ctx != NULL);
 
   YF_cmdbuf cmdb = calloc(1, sizeof(YF_cmdbuf_o));
@@ -42,7 +45,8 @@ YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf) {
   return cmdb;
 }
 
-int yf_cmdbuf_end(YF_cmdbuf cmdb) {
+int yf_cmdbuf_end(YF_cmdbuf cmdb)
+{
   assert(cmdb != NULL);
 
   int r = -1;
@@ -54,17 +58,20 @@ int yf_cmdbuf_end(YF_cmdbuf cmdb) {
   return r;
 }
 
-int yf_cmdbuf_exec(YF_context ctx) {
+int yf_cmdbuf_exec(YF_context ctx)
+{
   assert(ctx != NULL);
   return yf_cmdexec_exec(ctx);
 }
 
-void yf_cmdbuf_reset(YF_context ctx) {
+void yf_cmdbuf_reset(YF_context ctx)
+{
   assert(ctx != NULL);
   yf_cmdexec_reset(ctx);
 }
 
-void yf_cmdbuf_setgstate(YF_cmdbuf cmdb, YF_gstate gst) {
+void yf_cmdbuf_setgstate(YF_cmdbuf cmdb, YF_gstate gst)
+{
   assert(cmdb != NULL);
   assert(gst != NULL);
 
@@ -88,7 +95,8 @@ void yf_cmdbuf_setgstate(YF_cmdbuf cmdb, YF_gstate gst) {
   }
 }
 
-void yf_cmdbuf_setcstate(YF_cmdbuf cmdb, YF_cstate cst) {
+void yf_cmdbuf_setcstate(YF_cmdbuf cmdb, YF_cstate cst)
+{
   assert(cmdb != NULL);
   assert(cst != NULL);
 
@@ -112,7 +120,8 @@ void yf_cmdbuf_setcstate(YF_cmdbuf cmdb, YF_cstate cst) {
   }
 }
 
-void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt) {
+void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt)
+{
   assert(cmdb != NULL);
 
   if (cmdb->invalid)
@@ -162,7 +171,8 @@ void yf_cmdbuf_setvport(YF_cmdbuf cmdb, unsigned index,
   }
 }
 
-void yf_cmdbuf_setsciss(YF_cmdbuf cmdb, unsigned index, YF_rect rect) {
+void yf_cmdbuf_setsciss(YF_cmdbuf cmdb, unsigned index, YF_rect rect)
+{
   assert(cmdb != NULL);
 
   if (cmdb->invalid)
@@ -186,7 +196,8 @@ void yf_cmdbuf_setsciss(YF_cmdbuf cmdb, unsigned index, YF_rect rect) {
   }
 }
 
-void yf_cmdbuf_setdtable(YF_cmdbuf cmdb, unsigned index, unsigned alloc_i) {
+void yf_cmdbuf_setdtable(YF_cmdbuf cmdb, unsigned index, unsigned alloc_i)
+{
   assert(cmdb != NULL);
 
   if (cmdb->invalid)
@@ -258,7 +269,8 @@ void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset,
   }
 }
 
-void yf_cmdbuf_clearcolor(YF_cmdbuf cmdb, unsigned index, YF_color value) {
+void yf_cmdbuf_clearcolor(YF_cmdbuf cmdb, unsigned index, YF_color value)
+{
   assert(cmdb != NULL);
 
   if (cmdb->invalid)
@@ -282,7 +294,8 @@ void yf_cmdbuf_clearcolor(YF_cmdbuf cmdb, unsigned index, YF_color value) {
   }
 }
 
-void yf_cmdbuf_cleardepth(YF_cmdbuf cmdb, float value) {
+void yf_cmdbuf_cleardepth(YF_cmdbuf cmdb, float value)
+{
   assert(cmdb != NULL);
 
   if (cmdb->invalid)
@@ -305,7 +318,8 @@ void yf_cmdbuf_cleardepth(YF_cmdbuf cmdb, float value) {
   }
 }
 
-void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value) {
+void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value)
+{
   assert(cmdb != NULL);
 
   if (cmdb->invalid)
@@ -358,7 +372,8 @@ void yf_cmdbuf_draw(YF_cmdbuf cmdb, int indexed, unsigned index_base,
   }
 }
 
-void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim) {
+void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim)
+{
   assert(cmdb != NULL);
 
   if (cmdb->invalid)
@@ -427,7 +442,8 @@ void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, unsigned dst_layer,
   cmdb->cmds[i].cpyimg.layer_n = layer_n;
 }
 
-void yf_cmdbuf_sync(YF_cmdbuf cmdb)  {
+void yf_cmdbuf_sync(YF_cmdbuf cmdb)
+{
   assert(cmdb != NULL);
 
   if (cmdb->invalid)
@@ -441,11 +457,21 @@ void yf_cmdbuf_sync(YF_cmdbuf cmdb)  {
   cmdb->cmds[i].cmd = YF_CMD_SYNC;
 }
 
-static int grow_cmds(YF_cmdbuf cmdb) {
-  unsigned cap = 2 * cmdb->cmd_cap;
+static int grow_cmds(YF_cmdbuf cmdb)
+{
+  assert(cmdb != NULL);
+
+  if (cmdb->cmd_cap == UINT_MAX) {
+    yf_seterr(YF_ERR_LIMIT, __func__);
+    return -1;
+  }
+
+  unsigned cap = cmdb->cmd_cap << 1;
+  cap = YF_MAX(cap, cmdb->cmd_cap + 1);
+
   void *tmp = realloc(cmdb->cmds, cap * sizeof *cmdb->cmds);
   if (tmp == NULL) {
-    cap = 1 + cmdb->cmd_cap;
+    cap = cmdb->cmd_cap + 1;
     if ((tmp = realloc(cmdb->cmds, cap * sizeof *cmdb->cmds)) == NULL) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       return -1;

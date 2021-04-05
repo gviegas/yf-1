@@ -15,7 +15,8 @@
 #include "stage.h"
 #include "dtable.h"
 
-YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf) {
+YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
+{
   assert(ctx != NULL);
   assert(conf != NULL);
 
@@ -110,12 +111,14 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf) {
   return cst;
 }
 
-const YF_stage *yf_cstate_getstg(YF_cstate cst) {
+const YF_stage *yf_cstate_getstg(YF_cstate cst)
+{
   assert(cst != NULL);
   return &cst->stg;
 }
 
-YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index) {
+YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index)
+{
   assert(cst != NULL);
 
   if (index >= cst->dtb_n) {
@@ -125,7 +128,8 @@ YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index) {
   return cst->dtbs[index];
 }
 
-void yf_cstate_deinit(YF_cstate cst) {
+void yf_cstate_deinit(YF_cstate cst)
+{
   if (cst != NULL) {
     free(cst->dtbs);
     vkDestroyPipelineLayout(cst->ctx->device, cst->layout, NULL);

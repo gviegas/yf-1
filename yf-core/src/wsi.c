@@ -28,7 +28,8 @@ static int query_surface(YF_wsi wsi);
 /* Creates swapchain. */
 static int create_swapchain(YF_wsi wsi);
 
-YF_wsi yf_wsi_init(YF_context ctx, YF_window win) {
+YF_wsi yf_wsi_init(YF_context ctx, YF_window win)
+{
   assert(ctx != NULL);
   assert(win != NULL);
 
@@ -57,7 +58,8 @@ YF_wsi yf_wsi_init(YF_context ctx, YF_window win) {
   return wsi;
 }
 
-const YF_image *yf_wsi_getimages(YF_wsi wsi, unsigned *n) {
+const YF_image *yf_wsi_getimages(YF_wsi wsi, unsigned *n)
+{
   assert(wsi != NULL);
   assert(n != NULL);
 
@@ -65,12 +67,14 @@ const YF_image *yf_wsi_getimages(YF_wsi wsi, unsigned *n) {
   return wsi->imgs;
 }
 
-unsigned yf_wsi_getlimit(YF_wsi wsi) {
+unsigned yf_wsi_getlimit(YF_wsi wsi)
+{
   assert(wsi != NULL);
   return wsi->acq_limit;
 }
 
-int yf_wsi_next(YF_wsi wsi, int nonblocking) {
+int yf_wsi_next(YF_wsi wsi, int nonblocking)
+{
   assert(wsi != NULL);
 
   const uint64_t timeout = nonblocking ? 0 : UINT64_MAX;
@@ -141,7 +145,8 @@ int yf_wsi_next(YF_wsi wsi, int nonblocking) {
   return img_i;
 }
 
-int yf_wsi_present(YF_wsi wsi, unsigned index) {
+int yf_wsi_present(YF_wsi wsi, unsigned index)
+{
   assert(wsi != NULL);
 
   if (index >= wsi->img_n || !wsi->imgs_acq[index]) {
@@ -221,7 +226,8 @@ int yf_wsi_present(YF_wsi wsi, unsigned index) {
   return 0;
 }
 
-void yf_wsi_deinit(YF_wsi wsi) {
+void yf_wsi_deinit(YF_wsi wsi)
+{
   if (wsi != NULL) {
     /* TODO: If any image was acquired: submit, present & wait completion. */
     vkDestroySwapchainKHR(wsi->ctx->device, wsi->swapchain, NULL);
@@ -239,7 +245,8 @@ void yf_wsi_deinit(YF_wsi wsi) {
   }
 }
 
-int yf_canpresent(VkPhysicalDevice phy_dev, int queue_i) {
+int yf_canpresent(VkPhysicalDevice phy_dev, int queue_i)
+{
   assert(phy_dev != NULL);
   assert(queue_i > -1);
 
@@ -288,7 +295,8 @@ int yf_canpresent(VkPhysicalDevice phy_dev, int queue_i) {
   return r == VK_TRUE;
 }
 
-static int init_surface(YF_wsi wsi) {
+static int init_surface(YF_wsi wsi)
+{
   assert(wsi != NULL);
   assert(wsi->surface == VK_NULL_HANDLE);
 
@@ -368,7 +376,8 @@ static int init_surface(YF_wsi wsi) {
   return supported == VK_TRUE ? 0 : -1;
 }
 
-static int query_surface(YF_wsi wsi) {
+static int query_surface(YF_wsi wsi)
+{
   assert(wsi != NULL);
   assert(wsi->surface != VK_NULL_HANDLE);
 
@@ -496,7 +505,8 @@ static int query_surface(YF_wsi wsi) {
   return 0;
 }
 
-static int create_swapchain(YF_wsi wsi) {
+static int create_swapchain(YF_wsi wsi)
+{
   assert(wsi != NULL);
   assert(wsi->surface != VK_NULL_HANDLE);
 

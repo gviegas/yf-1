@@ -70,7 +70,8 @@ static int set_dev_exts(YF_context ctx);
 /* Sets features. */
 static int set_features(YF_context ctx);
 
-YF_context yf_context_init(void) {
+YF_context yf_context_init(void)
+{
   if (atomic_flag_test_and_set(&l_flag)) {
     yf_seterr(YF_ERR_EXIST, __func__);
     return NULL;
@@ -111,7 +112,8 @@ YF_context yf_context_init(void) {
   return ctx;
 }
 
-void yf_context_deinit(YF_context ctx) {
+void yf_context_deinit(YF_context ctx)
+{
   if (ctx == NULL) {
     atomic_flag_clear(&l_flag);
     return;
@@ -147,7 +149,8 @@ void yf_context_deinit(YF_context ctx) {
   atomic_flag_clear(&l_flag);
 }
 
-static int init_instance(YF_context ctx) {
+static int init_instance(YF_context ctx)
+{
   assert(ctx->instance == NULL);
 
   if (yf_setiprocvk(NULL) != 0)
@@ -197,7 +200,8 @@ static int init_instance(YF_context ctx) {
   return 0;
 }
 
-static int init_device(YF_context ctx) {
+static int init_device(YF_context ctx)
+{
   assert(ctx->instance != NULL);
   assert(ctx->phy_dev == NULL);
   assert(ctx->device == NULL);
@@ -345,7 +349,8 @@ static int init_device(YF_context ctx) {
   return 0;
 }
 
-static int init_cache(YF_context ctx) {
+static int init_cache(YF_context ctx)
+{
   VkPipelineCacheCreateInfo info = {
     .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
     .pNext = NULL,
@@ -363,7 +368,8 @@ static int init_cache(YF_context ctx) {
 }
 
 #if defined(YF_DEVEL) && !defined(YF_NO_VALIDATION)
-static int set_layers(YF_context ctx) {
+static int set_layers(YF_context ctx)
+{
   const char *opt_lays[4];
   size_t opt_n = 0;
 #if defined(__linux__)
@@ -437,7 +443,8 @@ static int set_layers(YF_context ctx) {
 }
 #endif /* defined(YF_DEVEL) && !defined(YF_NO_VALIDATION) */
 
-static int set_inst_exts(YF_context ctx) {
+static int set_inst_exts(YF_context ctx)
+{
   const char *req_exts[] = {
     VK_KHR_SURFACE_EXTENSION_NAME,
 #if defined(VK_USE_PLATFORM_WAYLAND_KHR)
@@ -520,7 +527,8 @@ static int set_inst_exts(YF_context ctx) {
   return 0;
 }
 
-static int set_dev_exts(YF_context ctx) {
+static int set_dev_exts(YF_context ctx)
+{
   const char *req_exts[] = {
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
   };
@@ -592,7 +600,8 @@ static int set_dev_exts(YF_context ctx) {
   return 0;
 }
 
-static int set_features(YF_context ctx) {
+static int set_features(YF_context ctx)
+{
   VkPhysicalDeviceFeatures feat;
   vkGetPhysicalDeviceFeatures(ctx->phy_dev, &feat);
 

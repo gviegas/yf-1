@@ -26,7 +26,8 @@
 static void *l_handle = NULL;
 
 #if defined(__linux__) || defined(__APPLE__)
-int yf_loadvk(void) {
+int yf_loadvk(void)
+{
   if (l_handle != NULL)
     return 0;
 
@@ -46,7 +47,8 @@ int yf_loadvk(void) {
   return 0;
 }
 
-void yf_unldvk(void) {
+void yf_unldvk(void)
+{
   if (l_handle != NULL) {
     dlclose(l_handle);
     l_handle = NULL;
@@ -58,7 +60,8 @@ void yf_unldvk(void) {
 # error "Invalid Platform"
 #endif /* defined(__linux__) || defined(__APPLE__) */
 
-int yf_setiprocvk(VkInstance instance) {
+int yf_setiprocvk(VkInstance instance)
+{
   if (l_handle == NULL && yf_loadvk() != 0)
     return -1;
 
@@ -109,7 +112,8 @@ int yf_setiprocvk(VkInstance instance) {
   return 0;
 }
 
-int yf_setdprocvk(VkDevice device) {
+int yf_setdprocvk(VkDevice device)
+{
   if (l_handle == NULL || device == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
