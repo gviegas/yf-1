@@ -24,11 +24,13 @@ static unsigned l_mask = YF_EVT_ANY;
 static int l_quit = 0;
 static int l_close = 1;
 
-static void close_wd(YF_window win, void *data) {
+static void close_wd(YF_window win, void *data)
+{
   printf("close_wd: %p, %p\n", (void *)win, data);
   yf_sleep(1.0);
   l_quit = 1;
 }
+
 static void resize_wd(YF_window win, unsigned width, unsigned height,
     void *data)
 {
@@ -38,13 +40,18 @@ static void resize_wd(YF_window win, unsigned width, unsigned height,
   assert(w == width && h == height);
 }
 
-static void enter_kb(YF_window win, void *data) {
+static void enter_kb(YF_window win, void *data)
+{
   printf("enter_kb: %p, %p\n", (void *)win, data);
 }
-static void leave_kb(YF_window win, void *data) {
+
+static void leave_kb(YF_window win, void *data)
+{
   printf("leave_kb: %p, %p\n", (void *)win, data);
 }
-static void key_kb(int key, int state, unsigned mod_mask, void *data) {
+
+static void key_kb(int key, int state, unsigned mod_mask, void *data)
+{
   printf("key_kb: %d, %d, %xh, %p\n", key, state, mod_mask, data);
 
   if (state == YF_KEYSTATE_PRESSED)
@@ -76,16 +83,23 @@ static void key_kb(int key, int state, unsigned mod_mask, void *data) {
   }
 }
 
-static void enter_pt(YF_window win, int x, int y, void *data) {
+static void enter_pt(YF_window win, int x, int y, void *data)
+{
   printf("enter_pt: %p, %d, %d, %p\n", (void *)win, x, y, data);
 }
-static void leave_pt(YF_window win, void *data) {
+
+static void leave_pt(YF_window win, void *data)
+{
   printf("leave_pt: %p, %p\n", (void *)win, data);
 }
-static void motion_pt(int x, int y, void *data) {
+
+static void motion_pt(int x, int y, void *data)
+{
   printf("motion_pt: %d, %d, %p\n", x, y, data);
 }
-static void button_pt(int btn, int state, int x, int y, void *data) {
+
+static void button_pt(int btn, int state, int x, int y, void *data)
+{
   printf("button_pt: %d, %d, %d, %d, %p\n", btn, state, x, y, data);
 
   if (state == YF_BTNSTATE_PRESSED)
@@ -112,7 +126,9 @@ static const struct T_fn l_fns[] = {
 
 /* Window test. */
 #define YF_TEST_WINDOW "window"
-static int test_window(void) {
+
+static int test_window(void)
+{
   YF_TEST_SUBT;
 
   YF_window wins[] = {
@@ -163,7 +179,9 @@ static int test_window(void) {
 
 /* Event test. */
 #define YF_TEST_EVENT "event"
-static int test_event(void) {
+
+static int test_event(void)
+{
   YF_TEST_SUBT;
 
   YF_window win1 = yf_window_init(400, 240, "EVT1", YF_WINCREAT_HIDDEN);
@@ -206,8 +224,10 @@ static int test_event(void) {
 static const char *l_ids[] = {YF_TEST_WINDOW, YF_TEST_EVENT, YF_TEST_ALL};
 
 /* Test function. */
-static int test(int argc, char *argv[]) {
+static int test(int argc, char *argv[])
+{
   assert(argc > 0);
+
   size_t test_n;
   size_t results;
 

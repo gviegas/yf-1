@@ -24,7 +24,8 @@
 static int l_plat = YF_PLATFORM_NONE;
 
 #if defined(__linux__)
-int yf_getplatform(void) {
+int yf_getplatform(void)
+{
   if (l_plat != YF_PLATFORM_NONE)
     return l_plat;
 
@@ -48,7 +49,8 @@ int yf_getplatform(void) {
   return l_plat;
 }
 
-void yf_getwinimp(YF_win_imp *imp) {
+void yf_getwinimp(YF_win_imp *imp)
+{
   switch (yf_getplatform()) {
   case YF_PLATFORM_WAYLAND:
     /* TODO */
@@ -61,7 +63,8 @@ void yf_getwinimp(YF_win_imp *imp) {
   }
 }
 
-void yf_getevtimp(YF_evt_imp *imp) {
+void yf_getevtimp(YF_evt_imp *imp)
+{
   switch (yf_getplatform()) {
   case YF_PLATFORM_WAYLAND:
     /* TODO */

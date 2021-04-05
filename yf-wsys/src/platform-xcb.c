@@ -240,15 +240,18 @@ static YF_list l_wins = NULL;
     if ((data) == NULL || (data)->win_id == (id)) break; \
   }} while (0)
 
-xcb_connection_t *yf_getconnxcb(void) {
+xcb_connection_t *yf_getconnxcb(void)
+{
   return yf_g_varsxcb.conn;
 }
 
-xcb_visualid_t yf_getvisualxcb(void) {
+xcb_visualid_t yf_getvisualxcb(void)
+{
   return yf_g_varsxcb.visual;
 }
 
-xcb_window_t yf_getwindowxcb(YF_window win) {
+xcb_window_t yf_getwindowxcb(YF_window win)
+{
   assert(win != NULL);
 
   /* XXX: Consider querying the 'YF_window' for the 'T_win' data instead. */
@@ -261,7 +264,8 @@ xcb_window_t yf_getwindowxcb(YF_window win) {
   return data->win_id;
 }
 
-int yf_loadxcb(void) {
+int yf_loadxcb(void)
+{
   if (l_handle != NULL)
     return 0;
 
@@ -296,7 +300,8 @@ int yf_loadxcb(void) {
   return 0;
 }
 
-void yf_unldxcb(void) {
+void yf_unldxcb(void)
+{
   if (l_wins != NULL) {
     T_win *win;
     YF_iter it = YF_NILIT;
@@ -322,7 +327,8 @@ void yf_unldxcb(void) {
   }
 }
 
-static int set_vars(void) {
+static int set_vars(void)
+{
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn == NULL);
 
@@ -534,7 +540,8 @@ static void *init_win(unsigned width, unsigned height, const char *title,
   return win;
 }
 
-static int open_win(void *win) {
+static int open_win(void *win)
+{
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
@@ -558,7 +565,8 @@ static int open_win(void *win) {
   return 0;
 }
 
-static int close_win(void *win) {
+static int close_win(void *win)
+{
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
@@ -582,7 +590,8 @@ static int close_win(void *win) {
   return 0;
 }
 
-static int resize_win(void *win, unsigned width, unsigned height) {
+static int resize_win(void *win, unsigned width, unsigned height)
+{
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
@@ -612,7 +621,8 @@ static int resize_win(void *win, unsigned width, unsigned height) {
   return 0;
 }
 
-static int toggle_win(void *win) {
+static int toggle_win(void *win)
+{
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
@@ -622,7 +632,8 @@ static int toggle_win(void *win) {
   return -1;
 }
 
-static int settitle_win(void *win, const char *title) {
+static int settitle_win(void *win, const char *title)
+{
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
@@ -645,7 +656,8 @@ static int settitle_win(void *win, const char *title) {
   return 0;
 }
 
-static void getsize_win(void *win, unsigned *width, unsigned *height) {
+static void getsize_win(void *win, unsigned *width, unsigned *height)
+{
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
   assert(win != NULL);
@@ -655,7 +667,8 @@ static void getsize_win(void *win, unsigned *width, unsigned *height) {
   *height = ((T_win *)win)->height;
 }
 
-static void deinit_win(void *win) {
+static void deinit_win(void *win)
+{
   if (l_handle != NULL && yf_g_varsxcb.conn != NULL) {
     YF_UNUSED xcb_void_cookie_t unused;
     YF_XCB_DESTROY_WINDOW(unused, yf_g_varsxcb.conn, ((T_win *)win)->win_id);
@@ -665,7 +678,8 @@ static void deinit_win(void *win) {
   free(win);
 }
 
-static int poll_evt(unsigned evt_mask) {
+static int poll_evt(unsigned evt_mask)
+{
   assert(l_handle != NULL);
   assert(yf_g_varsxcb.conn != NULL);
 
@@ -676,7 +690,7 @@ static int poll_evt(unsigned evt_mask) {
   unsigned type;
   xcb_generic_event_t *event = NULL;
 
-  do {
+  while (1) {
     YF_XCB_POLL_FOR_EVENT(event, yf_g_varsxcb.conn);
     if (event == NULL)
       break;
@@ -896,11 +910,12 @@ static int poll_evt(unsigned evt_mask) {
     }
 
     free(event);
-  } while (1);
+  }
 
   return 0;
 }
 
-static void changed_evt(YF_UNUSED int evt) {
+static void changed_evt(YF_UNUSED int evt)
+{
   /* TODO */
 }

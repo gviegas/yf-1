@@ -2,7 +2,7 @@
  * YF
  * platform-xcb.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_PLATFORM_XCB_H
@@ -40,7 +40,7 @@ typedef struct {
 } YF_varsxcb;
 
 /* Global variables instance.
-   This data is initialized by 'yf_loadxcb'. */
+   This data is initialized by 'yf_loadxcb()'. */
 extern YF_varsxcb yf_g_varsxcb;
 
 #endif /* YF_PLATFORM_XCB_H */

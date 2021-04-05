@@ -37,11 +37,13 @@ static T_evtfn l_buttonpt = { {.button_pt = NULL}, NULL };
 /* Mask of installed handlers. */
 static int l_mask = YF_EVT_NONE;
 
-int yf_pollevt(unsigned evt_mask) {
+int yf_pollevt(unsigned evt_mask)
+{
   return l_imp.poll(evt_mask);
 }
 
-void yf_setevtfn(int evt, YF_evtfn fn, void *arg) {
+void yf_setevtfn(int evt, YF_evtfn fn, void *arg)
+{
   switch (evt) {
   case YF_EVT_CLOSEWD:
     l_closewd.fn.close_wd = fn.close_wd;
@@ -95,7 +97,8 @@ void yf_setevtfn(int evt, YF_evtfn fn, void *arg) {
   l_imp.changed(evt);
 }
 
-void yf_getevtfn(int evt, YF_evtfn *fn, void **arg) {
+void yf_getevtfn(int evt, YF_evtfn *fn, void **arg)
+{
   assert(fn != NULL && arg != NULL);
 
   switch (evt) {
@@ -142,17 +145,20 @@ void yf_getevtfn(int evt, YF_evtfn *fn, void **arg) {
   }
 }
 
-unsigned yf_getevtmask(void) {
+unsigned yf_getevtmask(void)
+{
   return l_mask;
 }
 
-static int dummy_poll(unsigned evt_mask) {
+static int dummy_poll(unsigned evt_mask)
+{
   yf_getevtimp(&l_imp);
   return l_imp.poll(evt_mask);
   /* never called again */
 }
 
-static void dummy_changed(int evt) {
+static void dummy_changed(int evt)
+{
   yf_getevtimp(&l_imp);
   l_imp.changed(evt);
   /* never called again */

@@ -2,7 +2,7 @@
  * YF
  * event.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_EVENT_H
@@ -15,7 +15,7 @@ typedef struct {
   int (*poll)(unsigned evt_mask);
 
   /* Called when an event handler is set.
-     The new value can be obtained using 'yf_getevtfn'. */
+     The new value can be queried from 'yf_getevtfn()'. */
   void (*changed)(int evt);
 } YF_evt_imp;
 
