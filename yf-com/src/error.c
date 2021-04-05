@@ -8,20 +8,23 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "error.h"
-
-#undef YF_STR_MAXLEN
-#define YF_STR_MAXLEN 72
-
 #ifdef __STDC_NO_THREADS__
 # error "C11 threads required"
 #endif
 
+#include "error.h"
+
+#undef YF_STR_MAXLEN
+#define YF_STR_MAXLEN 128
+
+/* Current error code/string. */
 static _Thread_local int l_err = YF_ERR_UNKNOWN;
 static _Thread_local char l_info[YF_STR_MAXLEN] = {'\0'};
 
-void yf_seterr(int err, YF_UNUSED const char *info) {
+void yf_seterr(int err, YF_UNUSED const char *info)
+{
   l_err = err;
+
 #ifdef YF_DEVEL
   if (info != NULL)
     strncpy(l_info, info, YF_STR_MAXLEN-1)[YF_STR_MAXLEN-1] = '\0';
@@ -31,17 +34,20 @@ void yf_seterr(int err, YF_UNUSED const char *info) {
 #endif
 }
 
-int yf_geterr(void) {
+int yf_geterr(void)
+{
   return l_err;
 }
 
-char *yf_geterrinfo(char *dst, size_t n) {
+char *yf_geterrinfo(char *dst, size_t n)
+{
   if (strlen(l_info) < n)
     return strcpy(dst, l_info);
   return NULL;
 }
 
-void yf_printerr(void) {
+void yf_printerr(void)
+{
   char *s = NULL;
 
   switch (l_err) {

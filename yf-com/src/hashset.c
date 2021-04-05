@@ -57,7 +57,8 @@ static void make_factors(unsigned long long *state, size_t *a, size_t *b);
 /* Rehashes a hashset. */
 static int rehash(YF_hashset set, int down);
 
-YF_hashset yf_hashset_init(YF_hashfn hash, YF_cmpfn cmp) {
+YF_hashset yf_hashset_init(YF_hashfn hash, YF_cmpfn cmp)
+{
   YF_hashset set = malloc(sizeof(struct YF_hashset_o));
   if (set == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -86,7 +87,8 @@ YF_hashset yf_hashset_init(YF_hashfn hash, YF_cmpfn cmp) {
   return set;
 }
 
-int yf_hashset_insert(YF_hashset set, const void *val) {
+int yf_hashset_insert(YF_hashset set, const void *val)
+{
   assert(set != NULL);
 
   size_t k, x = set->hash(val);
@@ -107,7 +109,8 @@ int yf_hashset_insert(YF_hashset set, const void *val) {
   return r;
 }
 
-int yf_hashset_remove(YF_hashset set, const void *val) {
+int yf_hashset_remove(YF_hashset set, const void *val)
+{
   assert(set != NULL);
 
   size_t k, x = set->hash(val);
@@ -124,7 +127,8 @@ int yf_hashset_remove(YF_hashset set, const void *val) {
   return r;
 }
 
-int yf_hashset_contains(YF_hashset set, const void *val) {
+int yf_hashset_contains(YF_hashset set, const void *val)
+{
   assert(set != NULL);
 
   size_t k, x = set->hash(val);
@@ -132,7 +136,8 @@ int yf_hashset_contains(YF_hashset set, const void *val) {
   return yf_list_contains(set->buckets[k], val);
 }
 
-void *yf_hashset_search(YF_hashset set, const void *val) {
+void *yf_hashset_search(YF_hashset set, const void *val)
+{
   assert(set != NULL);
 
   size_t k, x = set->hash(val);
@@ -140,20 +145,21 @@ void *yf_hashset_search(YF_hashset set, const void *val) {
 
   void *r = NULL;
   YF_iter it = YF_NILIT;
-  do {
+  while (1) {
     r = yf_list_next(set->buckets[k], &it);
     if (YF_IT_ISNIL(it) || set->cmp(val, r) == 0)
       break;
-  } while (1);
-
+  }
   return r;
 }
 
-void *yf_hashset_extract(YF_hashset set, YF_iter *it) {
+void *yf_hashset_extract(YF_hashset set, YF_iter *it)
+{
   assert(set != NULL);
 
   void *r = NULL;
   YF_iter llit;
+
   if (it == NULL || YF_IT_ISNIL(*it)) {
     if (set->value_n != 0) {
       llit = YF_NILIT;
@@ -165,9 +171,7 @@ void *yf_hashset_extract(YF_hashset set, YF_iter *it) {
         --set->value_n;
         if (set->bucket_w > YF_WMINBITS &&
             (double)set->value_n / (double)(1 << set->bucket_w) < YF_MINLOADF)
-        {
           rehash(set, 1);
-        }
         break;
       }
     }
@@ -178,9 +182,7 @@ void *yf_hashset_extract(YF_hashset set, YF_iter *it) {
     --set->value_n;
     if (set->bucket_w > YF_WMINBITS &&
         (double)set->value_n / (double)(1 << set->bucket_w) < YF_MINLOADF)
-    {
       rehash(set, 1);
-    }
   }
 
   if (it != NULL)
@@ -188,11 +190,13 @@ void *yf_hashset_extract(YF_hashset set, YF_iter *it) {
   return r;
 }
 
-void *yf_hashset_next(YF_hashset set, YF_iter *it) {
+void *yf_hashset_next(YF_hashset set, YF_iter *it)
+{
   assert(set != NULL);
 
   void *r = NULL;
   YF_iter llit;
+
   if (it == NULL || YF_IT_ISNIL(*it)) {
     if (set->value_n != 0) {
       llit = YF_NILIT;
@@ -214,7 +218,7 @@ void *yf_hashset_next(YF_hashset set, YF_iter *it) {
     int found_curr = 0;
     for (size_t i = it->data[0]; i < ((size_t)1 << set->bucket_w); ++i) {
       llit = YF_NILIT;
-      do {
+      while (1) {
         val = yf_list_next(set->buckets[i], &llit);
         if (YF_IT_ISNIL(llit))
           break;
@@ -225,10 +229,11 @@ void *yf_hashset_next(YF_hashset set, YF_iter *it) {
         }
         if (set->cmp(val, (const void *)it->data[1]) == 0)
           found_curr = 1;
-      } while (1);
+      }
     }
     *it = YF_NILIT;
   }
+
   return r;
 }
 
@@ -237,31 +242,36 @@ void yf_hashset_each(YF_hashset set, int (*callb)(void *val, void *arg),
 {
   assert(set != NULL);
   assert(callb != NULL);
+
   if (set->value_n == 0)
     return;
 
   YF_iter it;
   void *val;
   size_t n = 0;
+
   for (size_t i = 0; i < ((size_t)1 << set->bucket_w); ++i) {
     it = YF_NILIT;
-    do {
+    while (1) {
       val = yf_list_next(set->buckets[i], &it);
       if (YF_IT_ISNIL(it))
         break;
       if (callb(val, arg) != 0 || ++n == set->value_n)
         return;
-    } while (1);
+    }
   }
 }
 
-size_t yf_hashset_getlen(YF_hashset set) {
+size_t yf_hashset_getlen(YF_hashset set)
+{
   assert(set != NULL);
   return set->value_n;
 }
 
-void yf_hashset_clear(YF_hashset set) {
+void yf_hashset_clear(YF_hashset set)
+{
   assert(set != NULL);
+
   if (set->value_n == 0)
     return;
 
@@ -283,7 +293,8 @@ void yf_hashset_clear(YF_hashset set) {
   make_factors(&set->lcg_state, &set->a, &set->b);
 }
 
-void yf_hashset_deinit(YF_hashset set) {
+void yf_hashset_deinit(YF_hashset set)
+{
   if (set != NULL) {
     for (size_t i = 0; i < ((size_t)1 << set->bucket_w); ++i)
       yf_list_deinit(set->buckets[i]);
@@ -292,7 +303,8 @@ void yf_hashset_deinit(YF_hashset set) {
   }
 }
 
-static void make_seed(unsigned long long *seed) {
+static void make_seed(unsigned long long *seed)
+{
 #ifdef __linux__
   if (getrandom(seed, sizeof *seed, 0) != sizeof *seed)
     *seed = time(NULL);
@@ -302,7 +314,8 @@ static void make_seed(unsigned long long *seed) {
   *seed &= (1ULL << 48) - 1;
 }
 
-static void make_factors(unsigned long long *state, size_t *a, size_t *b) {
+static void make_factors(unsigned long long *state, size_t *a, size_t *b)
+{
   if (YF_WBITS == 64) {
     unsigned long long ah, al, bh, bl;
     YF_LCG(*state, ah);
@@ -320,7 +333,8 @@ static void make_factors(unsigned long long *state, size_t *a, size_t *b) {
   }
 }
 
-static int rehash(YF_hashset set, int down) {
+static int rehash(YF_hashset set, int down)
+{
   const unsigned w = down ? set->bucket_w-1 : set->bucket_w+1;
   size_t a, b;
   make_factors(&set->lcg_state, &a, &b);
@@ -330,6 +344,7 @@ static int rehash(YF_hashset set, int down) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
+
   for (size_t i = 0; i < ((size_t)1 << w); ++i) {
     if ((tmp[i] = yf_list_init(set->cmp)) == NULL) {
       for (size_t j = 0; j < i; ++j)
@@ -342,11 +357,12 @@ static int rehash(YF_hashset set, int down) {
   YF_iter it;
   void *val;
   size_t x, k;
+
   for (size_t i = 0; i < ((size_t)1 << set->bucket_w); ++i) {
     if (yf_list_getlen(set->buckets[i]) == 0)
       continue;
     it = YF_NILIT;
-    do {
+    while (1) {
       val = yf_list_next(set->buckets[i], &it);
       if (YF_IT_ISNIL(it))
         break;
@@ -358,7 +374,7 @@ static int rehash(YF_hashset set, int down) {
         free(tmp);
         return -1;
       }
-    } while (1);
+    }
   }
 
   for (size_t i = 0; i < ((size_t)1 << set->bucket_w); ++i)

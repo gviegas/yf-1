@@ -36,7 +36,8 @@ static YF_hashset l_pubs = NULL;
 static size_t hash_ps(const void *x);
 static int cmp_ps(const void *a, const void *b);
 
-int yf_setpub(const void *pub, unsigned pubsub_mask) {
+int yf_setpub(const void *pub, unsigned pubsub_mask)
+{
   if (pub == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
@@ -83,7 +84,8 @@ int yf_setpub(const void *pub, unsigned pubsub_mask) {
   return 0;
 }
 
-unsigned yf_checkpub(const void *pub) {
+unsigned yf_checkpub(const void *pub)
+{
   assert(pub != NULL);
 
   if (l_pubs == NULL)
@@ -91,10 +93,12 @@ unsigned yf_checkpub(const void *pub) {
 
   const T_pub key = {pub, 0, NULL};
   T_pub *val = yf_hashset_search(l_pubs, &key);
+
   return val != NULL ? val->pubsub_mask : YF_PUBSUB_NONE;
 }
 
-void yf_publish(const void *pub, int pubsub) {
+void yf_publish(const void *pub, int pubsub)
+{
   assert(pub != NULL);
   assert(l_pubs != NULL);
 
@@ -157,12 +161,14 @@ int yf_subscribe(const void *pub, const void *sub, unsigned pubsub_mask,
   return 0;
 }
 
-static size_t hash_ps(const void *x) {
+static size_t hash_ps(const void *x)
+{
   const void *k = *(void **)x;
   return (size_t)k;
 }
 
-static int cmp_ps(const void *a, const void *b) {
+static int cmp_ps(const void *a, const void *b)
+{
   const void *k1 = *(void **)a;
   const void *k2 = *(void **)b;
   return (ptrdiff_t)k1 - (ptrdiff_t)k2;
