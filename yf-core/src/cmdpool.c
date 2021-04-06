@@ -152,7 +152,7 @@ void yf_cmdpool_reset(YF_context ctx, YF_cmdres *cmdr)
 
   T_priv *priv = ctx->cmdp.priv;
   /* XXX: This assumes that every resource has an exclusive pool. */
-  vkResetCommandPool(ctx->device, priv->cmdp->entries[cmdr->res_id].pool,
+  vkResetCommandPool(ctx->device, priv->cmdp.entries[cmdr->res_id].pool,
       VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
 
   yf_cmdpool_yield(ctx, cmdr);
