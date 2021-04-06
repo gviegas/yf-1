@@ -15,14 +15,13 @@
 typedef struct {
   VkCommandBuffer pool_res;
   int res_id;
-  int queue_i;
 } YF_cmdres;
 
 /* Creates a new command pool. */
 int yf_cmdpool_create(YF_context ctx, unsigned capacity);
 
-/* Obtains a resource for a given command buffer type. */
-int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdres *cmdr);
+/* Obtains a resource from the command pool. */
+int yf_cmdpool_obtain(YF_context ctx, YF_cmdres *cmdr);
 
 /* Yields a previously obtained resource. */
 void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr);
@@ -31,9 +30,8 @@ void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr);
 void yf_cmdpool_reset(YF_context ctx, YF_cmdres *cmdr);
 
 /* Gets the priority command pool resource for a given context.
-   If there is no resource in use, one supporting the given 'cmdbuf' value
-   is created and put in the recording state. */
-const YF_cmdres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
+   If there is no resource in use, one is created and started. */
+const YF_cmdres *yf_cmdpool_getprio(YF_context ctx,
     void (*callb)(int res, void *arg), void *arg);
 
 /* Checks which priority resources have been used and are pending execution. */

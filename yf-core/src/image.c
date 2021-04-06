@@ -231,14 +231,10 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
   memcpy(stg_buf->data, data, sz);
 
   const YF_cmdres *cmdr;
-  cmdr = yf_cmdpool_getprio(img->ctx, YF_CMDBUF_GRAPH, dealloc_stgbuf, stg_buf);
+  cmdr = yf_cmdpool_getprio(img->ctx, dealloc_stgbuf, stg_buf);
   if (cmdr == NULL) {
-    cmdr = yf_cmdpool_getprio(img->ctx, YF_CMDBUF_COMP, dealloc_stgbuf,
-        stg_buf);
-    if (cmdr == NULL) {
-      yf_buffer_deinit(stg_buf);
-      return -1;
-    }
+    yf_buffer_deinit(stg_buf);
+    return -1;
   }
 
   if (img->layout != VK_IMAGE_LAYOUT_GENERAL)

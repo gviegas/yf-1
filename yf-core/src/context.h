@@ -2,7 +2,7 @@
  * YF
  * context.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_CONTEXT_H
@@ -22,10 +22,12 @@ typedef struct YF_context_o {
   VkPhysicalDevice phy_dev;
   VkDevice device;
 
-  VkQueue graph_queue;
-  int graph_queue_i;
-  VkQueue comp_queue;
-  int comp_queue_i;
+#define YF_QUEUE_GRAPH 0x1
+#define YF_QUEUE_COMP  0x2
+  unsigned queue_mask;
+  VkQueue queue;
+  int queue_i;
+
   VkQueue pres_queue;
   int pres_queue_i;
 

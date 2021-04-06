@@ -152,7 +152,7 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb)
     return 0;
 
   YF_cmdres cmdr;
-  if (yf_cmdpool_obtain(cmdb->ctx, cmdb->cmdbuf, &cmdr) != 0)
+  if (yf_cmdpool_obtain(cmdb->ctx, &cmdr) != 0)
     return -1;
   VkCommandBufferBeginInfo info = {
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,

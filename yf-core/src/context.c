@@ -241,77 +241,59 @@ static int init_device(YF_context ctx)
     }
     vkGetPhysicalDeviceQueueFamilyProperties(ctx->phy_dev, &qf_n, qf_props);
 
-    ctx->graph_queue_i = ctx->comp_queue_i = ctx->pres_queue_i = -1;
+    ctx->queue_i = ctx->pres_queue_i = -1;
+    ctx->queue_mask = 0;
+    const unsigned graph_comp = YF_QUEUE_GRAPH | YF_QUEUE_COMP;
+
     for (unsigned i = 0; i < qf_n; ++i) {
-      int found[3] = {0, 0, 0};
+      /* there must be a queue that supports both graphics an compute,
+         otherwise graphics operations are not supported at all */
+      if (ctx->queue_mask != graph_comp) {
+        unsigned mask = 0;
+        if (qf_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT)
+          mask |= YF_QUEUE_GRAPH;
+        if (qf_props[i].queueFlags & VK_QUEUE_COMPUTE_BIT)
+          mask |= YF_QUEUE_COMP;
+        if (mask != 0) {
+          ctx->queue_mask = mask;
+          ctx->queue_i = i;
+        }
+      }
 
-      if (qf_props[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-        ctx->graph_queue_i = i;
-        found[0] = 1;
-      }
-      if (qf_props[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
-        ctx->comp_queue_i = i;
-        found[1] = 1;
-      }
-      if (yf_canpresent(ctx->phy_dev, i)) {
+      if (yf_canpresent(ctx->phy_dev, i))
         ctx->pres_queue_i = i;
-        found[2] = 1;
-      }
 
-      if (found[0] && found[1] && found[2])
+      if (ctx->queue_mask == graph_comp && ctx->pres_queue_i != -1)
         break;
     }
+
     free(qf_props);
 
-    if (ctx->graph_queue_i != -1 && ctx->comp_queue_i != -1 &&
-        ctx->pres_queue_i != -1)
-    {
+    if (ctx->queue_mask == graph_comp && ctx->pres_queue_i != -1) {
       ctx->dev_prop = prop;
       break;
     }
   }
 
-  if (ctx->graph_queue_i == -1 && ctx->comp_queue_i == -1) {
+  if (ctx->queue_i == -1) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     return -1;
   }
 
-  const int have_graph = ctx->graph_queue_i != -1;
-  const int have_comp = ctx->comp_queue_i != -1;
-  const int have_pres = ctx->pres_queue_i != -1;
-
   const float priority[1] = {0.0f};
-  VkDeviceQueueCreateInfo queue_infos[3];
+  VkDeviceQueueCreateInfo queue_infos[2];
   queue_infos[0].sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
   queue_infos[0].pNext = NULL;
   queue_infos[0].flags = 0;
-  queue_infos[0].queueFamilyIndex = 0;
+  queue_infos[0].queueFamilyIndex = ctx->queue_i;
   queue_infos[0].queueCount = 1;
   queue_infos[0].pQueuePriorities = priority;
   unsigned queue_info_n = 1;
 
-  if (have_graph) {
-    queue_infos[0].queueFamilyIndex = ctx->graph_queue_i;
-    if (have_comp) {
-      if (ctx->graph_queue_i != ctx->comp_queue_i) {
-        queue_infos[queue_info_n] = queue_infos[0];
-        queue_infos[queue_info_n].queueFamilyIndex = ctx->comp_queue_i;
-        ++queue_info_n;
-      }
-    }
-    if (have_pres) {
-      if (ctx->graph_queue_i != ctx->pres_queue_i &&
-          ctx->pres_queue_i != ctx->comp_queue_i)
-      {
-        queue_infos[queue_info_n] = queue_infos[0];
-        queue_infos[queue_info_n].queueFamilyIndex = ctx->pres_queue_i;
-        ++queue_info_n;
-      }
-    }
-  } else {
-    /* ignore pres. queue */
-    ctx->pres_queue_i = -1;
-    queue_infos[0].queueFamilyIndex = ctx->comp_queue_i;
+  if (ctx->pres_queue_i != -1 && ctx->pres_queue_i != ctx->queue_i) {
+    queue_infos[queue_info_n] = queue_infos[0];
+    queue_infos[queue_info_n].queueFamilyIndex = ctx->pres_queue_i;
+    ++queue_info_n;
   }
 
   if (set_dev_exts(ctx) != 0 || set_features(ctx) != 0)
@@ -338,11 +320,8 @@ static int init_device(YF_context ctx)
   if (yf_setdprocvk(ctx->device) != 0)
     return -1;
 
-  if (have_graph)
-    vkGetDeviceQueue(ctx->device, ctx->graph_queue_i, 0, &ctx->graph_queue);
-  if (have_comp)
-    vkGetDeviceQueue(ctx->device, ctx->comp_queue_i, 0, &ctx->comp_queue);
-  if (have_pres)
+  vkGetDeviceQueue(ctx->device, ctx->queue_i, 0, &ctx->queue);
+  if (ctx->pres_queue_i != -1)
     vkGetDeviceQueue(ctx->device, ctx->pres_queue_i, 0, &ctx->pres_queue);
 
   vkGetPhysicalDeviceMemoryProperties(ctx->phy_dev, &ctx->mem_prop);
@@ -642,8 +621,7 @@ static int set_features(YF_context ctx)
       ctx->features.tessellationShader == VK_FALSE ||
       ctx->features.fillModeNonSolid == VK_FALSE ||
       ctx->features.wideLines == VK_FALSE ||
-      ctx->features.largePoints == VK_FALSE)
-  {
+      ctx->features.largePoints == VK_FALSE) {
     yf_seterr(YF_ERR_UNSUP, __func__);
     return -1;
   }

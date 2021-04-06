@@ -17,7 +17,7 @@
 #include "context.h"
 #include "cmdbuf.h"
 
-#define YF_CMDEMIN 2
+#define YF_CMDEMIN 1
 #define YF_CMDEMAX 32
 
 #define YF_CMDEWAIT 16666666UL
@@ -29,23 +29,15 @@ typedef struct {
   void *arg;
 } T_entry;
 
-/* Type defining queue variables. */
+/* Type defining a command execution queue. */
 typedef struct {
   T_entry *entries;
   VkCommandBuffer *buffers;
   unsigned n;
+  unsigned cap;
   VkSubmitInfo subm_info;
   VkQueue queue;
   VkFence fence;
-} T_qvars;
-
-/* Type defining a command execution queue. */
-typedef struct {
-  int q1_i;
-  int q2_i;
-  T_qvars *q1;
-  T_qvars *q2;
-  unsigned cap;
 } T_cmde;
 
 /* Type defining execution queues stored in a context. */
@@ -220,69 +212,37 @@ static int init_queue(YF_context ctx, T_cmde *cmde)
   assert(cmde != NULL);
   assert(cmde->cap > 0);
 
-  cmde->q2_i = -1;
-  cmde->q2 = NULL;
-  unsigned queue_n = 0;
-  if (ctx->graph_queue_i >= 0) {
-    cmde->q1_i = ctx->graph_queue_i;
-    ++queue_n;
-  }
-  if (ctx->comp_queue_i != ctx->graph_queue_i) {
-    if (queue_n == 0)
-      cmde->q1_i = ctx->comp_queue_i;
-    else
-      cmde->q2_i = ctx->comp_queue_i;
-    ++queue_n;
+  cmde->entries = malloc(sizeof(T_entry) * cmde->cap);
+  cmde->buffers = malloc(sizeof(VkCommandBuffer) * cmde->cap);
+  if (cmde->entries == NULL || cmde->buffers == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
   }
 
-  T_qvars **qvs[2] = {&cmde->q1, &cmde->q2};
-  for (unsigned i = 0; i < queue_n; ++i) {
-    T_qvars *qv = malloc(sizeof(T_qvars));
-    if (qv == NULL) {
-      yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_queue(ctx, cmde);
-      return -1;
-    }
-    qv->entries = malloc(sizeof(T_entry) * cmde->cap);
-    if (qv->entries == NULL) {
-      yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_queue(ctx, cmde);
-      return -1;
-    }
-    qv->buffers = malloc(sizeof(VkCommandBuffer) * cmde->cap);
-    if (qv->buffers == NULL) {
-      yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_queue(ctx, cmde);
-      return -1;
-    }
-    VkFenceCreateInfo fence_info = {
-      .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-      .pNext = NULL,
-      .flags = 0
-    };
-    VkResult res = vkCreateFence(ctx->device, &fence_info, NULL, &qv->fence);
-    if (res != VK_SUCCESS) {
-      yf_seterr(YF_ERR_DEVGEN, __func__);
-      deinit_queue(ctx, cmde);
-      return -1;
-    }
-    qv->subm_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    qv->subm_info.pNext = NULL;
-    qv->subm_info.waitSemaphoreCount = 0;
-    qv->subm_info.pWaitSemaphores = 0;
-    qv->subm_info.pWaitDstStageMask = NULL;
-    qv->subm_info.commandBufferCount = 0;
-    qv->subm_info.pCommandBuffers = qv->buffers;
-    qv->subm_info.signalSemaphoreCount = 0;
-    qv->subm_info.pSignalSemaphores = NULL;
-    if (cmde->q1_i == ctx->graph_queue_i)
-      qv->queue = ctx->graph_queue;
-    else
-      qv->queue = ctx->comp_queue;
-    qv->n = 0;
-    *qvs[i] = qv;
+  VkFenceCreateInfo fence_info = {
+    .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+    .pNext = NULL,
+    .flags = 0
+  };
+  VkResult res = vkCreateFence(ctx->device, &fence_info, NULL, &cmde->fence);
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    deinit_queue(ctx, cmde);
+    return -1;
   }
 
+  cmde->subm_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  cmde->subm_info.pNext = NULL;
+  cmde->subm_info.waitSemaphoreCount = 0;
+  cmde->subm_info.pWaitSemaphores = NULL;
+  cmde->subm_info.pWaitDstStageMask = NULL;
+  cmde->subm_info.commandBufferCount = 0;
+  cmde->subm_info.pCommandBuffers = cmde->buffers;
+  cmde->subm_info.signalSemaphoreCount = 0;
+  cmde->subm_info.pSignalSemaphores = NULL;
+
+  cmde->queue = ctx->queue;
+  cmde->n = 0;
   return 0;
 }
 
@@ -292,23 +252,16 @@ static int enqueue_res(T_cmde *cmde, const YF_cmdres *cmdr,
   assert(cmde != NULL);
   assert(cmdr != NULL);
 
-  T_qvars *qv = NULL;
-  if (cmdr->queue_i == cmde->q1_i)
-    qv = cmde->q1;
-  else if (cmdr->queue_i == cmde->q2_i)
-    qv = cmde->q2;
-  else
-    assert(0);
-  if (qv->n == cmde->cap) {
+  if (cmde->n == cmde->cap) {
     yf_seterr(YF_ERR_QFULL, __func__);
     return -1;
   }
-  memcpy(&qv->entries[qv->n].cmdr, cmdr, sizeof *cmdr);
-  qv->entries[qv->n].callb = callb;
-  qv->entries[qv->n].arg = arg;
-  qv->buffers[qv->n] = cmdr->pool_res;
-  ++qv->n;
 
+  memcpy(&cmde->entries[cmde->n].cmdr, cmdr, sizeof *cmdr);
+  cmde->entries[cmde->n].callb = callb;
+  cmde->entries[cmde->n].arg = arg;
+  cmde->buffers[cmde->n] = cmdr->pool_res;
+  ++cmde->n;
   return 0;
 }
 
@@ -320,28 +273,21 @@ static int exec_queue(YF_context ctx, T_cmde *cmde)
   /* TODO: Use signal/wait semaphores between priority and non-priority
      command buffers instead of multiple submissions. */
 
+  if (cmde->n < 1)
+    return 0;
+
   int r = 0;
-  T_qvars *qvs[2] = {cmde->q1, cmde->q2};
-  VkFence fences[2] = {NULL, NULL};
-  unsigned fence_n = 0;
   VkResult res;
 
-  for (unsigned i = 0; i < 2; ++i) {
-    if (qvs[i] == NULL || qvs[i]->n < 1)
-      continue;
-    qvs[i]->subm_info.commandBufferCount = qvs[i]->n;
-    res = vkQueueSubmit(qvs[i]->queue, 1, &qvs[i]->subm_info, qvs[i]->fence);
-    if (res != VK_SUCCESS) {
-      yf_seterr(YF_ERR_DEVGEN, __func__);
-      r = -1;
-    } else {
-      fences[fence_n++] = qvs[i]->fence;
-    }
-  }
+  cmde->subm_info.commandBufferCount = cmde->n;
+  res = vkQueueSubmit(cmde->queue, 1, &cmde->subm_info, cmde->fence);
 
-  if (fence_n > 0) {
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    r = -1;
+  } else {
     do
-      res = vkWaitForFences(ctx->device, fence_n, fences, VK_TRUE, YF_CMDEWAIT);
+      res = vkWaitForFences(ctx->device, 1, &cmde->fence, VK_TRUE, YF_CMDEWAIT);
     while (res == VK_TIMEOUT);
     if (res != VK_SUCCESS) {
       yf_seterr(YF_ERR_DEVGEN, __func__);
@@ -349,17 +295,12 @@ static int exec_queue(YF_context ctx, T_cmde *cmde)
     }
   }
 
-  for (unsigned i = 0; i < 2; ++i) {
-    if (qvs[i] == NULL || qvs[i]->n < 1)
-      continue;
-    for (unsigned j = 0; j < qvs[i]->n; ++j) {
-      yf_cmdpool_yield(ctx, &qvs[i]->entries[j].cmdr);
-      if (qvs[i]->entries[j].callb != NULL)
-        qvs[i]->entries[j].callb(r, qvs[i]->entries[j].arg);
-    }
-    qvs[i]->n = 0;
+  for (unsigned i = 0; i < cmde->n; ++i) {
+    yf_cmdpool_yield(ctx, &cmde->entries[i].cmdr);
+    if (cmde->entries[i].callb != NULL)
+      cmde->entries[i].callb(r, cmde->entries[i].arg);
   }
-
+  cmde->n = 0;
   return r;
 }
 
@@ -368,17 +309,15 @@ static void reset_queue(YF_context ctx, T_cmde *cmde)
   assert(ctx != NULL);
   assert(cmde != NULL);
 
-  T_qvars *qvs[2] = {cmde->q1, cmde->q2};
-  for (unsigned i = 0; i < 2; ++i) {
-    if (qvs[i] == NULL || qvs[i]->n < 1)
-      continue;
-    for (unsigned j = 0; j < qvs[i]->n; ++j) {
-      yf_cmdpool_reset(ctx, &qvs[i]->entries[j].cmdr);
-      if (qvs[i]->entries[j].callb != NULL)
-        qvs[i]->entries[j].callb(-1, qvs[i]->entries[j].arg);
-    }
-    qvs[i]->n = 0;
+  if (cmde->n < 1)
+    return;
+
+  for (unsigned i = 0; i < cmde->n; ++i) {
+    yf_cmdpool_reset(ctx, &cmde->entries[i].cmdr);
+    if (cmde->entries[i].callb != NULL)
+      cmde->entries[i].callb(-1, cmde->entries[i].arg);
   }
+  cmde->n = 0;
 }
 
 static void deinit_queue(YF_context ctx, T_cmde *cmde)
@@ -389,15 +328,9 @@ static void deinit_queue(YF_context ctx, T_cmde *cmde)
     return;
 
   reset_queue(ctx, cmde);
-  T_qvars *qvs[2] = {cmde->q1, cmde->q2};
-  for (unsigned i = 0; i < 2; ++i) {
-    if (qvs[i] != NULL) {
-      vkDestroyFence(ctx->device, qvs[i]->fence, NULL);
-      free(qvs[i]->buffers);
-      free(qvs[i]->entries);
-      free(qvs[i]);
-    }
-  }
+  vkDestroyFence(ctx->device, cmde->fence, NULL);
+  free(cmde->buffers);
+  free(cmde->entries);
   free(cmde);
 }
 
