@@ -273,28 +273,21 @@ static int exec_queue(YF_context ctx, T_cmde *cmde)
   /* TODO: Use signal/wait semaphores between priority and non-priority
      command buffers instead of multiple submissions. */
 
+  if (cmde->n < 1)
+    return 0;
+
   int r = 0;
-  T_qvars *qvs[2] = {cmde->q1, cmde->q2};
-  VkFence fences[2] = {NULL, NULL};
-  unsigned fence_n = 0;
   VkResult res;
 
-  for (unsigned i = 0; i < 2; ++i) {
-    if (qvs[i] == NULL || qvs[i]->n < 1)
-      continue;
-    qvs[i]->subm_info.commandBufferCount = qvs[i]->n;
-    res = vkQueueSubmit(qvs[i]->queue, 1, &qvs[i]->subm_info, qvs[i]->fence);
-    if (res != VK_SUCCESS) {
-      yf_seterr(YF_ERR_DEVGEN, __func__);
-      r = -1;
-    } else {
-      fences[fence_n++] = qvs[i]->fence;
-    }
-  }
+  cmde->subm_info.commandBufferCount = cmde->n;
+  res = vkQueueSubmit(cmde->queue, 1, &cmde->subm_info, cmde->fence);
 
-  if (fence_n > 0) {
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    r = -1;
+  } else {
     do
-      res = vkWaitForFences(ctx->device, fence_n, fences, VK_TRUE, YF_CMDEWAIT);
+      res = vkWaitForFences(ctx->device, 1, &cmde->fence, VK_TRUE, YF_CMDEWAIT);
     while (res == VK_TIMEOUT);
     if (res != VK_SUCCESS) {
       yf_seterr(YF_ERR_DEVGEN, __func__);
@@ -302,17 +295,12 @@ static int exec_queue(YF_context ctx, T_cmde *cmde)
     }
   }
 
-  for (unsigned i = 0; i < 2; ++i) {
-    if (qvs[i] == NULL || qvs[i]->n < 1)
-      continue;
-    for (unsigned j = 0; j < qvs[i]->n; ++j) {
-      yf_cmdpool_yield(ctx, &qvs[i]->entries[j].cmdr);
-      if (qvs[i]->entries[j].callb != NULL)
-        qvs[i]->entries[j].callb(r, qvs[i]->entries[j].arg);
-    }
-    qvs[i]->n = 0;
+  for (unsigned i = 0; i < cmde->n; ++i) {
+    yf_cmdpool_yield(ctx, &cmde->entries[i].cmdr);
+    if (cmde->entries[i].callb != NULL)
+      cmde->entries[i].callb(r, cmde->entries[i].arg);
   }
-
+  cmde->n = 0;
   return r;
 }
 
