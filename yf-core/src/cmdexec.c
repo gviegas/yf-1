@@ -212,69 +212,37 @@ static int init_queue(YF_context ctx, T_cmde *cmde)
   assert(cmde != NULL);
   assert(cmde->cap > 0);
 
-  cmde->q2_i = -1;
-  cmde->q2 = NULL;
-  unsigned queue_n = 0;
-  if (ctx->graph_queue_i >= 0) {
-    cmde->q1_i = ctx->graph_queue_i;
-    ++queue_n;
-  }
-  if (ctx->comp_queue_i != ctx->graph_queue_i) {
-    if (queue_n == 0)
-      cmde->q1_i = ctx->comp_queue_i;
-    else
-      cmde->q2_i = ctx->comp_queue_i;
-    ++queue_n;
+  cmde->entries = malloc(sizeof(T_entry) * cmde->cap);
+  cmde->buffers = malloc(sizeof(VkCommandBuffer) * cmde->cap);
+  if (cmde->entries == NULL || cmde->buffers == NULL) {
+    yf_seterr(YF_ERR_NOMEM, __func__);
+    return -1;
   }
 
-  T_qvars **qvs[2] = {&cmde->q1, &cmde->q2};
-  for (unsigned i = 0; i < queue_n; ++i) {
-    T_qvars *qv = malloc(sizeof(T_qvars));
-    if (qv == NULL) {
-      yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_queue(ctx, cmde);
-      return -1;
-    }
-    qv->entries = malloc(sizeof(T_entry) * cmde->cap);
-    if (qv->entries == NULL) {
-      yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_queue(ctx, cmde);
-      return -1;
-    }
-    qv->buffers = malloc(sizeof(VkCommandBuffer) * cmde->cap);
-    if (qv->buffers == NULL) {
-      yf_seterr(YF_ERR_NOMEM, __func__);
-      deinit_queue(ctx, cmde);
-      return -1;
-    }
-    VkFenceCreateInfo fence_info = {
-      .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-      .pNext = NULL,
-      .flags = 0
-    };
-    VkResult res = vkCreateFence(ctx->device, &fence_info, NULL, &qv->fence);
-    if (res != VK_SUCCESS) {
-      yf_seterr(YF_ERR_DEVGEN, __func__);
-      deinit_queue(ctx, cmde);
-      return -1;
-    }
-    qv->subm_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    qv->subm_info.pNext = NULL;
-    qv->subm_info.waitSemaphoreCount = 0;
-    qv->subm_info.pWaitSemaphores = 0;
-    qv->subm_info.pWaitDstStageMask = NULL;
-    qv->subm_info.commandBufferCount = 0;
-    qv->subm_info.pCommandBuffers = qv->buffers;
-    qv->subm_info.signalSemaphoreCount = 0;
-    qv->subm_info.pSignalSemaphores = NULL;
-    if (cmde->q1_i == ctx->graph_queue_i)
-      qv->queue = ctx->graph_queue;
-    else
-      qv->queue = ctx->comp_queue;
-    qv->n = 0;
-    *qvs[i] = qv;
+  VkFenceCreateInfo fence_info = {
+    .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+    .pNext = NULL,
+    .flags = 0
+  };
+  VkResult res = vkCreateFence(ctx->device, &fence_info, NULL, &cmde->fence);
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    deinit_queue(ctx, cmde);
+    return -1;
   }
 
+  cmde->subm_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+  cmde->subm_info.pNext = NULL;
+  cmde->subm_info.waitSemaphoreCount = 0;
+  cmde->subm_info.pWaitSemaphores = NULL;
+  cmde->subm_info.pWaitDstStageMask = NULL;
+  cmde->subm_info.commandBufferCount = 0;
+  cmde->subm_info.pCommandBuffers = cmde->buffers;
+  cmde->subm_info.signalSemaphoreCount = 0;
+  cmde->subm_info.pSignalSemaphores = NULL;
+
+  cmde->queue = ctx->queue;
+  cmde->n = 0;
   return 0;
 }
 
