@@ -17,7 +17,7 @@
 #include "context.h"
 #include "cmdbuf.h"
 
-#define YF_CMDEMIN 2
+#define YF_CMDEMIN 1
 #define YF_CMDEMAX 32
 
 #define YF_CMDEWAIT 16666666UL
