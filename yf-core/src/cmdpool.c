@@ -206,12 +206,12 @@ void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdres **cmdr_list,
   assert(ctx->cmdp.priv != NULL);
 
   T_priv *priv = ctx->cmdp.priv;
-  if (priv->prio_n == 0) {
+  if (priv->prio.res_id == -1) {
     *cmdr_list = NULL;
     *cmdr_n = 0;
   } else {
-    *cmdr_list = priv->prio;
-    *cmdr_n = priv->prio_n;
+    *cmdr_list = &priv->prio;
+    *cmdr_n = 1;
   }
 }
 
