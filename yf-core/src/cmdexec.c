@@ -252,23 +252,16 @@ static int enqueue_res(T_cmde *cmde, const YF_cmdres *cmdr,
   assert(cmde != NULL);
   assert(cmdr != NULL);
 
-  T_qvars *qv = NULL;
-  if (cmdr->queue_i == cmde->q1_i)
-    qv = cmde->q1;
-  else if (cmdr->queue_i == cmde->q2_i)
-    qv = cmde->q2;
-  else
-    assert(0);
-  if (qv->n == cmde->cap) {
+  if (cmde->n == cmde->cap) {
     yf_seterr(YF_ERR_QFULL, __func__);
     return -1;
   }
-  memcpy(&qv->entries[qv->n].cmdr, cmdr, sizeof *cmdr);
-  qv->entries[qv->n].callb = callb;
-  qv->entries[qv->n].arg = arg;
-  qv->buffers[qv->n] = cmdr->pool_res;
-  ++qv->n;
 
+  memcpy(&cmde->entries[cmde->n].cmdr, cmdr, sizeof *cmdr);
+  cmde->entries[cmde->n].callb = callb;
+  cmde->entries[cmde->n].arg = arg;
+  cmde->buffers[cmde->n] = cmdr->pool_res;
+  ++cmde->n;
   return 0;
 }
 
