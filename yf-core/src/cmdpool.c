@@ -249,13 +249,11 @@ static int init_entries(YF_context ctx, T_cmdp *cmdp)
     return -1;
   }
 
-  const int gqueue_i = ctx->graph_queue_i;
-  const int cqueue_i = ctx->comp_queue_i;
   VkCommandPoolCreateInfo pool_info = {
     .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
     .pNext = NULL,
     .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-    .queueFamilyIndex = 0
+    .queueFamilyIndex = ctx->queue_i
   };
   VkCommandBufferAllocateInfo alloc_info = {
     .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
@@ -267,15 +265,7 @@ static int init_entries(YF_context ctx, T_cmdp *cmdp)
   VkResult res;
 
   for (unsigned i = 0; i < cmdp->cap; ++i) {
-    if (gqueue_i < 0)
-      cmdp->entries[i].queue_i = cqueue_i;
-    else if (cqueue_i < 0 || i % 2 == 0)
-      cmdp->entries[i].queue_i = gqueue_i;
-    else
-      cmdp->entries[i].queue_i = cqueue_i;
-    pool_info.queueFamilyIndex = cmdp->entries[i].queue_i;
-
-    /* TODO: Consider using only one pool for each queue instead. */
+    /* TODO: Consider using only one pool instead. */
     res = vkCreateCommandPool(ctx->device, &pool_info, NULL,
         &cmdp->entries[i].pool);
     if (res != VK_SUCCESS) {
