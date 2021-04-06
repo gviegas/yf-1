@@ -16,7 +16,8 @@
 #undef YF_LINECHR
 #define YF_LINECHR '%'
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   char line[YF_LINESZ+1];
   memset(line, YF_LINECHR, YF_LINESZ);
   line[YF_LINESZ] = '\0';

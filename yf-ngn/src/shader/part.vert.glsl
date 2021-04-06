@@ -46,7 +46,8 @@ out IO_vtx {
   layout(location=3) vec4 clr;
 } out_vtx;
 
-void main() {
+void main()
+{
   /* TODO: Take this parameters from uniform buffer instead. */
   const float pt_min = 0.125;
   const float pt_max = 4.0;
