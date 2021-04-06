@@ -221,8 +221,7 @@ void yf_cmdpool_notifyprio(YF_context ctx, int result)
   assert(ctx->cmdp.priv != NULL);
 
   T_priv *priv = ctx->cmdp.priv;
-  for (unsigned i = 0; i < priv->prio_n; ++i)
-    yf_cmdpool_yield(ctx, priv->prio+i);
+  yf_cmdpool_yield(ctx, &priv->prio);
 
   if (yf_list_getlen(priv->callbs) < 1)
     return;
