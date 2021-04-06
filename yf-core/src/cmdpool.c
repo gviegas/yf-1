@@ -23,7 +23,6 @@
 typedef struct {
   VkCommandPool pool;
   VkCommandBuffer buffer;
-  int queue_i;
   int in_use;
 } T_entry;
 
@@ -31,15 +30,14 @@ typedef struct {
 typedef struct {
   T_entry *entries;
   unsigned last_i;
-  unsigned curr_n;
+  unsigned cur_n;
   unsigned cap;
 } T_cmdp;
 
 /* Type defining command pool variables stored in a context. */
 typedef struct {
-  T_cmdp *cmdp;
-  YF_cmdres prio[2];
-  unsigned prio_n;
+  T_cmdp cmdp;
+  YF_cmdres prio;
   YF_list callbs;
 } T_priv;
 
