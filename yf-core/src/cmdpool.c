@@ -299,12 +299,11 @@ static void destroy_priv(YF_context ctx)
   while (!YF_IT_ISNIL(it));
   yf_list_deinit(priv->callbs);
 
-  if (priv->cmdp->entries != NULL) {
-    for (unsigned i = 0; i < priv->cmdp->cap; ++i)
-      vkDestroyCommandPool(ctx->device, priv->cmdp->entries[i].pool, NULL);
-    free(priv->cmdp->entries);
+  if (priv->cmdp.entries != NULL) {
+    for (unsigned i = 0; i < priv->cmdp.cap; ++i)
+      vkDestroyCommandPool(ctx->device, priv->cmdp.entries[i].pool, NULL);
+    free(priv->cmdp.entries);
   }
-  free(priv->cmdp);
 
   free(priv);
   ctx->cmdp.priv = NULL;
