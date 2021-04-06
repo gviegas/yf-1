@@ -309,17 +309,15 @@ static void reset_queue(YF_context ctx, T_cmde *cmde)
   assert(ctx != NULL);
   assert(cmde != NULL);
 
-  T_qvars *qvs[2] = {cmde->q1, cmde->q2};
-  for (unsigned i = 0; i < 2; ++i) {
-    if (qvs[i] == NULL || qvs[i]->n < 1)
-      continue;
-    for (unsigned j = 0; j < qvs[i]->n; ++j) {
-      yf_cmdpool_reset(ctx, &qvs[i]->entries[j].cmdr);
-      if (qvs[i]->entries[j].callb != NULL)
-        qvs[i]->entries[j].callb(-1, qvs[i]->entries[j].arg);
-    }
-    qvs[i]->n = 0;
+  if (cmde->n < 1)
+    return;
+
+  for (unsigned i = 0; i < cmde->n; ++i) {
+    yf_cmdpool_reset(ctx, &cmde->entries[i].cmdr);
+    if (cmde->entries[i].callb != NULL)
+      cmde->entries[i].callb(-1, cmde->entries[i].arg);
   }
+  cmde->n = 0;
 }
 
 static void deinit_queue(YF_context ctx, T_cmde *cmde)
