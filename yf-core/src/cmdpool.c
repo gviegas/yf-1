@@ -130,19 +130,14 @@ void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr)
     return;
 
   T_priv *priv = ctx->cmdp.priv;
-  assert(priv->cmdp->entries[cmdr->res_id].in_use);
 
-  priv->cmdp->entries[cmdr->res_id].in_use = 0;
-  priv->cmdp->last_i = cmdr->res_id;
-  --priv->cmdp->curr_n;
-  for (unsigned i = 0; i < priv->prio_n; ++i) {
-    if (priv->prio[i].res_id == cmdr->res_id) {
-      priv->prio[i].pool_res = NULL;
-      priv->prio[i].res_id = -1;
-      priv->prio[i].queue_i = -1;
-      --priv->prio_n;
-      break;
-    }
+  priv->cmdp.entries[cmdr->res_id].in_use = 0;
+  priv->cmdp.last_i = cmdr->res_id;
+  --priv->cmdp.cur_n;
+
+  if (priv->prio.res_id == cmdr->res_id) {
+    priv->prio.pool_res = NULL;
+    priv->prio.res_id = -1;
   }
 }
 
