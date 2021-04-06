@@ -65,29 +65,19 @@ int yf_cmdpool_create(YF_context ctx, unsigned capacity)
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  priv->cmdp = calloc(1, sizeof(T_cmdp));
-  if (priv->cmdp == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    free(priv);
-    return -1;
-  }
 
-  ctx->cmdp.priv= priv;
+  ctx->cmdp.priv = priv;
   ctx->cmdp.deinit_callb = destroy_priv;
 
-  priv->cmdp->last_i = 0;
-  priv->cmdp->curr_n = 0;
-  priv->cmdp->cap = YF_MAX(YF_CMDPMIN, YF_MIN(YF_CMDPMAX, capacity));
-  if (init_entries(ctx, priv->cmdp) != 0) {
+  priv->cmdp.last_i = 0;
+  priv->cmdp.cur_n = 0;
+  priv->cmdp.cap = YF_MAX(YF_CMDPMIN, YF_MIN(YF_CMDPMAX, capacity));
+  if (init_entries(ctx, &priv->cmdp) != 0) {
     destroy_priv(ctx);
     return  -1;
   }
-  for (unsigned i = 0; i < (sizeof priv->prio / sizeof priv->prio[0]); ++i) {
-    priv->prio[i].pool_res = NULL;
-    priv->prio[i].res_id = -1;
-    priv->prio[i].queue_i = -1;
-  }
-  priv->prio_n = 0;
+  priv->prio.pool_res = NULL;
+  priv->prio.res_id = -1;
   priv->callbs = yf_list_init(NULL);
   if (priv->callbs == NULL) {
     destroy_priv(ctx);
