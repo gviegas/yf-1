@@ -41,49 +41,56 @@ YF_window yf_window_init(unsigned width, unsigned height, const char *title,
   return win;
 }
 
-int yf_window_open(YF_window win) {
+int yf_window_open(YF_window win)
+{
   assert(l_imp.open != NULL);
   assert(win != NULL);
 
   return l_imp.open(win->data);
 }
 
-int yf_window_close(YF_window win) {
+int yf_window_close(YF_window win)
+{
   assert(l_imp.close != NULL);
   assert(win != NULL);
 
   return l_imp.close(win->data);
 }
 
-int yf_window_resize(YF_window win, unsigned width, unsigned height) {
+int yf_window_resize(YF_window win, unsigned width, unsigned height)
+{
   assert(l_imp.resize != NULL);
   assert(win != NULL);
 
   return l_imp.resize(win->data, width, height);
 }
 
-int yf_window_toggle(YF_window win) {
+int yf_window_toggle(YF_window win)
+{
   assert(l_imp.toggle != NULL);
   assert(win != NULL);
 
   return l_imp.toggle(win->data);
 }
 
-int yf_window_settitle(YF_window win, const char *title) {
+int yf_window_settitle(YF_window win, const char *title)
+{
   assert(l_imp.settitle != NULL);
   assert(win != NULL);
 
   return l_imp.settitle(win->data, title);
 }
 
-void yf_window_getsize(YF_window win, unsigned *width, unsigned *height) {
+void yf_window_getsize(YF_window win, unsigned *width, unsigned *height)
+{
   assert(l_imp.getsize != NULL);
   assert(win != NULL);
 
   l_imp.getsize(win->data, width, height);
 }
 
-void yf_window_deinit(YF_window win) {
+void yf_window_deinit(YF_window win)
+{
   assert(l_imp.deinit != NULL);
 
   if (win != NULL) {

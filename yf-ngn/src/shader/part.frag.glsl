@@ -18,6 +18,7 @@ in IO_vtx {
 
 layout(location=0) out vec4 clr0;
 
-void main() {
+void main()
+{
   clr0 = in_vtx.clr * textureLod(u_tex, gl_PointCoord, 0.0);
 }

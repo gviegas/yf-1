@@ -544,7 +544,10 @@ static void print_gltf(const T_gltf *gltf);
     (pathname)[path_len+name_len] = '\0'; \
   } } while (0)
 
-int yf_loadgltf(const char *pathname, YF_meshdt *data) {
+int yf_loadgltf(const char *pathname, YF_meshdt *data)
+{
+  assert(data != NULL);
+
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
@@ -595,7 +598,8 @@ int yf_loadgltf(const char *pathname, YF_meshdt *data) {
   return 0;
 }
 
-static int next_symbol(FILE *file, T_symbol *symbol) {
+static int next_symbol(FILE *file, T_symbol *symbol)
+{
   static_assert(YF_MAXTOKENS > 1);
 
   int c;
@@ -731,7 +735,8 @@ static int next_symbol(FILE *file, T_symbol *symbol) {
   return symbol->symbol;
 }
 
-static int consume_prop(FILE *file, T_symbol *symbol) {
+static int consume_prop(FILE *file, T_symbol *symbol)
+{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(symbol->symbol == YF_SYMBOL_STR);
@@ -837,7 +842,8 @@ static int parse_array(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_str(FILE *file, T_symbol *symbol, T_str *str) {
+static int parse_str(FILE *file, T_symbol *symbol, T_str *str)
+{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(str != NULL);
@@ -862,7 +868,8 @@ static int parse_str(FILE *file, T_symbol *symbol, T_str *str) {
   return 0;
 }
 
-static int parse_num(FILE *file, T_symbol *symbol, T_num *num) {
+static int parse_num(FILE *file, T_symbol *symbol, T_num *num)
+{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(num != NULL);
@@ -905,7 +912,8 @@ static int parse_num_array(FILE *file, T_symbol *symbol,
   return parse_num(file, symbol, num_p+index);
 }
 
-static int parse_int(FILE *file, T_symbol *symbol, T_int *intr) {
+static int parse_int(FILE *file, T_symbol *symbol, T_int *intr)
+{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(intr != NULL);
@@ -944,7 +952,8 @@ static int parse_int_array(FILE *file, T_symbol *symbol,
   return parse_int(file, symbol, int_p+index);
 }
 
-static int parse_bool(FILE *file, T_symbol *symbol, T_bool *booln) {
+static int parse_bool(FILE *file, T_symbol *symbol, T_bool *booln)
+{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(booln != NULL);
@@ -967,7 +976,8 @@ static int parse_bool(FILE *file, T_symbol *symbol, T_bool *booln) {
   return 0;
 }
 
-static int parse_gltf(FILE *file, T_symbol *symbol, T_gltf *gltf) {
+static int parse_gltf(FILE *file, T_symbol *symbol, T_gltf *gltf)
+{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(gltf != NULL);
@@ -1070,7 +1080,8 @@ static int parse_gltf(FILE *file, T_symbol *symbol, T_gltf *gltf) {
   return 0;
 }
 
-static int parse_asset(FILE *file, T_symbol *symbol, T_asset *asset) {
+static int parse_asset(FILE *file, T_symbol *symbol, T_asset *asset)
+{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(asset != NULL);
@@ -1120,7 +1131,8 @@ static int parse_asset(FILE *file, T_symbol *symbol, T_asset *asset) {
   return 0;
 }
 
-static int parse_scene(FILE *file, T_symbol *symbol, T_int *scene) {
+static int parse_scene(FILE *file, T_symbol *symbol, T_int *scene)
+{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(scene != NULL);
@@ -2029,7 +2041,8 @@ static int parse_animations(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_sparse(FILE *file, T_symbol *symbol, T_sparse *sparse) {
+static int parse_sparse(FILE *file, T_symbol *symbol, T_sparse *sparse)
+{
   assert(!feof(file));
   assert(symbol != NULL);
   assert(sparse != NULL);
@@ -2461,7 +2474,8 @@ static int parse_samplers(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data) {
+static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
+{
   assert(gltf != NULL);
   assert(path != NULL);
   assert(data != NULL);
@@ -2760,7 +2774,8 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data) {
   return 0;
 }
 
-static void deinit_gltf(T_gltf *gltf) {
+static void deinit_gltf(T_gltf *gltf)
+{
   if (gltf == NULL)
     return;
 
@@ -2847,7 +2862,8 @@ static void deinit_gltf(T_gltf *gltf) {
  */
 
 #ifdef YF_DEVEL
-static void print_gltf(const T_gltf *gltf) {
+static void print_gltf(const T_gltf *gltf)
+{
   printf("\n[YF] OUTPUT (%s):\n", __func__);
 
   puts("glTF.asset:");

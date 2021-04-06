@@ -25,12 +25,14 @@ struct YF_node_o {
   void *obj;
 };
 
-YF_node yf_node_init(void) {
+YF_node yf_node_init(void)
+{
   YF_node node = malloc(sizeof(struct YF_node_o));
   if (node == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return NULL;
   }
+
   node->parent = NULL;
   node->prev_sibl = NULL;
   node->next_sibl = NULL;
@@ -40,10 +42,12 @@ YF_node yf_node_init(void) {
   node->name = NULL;
   node->nodeobj = YF_NODEOBJ_NONE;
   node->obj = NULL;
+
   return node;
 }
 
-void yf_node_insert(YF_node node, YF_node child) {
+void yf_node_insert(YF_node node, YF_node child)
+{
   assert(node != NULL);
   assert(child != NULL);
   assert(node != child);
@@ -64,8 +68,10 @@ void yf_node_insert(YF_node node, YF_node child) {
   while ((aux = aux->parent) != NULL);
 }
 
-void yf_node_drop(YF_node node) {
+void yf_node_drop(YF_node node)
+{
   assert(node != NULL);
+
   if (node->parent == NULL)
     return;
 
@@ -86,8 +92,10 @@ void yf_node_drop(YF_node node) {
   node->next_sibl = NULL;
 }
 
-void yf_node_prune(YF_node node) {
+void yf_node_prune(YF_node node)
+{
   assert(node != NULL);
+
   if (node->child == NULL)
     return;
 
@@ -115,6 +123,7 @@ int yf_node_traverse(YF_node node, int (*fn)(YF_node descendant, void *arg),
 {
   assert(node != NULL);
   assert(fn != NULL);
+
   if (node->child == NULL)
     return 0;
 
@@ -143,7 +152,8 @@ int yf_node_traverse(YF_node node, int (*fn)(YF_node descendant, void *arg),
   return 0;
 }
 
-int yf_node_descends(YF_node node, YF_node ancestor) {
+int yf_node_descends(YF_node node, YF_node ancestor)
+{
   assert(node != NULL);
   assert(ancestor != NULL);
   assert(node != ancestor);
@@ -158,22 +168,26 @@ int yf_node_descends(YF_node node, YF_node ancestor) {
   return 0;
 }
 
-int yf_node_isleaf(YF_node node) {
+int yf_node_isleaf(YF_node node)
+{
   assert(node != NULL);
   return node->child == NULL;
 }
 
-size_t yf_node_getlen(YF_node node) {
+size_t yf_node_getlen(YF_node node)
+{
   assert(node != NULL);
   return node->n;
 }
 
-YF_mat4 *yf_node_getxform(YF_node node) {
+YF_mat4 *yf_node_getxform(YF_node node)
+{
   assert(node != NULL);
   return &node->xform;
 }
 
-char *yf_node_getname(YF_node node, char *dst, size_t n) {
+char *yf_node_getname(YF_node node, char *dst, size_t n)
+{
   assert(node != NULL);
   assert(dst != NULL);
   assert(n > 0);
@@ -188,7 +202,8 @@ char *yf_node_getname(YF_node node, char *dst, size_t n) {
   return NULL;
 }
 
-int yf_node_setname(YF_node node, const char *name) {
+int yf_node_setname(YF_node node, const char *name)
+{
   assert(node != NULL);
 
   if (name == NULL) {
@@ -220,7 +235,8 @@ int yf_node_setname(YF_node node, const char *name) {
   return 0;
 }
 
-int yf_node_getobj(YF_node node, void **obj) {
+int yf_node_getobj(YF_node node, void **obj)
+{
   assert(node != NULL);
 
   if (obj != NULL)
@@ -228,7 +244,8 @@ int yf_node_getobj(YF_node node, void **obj) {
   return node->nodeobj;
 }
 
-void yf_node_deinit(YF_node node) {
+void yf_node_deinit(YF_node node)
+{
   if (node != NULL) {
     yf_node_drop(node);
     yf_node_prune(node);
@@ -237,8 +254,10 @@ void yf_node_deinit(YF_node node) {
   }
 }
 
-void yf_node_setobj(YF_node node, int nodeobj, void *obj) {
+void yf_node_setobj(YF_node node, int nodeobj, void *obj)
+{
   assert(node != NULL);
+
   /* TODO: Ensure that 'nodeobj' is valid. */
   node->nodeobj = nodeobj;
   node->obj = obj;

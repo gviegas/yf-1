@@ -2,7 +2,7 @@
  * YF
  * test-node.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -11,7 +11,8 @@
 #include "yf-node.h"
 
 /* Iteration callback for node. */
-static int do_each_node(YF_node node, void *arg) {
+static int do_each_node(YF_node node, void *arg)
+{
   int r = (long)arg;
   printf("@%p (%d)\n", (void *)node, r);
   return r;
@@ -19,7 +20,8 @@ static int do_each_node(YF_node node, void *arg) {
 
 /* Tests node functionality. */
 /* TODO: Check that values are correct, don't just print them. */
-int yf_test_node(void) {
+int yf_test_node(void)
+{
   YF_node n1, n2, n3, n4, n5;
   n1 = yf_node_init();
   n2 = yf_node_init();

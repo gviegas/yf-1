@@ -2,7 +2,7 @@
  * YF
  * cmdexec.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_CMDEXEC_H
@@ -33,7 +33,7 @@ void yf_cmdexec_resetprio(YF_context ctx);
 
 /* Sets a fence upon which to wait in the next submission.
    XXX: Fences are used instead of semaphores because multiple queues
-   are supported. This may change eventually. */
+   are supported. This is expected to change in the future. */
 void yf_cmdexec_waitfor(YF_context ctx, VkFence fence);
 
 #endif /* YF_CMDEXEC_H */

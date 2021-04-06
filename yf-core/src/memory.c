@@ -26,7 +26,8 @@ static VkDeviceMemory alloc_memory(YF_context ctx,
 /* Deallocates device memory. */
 static void free_memory(YF_context ctx, VkDeviceMemory memory);
 
-int yf_buffer_alloc(YF_buffer buf) {
+int yf_buffer_alloc(YF_buffer buf)
+{
   assert(buf != NULL);
   assert(buf->memory == NULL);
 
@@ -51,7 +52,8 @@ int yf_buffer_alloc(YF_buffer buf) {
   return 0;
 }
 
-int yf_image_alloc(YF_image img) {
+int yf_image_alloc(YF_image img)
+{
   assert(img != NULL);
   assert(img->memory == NULL);
 
@@ -74,7 +76,8 @@ int yf_image_alloc(YF_image img) {
   return 0;
 }
 
-void yf_buffer_free(YF_buffer buf) {
+void yf_buffer_free(YF_buffer buf)
+{
   if (buf != NULL) {
     free_memory(buf->ctx, buf->memory);
     buf->memory = NULL;
@@ -82,7 +85,8 @@ void yf_buffer_free(YF_buffer buf) {
   }
 }
 
-void yf_image_free(YF_image img) {
+void yf_image_free(YF_image img)
+{
   if (img != NULL) {
     free_memory(img->ctx, img->memory);
     img->memory = NULL;
@@ -142,6 +146,7 @@ static VkDeviceMemory alloc_memory(YF_context ctx,
   return mem;
 }
 
-static void free_memory(YF_context ctx, VkDeviceMemory memory) {
+static void free_memory(YF_context ctx, VkDeviceMemory memory)
+{
   vkFreeMemory(ctx->device, memory, NULL);
 }

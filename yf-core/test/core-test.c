@@ -18,8 +18,11 @@
 
 /* Info test. */
 #define YF_TEST_CAPAB "capab"
+
 int yf_test_capab(void);
-static int test_capab(void) {
+
+static int test_capab(void)
+{
   YF_TEST_SUBT;
   puts("");
   int r = yf_test_capab();
@@ -29,8 +32,11 @@ static int test_capab(void) {
 
 /* Draw test. */
 #define YF_TEST_DRAW "draw"
+
 int yf_test_draw(void);
-static int test_draw(void) {
+
+static int test_draw(void)
+{
   YF_TEST_SUBT;
   puts("");
   int r = yf_test_draw();
@@ -41,8 +47,10 @@ static int test_draw(void) {
 static const char *l_ids[] = {YF_TEST_CAPAB, YF_TEST_DRAW, YF_TEST_ALL};
 
 /* Test function. */
-static int test(int argc, char *argv[]) {
+static int test(int argc, char *argv[])
+{
   assert(argc > 0);
+
   size_t test_n;
   size_t results;
 

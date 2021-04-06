@@ -35,7 +35,8 @@ static int init_rect(YF_quad quad);
 /* Updates a quad's mesh rectangle. */
 static void update_rect(YF_quad quad);
 
-YF_quad yf_quad_init(void) {
+YF_quad yf_quad_init(void)
+{
   YF_quad quad = calloc(1, sizeof(struct YF_quad_o));
   if (quad == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -54,12 +55,14 @@ YF_quad yf_quad_init(void) {
   return quad;
 }
 
-YF_node yf_quad_getnode(YF_quad quad) {
+YF_node yf_quad_getnode(YF_quad quad)
+{
   assert(quad != NULL);
   return quad->node;
 }
 
-YF_mesh yf_quad_getmesh(YF_quad quad) {
+YF_mesh yf_quad_getmesh(YF_quad quad)
+{
   assert(quad != NULL);
 
   if (quad->pend_mask != YF_PEND_NONE) {
@@ -69,12 +72,14 @@ YF_mesh yf_quad_getmesh(YF_quad quad) {
   return quad->mesh;
 }
 
-YF_texture yf_quad_gettex(YF_quad quad) {
+YF_texture yf_quad_gettex(YF_quad quad)
+{
   assert(quad != NULL);
   return quad->tex;
 }
 
-void yf_quad_settex(YF_quad quad, YF_texture tex) {
+void yf_quad_settex(YF_quad quad, YF_texture tex)
+{
   assert(quad != NULL);
 
   quad->tex = tex;
@@ -83,12 +88,14 @@ void yf_quad_settex(YF_quad quad, YF_texture tex) {
   quad->pend_mask |= YF_PEND_TC;
 }
 
-const YF_rect *yf_quad_getrect(YF_quad quad) {
+const YF_rect *yf_quad_getrect(YF_quad quad)
+{
   assert(quad != NULL);
   return &quad->rect;
 }
 
-void yf_quad_setrect(YF_quad quad, const YF_rect *rect) {
+void yf_quad_setrect(YF_quad quad, const YF_rect *rect)
+{
   assert(quad != NULL);
   assert(rect != NULL);
 
@@ -96,7 +103,8 @@ void yf_quad_setrect(YF_quad quad, const YF_rect *rect) {
   quad->pend_mask |= YF_PEND_TC;
 }
 
-YF_color yf_quad_getcolor(YF_quad quad, int corner) {
+YF_color yf_quad_getcolor(YF_quad quad, int corner)
+{
   assert(quad != NULL);
 
   unsigned i = 0;
@@ -124,7 +132,8 @@ YF_color yf_quad_getcolor(YF_quad quad, int corner) {
   return (YF_color){v->clr[0], v->clr[1], v->clr[2], v->clr[3]};
 }
 
-void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color) {
+void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color)
+{
   assert(quad != NULL);
 
   if (corner_mask & YF_CORNER_TOPL) {
@@ -155,7 +164,8 @@ void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color) {
   quad->pend_mask |= YF_PEND_CLR;
 }
 
-void yf_quad_deinit(YF_quad quad) {
+void yf_quad_deinit(YF_quad quad)
+{
   if (quad != NULL) {
     yf_node_deinit(quad->node);
     yf_mesh_deinit(quad->mesh);
@@ -163,7 +173,8 @@ void yf_quad_deinit(YF_quad quad) {
   }
 }
 
-static int init_rect(YF_quad quad) {
+static int init_rect(YF_quad quad)
+{
   assert(quad != NULL);
 
 #ifdef YF_FLIP_TEX
@@ -206,7 +217,8 @@ static int init_rect(YF_quad quad) {
   return quad->mesh == NULL ? -1 : 0;
 }
 
-static void update_rect(YF_quad quad) {
+static void update_rect(YF_quad quad)
+{
   assert(quad != NULL);
   assert(quad->pend_mask != YF_PEND_NONE);
 

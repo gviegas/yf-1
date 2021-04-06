@@ -48,7 +48,8 @@ out IO_vtx {
   layout(location=2) vec3 norm;
 } out_vtx;
 
-void main() {
+void main()
+{
   gl_Position = u_glob.p * u_inst.mv * vec4(pos, 1.0);
   out_vtx.tc = tc;
   out_vtx.norm = norm;

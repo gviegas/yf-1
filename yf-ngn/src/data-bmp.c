@@ -125,18 +125,21 @@ static_assert(offsetof(T_bmpv5h, reserved) == YF_BMPV5H_SZ-4, "!offsetof");
   while (res > lshf && (mask & (1 << (res-1))) == 0) --res; \
   res -= lshf; } while (0)
 
-int yf_loadbmp(const char *pathname, YF_texdt *data) {
+int yf_loadbmp(const char *pathname, YF_texdt *data)
+{
+  assert(data != NULL);
+
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
   }
-  assert(data != NULL);
 
   FILE *file = fopen(pathname, "r");
   if (file == NULL) {
     yf_seterr(YF_ERR_NOFILE, __func__);
     return -1;
   }
+
   T_bmpfh fh;
   if (fread(&fh.type, 1, YF_BMPFH_SZ, file) < YF_BMPFH_SZ ||
       le16toh(fh.type) != YF_BMP_TYPE)

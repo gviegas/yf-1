@@ -74,7 +74,8 @@ static void deinit_queue(YF_context ctx, T_cmde *cmde);
 /* Destroys the 'T_priv' data stored in a given context. */
 static void destroy_priv(YF_context ctx);
 
-int yf_cmdexec_create(YF_context ctx, unsigned capacity) {
+int yf_cmdexec_create(YF_context ctx, unsigned capacity)
+{
   assert(ctx != NULL);
 
   if (ctx->cmde.priv != NULL)
@@ -128,7 +129,8 @@ int yf_cmdexec_enqueue(YF_context ctx, const YF_cmdres *cmdr,
   return enqueue_res(((T_priv *)ctx->cmde.priv)->cmde, cmdr, callb, arg);
 }
 
-int yf_cmdexec_exec(YF_context ctx) {
+int yf_cmdexec_exec(YF_context ctx)
+{
   assert(ctx != NULL);
 
   if (yf_cmdexec_execprio(ctx) != 0) {
@@ -138,7 +140,8 @@ int yf_cmdexec_exec(YF_context ctx) {
   return exec_queue(ctx, ((T_priv *)ctx->cmde.priv)->cmde);
 }
 
-int yf_cmdexec_execprio(YF_context ctx) {
+int yf_cmdexec_execprio(YF_context ctx)
+{
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
@@ -186,21 +189,24 @@ int yf_cmdexec_execprio(YF_context ctx) {
   return r;
 }
 
-void yf_cmdexec_reset(YF_context ctx) {
+void yf_cmdexec_reset(YF_context ctx)
+{
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
   reset_queue(ctx, ((T_priv *)ctx->cmde.priv)->cmde);
 }
 
-void yf_cmdexec_resetprio(YF_context ctx) {
+void yf_cmdexec_resetprio(YF_context ctx)
+{
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
   reset_queue(ctx, ((T_priv *)ctx->cmde.priv)->prio);
 }
 
-void yf_cmdexec_waitfor(YF_context ctx, VkFence fence) {
+void yf_cmdexec_waitfor(YF_context ctx, VkFence fence)
+{
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
@@ -208,7 +214,8 @@ void yf_cmdexec_waitfor(YF_context ctx, VkFence fence) {
   yf_list_insert(fences, fence);
 }
 
-static int init_queue(YF_context ctx, T_cmde *cmde) {
+static int init_queue(YF_context ctx, T_cmde *cmde)
+{
   assert(ctx != NULL);
   assert(cmde != NULL);
   assert(cmde->cap > 0);
@@ -305,7 +312,8 @@ static int enqueue_res(T_cmde *cmde, const YF_cmdres *cmdr,
   return 0;
 }
 
-static int exec_queue(YF_context ctx, T_cmde *cmde) {
+static int exec_queue(YF_context ctx, T_cmde *cmde)
+{
   assert(ctx != NULL);
   assert(cmde != NULL);
 
@@ -355,7 +363,8 @@ static int exec_queue(YF_context ctx, T_cmde *cmde) {
   return r;
 }
 
-static void reset_queue(YF_context ctx, T_cmde *cmde) {
+static void reset_queue(YF_context ctx, T_cmde *cmde)
+{
   assert(ctx != NULL);
   assert(cmde != NULL);
 
@@ -372,7 +381,8 @@ static void reset_queue(YF_context ctx, T_cmde *cmde) {
   }
 }
 
-static void deinit_queue(YF_context ctx, T_cmde *cmde) {
+static void deinit_queue(YF_context ctx, T_cmde *cmde)
+{
   assert(ctx != NULL);
 
   if (cmde == NULL)
@@ -391,7 +401,8 @@ static void deinit_queue(YF_context ctx, T_cmde *cmde) {
   free(cmde);
 }
 
-static void destroy_priv(YF_context ctx) {
+static void destroy_priv(YF_context ctx)
+{
   assert(ctx != NULL);
 
   if (ctx->cmde.priv == NULL)

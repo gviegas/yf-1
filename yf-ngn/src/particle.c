@@ -52,7 +52,8 @@ struct YF_particle_o {
 /* Initializes vertices, states and mesh object. */
 static int init_points(YF_particle part);
 
-YF_particle yf_particle_init(unsigned count) {
+YF_particle yf_particle_init(unsigned count)
+{
   if (count == 0) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return NULL;
@@ -103,32 +104,38 @@ YF_particle yf_particle_init(unsigned count) {
   return part;
 }
 
-YF_node yf_particle_getnode(YF_particle part) {
+YF_node yf_particle_getnode(YF_particle part)
+{
   assert(part != NULL);
   return part->node;
 }
 
-YF_psys *yf_particle_getsys(YF_particle part) {
+YF_psys *yf_particle_getsys(YF_particle part)
+{
   assert(part != NULL);
   return &part->sys;
 }
 
-YF_mesh yf_particle_getmesh(YF_particle part) {
+YF_mesh yf_particle_getmesh(YF_particle part)
+{
   assert(part != NULL);
   return part->mesh;
 }
 
-YF_texture yf_particle_gettex(YF_particle part) {
+YF_texture yf_particle_gettex(YF_particle part)
+{
   assert(part != NULL);
   return part->tex;
 }
 
-void yf_particle_settex(YF_particle part, YF_texture tex) {
+void yf_particle_settex(YF_particle part, YF_texture tex)
+{
   assert(part != NULL);
   part->tex = tex;
 }
 
-void yf_particle_simulate(YF_particle part, double tm) {
+void yf_particle_simulate(YF_particle part, double tm)
+{
   assert(tm >= 0.0);
 
   const YF_float dt = tm;
@@ -228,7 +235,8 @@ void yf_particle_simulate(YF_particle part, double tm) {
 #endif
 }
 
-void yf_particle_deinit(YF_particle part) {
+void yf_particle_deinit(YF_particle part)
+{
   if (part != NULL) {
     yf_node_deinit(part->node);
     yf_mesh_deinit(part->mesh);
@@ -238,7 +246,8 @@ void yf_particle_deinit(YF_particle part) {
   }
 }
 
-static int init_points(YF_particle part) {
+static int init_points(YF_particle part)
+{
   assert(part != NULL);
 
   part->pts = malloc(sizeof(YF_vpart) * part->count);

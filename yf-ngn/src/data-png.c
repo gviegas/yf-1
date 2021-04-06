@@ -130,7 +130,8 @@ static void print_codes(const uint8_t *lengths, size_t length_n,
     const uint32_t *codes, const T_tree *tree, size_t tree_n, size_t tree_max);
 #endif
 
-int yf_loadpng(const char *pathname, YF_texdt *data) {
+int yf_loadpng(const char *pathname, YF_texdt *data)
+{
   assert(pathname != NULL);
   assert(data != NULL);
 
@@ -228,7 +229,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
   uint8_t *idat = NULL;
   size_t idat_sz = 0;
 
-  do {
+  while (1) {
     if (fread(chunk, sizeof(T_chunk), 1, file) < 1) {
       yf_seterr(YF_ERR_NOMEM, __func__);
       free(chunk);
@@ -362,7 +363,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
       fclose(file);
       return -1;
     }
-  } while (1);
+  }
 
   free(chunk);
   fclose(file);
@@ -388,7 +389,8 @@ int yf_loadpng(const char *pathname, YF_texdt *data) {
   return r;
 }
 
-static int load_texdt(const T_png *png, YF_texdt *data) {
+static int load_texdt(const T_png *png, YF_texdt *data)
+{
   assert(png != NULL);
   assert(data != NULL);
 
@@ -683,7 +685,8 @@ static int load_texdt(const T_png *png, YF_texdt *data) {
   return 0;
 }
 
-static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz) {
+static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
+{
   assert(strm != NULL);
   assert(buf != NULL);
 
@@ -942,7 +945,7 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz) {
   return 0;
 }
 
-static T_tree *gen_codes(const uint8_t *lengths, size_t length_n,
+static T_tree * gen_codes(const uint8_t *lengths, size_t length_n,
     uint32_t *codes)
 {
   assert(lengths != NULL);

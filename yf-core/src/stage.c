@@ -38,7 +38,8 @@ static size_t hash_kv(const void *x);
 /* Compares a 'T_kv' to another. */
 static int cmp_kv(const void *a, const void *b);
 
-int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod) {
+int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod)
+{
   assert(ctx != NULL);
   assert(pathname != NULL);
 
@@ -58,34 +59,36 @@ int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod) {
     ctx->stg.deinit_callb = destroy_priv;
   }
 
-  FILE *f = fopen(pathname, "r");
-  if (f == NULL) {
+  FILE *file = fopen(pathname, "r");
+  if (file == NULL) {
     yf_seterr(YF_ERR_NOFILE, __func__);
     return -1;
   }
 
   long n = 0;
-  if (fseek(f, 0, SEEK_END) != 0 || (n = ftell(f)) <= 0 || n % YF_MODWRD != 0) {
+  if (fseek(file, 0, SEEK_END) != 0 || (n = ftell(file)) <= 0 ||
+      n % YF_MODWRD != 0)
+  {
     yf_seterr(YF_ERR_INVFILE, __func__);
-    fclose(f);
+    fclose(file);
     return -1;
   }
-  rewind(f);
+  rewind(file);
 
   unsigned char *buf = malloc(n);
   if (buf == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    fclose(f);
+    fclose(file);
     return -1;
   }
 
-  if (fread(buf, 1, n, f) != (size_t)n) {
+  if (fread(buf, 1, n, file) != (size_t)n) {
     yf_seterr(YF_ERR_OTHER, __func__);
     free(buf);
-    fclose(f);
+    fclose(file);
     return -1;
   }
-  fclose(f);
+  fclose(file);
 
   T_kv *kv = malloc(sizeof(T_kv));
   if (kv == NULL) {
@@ -116,7 +119,8 @@ int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod) {
   return 0;
 }
 
-void yf_unldmod(YF_context ctx, YF_modid mod) {
+void yf_unldmod(YF_context ctx, YF_modid mod)
+{
   assert(ctx != NULL);
 
   if (ctx->stg.priv == NULL)
@@ -132,7 +136,8 @@ void yf_unldmod(YF_context ctx, YF_modid mod) {
   }
 }
 
-VkShaderModule yf_getmod(YF_context ctx, YF_modid mod) {
+VkShaderModule yf_getmod(YF_context ctx, YF_modid mod)
+{
   assert(ctx != NULL);
 
   if (ctx->stg.priv == NULL)
@@ -146,7 +151,8 @@ VkShaderModule yf_getmod(YF_context ctx, YF_modid mod) {
   return VK_NULL_HANDLE;
 }
 
-static void destroy_priv(YF_context ctx) {
+static void destroy_priv(YF_context ctx)
+{
   assert(ctx != NULL);
 
   if (ctx->stg.priv == NULL)
@@ -162,10 +168,12 @@ static void destroy_priv(YF_context ctx) {
   ctx->stg.priv = NULL;
 }
 
-static size_t hash_kv(const void *x) {
+static size_t hash_kv(const void *x)
+{
   return ((T_kv *)x)->key ^ 0xe353d215;
 }
 
-static int cmp_kv(const void *a, const void *b) {
+static int cmp_kv(const void *a, const void *b)
+{
   return ((T_kv *)a)->key != ((T_kv *)b)->key;
 }

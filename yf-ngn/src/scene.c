@@ -141,10 +141,13 @@ static void clear_obj(void);
 
 /* Functions used by the model sets. */
 static size_t hash_mdl(const void *x);
+
 static int cmp_mdl(const void *a, const void *b);
+
 static int dealloc_mdl(void *val, void *arg);
 
-YF_scene yf_scene_init(void) {
+YF_scene yf_scene_init(void)
+{
   if (l_vars.ctx == NULL && init_vars() != 0)
     return NULL;
 
@@ -166,27 +169,32 @@ YF_scene yf_scene_init(void) {
   return scn;
 }
 
-YF_node yf_scene_getnode(YF_scene scn) {
+YF_node yf_scene_getnode(YF_scene scn)
+{
   assert(scn != NULL);
   return scn->node;
 }
 
-YF_camera yf_scene_getcam(YF_scene scn) {
+YF_camera yf_scene_getcam(YF_scene scn)
+{
   assert(scn != NULL);
   return scn->cam;
 }
 
-YF_color yf_scene_getcolor(YF_scene scn) {
+YF_color yf_scene_getcolor(YF_scene scn)
+{
   assert(scn != NULL);
   return scn->color;
 }
 
-void yf_scene_setcolor(YF_scene scn, YF_color color) {
+void yf_scene_setcolor(YF_scene scn, YF_color color)
+{
   assert(scn != NULL);
   scn->color = color;
 }
 
-void yf_scene_deinit(YF_scene scn) {
+void yf_scene_deinit(YF_scene scn)
+{
   /* TODO: Deinitialize shared vars. on exit. */
   if (scn != NULL) {
     yf_camera_deinit(scn->cam);
@@ -195,7 +203,8 @@ void yf_scene_deinit(YF_scene scn) {
   }
 }
 
-int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
+int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
+{
   assert(scn != NULL);
   assert(pass != NULL);
   assert(tgt != NULL);
@@ -357,7 +366,8 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim) {
   return 0;
 }
 
-static int init_vars(void) {
+static int init_vars(void)
+{
   assert(l_vars.ctx == NULL);
 
   if ((l_vars.ctx = yf_getctx()) == NULL)
@@ -461,7 +471,8 @@ static int init_vars(void) {
   return 0;
 }
 
-static int traverse_scn(YF_node node, void *arg) {
+static int traverse_scn(YF_node node, void *arg)
+{
   void *obj = NULL;
   const int nodeobj = yf_node_getobj(node, &obj);
 
@@ -570,7 +581,8 @@ static int traverse_scn(YF_node node, void *arg) {
   return 0;
 }
 
-static int render_mdl(YF_scene scn) {
+static int render_mdl(YF_scene scn)
+{
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
   YF_dtable inst_dtb = NULL;
@@ -632,7 +644,8 @@ static int render_mdl(YF_scene scn) {
   return 0;
 }
 
-static int render_mdl_inst(YF_scene scn) {
+static int render_mdl_inst(YF_scene scn)
+{
   static const int resrq[] = {YF_RESRQ_MDL4, YF_RESRQ_MDL16, YF_RESRQ_MDL64};
   static const unsigned insts[] = {4, 16, 64};
   static const int sz = sizeof resrq / sizeof resrq[0];
@@ -740,7 +753,8 @@ static int render_mdl_inst(YF_scene scn) {
   return 0;
 }
 
-static int render_terr(YF_scene scn) {
+static int render_terr(YF_scene scn)
+{
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
   YF_dtable inst_dtb = NULL;
@@ -806,7 +820,8 @@ static int render_terr(YF_scene scn) {
   return 0;
 }
 
-static int render_part(YF_scene scn) {
+static int render_part(YF_scene scn)
+{
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
   YF_dtable inst_dtb = NULL;
@@ -865,7 +880,8 @@ static int render_part(YF_scene scn) {
   return 0;
 }
 
-static int render_quad(YF_scene scn) {
+static int render_quad(YF_scene scn)
+{
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
   YF_dtable inst_dtb = NULL;
@@ -924,7 +940,8 @@ static int render_quad(YF_scene scn) {
   return 0;
 }
 
-static int render_labl(YF_scene scn) {
+static int render_labl(YF_scene scn)
+{
   YF_gstate gst = NULL;
   unsigned inst_alloc = 0;
   YF_dtable inst_dtb = NULL;
@@ -981,7 +998,8 @@ static int render_labl(YF_scene scn) {
   return 0;
 }
 
-static int copy_glob(YF_scene scn) {
+static int copy_glob(YF_scene scn)
+{
   YF_dtable dtb = yf_resmgr_getglob();
   if (dtb == NULL)
     return -1;
@@ -1170,7 +1188,8 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
   return 0;
 }
 
-static void yield_res(void) {
+static void yield_res(void)
+{
   T_reso *val;
   while ((val = yf_list_removeat(l_vars.res_obtd, NULL)) != NULL) {
     yf_resmgr_yield(val->resrq, val->inst_alloc);
@@ -1178,7 +1197,8 @@ static void yield_res(void) {
   }
 }
 
-static void clear_obj(void) {
+static void clear_obj(void)
+{
   if (yf_hashset_getlen(l_vars.mdls) != 0) {
     yf_hashset_each(l_vars.mdls, dealloc_mdl, NULL);
     yf_hashset_clear(l_vars.mdls);
@@ -1193,18 +1213,21 @@ static void clear_obj(void) {
   yf_list_clear(l_vars.labls);
 }
 
-static size_t hash_mdl(const void *x) {
+static size_t hash_mdl(const void *x)
+{
   const T_kv_mdl *kv = x;
   return (size_t)kv->key.mesh ^ (size_t)kv->key.tex ^ 0x516536655d2b;
 }
 
-static int cmp_mdl(const void *a, const void *b) {
+static int cmp_mdl(const void *a, const void *b)
+{
   const T_kv_mdl *kv1 = a;
   const T_kv_mdl *kv2 = b;
   return !(kv1->key.mesh == kv2->key.mesh && kv1->key.tex == kv2->key.tex);
 }
 
-static int dealloc_mdl(void *val, YF_UNUSED void *arg) {
+static int dealloc_mdl(void *val, YF_UNUSED void *arg)
+{
   T_kv_mdl *kv = val;
   if (kv->mdl_n > 1)
     free(kv->mdls);

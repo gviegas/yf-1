@@ -17,7 +17,8 @@
 /* Destroys the 'YF_limits' data stored in a given context. */
 static void destroy_lim(YF_context ctx);
 
-const YF_limits *yf_getlimits(YF_context ctx) {
+const YF_limits *yf_getlimits(YF_context ctx)
+{
   assert(ctx != NULL);
 
   if (ctx->lim.priv != NULL)
@@ -92,8 +93,10 @@ const YF_limits *yf_getlimits(YF_context ctx) {
   return lim;
 }
 
-static void destroy_lim(YF_context ctx) {
+static void destroy_lim(YF_context ctx)
+{
   assert(ctx != NULL);
+
   free(ctx->lim.priv);
   ctx->lim.priv = NULL;
 }

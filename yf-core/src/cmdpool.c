@@ -55,7 +55,8 @@ static int init_entries(YF_context ctx, T_cmdp *cmdp);
 /* Destroys the 'T_priv' data stored in a given context. */
 static void destroy_priv(YF_context ctx);
 
-int yf_cmdpool_create(YF_context ctx, unsigned capacity) {
+int yf_cmdpool_create(YF_context ctx, unsigned capacity)
+{
   assert(ctx != NULL);
 
   if (ctx->cmdp.priv != NULL)
@@ -98,7 +99,8 @@ int yf_cmdpool_create(YF_context ctx, unsigned capacity) {
   return 0;
 }
 
-int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdres *cmdr) {
+int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdres *cmdr)
+{
   assert(ctx != NULL);
   assert(cmdr != NULL);
   assert(ctx->cmdp.priv != NULL);
@@ -148,7 +150,8 @@ int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdres *cmdr) {
   return 0;
 }
 
-void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr) {
+void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr)
+{
   assert(ctx != NULL);
   assert(cmdr != NULL);
   assert(ctx->cmdp.priv != NULL);
@@ -173,7 +176,8 @@ void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr) {
   }
 }
 
-void yf_cmdpool_reset(YF_context ctx, YF_cmdres *cmdr) {
+void yf_cmdpool_reset(YF_context ctx, YF_cmdres *cmdr)
+{
   assert(ctx != NULL);
   assert(cmdr != NULL);
   assert(ctx->cmdp.priv != NULL);
@@ -272,7 +276,8 @@ void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdres **cmdr_list,
   }
 }
 
-void yf_cmdpool_notifyprio(YF_context ctx, int result) {
+void yf_cmdpool_notifyprio(YF_context ctx, int result)
+{
   assert(ctx != NULL);
   assert(ctx->cmdp.priv != NULL);
 
@@ -285,17 +290,18 @@ void yf_cmdpool_notifyprio(YF_context ctx, int result) {
 
   YF_iter it = YF_NILIT;
   T_callb *callb = NULL;
-  do {
+  while (1) {
     callb = yf_list_next(priv->callbs, &it);
     if (YF_IT_ISNIL(it))
       break;
     callb->callb(result, callb->arg);
     free(callb);
-  } while (1);
+  }
   yf_list_clear(priv->callbs);
 }
 
-static int init_entries(YF_context ctx, T_cmdp *cmdp) {
+static int init_entries(YF_context ctx, T_cmdp *cmdp)
+{
   assert(ctx != NULL);
   assert(cmdp != NULL);
 
@@ -351,7 +357,8 @@ static int init_entries(YF_context ctx, T_cmdp *cmdp) {
   return 0;
 }
 
-static void destroy_priv(YF_context ctx) {
+static void destroy_priv(YF_context ctx)
+{
   assert(ctx != NULL);
 
   if (ctx->cmdp.priv == NULL)

@@ -19,7 +19,9 @@
 
 /* Error test. */
 #define YF_TEST_ERROR "error"
-static int test_error(void) {
+
+static int test_error(void)
+{
   YF_TEST_SUBT;
 
   int err;
@@ -68,7 +70,9 @@ static int test_error(void) {
 
 /* Clock test. */
 #define YF_TEST_CLOCK "clock"
-static int test_clock(void) {
+
+static int test_clock(void)
+{
   YF_TEST_SUBT;
 
   double t1, t2;
@@ -94,11 +98,15 @@ static int test_clock(void) {
 
 /* List test. */
 #define YF_TEST_LIST "list"
-static int list_cb(void *val, void *arg) {
+
+static int list_cb(void *val, void *arg)
+{
   printf("%c,%p ", *(int *)val, arg);
   return 0;
 }
-static int test_list(void) {
+
+static int test_list(void)
+{
   YF_TEST_SUBT;
 
   int a = 'a';
@@ -338,16 +346,22 @@ static int test_list(void) {
 
 /* Hashset test. */
 #define YF_TEST_HASHSET "hashset"
-static size_t hashset_hash(const void *x) {
+
+static size_t hashset_hash(const void *x)
+{
   if (x == NULL)
     return 1<<24;
   const char *s = x;
   return ((size_t)s[0] << 16) | ((size_t)s[1] << 8) | (size_t)s[2];
 }
-static int hashset_cmp(const void *a, const void *b) {
+
+static int hashset_cmp(const void *a, const void *b)
+{
   return strcmp(a, b);
 }
-static int hashset_cb(void *val, void *arg) {
+
+static int hashset_cb(void *val, void *arg)
+{
   printf("%s,%p ", (const char *)val, arg);
   if (strcmp(val, "_B_") == 0) {
     printf("{early break} ");
@@ -355,7 +369,9 @@ static int hashset_cb(void *val, void *arg) {
   }
   return 0;
 }
-static int test_hashset(void) {
+
+static int test_hashset(void)
+{
   YF_TEST_SUBT;
 
   const char a[] = "_A_";
@@ -580,17 +596,24 @@ static int test_hashset(void) {
 
 /* Publish-Subscribe test. */
 #define YF_TEST_PUBSUB "pubsub"
+
 struct ps1 { int val; };
-void pubsub_callb1(void *pub, int pubsub, void *arg) {
+struct ps2 { double val; };
+
+static void pubsub_callb1(void *pub, int pubsub, void *arg)
+{
   printf("\ngot: pub=%p (%d) pubsub=0x%x arg=%lu",
       pub, ((struct ps1 *)pub)->val, pubsub, (size_t)arg);
 }
-struct ps2 { double val; };
-void pubsub_callb2(void *pub, int pubsub, void *arg) {
+
+static void pubsub_callb2(void *pub, int pubsub, void *arg)
+{
   printf("\ngot: pub=%p (%.4f) pubsub=0x%x arg=%lu",
       pub, ((struct ps2 *)pub)->val, pubsub, (size_t)arg);
 }
-static int test_pubsub(void) {
+
+static int test_pubsub(void)
+{
   YF_TEST_SUBT;
 
   struct ps1 a1 = {43131};
@@ -742,8 +765,10 @@ static const char *l_ids[] = {
 };
 
 /* Test function. */
-static int test(int argc, char *argv[]) {
+static int test(int argc, char *argv[])
+{
   assert(argc > 0);
+
   size_t test_n;
   size_t results;
 

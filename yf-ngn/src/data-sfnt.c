@@ -488,13 +488,17 @@ static void scale_metrics(void *font, uint16_t pt, uint16_t dpi,
 static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
     YF_glyph *glyph);
 
-int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
+int yf_loadsfnt(const char *pathname, YF_fontdt *data)
+{
+  assert(data != NULL);
+
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
   }
 
   T_sfnt sfnt = {0};
+
   FILE *file = fopen(pathname, "r");
   if (file == NULL) {
     yf_seterr(YF_ERR_NOFILE, __func__);
@@ -899,7 +903,8 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data) {
   return 0;
 }
 
-static int verify_file(FILE *file) {
+static int verify_file(FILE *file)
+{
   assert(!feof(file));
 
   rewind(file);
@@ -953,7 +958,8 @@ static int verify_file(FILE *file) {
   return 0;
 }
 
-static int load_ttf(T_sfnt *sfnt, FILE *file) {
+static int load_ttf(T_sfnt *sfnt, FILE *file)
+{
   assert(sfnt != NULL);
   assert(!feof(file));
 
@@ -1136,7 +1142,8 @@ static int load_ttf(T_sfnt *sfnt, FILE *file) {
   return 0;
 }
 
-static void deinit_tables(T_sfnt *sfnt) {
+static void deinit_tables(T_sfnt *sfnt)
+{
   if (sfnt == NULL)
     return;
 
@@ -1193,7 +1200,8 @@ static void deinit_tables(T_sfnt *sfnt) {
      expected to be allocated from the stack. */
 }
 
-static int get_metrics(const T_sfnt *sfnt, T_fontmet *fmet) {
+static int get_metrics(const T_sfnt *sfnt, T_fontmet *fmet)
+{
   assert(sfnt != NULL);
   assert(fmet != NULL);
 
@@ -1485,16 +1493,19 @@ static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
   return 0;
 }
 
-static size_t hash_fmap(const void *x) {
+static size_t hash_fmap(const void *x)
+{
   return ((uintptr_t)x & 0xffff) ^ 0xa993;
 }
 
-static int cmp_fmap(const void *a, const void *b) {
+static int cmp_fmap(const void *a, const void *b)
+{
   /*return (uint16_t)a - (uint16_t)b;*/
   return ((uintptr_t)a & 0xffff) - ((uintptr_t)b & 0xffff);
 }
 
-static void deinit_font(void *font) {
+static void deinit_font(void *font)
+{
   if (font == NULL)
     return;
 
@@ -1625,7 +1636,8 @@ static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
   return r;
 }
 
-static int fetch_glyph(T_font *font, wchar_t code, T_outline *outln) {
+static int fetch_glyph(T_font *font, wchar_t code, T_outline *outln)
+{
   assert(font != NULL);
   assert(font->ttf.loca != NULL);
   assert(font->ttf.glyf != NULL);
@@ -1693,7 +1705,8 @@ static int fetch_glyph(T_font *font, wchar_t code, T_outline *outln) {
   return 0;
 }
 
-static int fetch_simple(T_font *font, uint16_t id, T_component *comp) {
+static int fetch_simple(T_font *font, uint16_t id, T_component *comp)
+{
   assert(font != NULL);
   assert(comp != NULL);
 
@@ -1891,7 +1904,8 @@ static int fetch_compnd(T_font *font, uint16_t id, T_component *comps,
   return 0;
 }
 
-static void deinit_outline(T_outline *outln) {
+static void deinit_outline(T_outline *outln)
+{
   if (outln == NULL)
     return;
 
@@ -1926,7 +1940,8 @@ static void deinit_outline(T_outline *outln) {
     ((x)&(~((1<<YF_SFNT_Q)-1)))-(((x)&(1<<(YF_SFNT_Q-1)))<<1) : \
     ((x)&(~((1<<YF_SFNT_Q)-1)))+(((x)&(1<<(YF_SFNT_Q-1)))<<1))
 
-static int scale_outline(T_outline *outln) {
+static int scale_outline(T_outline *outln)
+{
   assert(outln != NULL);
 
   const float fac = outln->scale;
@@ -2063,7 +2078,8 @@ static int scale_outline(T_outline *outln) {
   return 0;
 }
 
-static int grid_fit(T_outline *outln) {
+static int grid_fit(T_outline *outln)
+{
   assert(outln != NULL);
 
   /* TODO: Improve this. */
@@ -2102,7 +2118,8 @@ typedef struct {
   T_point p2;
 } T_segment;
 
-static int rasterize(T_outline *outln, YF_glyph *glyph) {
+static int rasterize(T_outline *outln, YF_glyph *glyph)
+{
   assert(outln != NULL);
   assert(glyph != NULL);
 

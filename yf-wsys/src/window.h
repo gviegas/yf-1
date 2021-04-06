@@ -2,7 +2,7 @@
  * YF
  * window.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_WINDOW_H
@@ -12,7 +12,7 @@
 
 /* Type defining a specific window implementation. */
 typedef struct {
-  /* Implementations return a pointer to their internal data on 'init',
+  /* Implementations return a pointer to their internal data on 'init()',
      which is then provided as parameter when calling other window functions.
      The 'wrapper' object is the client interface to this internal data. */
   void *(*init)(unsigned width, unsigned height, const char *title,

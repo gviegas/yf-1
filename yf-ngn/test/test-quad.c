@@ -46,7 +46,8 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(double elapsed_time) {
+static void update(double elapsed_time)
+{
   printf("update (%.4f)\n", elapsed_time);
 
   if (l_vars.input.quit) {
@@ -56,7 +57,8 @@ static void update(double elapsed_time) {
 }
 
 /* Tests quad rendering. */
-int yf_test_quad(void) {
+int yf_test_quad(void)
+{
   YF_evtfn evtfn = {.key_kb = on_key};
   yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 

@@ -165,7 +165,8 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(double elapsed_time) {
+static void update(double elapsed_time)
+{
   static double tm = 0.0;
   tm += elapsed_time;
   printf("update (%.6f)\n", elapsed_time);
@@ -219,7 +220,8 @@ static void update(double elapsed_time) {
 }
 
 /* Tests model rendering. */
-int yf_test_model(void) {
+int yf_test_model(void)
+{
   srand(time(NULL));
   const int instanced = rand() & 1;
   printf("(%s rendering, %u models)\n\n",

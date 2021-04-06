@@ -57,7 +57,8 @@ static size_t hash_kv(const void *x);
 /* Compares a 'T_kv' to another. */
 static int cmp_kv(const void *a, const void *b);
 
-YF_texture yf_texture_init(int filetype, const char *pathname) {
+YF_texture yf_texture_init(int filetype, const char *pathname)
+{
   YF_texdt data = {0};
 
   switch (filetype) {
@@ -83,14 +84,16 @@ YF_texture yf_texture_init(int filetype, const char *pathname) {
   return tex;
 }
 
-YF_dim2 yf_texture_getdim(YF_texture tex) {
+YF_dim2 yf_texture_getdim(YF_texture tex)
+{
   assert(tex != NULL);
   YF_dim3 dim;
   yf_image_getval(tex->imge->img, NULL, &dim, NULL, NULL, NULL);
   return (YF_dim2){dim.width, dim.height};
 }
 
-void yf_texture_deinit(YF_texture tex) {
+void yf_texture_deinit(YF_texture tex)
+{
   if (tex == NULL)
     return;
 
@@ -114,7 +117,8 @@ void yf_texture_deinit(YF_texture tex) {
   free(tex);
 }
 
-YF_texture yf_texture_initdt(const YF_texdt *data) {
+YF_texture yf_texture_initdt(const YF_texdt *data)
+{
   assert(data != NULL);
 
   if (l_ctx == NULL && (l_ctx = yf_getctx()) == NULL)
@@ -157,7 +161,8 @@ int yf_texture_copyres(YF_texture tex, YF_dtable dtb, unsigned alloc_i,
       &tex->imge->img, &tex->layer);
 }
 
-static int copy_data(YF_texture tex, const YF_texdt *data) {
+static int copy_data(YF_texture tex, const YF_texdt *data)
+{
   const T_kv key = {{data->pixfmt, data->dim}, {0}};
   T_kv *val = yf_hashset_search(l_imges, &key);
 
@@ -256,12 +261,14 @@ static int copy_data(YF_texture tex, const YF_texdt *data) {
   return 0;
 }
 
-static size_t hash_kv(const void *x) {
+static size_t hash_kv(const void *x)
+{
   const T_kv *kv = x;
   return kv->key.pixfmt ^ kv->key.dim.width ^ kv->key.dim.height ^ 3258114451;
 }
 
-static int cmp_kv(const void *a, const void *b) {
+static int cmp_kv(const void *a, const void *b)
+{
   const T_kv *kv1 = a;
   const T_kv *kv2 = b;
   return !(kv1->key.pixfmt == kv2->key.pixfmt &&

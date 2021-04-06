@@ -357,7 +357,8 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
   return tgt;
 }
 
-int yf_pass_unmktarget(YF_pass pass, YF_target tgt) {
+int yf_pass_unmktarget(YF_pass pass, YF_target tgt)
+{
   assert(pass != NULL);
 
   if (tgt == NULL)
@@ -392,7 +393,8 @@ int yf_pass_unmktarget(YF_pass pass, YF_target tgt) {
   return 0;
 }
 
-void yf_pass_deinit(YF_pass pass) {
+void yf_pass_deinit(YF_pass pass)
+{
   if (pass != NULL) {
     vkDestroyRenderPass(pass->ctx->device, pass->ren_pass, NULL);
     for (unsigned i = 0; i < pass->tgt_cap; ++i)

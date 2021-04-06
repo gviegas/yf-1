@@ -12,7 +12,8 @@
 #undef YF_PTITLE
 #define YF_PTITLE printf("\n[YF] OUTPUT (%s):", __func__)
 
-void yf_print_ctx(YF_context ctx) {
+void yf_print_ctx(YF_context ctx)
+{
   YF_PTITLE;
 
   printf("\nqueue indices (graph/comp/pres): %d/%d/%d",
@@ -33,7 +34,8 @@ void yf_print_ctx(YF_context ctx) {
   printf("\n\n");
 }
 
-void yf_print_lim(const YF_limits *lim) {
+void yf_print_lim(const YF_limits *lim)
+{
   YF_PTITLE;
 
   printf("\nmemory - max objects: %lu", lim->memory.obj_max);

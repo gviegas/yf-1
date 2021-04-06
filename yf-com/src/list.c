@@ -24,22 +24,26 @@ struct YF_list_o {
   size_t n;
 };
 
-YF_list yf_list_init(YF_cmpfn cmp) {
+YF_list yf_list_init(YF_cmpfn cmp)
+{
   YF_list list = malloc(sizeof(struct YF_list_o));
   if (list == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return NULL;
   }
+
   if (cmp != NULL)
     list->cmp = cmp;
   else
     list->cmp = yf_cmp;
   list->first = NULL;
   list->n = 0;
+
   return list;
 }
 
-int yf_list_insert(YF_list list, const void *val) {
+int yf_list_insert(YF_list list, const void *val)
+{
   assert(list != NULL);
 
   T_entry *e = malloc(sizeof(T_entry));
@@ -50,14 +54,17 @@ int yf_list_insert(YF_list list, const void *val) {
   e->val = val;
   e->prev = NULL;
   e->next = list->first;
+
   if (list->first != NULL)
     list->first->prev = e;
   list->first = e;
   ++list->n;
+
   return 0;
 }
 
-int yf_list_insertat(YF_list list, YF_iter *it, const void *val) {
+int yf_list_insertat(YF_list list, YF_iter *it, const void *val)
+{
   assert(list != NULL);
 
   if (it == NULL || YF_IT_ISNIL(*it)) {
@@ -84,7 +91,8 @@ int yf_list_insertat(YF_list list, YF_iter *it, const void *val) {
   return 0;
 }
 
-int yf_list_remove(YF_list list, const void *val) {
+int yf_list_remove(YF_list list, const void *val)
+{
   assert(list != NULL);
 
   T_entry *e = list->first;
@@ -107,7 +115,8 @@ int yf_list_remove(YF_list list, const void *val) {
   return -1;
 }
 
-void *yf_list_removeat(YF_list list, YF_iter *it) {
+void *yf_list_removeat(YF_list list, YF_iter *it)
+{
   assert(list != NULL);
 
   if (list->first == NULL) {
@@ -139,7 +148,8 @@ void *yf_list_removeat(YF_list list, YF_iter *it) {
   return r;
 }
 
-int yf_list_contains(YF_list list, const void *val) {
+int yf_list_contains(YF_list list, const void *val)
+{
   assert(list != NULL);
 
   T_entry *e = list->first;
@@ -151,7 +161,8 @@ int yf_list_contains(YF_list list, const void *val) {
   return 0;
 }
 
-void *yf_list_next(YF_list list, YF_iter *it) {
+void *yf_list_next(YF_list list, YF_iter *it)
+{
   assert(list != NULL);
 
   void *r = NULL;
@@ -176,7 +187,8 @@ void *yf_list_next(YF_list list, YF_iter *it) {
   return r;
 }
 
-void yf_list_each(YF_list list, int (*callb)(void *val, void *arg), void *arg) {
+void yf_list_each(YF_list list, int (*callb)(void *val, void *arg), void *arg)
+{
   assert(list != NULL);
   assert(callb != NULL);
 
@@ -188,40 +200,45 @@ void yf_list_each(YF_list list, int (*callb)(void *val, void *arg), void *arg) {
   }
 }
 
-size_t yf_list_getlen(YF_list list) {
+size_t yf_list_getlen(YF_list list)
+{
   assert(list != NULL);
   return list->n;
 }
 
-void yf_list_clear(YF_list list) {
+void yf_list_clear(YF_list list)
+{
   assert(list != NULL);
+
   if (list->n == 0)
     return;
 
   T_entry *e = list->first;
-  do {
+  while (1) {
     if (e->next == NULL) {
       free(e);
       break;
     }
     e = e->next;
     free(e->prev);
-  } while (1);
+  }
+
   list->first = NULL;
   list->n = 0;
 }
 
-void yf_list_deinit(YF_list list) {
+void yf_list_deinit(YF_list list)
+{
   if (list != NULL && list->n > 0) {
     T_entry *e = list->first;
-    do {
+    while (1) {
       if (e->next == NULL) {
         free(e);
         break;
       }
       e = e->next;
       free(e->prev);
-    } while (1);
+    }
   }
   free(list);
 }

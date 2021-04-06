@@ -19,7 +19,8 @@
 #undef YF_PTITLE
 #define YF_PTITLE printf("\n[YF] OUTPUT (%s):", __func__);
 
-void yf_print_nodeobj(YF_node node) {
+void yf_print_nodeobj(YF_node node)
+{
   YF_PTITLE;
 
   void *obj;
@@ -77,7 +78,8 @@ void yf_print_nodeobj(YF_node node) {
   printf("\n\n");
 }
 
-void yf_print_meshdt(const YF_meshdt *data) {
+void yf_print_meshdt(const YF_meshdt *data)
+{
 #define YF_VMDL_PRINT(vtx) do { \
   printf("\n pos:  [%.3f %.3f %.3f]", \
       (vtx).pos[0], (vtx).pos[1], (vtx).pos[2]); \
@@ -160,7 +162,8 @@ void yf_print_meshdt(const YF_meshdt *data) {
 }
 
 
-void yf_print_texdt(const YF_texdt *data) {
+void yf_print_texdt(const YF_texdt *data)
+{
   YF_PTITLE;
 
   printf("\ndim: %u, %u", data->dim.width, data->dim.height);

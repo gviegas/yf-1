@@ -2,7 +2,7 @@
  * YF
  * test-capab.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -14,7 +14,8 @@
 static YF_context l_ctx = NULL;
 
 /* Prints extension-related info. */
-static void print_extensions(void) {
+static void print_extensions(void)
+{
   puts("\n=Instance exts=\n");
   for (;;) {
     VkExtensionProperties exts[100];
@@ -68,7 +69,8 @@ static void print_extensions(void) {
 }
 
 /* Prints device features. */
-static void print_features(void) {
+static void print_features(void)
+{
   VkPhysicalDeviceFeatures feat;
   vkGetPhysicalDeviceFeatures(l_ctx->phy_dev, &feat);
   const char *av[2] = {"NO", "YES"};
@@ -143,7 +145,8 @@ static void print_features(void) {
 }
 
 /* Prints device limits. */
-static void print_limits() {
+static void print_limits()
+{
   VkPhysicalDeviceLimits *lim = &l_ctx->dev_prop.limits;
 
   puts("\n=limits=\n");
@@ -308,8 +311,9 @@ static void print_limits() {
   printf("nonCoherentAtomSize: %lu\n", lim->nonCoherentAtomSize);
 }
 
-/* Called by the main test. */
-int yf_test_capab(void) {
+/* Tests capabilities. */
+int yf_test_capab(void)
+{
   l_ctx = yf_context_init();
   if (l_ctx == NULL)
     return -1;

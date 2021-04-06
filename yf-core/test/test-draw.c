@@ -50,7 +50,8 @@ static void key_kb(int key, int state,
 }
 
 /* Initializes content. */
-static void init(void) {
+static void init(void)
+{
   /* Context */
   YF_context ctx = yf_context_init();
   assert(ctx != NULL);
@@ -211,7 +212,8 @@ static void init(void) {
 }
 
 /* Updates content. */
-static void update(void) {
+static void update(void)
+{
   /* Event polling */
   yf_pollevt(YF_EVT_KEYKB);
 
@@ -244,7 +246,8 @@ static void update(void) {
 }
 
 /* Runs the main loop. */
-static int run(void) {
+static int run(void)
+{
   const long frame_tm = 1.0 / 60.0 * 1000000000.0;
   long dt;
   time_t sec;
@@ -285,7 +288,8 @@ static int run(void) {
 }
 
 /* Tests drawing. */
-int yf_test_draw(void) {
+int yf_test_draw(void)
+{
   init();
   return run();
 }

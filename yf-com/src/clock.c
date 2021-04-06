@@ -13,8 +13,10 @@
 
 #include "clock.h"
 
-double yf_gettime(void) {
+double yf_gettime(void)
+{
   double tm = 0.0;
+
 #if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 199309L)
   struct timespec ts;
   clock_gettime(CLOCK_MONOTONIC, &ts);
@@ -24,11 +26,14 @@ double yf_gettime(void) {
 /* TODO: Other platforms. */
 # error "Invalid platform"
 #endif
+
   return tm;
 }
 
-void yf_sleep(double seconds) {
+void yf_sleep(double seconds)
+{
   assert(seconds >= 0.0);
+
 #if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 199309L)
   struct timespec ts, ts_rem;
   ts.tv_sec = seconds;

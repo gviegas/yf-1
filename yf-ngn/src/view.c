@@ -33,7 +33,8 @@ struct YF_view_o {
 /* Global pass instance. */
 YF_pass yf_g_pass = NULL;
 
-YF_view yf_view_init(YF_window win) {
+YF_view yf_view_init(YF_window win)
+{
   assert(win != NULL);
 
   YF_view view = calloc(1, sizeof(struct YF_view_o));
@@ -129,12 +130,14 @@ YF_view yf_view_init(YF_window win) {
   return view;
 }
 
-void yf_view_setscene(YF_view view, YF_scene scn) {
+void yf_view_setscene(YF_view view, YF_scene scn)
+{
   assert(view != NULL);
   view->scn = scn;
 }
 
-int yf_view_render(YF_view view) {
+int yf_view_render(YF_view view)
+{
   assert(view != NULL);
 
   yf_pollevt(YF_EVT_ANY);
@@ -202,12 +205,14 @@ int yf_view_start(YF_view view, unsigned fps,
   return r;
 }
 
-void yf_view_stop(YF_view view) {
+void yf_view_stop(YF_view view)
+{
   assert(view != NULL);
   view->started = 0;
 }
 
-void yf_view_deinit(YF_view view) {
+void yf_view_deinit(YF_view view)
+{
   if (view == NULL)
     return;
 

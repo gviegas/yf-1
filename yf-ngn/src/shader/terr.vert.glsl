@@ -53,7 +53,8 @@ out IO_vtx {
   layout(location=2) vec3 norm;
 } out_vtx;
 
-void main() {
+void main()
+{
   float y = textureLod(u_hmap, tc, 0.0).r;
   gl_Position = u_glob.p * u_inst.mv * vec4(pos.x, y, pos.z, 1.0);
   out_vtx.tc = tc;

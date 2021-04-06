@@ -33,7 +33,8 @@ static size_t hash_res(const void *x);
 static int cmp_res(const void *a, const void *b);
 static int deinit_res(void *val, void *arg);
 
-YF_collection yf_collection_init(const char *pathname) {
+YF_collection yf_collection_init(const char *pathname)
+{
   YF_collection coll = calloc(1, sizeof(struct YF_collection_o));
   if (coll == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -56,7 +57,8 @@ YF_collection yf_collection_init(const char *pathname) {
   return coll;
 }
 
-void *yf_collection_getres(YF_collection coll, int collres, const char *name) {
+void *yf_collection_getres(YF_collection coll, int collres, const char *name)
+{
   assert(coll != NULL);
   assert(collres >= 0 && collres < YF_COLLRES_N);
   assert(name != NULL);
@@ -97,7 +99,8 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
   return 0;
 }
 
-int yf_collection_contains(YF_collection coll, int collres, const char *name) {
+int yf_collection_contains(YF_collection coll, int collres, const char *name)
+{
   assert(coll != NULL);
   assert(collres >= 0 && collres < YF_COLLRES_N);
   assert(name != NULL);
@@ -106,7 +109,8 @@ int yf_collection_contains(YF_collection coll, int collres, const char *name) {
   return yf_hashset_contains(coll->sets[collres], &res);
 }
 
-void yf_collection_deinit(YF_collection coll) {
+void yf_collection_deinit(YF_collection coll)
+{
   if (coll == NULL)
     return;
 
@@ -120,7 +124,8 @@ void yf_collection_deinit(YF_collection coll) {
   free(coll);
 }
 
-static size_t hash_res(const void *x) {
+static size_t hash_res(const void *x)
+{
   const char *str = ((const T_res *)x)->name;
   size_t hash = 0;
   while (*str != '\0')
@@ -128,13 +133,15 @@ static size_t hash_res(const void *x) {
   return hash ^ 0xb722a593;
 }
 
-static int cmp_res(const void *a, const void *b) {
+static int cmp_res(const void *a, const void *b)
+{
   const char *s1 = ((const T_res *)a)->name;
   const char *s2 = ((const T_res *)b)->name;
   return strcmp(s1, s2);
 }
 
-static int deinit_res(void *val, void *arg) {
+static int deinit_res(void *val, void *arg)
+{
   T_res *res = val;
 
   switch ((size_t)arg) {

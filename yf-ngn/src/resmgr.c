@@ -85,7 +85,8 @@ static int init_labl(T_entry *entry);
    The caller is responsible for deallocating the returned string. */
 static char *make_shdpath(int nodeobj, int stage, unsigned elements);
 
-YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc) {
+YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc)
+{
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
   assert(inst_alloc != NULL);
 
@@ -120,7 +121,8 @@ YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc) {
   return gst;
 }
 
-void yf_resmgr_yield(int resrq, unsigned inst_alloc) {
+void yf_resmgr_yield(int resrq, unsigned inst_alloc)
+{
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
   assert(inst_alloc < l_entries[resrq].n);
 
@@ -128,7 +130,8 @@ void yf_resmgr_yield(int resrq, unsigned inst_alloc) {
   l_entries[resrq].i = inst_alloc;
 }
 
-YF_dtable yf_resmgr_getglob(void) {
+YF_dtable yf_resmgr_getglob(void)
+{
   if (l_glob != NULL)
     return l_glob;
 
@@ -144,12 +147,14 @@ YF_dtable yf_resmgr_getglob(void) {
   return l_glob;
 }
 
-unsigned yf_resmgr_getallocn(int resrq) {
+unsigned yf_resmgr_getallocn(int resrq)
+{
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
   return l_entries[resrq].n;
 }
 
-int yf_resmgr_setallocn(int resrq, unsigned n) {
+int yf_resmgr_setallocn(int resrq, unsigned n)
+{
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
 
   if (n == l_allocn[resrq])
@@ -181,7 +186,8 @@ int yf_resmgr_setallocn(int resrq, unsigned n) {
   return 0;
 }
 
-int yf_resmgr_prealloc(int resrq) {
+int yf_resmgr_prealloc(int resrq)
+{
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
 
   if (l_allocn[resrq] == 0)
@@ -195,14 +201,16 @@ int yf_resmgr_prealloc(int resrq) {
   return init_entry(resrq);
 }
 
-void yf_resmgr_dealloc(int resrq) {
+void yf_resmgr_dealloc(int resrq)
+{
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
 
   if (l_entries[resrq].gst != NULL)
     deinit_entry(resrq);
 }
 
-void yf_resmgr_clear(void) {
+void yf_resmgr_clear(void)
+{
   for (unsigned i = 0; i < YF_RESRQ_N; ++i) {
     if (l_entries[i].gst != NULL)
       deinit_entry(i);
@@ -211,7 +219,8 @@ void yf_resmgr_clear(void) {
   l_glob = NULL;
 }
 
-static int init_entry(int resrq) {
+static int init_entry(int resrq)
+{
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
   assert(l_allocn[resrq] > 0);
 
@@ -251,7 +260,8 @@ static int init_entry(int resrq) {
   }
 }
 
-static void deinit_entry(int resrq) {
+static void deinit_entry(int resrq)
+{
   assert(resrq >= 0 && resrq < YF_RESRQ_N);
   assert(l_entries[resrq].gst != NULL);
   assert(yf_getctx() != NULL);
@@ -275,7 +285,8 @@ static void deinit_entry(int resrq) {
   memset(l_entries+resrq, 0, sizeof(T_entry));
 }
 
-static int init_mdl(T_entry *entry, unsigned elements) {
+static int init_mdl(T_entry *entry, unsigned elements)
+{
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
 
@@ -368,7 +379,8 @@ static int init_mdl(T_entry *entry, unsigned elements) {
   return 0;
 }
 
-static int init_terr(T_entry *entry) {
+static int init_terr(T_entry *entry)
+{
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
 
@@ -462,7 +474,8 @@ static int init_terr(T_entry *entry) {
   return 0;
 }
 
-static int init_part(T_entry *entry) {
+static int init_part(T_entry *entry)
+{
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
 
@@ -554,7 +567,8 @@ static int init_part(T_entry *entry) {
   return 0;
 }
 
-static int init_quad(T_entry *entry) {
+static int init_quad(T_entry *entry)
+{
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
 
@@ -647,7 +661,8 @@ static int init_quad(T_entry *entry) {
   return 0;
 }
 
-static int init_labl(T_entry *entry) {
+static int init_labl(T_entry *entry)
+{
   YF_context ctx = yf_getctx();
   YF_pass pass = yf_getpass();
 
@@ -740,7 +755,8 @@ static int init_labl(T_entry *entry) {
   return 0;
 }
 
-static char *make_shdpath(int nodeobj, int stage, unsigned elements) {
+static char *make_shdpath(int nodeobj, int stage, unsigned elements)
+{
   char *obj_name = NULL;
   switch (nodeobj) {
   case YF_NODEOBJ_MODEL:

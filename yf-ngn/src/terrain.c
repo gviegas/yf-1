@@ -28,7 +28,8 @@ struct YF_terrain_o {
 /* Initializes grid mesh. */
 static int init_grid(YF_terrain terr);
 
-YF_terrain yf_terrain_init(unsigned width, unsigned depth) {
+YF_terrain yf_terrain_init(unsigned width, unsigned depth)
+{
   if (width == 0 || depth == 0) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return NULL;
@@ -54,37 +55,44 @@ YF_terrain yf_terrain_init(unsigned width, unsigned depth) {
   return terr;
 }
 
-YF_node yf_terrain_getnode(YF_terrain terr) {
+YF_node yf_terrain_getnode(YF_terrain terr)
+{
   assert(terr != NULL);
   return terr->node;
 }
 
-YF_mesh yf_terrain_getmesh(YF_terrain terr) {
+YF_mesh yf_terrain_getmesh(YF_terrain terr)
+{
   assert(terr != NULL);
   return terr->mesh;
 }
 
-YF_texture yf_terrain_gethmap(YF_terrain terr) {
+YF_texture yf_terrain_gethmap(YF_terrain terr)
+{
   assert(terr != NULL);
   return terr->hmap;
 }
 
-void yf_terrain_sethmap(YF_terrain terr, YF_texture hmap) {
+void yf_terrain_sethmap(YF_terrain terr, YF_texture hmap)
+{
   assert(terr != NULL);
   terr->hmap = hmap;
 }
 
-YF_texture yf_terrain_gettex(YF_terrain terr) {
+YF_texture yf_terrain_gettex(YF_terrain terr)
+{
   assert(terr != NULL);
   return terr->tex;
 }
 
-void yf_terrain_settex(YF_terrain terr, YF_texture tex) {
+void yf_terrain_settex(YF_terrain terr, YF_texture tex)
+{
   assert(terr != NULL);
   terr->tex = tex;
 }
 
-void yf_terrain_deinit(YF_terrain terr) {
+void yf_terrain_deinit(YF_terrain terr)
+{
   if (terr != NULL) {
     yf_node_deinit(terr->node);
     yf_mesh_deinit(terr->mesh);
@@ -92,7 +100,8 @@ void yf_terrain_deinit(YF_terrain terr) {
   }
 }
 
-static int init_grid(YF_terrain terr) {
+static int init_grid(YF_terrain terr)
+{
   assert(terr != NULL);
 
   /* TODO: Support for custom tiling. */

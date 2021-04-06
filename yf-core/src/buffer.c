@@ -18,7 +18,8 @@
 #include "memory.h"
 #include "limits.h"
 
-YF_buffer yf_buffer_init(YF_context ctx, size_t size) {
+YF_buffer yf_buffer_init(YF_context ctx, size_t size)
+{
   assert(ctx != NULL);
   assert(size > 0);
 
@@ -73,8 +74,7 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size) {
   return buf;
 }
 
-int yf_buffer_copy(YF_buffer buf, size_t offset, const void *data,
-    size_t size)
+int yf_buffer_copy(YF_buffer buf, size_t offset, const void *data, size_t size)
 {
   assert(buf != NULL);
   assert(data != NULL);
@@ -88,14 +88,16 @@ int yf_buffer_copy(YF_buffer buf, size_t offset, const void *data,
   return 0;
 }
 
-void yf_buffer_getval(YF_buffer buf, size_t *size) {
+void yf_buffer_getval(YF_buffer buf, size_t *size)
+{
   assert(buf != NULL);
 
   if (size != NULL)
     *size = buf->size;
 }
 
-void yf_buffer_deinit(YF_buffer buf) {
+void yf_buffer_deinit(YF_buffer buf)
+{
   if (buf == NULL)
     return;
 

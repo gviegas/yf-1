@@ -50,7 +50,8 @@ out IO_vtx {
   layout(location=3) vec4 clr;
 } out_vtx;
 
-void main() {
+void main()
+{
   vec2 s;
   s = vec2(u_inst.wdt/u_glob.vport[0].wdt, u_inst.hgt/u_glob.vport[0].hgt);
   gl_Position = u_glob.o * u_inst.m * vec4(pos.xy*s, pos.z, 1.0);
