@@ -158,52 +158,26 @@ void yf_cmdpool_reset(YF_context ctx, YF_cmdres *cmdr)
   yf_cmdpool_yield(ctx, cmdr);
 }
 
-const YF_cmdres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
+const YF_cmdres *yf_cmdpool_getprio(YF_context ctx,
     void (*callb)(int res, void *arg), void *arg)
 {
   assert(ctx != NULL);
   assert(ctx->cmdp.priv != NULL);
 
   T_priv *priv = ctx->cmdp.priv;
-  int queue_i = -1;
-  switch (cmdbuf) {
-  case YF_CMDBUF_GRAPH:
-    queue_i = ctx->graph_queue_i;
-    break;
-  case YF_CMDBUF_COMP:
-    queue_i = ctx->comp_queue_i;
-    break;
-  default:
-    yf_seterr(YF_ERR_INVARG, __func__);
-    return NULL;
-  }
-  if (queue_i == -1) {
-    yf_seterr(YF_ERR_UNSUP, __func__);
-    return NULL;
-  }
 
-  YF_cmdres *cmdr= NULL;
-  for (unsigned i = 0; i < priv->prio_n; ++i) {
-    if (priv->prio[i].queue_i == queue_i) {
-      cmdr = priv->prio+i;
-      break;
-    }
-  }
-
-  if (cmdr == NULL) {
-    cmdr = priv->prio+priv->prio_n;
-    if (yf_cmdpool_obtain(ctx, cmdbuf, cmdr) != 0)
+  if (priv->prio.res_id == -1) {
+    if (yf_cmdpool_obtain(ctx, &priv->prio) != 0)
       return NULL;
-    ++priv->prio_n;
     VkCommandBufferBeginInfo info = {
       .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
       .pNext = NULL,
       .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
       .pInheritanceInfo = NULL
     };
-    if (vkBeginCommandBuffer(cmdr->pool_res, &info) != VK_SUCCESS) {
+    if (vkBeginCommandBuffer(priv->prio.pool_res, &info) != VK_SUCCESS) {
       yf_seterr(YF_ERR_DEVGEN, __func__);
-      yf_cmdpool_yield(ctx, cmdr);
+      yf_cmdpool_yield(ctx, &priv->prio);
       return NULL;
     }
   }
@@ -220,7 +194,7 @@ const YF_cmdres *yf_cmdpool_getprio(YF_context ctx, int cmdbuf,
       return NULL;
   }
 
-  return cmdr;
+  return &priv->prio;
 }
 
 void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdres **cmdr_list,
