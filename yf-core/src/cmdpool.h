@@ -15,7 +15,6 @@
 typedef struct {
   VkCommandBuffer pool_res;
   int res_id;
-  int queue_i;
 } YF_cmdres;
 
 /* Creates a new command pool. */
