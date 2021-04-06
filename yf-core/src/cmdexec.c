@@ -328,15 +328,9 @@ static void deinit_queue(YF_context ctx, T_cmde *cmde)
     return;
 
   reset_queue(ctx, cmde);
-  T_qvars *qvs[2] = {cmde->q1, cmde->q2};
-  for (unsigned i = 0; i < 2; ++i) {
-    if (qvs[i] != NULL) {
-      vkDestroyFence(ctx->device, qvs[i]->fence, NULL);
-      free(qvs[i]->buffers);
-      free(qvs[i]->entries);
-      free(qvs[i]);
-    }
-  }
+  vkDestroyFence(ctx->device, cmde->fence, NULL);
+  free(cmde->buffers);
+  free(cmde->entries);
   free(cmde);
 }
 
