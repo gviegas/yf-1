@@ -16,7 +16,7 @@
 #include "cmdbuf.h"
 #include "context.h"
 
-#define YF_CMDPMIN 2
+#define YF_CMDPMIN 1
 #define YF_CMDPMAX 32
 
 /* Type representing a resource entry in the pool. */
