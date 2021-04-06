@@ -155,7 +155,7 @@ int yf_wsi_present(YF_wsi wsi, unsigned index)
   }
 
   const YF_cmdres *cmdr;
-  cmdr = yf_cmdpool_getprio(wsi->ctx, YF_CMDBUF_GRAPH, NULL, NULL);
+  cmdr = yf_cmdpool_getprio(wsi->ctx, NULL, NULL);
   if (cmdr == NULL)
     /* TODO: May need to release the image somehow. */
     return -1;
@@ -475,8 +475,8 @@ static int query_surface(YF_wsi wsi)
   unsigned queue_is[2];
   unsigned queue_i_n = 0;
   VkSharingMode shar_mode = VK_SHARING_MODE_EXCLUSIVE;
-  if (wsi->ctx->graph_queue_i != wsi->ctx->pres_queue_i) {
-    queue_is[0] = wsi->ctx->graph_queue_i;
+  if (wsi->ctx->queue_i != wsi->ctx->pres_queue_i) {
+    queue_is[0] = wsi->ctx->queue_i;
     queue_is[1] = wsi->ctx->pres_queue_i;
     queue_i_n = 2;
     shar_mode = VK_SHARING_MODE_CONCURRENT;
