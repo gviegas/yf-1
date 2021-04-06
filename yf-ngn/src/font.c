@@ -36,7 +36,8 @@ static size_t hash_glyph(const void *x);
 static int cmp_glyph(const void *a, const void *b);
 static int deinit_glyph(void *val, void *arg);
 
-YF_font yf_font_init(int filetype, const char *pathname) {
+YF_font yf_font_init(int filetype, const char *pathname)
+{
   YF_fontdt data = {0};
 
   switch (filetype) {
@@ -60,7 +61,8 @@ YF_font yf_font_init(int filetype, const char *pathname) {
   return font;
 }
 
-void yf_font_deinit(YF_font font) {
+void yf_font_deinit(YF_font font)
+{
   if (font != NULL) {
     if (font->data.deinit != NULL)
       font->data.deinit(font->data.font);
@@ -72,7 +74,8 @@ void yf_font_deinit(YF_font font) {
   }
 }
 
-YF_font yf_font_initdt(const YF_fontdt *data) {
+YF_font yf_font_initdt(const YF_fontdt *data)
+{
   assert(data != NULL);
 
   YF_font font = calloc(1, sizeof(struct YF_font_o));
@@ -220,7 +223,8 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
   return 0;
 }
 
-void yf_font_yieldrz(YF_font font, YF_fontrz *rz) {
+void yf_font_yieldrz(YF_font font, YF_fontrz *rz)
+{
   assert(font != NULL);
   assert(rz != NULL);
 
@@ -229,15 +233,18 @@ void yf_font_yieldrz(YF_font font, YF_fontrz *rz) {
   memset(rz, 0, sizeof *rz);
 }
 
-static size_t hash_glyph(const void *x) {
+static size_t hash_glyph(const void *x)
+{
   return ((T_kv_glyph *)x)->key ^ 21221;
 }
 
-static int cmp_glyph(const void *a, const void *b) {
+static int cmp_glyph(const void *a, const void *b)
+{
   return ((T_kv_glyph *)a)->key - ((T_kv_glyph *)b)->key;
 }
 
-static int deinit_glyph(void *val, YF_UNUSED void *arg) {
+static int deinit_glyph(void *val, YF_UNUSED void *arg)
+{
   free(((T_kv_glyph *)val)->val.bitmap.u8);
   free(val);
   return 0;

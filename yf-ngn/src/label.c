@@ -52,7 +52,8 @@ static void update_rect(YF_label labl);
 /* Copies label glyphs to texture. */
 static int copy_glyphs(YF_label labl);
 
-YF_label yf_label_init(void) {
+YF_label yf_label_init(void)
+{
   YF_label labl = calloc(1, sizeof(struct YF_label_o));
   if (labl == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -73,12 +74,14 @@ YF_label yf_label_init(void) {
   return labl;
 }
 
-YF_node yf_label_getnode(YF_label labl) {
+YF_node yf_label_getnode(YF_label labl)
+{
   assert(labl != NULL);
   return labl->node;
 }
 
-YF_mesh yf_label_getmesh(YF_label labl) {
+YF_mesh yf_label_getmesh(YF_label labl)
+{
   assert(labl != NULL);
 
   if (labl->pend_mask != YF_PEND_NONE) {
@@ -93,7 +96,8 @@ YF_mesh yf_label_getmesh(YF_label labl) {
   return labl->mesh;
 }
 
-YF_texture yf_label_gettex(YF_label labl) {
+YF_texture yf_label_gettex(YF_label labl)
+{
   assert(labl != NULL);
 
   if (labl->pend_mask & YF_PEND_RZ) {
@@ -104,12 +108,14 @@ YF_texture yf_label_gettex(YF_label labl) {
   return labl->rz.tex;
 }
 
-YF_font yf_label_getfont(YF_label labl) {
+YF_font yf_label_getfont(YF_label labl)
+{
   assert(labl != NULL);
   return labl->font;
 }
 
-void yf_label_setfont(YF_label labl, YF_font font) {
+void yf_label_setfont(YF_label labl, YF_font font)
+{
   assert(labl != NULL);
 
   if (font == labl->font)
@@ -121,7 +127,8 @@ void yf_label_setfont(YF_label labl, YF_font font) {
   labl->pend_mask |= YF_PEND_RZ;
 }
 
-wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n) {
+wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n)
+{
   assert(labl != NULL);
   assert(dst != NULL);
   assert(n > 0);
@@ -136,7 +143,8 @@ wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n) {
   return NULL;
 }
 
-int yf_label_setstr(YF_label labl, const wchar_t *str) {
+int yf_label_setstr(YF_label labl, const wchar_t *str)
+{
   assert(labl != NULL);
 
   if (str == NULL) {
@@ -170,12 +178,14 @@ int yf_label_setstr(YF_label labl, const wchar_t *str) {
   return 0;
 }
 
-unsigned short yf_label_getpt(YF_label labl) {
+unsigned short yf_label_getpt(YF_label labl)
+{
   assert(labl != NULL);
   return labl->pt;
 }
 
-int yf_label_setpt(YF_label labl, unsigned short pt) {
+int yf_label_setpt(YF_label labl, unsigned short pt)
+{
   assert(labl != NULL);
 
   if (pt == labl->pt)
@@ -190,7 +200,8 @@ int yf_label_setpt(YF_label labl, unsigned short pt) {
   return 0;
 }
 
-YF_color yf_label_getcolor(YF_label labl, int corner) {
+YF_color yf_label_getcolor(YF_label labl, int corner)
+{
   assert(labl != NULL);
 
   unsigned i = 0;
@@ -218,7 +229,8 @@ YF_color yf_label_getcolor(YF_label labl, int corner) {
   return (YF_color){v->clr[0], v->clr[1], v->clr[2], v->clr[3]};
 }
 
-void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color) {
+void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color)
+{
   assert(labl != NULL);
 
   if (corner_mask & YF_CORNER_TOPL) {
@@ -249,7 +261,8 @@ void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color) {
   labl->pend_mask |= YF_PEND_CLR;
 }
 
-YF_dim2 yf_label_getdim(YF_label labl) {
+YF_dim2 yf_label_getdim(YF_label labl)
+{
   assert(labl != NULL);
 
   if (labl->pend_mask & YF_PEND_RZ) {
@@ -260,7 +273,8 @@ YF_dim2 yf_label_getdim(YF_label labl) {
   return labl->rz.dim;
 }
 
-void yf_label_deinit(YF_label labl) {
+void yf_label_deinit(YF_label labl)
+{
   if (labl != NULL) {
     yf_node_deinit(labl->node);
     yf_mesh_deinit(labl->mesh);
@@ -273,7 +287,8 @@ void yf_label_deinit(YF_label labl) {
   }
 }
 
-static int init_rect(YF_label labl) {
+static int init_rect(YF_label labl)
+{
   assert(labl != NULL);
 
   static const YF_vlabl verts[4] = {
@@ -310,7 +325,8 @@ static int init_rect(YF_label labl) {
   return labl->mesh == NULL ? -1 : 0;
 }
 
-static void update_rect(YF_label labl) {
+static void update_rect(YF_label labl)
+{
   assert(labl != NULL);
   assert(labl->pend_mask != YF_PEND_NONE);
 
@@ -352,7 +368,8 @@ static void update_rect(YF_label labl) {
 #endif
 }
 
-static int copy_glyphs(YF_label labl) {
+static int copy_glyphs(YF_label labl)
+{
   assert(labl != NULL);
   assert(labl->font != NULL);
   assert(labl->pend_mask & YF_PEND_RZ);

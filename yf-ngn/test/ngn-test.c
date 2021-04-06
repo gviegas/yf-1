@@ -18,8 +18,11 @@
 
 /* Node test. */
 #define YF_TEST_NODE "node"
+
 int yf_test_node(void);
-static int test_node(void) {
+
+static int test_node(void)
+{
   YF_TEST_SUBT;
   puts("");
   int r = yf_test_node();
@@ -29,8 +32,11 @@ static int test_node(void) {
 
 /* Vector/Matrix test. */
 #define YF_TEST_VECMAT "vecmat"
+
 int yf_test_vecmat(void);
-static int test_vecmat(void) {
+
+static int test_vecmat(void)
+{
   YF_TEST_SUBT;
   puts("");
   int r = yf_test_vecmat();
@@ -40,8 +46,11 @@ static int test_vecmat(void) {
 
 /* Model test. */
 #define YF_TEST_MODEL "model"
+
 int yf_test_model(void);
-static int test_model(void) {
+
+static int test_model(void)
+{
   YF_TEST_SUBT;
   puts("");
   int r = yf_test_model();
@@ -51,8 +60,11 @@ static int test_model(void) {
 
 /* Terrain test. */
 #define YF_TEST_TERRAIN "terrain"
+
 int yf_test_terrain(void);
-static int test_terrain(void) {
+
+static int test_terrain(void)
+{
   YF_TEST_SUBT;
   puts("");
   int r = yf_test_terrain();
@@ -62,8 +74,11 @@ static int test_terrain(void) {
 
 /* Particle test. */
 #define YF_TEST_PARTICLE "particle"
+
 int yf_test_particle(void);
-static int test_particle(void) {
+
+static int test_particle(void)
+{
   YF_TEST_SUBT;
   puts("");
   int r = yf_test_particle();
@@ -73,8 +88,11 @@ static int test_particle(void) {
 
 /* Quad test. */
 #define YF_TEST_QUAD "quad"
+
 int yf_test_quad(void);
-static int test_quad(void) {
+
+static int test_quad(void)
+{
   YF_TEST_SUBT;
   puts("");
   int r = yf_test_quad();
@@ -84,8 +102,11 @@ static int test_quad(void) {
 
 /* Label test. */
 #define YF_TEST_LABEL "label"
+
 int yf_test_label(void);
-static int test_label(void) {
+
+static int test_label(void)
+{
   YF_TEST_SUBT;
   puts("");
   int r = yf_test_label();
@@ -95,8 +116,11 @@ static int test_label(void) {
 
 /* Miscellaneous test. */
 #define YF_TEST_MISC "misc"
+
 int yf_test_misc(void);
-static int test_misc(void) {
+
+static int test_misc(void)
+{
   YF_TEST_SUBT;
   puts("");
   int r = yf_test_misc();
@@ -117,8 +141,10 @@ static const char *l_ids[] = {
 };
 
 /* Test function. */
-static int test(int argc, char *argv[]) {
+static int test(int argc, char *argv[])
+{
   assert(argc > 0);
+
   size_t test_n;
   size_t results;
 

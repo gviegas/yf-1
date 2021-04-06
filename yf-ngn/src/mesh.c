@@ -66,7 +66,8 @@ static size_t resize_buf(size_t new_len);
 /* Resizes the memory block list. */
 static size_t resize_blks(size_t new_cap);
 
-YF_mesh yf_mesh_init(int filetype, const char *pathname) {
+YF_mesh yf_mesh_init(int filetype, const char *pathname)
+{
   YF_meshdt data = {0};
 
   switch (filetype) {
@@ -93,7 +94,8 @@ YF_mesh yf_mesh_init(int filetype, const char *pathname) {
   return mesh;
 }
 
-void yf_mesh_deinit(YF_mesh mesh) {
+void yf_mesh_deinit(YF_mesh mesh)
+{
   if (mesh == NULL)
     return;
 
@@ -180,7 +182,8 @@ void yf_mesh_deinit(YF_mesh mesh) {
   free(mesh);
 }
 
-YF_mesh yf_mesh_initdt(const YF_meshdt *data) {
+YF_mesh yf_mesh_initdt(const YF_meshdt *data)
+{
   assert(data != NULL);
 
   if (l_ctx == NULL) {
@@ -215,7 +218,8 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data) {
   return mesh;
 }
 
-int yf_mesh_setvtx(YF_mesh mesh, YF_slice range, const void *data) {
+int yf_mesh_setvtx(YF_mesh mesh, YF_slice range, const void *data)
+{
   assert(mesh != NULL);
   assert(range.n > 0);
   assert(data != NULL);
@@ -230,7 +234,8 @@ int yf_mesh_setvtx(YF_mesh mesh, YF_slice range, const void *data) {
   return yf_buffer_copy(l_buf, off, data, sz);
 }
 
-void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n, int inst_id) {
+void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n, int inst_id)
+{
   assert(mesh != NULL);
   assert(cmdb != NULL);
 
@@ -243,7 +248,8 @@ void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n, int inst_id) {
   }
 }
 
-static int copy_data(YF_mesh mesh, const YF_meshdt *data) {
+static int copy_data(YF_mesh mesh, const YF_meshdt *data)
+{
   assert(data->v.n <= UINT_MAX);
   assert(data->i.n <= UINT_MAX);
 
@@ -335,7 +341,8 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data) {
   return 0;
 }
 
-static size_t resize_buf(size_t new_len) {
+static size_t resize_buf(size_t new_len)
+{
   size_t sz = new_len < SIZE_MAX ? YF_BUFLEN : new_len;
   while (sz < new_len)
     sz <<= 1;
@@ -375,7 +382,8 @@ static size_t resize_buf(size_t new_len) {
   return sz;
 }
 
-static size_t resize_blks(size_t new_cap) {
+static size_t resize_blks(size_t new_cap)
+{
   if (new_cap > SIZE_MAX / sizeof(T_memblk)) {
     yf_seterr(YF_ERR_OFLOW, __func__);
     return l_blk_cap;

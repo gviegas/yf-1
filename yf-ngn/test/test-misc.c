@@ -84,7 +84,8 @@ static void on_key(int key, int state,
 }
 
 /* Updates content */
-static void update(double elapsed_time) {
+static void update(double elapsed_time)
+{
   printf("update (%.4f)\n", elapsed_time);
 
   if (l_vars.input.quit) {
@@ -167,7 +168,8 @@ static void update(double elapsed_time) {
 }
 
 /* Tests miscellany. */
-int yf_test_misc(void) {
+int yf_test_misc(void)
+{
   srand(time(NULL));
 
   YF_evtfn evtfn = {.key_kb = on_key};

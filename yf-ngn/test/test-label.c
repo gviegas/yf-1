@@ -34,7 +34,8 @@ struct T_vars {
 static struct T_vars l_vars = {0};
 
 /* Inserts wide-characters. */
-static void insert_wc(wchar_t wc) {
+static void insert_wc(wchar_t wc)
+{
 #define YF_MAXN 255
   static wchar_t wcs[YF_MAXN+1] = {0};
   static size_t n = 0;
@@ -51,7 +52,9 @@ static void insert_wc(wchar_t wc) {
 }
 
 /* Handles key events. */
-static void on_key(int key, int state, unsigned mod_mask, YF_UNUSED void *arg) {
+static void on_key(int key, int state, unsigned mod_mask,
+    YF_UNUSED void *arg)
+{
   if (state == YF_KEYSTATE_RELEASED)
     return;
 
@@ -225,7 +228,8 @@ static void on_key(int key, int state, unsigned mod_mask, YF_UNUSED void *arg) {
 }
 
 /* Updates content. */
-static void update(double elapsed_time) {
+static void update(double elapsed_time)
+{
   printf("update (%.4f)\n", elapsed_time);
 
   if (l_vars.input.quit) {
@@ -235,7 +239,8 @@ static void update(double elapsed_time) {
 }
 
 /* Tests label rendering. */
-int yf_test_label(void) {
+int yf_test_label(void)
+{
   YF_evtfn evtfn = {.key_kb = on_key};
   yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 

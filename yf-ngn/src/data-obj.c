@@ -39,12 +39,14 @@ static int cmp_kv(const void *a, const void *b);
 /* Deallocates a 'T_kv'. */
 static int dealloc_kv(void *val, void *arg);
 
-int yf_loadobj(const char *pathname, YF_meshdt *data) {
+int yf_loadobj(const char *pathname, YF_meshdt *data)
+{
+  assert(data != NULL);
+
   if (pathname == NULL) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
   }
-  assert(data != NULL);
 
   YF_vec3 *poss = NULL;
   YF_vec2 *texs = NULL;
@@ -395,18 +397,21 @@ int yf_loadobj(const char *pathname, YF_meshdt *data) {
   return r;
 }
 
-static size_t hash_kv(const void *x) {
+static size_t hash_kv(const void *x)
+{
   const unsigned *k = x;
   return k[0] ^ k[1] ^ k[2] ^ 4271934599;
 }
 
-static int cmp_kv(const void *a, const void *b) {
+static int cmp_kv(const void *a, const void *b)
+{
   const unsigned *k1 = a;
   const unsigned *k2 = b;
   return !(k1[0] == k2[0] && k1[1] == k2[1] && k1[2] == k2[2]);
 }
 
-static int dealloc_kv(void *val, YF_UNUSED void *arg) {
+static int dealloc_kv(void *val, YF_UNUSED void *arg)
+{
   free(val);
   return 0;
 }

@@ -11,7 +11,7 @@
 #include "coreobj.h"
 #include "error.h"
 
-/* TODO: MT. */
+/* TODO: Thread-safe. */
 
 /* Context instance. */
 static YF_context l_ctx = NULL;
@@ -31,7 +31,8 @@ static int set_handler(void);
 /* Handles deinitialization before exiting. */
 static void handle_exit(void);
 
-YF_context yf_getctx(void) {
+YF_context yf_getctx(void)
+{
   if (l_ctx == NULL) {
     if ((l_ctx = yf_context_init()) == NULL)
       exit_fatal(__func__);
@@ -41,13 +42,15 @@ YF_context yf_getctx(void) {
   return l_ctx;
 }
 
-YF_pass yf_getpass(void) {
+YF_pass yf_getpass(void)
+{
   if (yf_g_pass == NULL)
     exit_fatal(__func__);
   return yf_g_pass;
 }
 
-static _Noreturn void exit_fatal(const char *info) {
+static _Noreturn void exit_fatal(const char *info)
+{
 #ifndef YF_DEVEL
   yf_printerr();
 #endif
@@ -55,7 +58,8 @@ static _Noreturn void exit_fatal(const char *info) {
   exit(EXIT_FAILURE);
 }
 
-static int set_handler(void) {
+static int set_handler(void)
+{
   if (!l_installed) {
     if (atexit(handle_exit) != 0)
       return -1;
@@ -64,7 +68,8 @@ static int set_handler(void) {
   return 0;
 }
 
-static void handle_exit(void) {
+static void handle_exit(void)
+{
   yf_pass_deinit(yf_g_pass);
   yf_g_pass = NULL;
   yf_context_deinit(l_ctx);

@@ -2,7 +2,7 @@
  * YF
  * test-vecmat.c
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -26,7 +26,8 @@
 
 /* Tests vector & matrix functionality. */
 /* TODO: Check if values are correct, don't just print them. */
-int yf_test_vecmat(void) {
+int yf_test_vecmat(void)
+{
   YF_vec3 v = {1.0, 0.0, 0.0};
   YF_vec3 u = {0.0, 1.0, 0.0};
   YF_vec3 t = {0};
