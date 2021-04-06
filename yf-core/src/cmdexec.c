@@ -29,23 +29,15 @@ typedef struct {
   void *arg;
 } T_entry;
 
-/* Type defining queue variables. */
+/* Type defining a command execution queue. */
 typedef struct {
   T_entry *entries;
   VkCommandBuffer *buffers;
   unsigned n;
+  unsigned cap;
   VkSubmitInfo subm_info;
   VkQueue queue;
   VkFence fence;
-} T_qvars;
-
-/* Type defining a command execution queue. */
-typedef struct {
-  int q1_i;
-  int q2_i;
-  T_qvars *q1;
-  T_qvars *q2;
-  unsigned cap;
 } T_cmde;
 
 /* Type defining execution queues stored in a context. */
