@@ -87,44 +87,26 @@ int yf_cmdpool_create(YF_context ctx, unsigned capacity)
   return 0;
 }
 
-int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdres *cmdr)
+int yf_cmdpool_obtain(YF_context ctx, YF_cmdres *cmdr)
 {
   assert(ctx != NULL);
   assert(cmdr != NULL);
   assert(ctx->cmdp.priv != NULL);
 
-  T_cmdp *cmdp = ((T_priv *)ctx->cmdp.priv)->cmdp;
-  if (cmdp->curr_n == cmdp->cap) {
+  T_cmdp *cmdp = &((T_priv *)ctx->cmdp.priv)->cmdp;
+  if (cmdp->cur_n == cmdp->cap) {
     yf_seterr(YF_ERR_INUSE, __func__);
-    return -1;
-  }
-
-  int queue_i = -1;
-  switch (cmdbuf) {
-  case YF_CMDBUF_GRAPH:
-    queue_i = ctx->graph_queue_i;
-    break;
-  case YF_CMDBUF_COMP:
-    queue_i = ctx->comp_queue_i;
-    break;
-  default:
-    yf_seterr(YF_ERR_INVARG, __func__);
-    return -1;
-  }
-  if (queue_i == -1) {
-    yf_seterr(YF_ERR_UNSUP, __func__);
     return -1;
   }
 
   T_entry *e = NULL;
   for (unsigned i = 0; i < cmdp->cap; ++i) {
     e = &cmdp->entries[cmdp->last_i];
-    if (!e->in_use && e->queue_i == queue_i) {
-      cmdr->queue_i = queue_i;
+    if (!e->in_use) {
       cmdr->res_id = cmdp->last_i;
       cmdr->pool_res = e->buffer;
       e->in_use = 1;
-      ++cmdp->curr_n;
+      ++cmdp->cur_n;
       break;
     }
     cmdp->last_i = (cmdp->last_i + 1) % cmdp->cap;

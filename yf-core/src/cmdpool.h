@@ -20,8 +20,8 @@ typedef struct {
 /* Creates a new command pool. */
 int yf_cmdpool_create(YF_context ctx, unsigned capacity);
 
-/* Obtains a resource for a given command buffer type. */
-int yf_cmdpool_obtain(YF_context ctx, int cmdbuf, YF_cmdres *cmdr);
+/* Obtains a resource from the command pool. */
+int yf_cmdpool_obtain(YF_context ctx, YF_cmdres *cmdr);
 
 /* Yields a previously obtained resource. */
 void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr);
