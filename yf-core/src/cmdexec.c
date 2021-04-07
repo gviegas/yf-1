@@ -197,13 +197,13 @@ void yf_cmdexec_resetprio(YF_context ctx)
   reset_queue(ctx, &((T_priv *)ctx->cmde.priv)->prio);
 }
 
-void yf_cmdexec_waitfor(YF_context ctx, VkFence fence)
+void yf_cmdexec_waitfor(YF_context ctx, VkSemaphore sem)
 {
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
-  YF_list fences = ((T_priv *)ctx->cmde.priv)->fences;
-  yf_list_insert(fences, fence);
+  YF_list wait_sems = ((T_priv *)ctx->cmde.priv)->subm.wait_sems;
+  yf_list_insert(wait_sems, sem);
 }
 
 static int init_queue(YF_context ctx, T_cmde *cmde)
