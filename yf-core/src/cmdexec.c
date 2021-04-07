@@ -95,16 +95,38 @@ int yf_cmdexec_create(YF_context ctx, unsigned capacity)
   ctx->cmde.deinit_callb = destroy_priv;
 
   priv->cmde.cap = YF_CLAMP(capacity, YF_CMDEMIN, YF_CMDEMAX);
-  if (init_queue(ctx, &priv->cmde) != 0) {
-    destroy_priv(ctx);
-    return -1;
-  }
   priv->prio.cap = YF_CMDEMIN;
-  if (init_queue(ctx, &priv->prio) != 0) {
+  if (init_queue(ctx, &priv->cmde) != 0 || init_queue(ctx, &priv->prio) != 0) {
     destroy_priv(ctx);
     return -1;
   }
 
+  priv->subm.queue = ctx->queue;
+
+  VkFenceCreateInfo fence_info = {
+    .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
+    .pNext = NULL,
+    .flags = 0
+  };
+  VkSemaphoreCreateInfo sem_info = {
+    .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO,
+    .pNext = NULL,
+    .flags = 0
+  };
+  if (vkCreateFence(ctx->device, &fence_info, NULL,
+        &priv->subm.fence) != VK_SUCCESS ||
+      vkCreateSemaphore(ctx->device, &sem_info, NULL,
+        &priv->subm.prio_sem) != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    destroy_priv(ctx);
+    return -1;
+  }
+
+  priv->subm.wait_sems = yf_list_init(NULL);
+  if (priv->subm.wait_sems == NULL) {
+    destroy_priv(ctx);
+    return -1;
+  }
   return 0;
 }
 
