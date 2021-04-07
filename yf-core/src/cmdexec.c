@@ -42,8 +42,8 @@ typedef struct {
 
 /* Type defining execution queues stored in a context. */
 typedef struct {
-  T_cmde *cmde;
-  T_cmde *prio;
+  T_cmde cmde;
+  T_cmde prio;
   YF_list fences;
 } T_priv;
 
@@ -78,16 +78,8 @@ int yf_cmdexec_create(YF_context ctx, unsigned capacity)
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  priv->cmde = calloc(1, sizeof(T_cmde));
-  priv->prio = calloc(1, sizeof(T_cmde));
   priv->fences = yf_list_init(NULL);
-  if (priv->cmde == NULL || priv->prio == NULL || priv->fences == NULL) {
-    if (priv->fences != NULL) {
-      yf_seterr(YF_ERR_NOMEM, __func__);
-      yf_list_deinit(priv->fences);
-    }
-    free(priv->cmde);
-    free(priv->prio);
+  if (priv->fences == NULL) {
     free(priv);
     return -1;
   }
@@ -95,15 +87,13 @@ int yf_cmdexec_create(YF_context ctx, unsigned capacity)
   ctx->cmde.priv = priv;
   ctx->cmde.deinit_callb = destroy_priv;
 
-  priv->cmde->cap = YF_MAX(YF_CMDEMIN, YF_MIN(YF_CMDEMAX, capacity));
-  if (init_queue(ctx, priv->cmde) != 0) {
-    priv->cmde = NULL;
+  priv->cmde.cap = YF_CLAMP(capacity, YF_CMDEMIN, YF_CMDEMAX);
+  if (init_queue(ctx, &priv->cmde) != 0) {
     destroy_priv(ctx);
     return -1;
   }
-  priv->prio->cap = YF_CMDEMIN;
-  if (init_queue(ctx, priv->prio) != 0) {
-    priv->prio = NULL;
+  priv->prio.cap = YF_CMDEMIN;
+  if (init_queue(ctx, &priv->prio) != 0) {
     destroy_priv(ctx);
     return -1;
   }
@@ -118,7 +108,7 @@ int yf_cmdexec_enqueue(YF_context ctx, const YF_cmdres *cmdr,
   assert(cmdr != NULL);
   assert(ctx->cmde.priv != NULL);
 
-  return enqueue_res(((T_priv *)ctx->cmde.priv)->cmde, cmdr, callb, arg);
+  return enqueue_res(&((T_priv *)ctx->cmde.priv)->cmde, cmdr, callb, arg);
 }
 
 int yf_cmdexec_exec(YF_context ctx)
@@ -126,10 +116,10 @@ int yf_cmdexec_exec(YF_context ctx)
   assert(ctx != NULL);
 
   if (yf_cmdexec_execprio(ctx) != 0) {
-    reset_queue(ctx, ((T_priv *)ctx->cmde.priv)->cmde);
+    reset_queue(ctx, &((T_priv *)ctx->cmde.priv)->cmde);
     return -1;
   }
-  return exec_queue(ctx, ((T_priv *)ctx->cmde.priv)->cmde);
+  return exec_queue(ctx, &((T_priv *)ctx->cmde.priv)->cmde);
 }
 
 int yf_cmdexec_execprio(YF_context ctx)
@@ -166,16 +156,16 @@ int yf_cmdexec_execprio(YF_context ctx)
       r = -1;
       break;
     }
-    if (enqueue_res(priv->prio, cmdr_list+i, NULL, NULL) != 0) {
+    if (enqueue_res(&priv->prio, cmdr_list+i, NULL, NULL) != 0) {
       r = -1;
       break;
     }
   }
 
   if (r == 0)
-    r = exec_queue(ctx, priv->prio);
+    r = exec_queue(ctx, &priv->prio);
   else
-    reset_queue(ctx, priv->prio);
+    reset_queue(ctx, &priv->prio);
 
   yf_cmdpool_notifyprio(ctx, r);
   return r;
@@ -186,7 +176,7 @@ void yf_cmdexec_reset(YF_context ctx)
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
-  reset_queue(ctx, ((T_priv *)ctx->cmde.priv)->cmde);
+  reset_queue(ctx, &((T_priv *)ctx->cmde.priv)->cmde);
 }
 
 void yf_cmdexec_resetprio(YF_context ctx)
@@ -194,7 +184,7 @@ void yf_cmdexec_resetprio(YF_context ctx)
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
-  reset_queue(ctx, ((T_priv *)ctx->cmde.priv)->prio);
+  reset_queue(ctx, &((T_priv *)ctx->cmde.priv)->prio);
 }
 
 void yf_cmdexec_waitfor(YF_context ctx, VkFence fence)
@@ -331,7 +321,8 @@ static void deinit_queue(YF_context ctx, T_cmde *cmde)
   vkDestroyFence(ctx->device, cmde->fence, NULL);
   free(cmde->buffers);
   free(cmde->entries);
-  free(cmde);
+
+  /* XXX: The 'cmde' itself is not freed. */
 }
 
 static void destroy_priv(YF_context ctx)
@@ -342,8 +333,8 @@ static void destroy_priv(YF_context ctx)
     return;
 
   T_priv *priv = ctx->cmde.priv;
-  deinit_queue(ctx, priv->cmde);
-  deinit_queue(ctx, priv->prio);
+  deinit_queue(ctx, &priv->cmde);
+  deinit_queue(ctx, &priv->prio);
   yf_list_deinit(priv->fences);
   free(priv);
   ctx->cmde.priv = NULL;
