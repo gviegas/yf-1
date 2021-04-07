@@ -40,7 +40,6 @@ typedef struct {
 
 /* Type defining submission state. */
 typedef struct {
-  VkQueue queue;
   VkFence fence;
   VkSemaphore prio_sem;
   YF_list wait_sems;
@@ -61,7 +60,7 @@ static int enqueue_res(T_cmde *cmde, const YF_cmdres *cmdr,
     void (*callb)(int res, void *arg), void *arg);
 
 /* Executes a command queue. */
-static int exec_queue(YF_context ctx, T_cmde *cmde);
+static int exec_queue(YF_context ctx, T_cmde *cmde, T_subm *subm);
 
 /* Resets a command queue. */
 static void reset_queue(YF_context ctx, T_cmde *cmde);
@@ -94,8 +93,6 @@ int yf_cmdexec_create(YF_context ctx, unsigned capacity)
     destroy_priv(ctx);
     return -1;
   }
-
-  priv->subm.queue = ctx->queue;
 
   VkFenceCreateInfo fence_info = {
     .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
@@ -142,7 +139,7 @@ int yf_cmdexec_exec(YF_context ctx)
     reset_queue(ctx, &((T_priv *)ctx->cmde.priv)->cmde);
     return -1;
   }
-  return exec_queue(ctx, &((T_priv *)ctx->cmde.priv)->cmde);
+  return exec_queue(ctx, &((T_priv *)ctx->cmde.priv)->cmde, NULL); /* TODO */
 }
 
 int yf_cmdexec_execprio(YF_context ctx)
@@ -173,7 +170,7 @@ int yf_cmdexec_execprio(YF_context ctx)
   }
 
   if (r == 0)
-    r = exec_queue(ctx, &priv->prio);
+    r = exec_queue(ctx, &priv->prio, NULL); /* TODO */
   else
     reset_queue(ctx, &priv->prio);
 
@@ -252,13 +249,11 @@ static int enqueue_res(T_cmde *cmde, const YF_cmdres *cmdr,
   return 0;
 }
 
-static int exec_queue(YF_context ctx, T_cmde *cmde)
+static int exec_queue(YF_context ctx, T_cmde *cmde, T_subm *subm)
 {
   assert(ctx != NULL);
   assert(cmde != NULL);
-
-  /* TODO: Use signal/wait semaphores between priority and non-priority
-     command buffers instead of multiple submissions. */
+  assert(subm != NULL);
 
   if (cmde->n < 1)
     return 0;
@@ -267,14 +262,35 @@ static int exec_queue(YF_context ctx, T_cmde *cmde)
   VkResult res;
 
   cmde->subm_info.commandBufferCount = cmde->n;
-  res = vkQueueSubmit(cmde->queue, 1, &cmde->subm_info, cmde->fence);
+  cmde->subm_info.signalSemaphoreCount = 0;
+  cmde->subm_info.pSignalSemaphores = NULL;
+
+  const unsigned sem_n = yf_list_getlen(subm->wait_sems);
+  if (sem_n > 0) {
+    VkSemaphore sems[sem_n];
+    VkPipelineStageFlags stgs[sem_n];
+    for (unsigned i = 0; i < sem_n; ++i) {
+      sems[i] = yf_list_removeat(subm->wait_sems, NULL);
+      /* TODO: Store stages alongside sems. */
+      stgs[i] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+    }
+    cmde->subm_info.waitSemaphoreCount = sem_n;
+    cmde->subm_info.pWaitSemaphores = sems;
+    cmde->subm_info.pWaitDstStageMask = stgs;
+    res = vkQueueSubmit(ctx->queue, 1, &cmde->subm_info, subm->fence);
+  } else {
+    cmde->subm_info.waitSemaphoreCount = 0;
+    cmde->subm_info.pWaitSemaphores = NULL;
+    cmde->subm_info.pWaitDstStageMask = NULL;
+    res = vkQueueSubmit(ctx->queue, 1, &cmde->subm_info, subm->fence);
+  }
 
   if (res != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     r = -1;
   } else {
     do
-      res = vkWaitForFences(ctx->device, 1, &cmde->fence, VK_TRUE, YF_CMDEWAIT);
+      res = vkWaitForFences(ctx->device, 1, &subm->fence, VK_TRUE, YF_CMDEWAIT);
     while (res == VK_TIMEOUT);
     if (res != VK_SUCCESS) {
       yf_seterr(YF_ERR_DEVGEN, __func__);
