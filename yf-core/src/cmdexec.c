@@ -331,7 +331,6 @@ static void deinit_queue(YF_context ctx, T_cmde *cmde)
     return;
 
   reset_queue(ctx, cmde);
-  vkDestroyFence(ctx->device, cmde->fence, NULL);
   free(cmde->buffers);
   free(cmde->entries);
 
@@ -346,9 +345,19 @@ static void destroy_priv(YF_context ctx)
     return;
 
   T_priv *priv = ctx->cmde.priv;
+
   deinit_queue(ctx, &priv->cmde);
   deinit_queue(ctx, &priv->prio);
-  yf_list_deinit(priv->fences);
+  vkDestroyFence(ctx->device, priv->subm.fence, NULL);
+  vkDestroySemaphore(ctx->device, priv->subm.prio_sem, NULL);
+
+  if (priv->subm.wait_sems != NULL) {
+    while (yf_list_getlen(priv->subm.wait_sems) > 0)
+      vkDestroySemaphore(ctx->device,
+          yf_list_removeat(priv->subm.wait_sems, NULL), NULL);
+    yf_list_deinit(priv->subm.wait_sems);
+  }
+
   free(priv);
   ctx->cmde.priv = NULL;
 }
