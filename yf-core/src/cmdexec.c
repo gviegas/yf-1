@@ -36,14 +36,21 @@ typedef struct {
   unsigned n;
   unsigned cap;
   VkSubmitInfo subm_info;
+} T_cmde;
+
+/* Type defining submission state. */
+typedef struct {
   VkQueue queue;
   VkFence fence;
-} T_cmde;
+  VkSemaphore prio_sem;
+  YF_list wait_sems;
+} T_subm;
 
 /* Type defining execution queues stored in a context. */
 typedef struct {
   T_cmde cmde;
   T_cmde prio;
+  T_subm subm;
   YF_list fences;
 } T_priv;
 
