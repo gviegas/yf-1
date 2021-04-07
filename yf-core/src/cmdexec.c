@@ -219,17 +219,6 @@ static int init_queue(YF_context ctx, T_cmde *cmde)
     return -1;
   }
 
-  VkFenceCreateInfo fence_info = {
-    .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO,
-    .pNext = NULL,
-    .flags = 0
-  };
-  VkResult res = vkCreateFence(ctx->device, &fence_info, NULL, &cmde->fence);
-  if (res != VK_SUCCESS) {
-    yf_seterr(YF_ERR_DEVGEN, __func__);
-    return -1;
-  }
-
   cmde->subm_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
   cmde->subm_info.pNext = NULL;
   cmde->subm_info.waitSemaphoreCount = 0;
@@ -240,7 +229,6 @@ static int init_queue(YF_context ctx, T_cmde *cmde)
   cmde->subm_info.signalSemaphoreCount = 0;
   cmde->subm_info.pSignalSemaphores = NULL;
 
-  cmde->queue = ctx->queue;
   cmde->n = 0;
   return 0;
 }
