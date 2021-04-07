@@ -300,6 +300,9 @@ static int exec_queues(YF_context ctx, T_cmde *prio, T_cmde *cmde,
   int r = 0;
   VkResult res;
 
+  if (subm->prio_stg == 0)
+    subm->prio_stg = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+
   prio->subm_info.commandBufferCount = prio->n;
   prio->subm_info.signalSemaphoreCount = 1;
   prio->subm_info.pSignalSemaphores = &subm->prio_sem;
@@ -331,6 +334,8 @@ static int exec_queues(YF_context ctx, T_cmde *prio, T_cmde *cmde,
     const VkSubmitInfo subm_infos[2] = {prio->subm_info, cmde->subm_info};
     res = vkQueueSubmit(ctx->queue, 2, subm_infos, subm->fence);
   }
+
+  subm->prio_stg = 0;
 
   if (res != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
