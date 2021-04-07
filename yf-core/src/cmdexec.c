@@ -144,12 +144,21 @@ int yf_cmdexec_enqueue(YF_context ctx, const YF_cmdres *cmdr,
 int yf_cmdexec_exec(YF_context ctx)
 {
   assert(ctx != NULL);
+  assert(ctx->cmde.priv != NULL);
 
-  if (yf_cmdexec_execprio(ctx) != 0) {
-    reset_queue(ctx, &((T_priv *)ctx->cmde.priv)->cmde);
-    return -1;
+  T_priv *priv = ctx->cmde.priv;
+  int r = 0;
+
+  r = end_prio(ctx, &priv->prio);
+  if (r == 0) {
+    r = exec_queues(ctx, &priv->prio, &priv->cmde, &priv->subm);
+  } else {
+    reset_queue(ctx, &priv->prio);
+    reset_queue(ctx, &priv->cmde);
   }
-  return exec_queue(ctx, &((T_priv *)ctx->cmde.priv)->cmde, NULL); /* TODO */
+
+  yf_cmdpool_notifyprio(ctx, r);
+  return r;
 }
 
 int yf_cmdexec_execprio(YF_context ctx)
@@ -160,27 +169,9 @@ int yf_cmdexec_execprio(YF_context ctx)
   T_priv *priv = ctx->cmde.priv;
   int r = 0;
 
-  const YF_cmdres *cmdr_list;
-  unsigned cmdr_n;
-  yf_cmdpool_checkprio(ctx, &cmdr_list, &cmdr_n);
-
-  if (cmdr_n == 0)
-    return r;
-
-  for (unsigned i = 0; i < cmdr_n; ++i) {
-    if (vkEndCommandBuffer(cmdr_list[i].pool_res) != VK_SUCCESS) {
-      yf_seterr(YF_ERR_DEVGEN, __func__);
-      r = -1;
-      break;
-    }
-    if (enqueue_res(&priv->prio, cmdr_list+i, NULL, NULL) != 0) {
-      r = -1;
-      break;
-    }
-  }
-
+  r = end_prio(ctx, &priv->prio);
   if (r == 0)
-    r = exec_queue(ctx, &priv->prio, NULL); /* TODO */
+    r = exec_queue(ctx, &priv->prio, &priv->subm);
   else
     reset_queue(ctx, &priv->prio);
 
