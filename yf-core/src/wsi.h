@@ -23,9 +23,7 @@ typedef struct YF_wsi_o {
 
   YF_image *imgs;
   int *imgs_acq;
-  /* XXX Using fences instead of semaphores for the time being. */
-  /*VkSemaphore *imgs_sem;*/
-  VkFence *imgs_fence;
+  VkSemaphore *imgs_sem;
   unsigned img_n;
 } YF_wsi_o;
 
