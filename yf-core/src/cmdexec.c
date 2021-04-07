@@ -197,13 +197,18 @@ void yf_cmdexec_resetprio(YF_context ctx)
   reset_queue(ctx, &((T_priv *)ctx->cmde.priv)->prio);
 }
 
-void yf_cmdexec_waitfor(YF_context ctx, VkSemaphore sem)
+void yf_cmdexec_waitfor(YF_context ctx, VkSemaphore sem,
+    VkPipelineStageFlags stg_mask)
 {
   assert(ctx != NULL);
   assert(ctx->cmde.priv != NULL);
 
   YF_list wait_sems = ((T_priv *)ctx->cmde.priv)->subm.wait_sems;
   yf_list_insert(wait_sems, sem);
+
+  YF_list wait_stgs = ((T_priv *)ctx->cmde.priv)->subm.wait_stgs;
+  uintptr_t sm = stg_mask != 0 ? stg_mask : VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+  yf_list_insert(wait_stgs, (void *)sm);
 }
 
 static int init_queue(YF_context ctx, T_cmde *cmde)
