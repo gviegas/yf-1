@@ -42,7 +42,9 @@ typedef struct {
 typedef struct {
   VkFence fence;
   VkSemaphore prio_sem;
+  VkPipelineStageFlags prio_stg;
   YF_list wait_sems;
+  YF_list wait_stgs;
 } T_subm;
 
 /* Type defining execution queues stored in a context. */
@@ -114,7 +116,8 @@ int yf_cmdexec_create(YF_context ctx, unsigned capacity)
   }
 
   priv->subm.wait_sems = yf_list_init(NULL);
-  if (priv->subm.wait_sems == NULL) {
+  priv->subm.wait_stgs = yf_list_init(NULL);
+  if (priv->subm.wait_sems == NULL || priv->subm.wait_stgs == NULL) {
     destroy_priv(ctx);
     return -1;
   }
@@ -357,6 +360,7 @@ static void destroy_priv(YF_context ctx)
           yf_list_removeat(priv->subm.wait_sems, NULL), NULL);
     yf_list_deinit(priv->subm.wait_sems);
   }
+  yf_list_deinit(priv->subm.wait_stgs);
 
   free(priv);
   ctx->cmde.priv = NULL;
