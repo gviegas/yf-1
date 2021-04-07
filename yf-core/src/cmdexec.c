@@ -51,7 +51,6 @@ typedef struct {
   T_cmde cmde;
   T_cmde prio;
   T_subm subm;
-  YF_list fences;
 } T_priv;
 
 /* Initializes a pre-allocated queue. */
@@ -83,11 +82,6 @@ int yf_cmdexec_create(YF_context ctx, unsigned capacity)
   T_priv *priv = calloc(1, sizeof(T_priv));
   if (priv == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    return -1;
-  }
-  priv->fences = yf_list_init(NULL);
-  if (priv->fences == NULL) {
-    free(priv);
     return -1;
   }
 
