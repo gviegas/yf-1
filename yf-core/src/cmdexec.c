@@ -61,6 +61,9 @@ static int init_queue(YF_context ctx, T_cmde *cmde);
 static int enqueue_res(T_cmde *cmde, const YF_cmdres *cmdr,
     void (*callb)(int res, void *arg), void *arg);
 
+/* Ends priority queue and enqueues its resources. */
+static int end_prio(YF_context ctx, T_cmde *prio);
+
 /* Executes priority and non-priority command queues. */
 static int exec_queues(YF_context ctx, T_cmde *prio, T_cmde *cmde,
     T_subm *subm);
@@ -259,6 +262,34 @@ static int enqueue_res(T_cmde *cmde, const YF_cmdres *cmdr,
   cmde->buffers[cmde->n] = cmdr->pool_res;
   ++cmde->n;
   return 0;
+}
+
+static int end_prio(YF_context ctx, T_cmde *prio)
+{
+  assert(ctx != NULL);
+  assert(prio != NULL);
+
+  int r = 0;
+
+  const YF_cmdres *cmdr_list;
+  unsigned cmdr_n;
+  yf_cmdpool_checkprio(ctx, &cmdr_list, &cmdr_n);
+
+  if (cmdr_n == 0)
+    return r;
+
+  for (unsigned i = 0; i < cmdr_n; ++i) {
+    if (vkEndCommandBuffer(cmdr_list[i].pool_res) != VK_SUCCESS) {
+      yf_seterr(YF_ERR_DEVGEN, __func__);
+      r = -1;
+      break;
+    }
+    if (enqueue_res(prio, cmdr_list+i, NULL, NULL) != 0) {
+      r = -1;
+      break;
+    }
+  }
+  return r;
 }
 
 static int exec_queues(YF_context ctx, T_cmde *prio, T_cmde *cmde,
