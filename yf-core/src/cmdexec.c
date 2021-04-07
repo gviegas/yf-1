@@ -61,6 +61,10 @@ static int init_queue(YF_context ctx, T_cmde *cmde);
 static int enqueue_res(T_cmde *cmde, const YF_cmdres *cmdr,
     void (*callb)(int res, void *arg), void *arg);
 
+/* Executes priority and non-priority command queues. */
+static int exec_queues(YF_context ctx, T_cmde *prio, T_cmde *cmde,
+    T_subm *subm);
+
 /* Executes a command queue. */
 static int exec_queue(YF_context ctx, T_cmde *cmde, T_subm *subm);
 
@@ -257,6 +261,80 @@ static int enqueue_res(T_cmde *cmde, const YF_cmdres *cmdr,
   return 0;
 }
 
+static int exec_queues(YF_context ctx, T_cmde *prio, T_cmde *cmde,
+    T_subm *subm)
+{
+  assert(ctx != NULL);
+  assert(prio != NULL);
+  assert(cmde != NULL);
+  assert(subm != NULL);
+
+  if (prio->n < 1)
+    return exec_queue(ctx, cmde, subm);
+
+  if (cmde->n < 1)
+    return exec_queue(ctx, prio, subm);
+
+  int r = 0;
+  VkResult res;
+
+  prio->subm_info.commandBufferCount = prio->n;
+  prio->subm_info.signalSemaphoreCount = 1;
+  prio->subm_info.pSignalSemaphores = &subm->prio_sem;
+
+  cmde->subm_info.waitSemaphoreCount = 1;
+  cmde->subm_info.pWaitSemaphores = &subm->prio_sem;
+  cmde->subm_info.pWaitDstStageMask = &subm->prio_stg;
+  cmde->subm_info.commandBufferCount = cmde->n;
+  cmde->subm_info.signalSemaphoreCount = 0;
+  cmde->subm_info.pSignalSemaphores = NULL;
+
+  const unsigned sem_n = yf_list_getlen(subm->wait_sems);
+  if (sem_n > 0) {
+    VkSemaphore sems[sem_n];
+    VkPipelineStageFlags stgs[sem_n];
+    for (unsigned i = 0; i < sem_n; ++i) {
+      sems[i] = yf_list_removeat(subm->wait_sems, NULL);
+      stgs[i] = (uintptr_t)yf_list_removeat(subm->wait_stgs, NULL);
+    }
+    prio->subm_info.waitSemaphoreCount = sem_n;
+    prio->subm_info.pWaitSemaphores = sems;
+    prio->subm_info.pWaitDstStageMask = stgs;
+    const VkSubmitInfo subm_infos[2] = {prio->subm_info, cmde->subm_info};
+    res = vkQueueSubmit(ctx->queue, 2, subm_infos, subm->fence);
+  } else {
+    prio->subm_info.waitSemaphoreCount = 0;
+    prio->subm_info.pWaitSemaphores = NULL;
+    prio->subm_info.pWaitDstStageMask = 0;
+    const VkSubmitInfo subm_infos[2] = {prio->subm_info, cmde->subm_info};
+    res = vkQueueSubmit(ctx->queue, 2, subm_infos, subm->fence);
+  }
+
+  if (res != VK_SUCCESS) {
+    yf_seterr(YF_ERR_DEVGEN, __func__);
+    r = -1;
+  } else {
+    do
+      res = vkWaitForFences(ctx->device, 1, &subm->fence, VK_TRUE, YF_CMDEWAIT);
+    while (res == VK_TIMEOUT);
+    if (res != VK_SUCCESS) {
+      yf_seterr(YF_ERR_DEVGEN, __func__);
+      r = -1;
+    }
+  }
+
+  T_cmde *cmdes[2] = {prio, cmde};
+  for (unsigned i = 0; i < 2; ++i) {
+    for (unsigned j = 0; j < cmdes[i]->n; ++j) {
+      yf_cmdpool_yield(ctx, &cmdes[i]->entries[j].cmdr);
+      if (cmdes[i]->entries[j].callb != NULL)
+        cmdes[i]->entries[j].callb(r, cmdes[i]->entries[j].arg);
+    }
+    cmdes[i]->n = 0;
+  }
+  return r;
+}
+
 static int exec_queue(YF_context ctx, T_cmde *cmde, T_subm *subm)
 {
   assert(ctx != NULL);
@@ -279,8 +357,7 @@ static int exec_queue(YF_context ctx, T_cmde *cmde, T_subm *subm)
     VkPipelineStageFlags stgs[sem_n];
     for (unsigned i = 0; i < sem_n; ++i) {
       sems[i] = yf_list_removeat(subm->wait_sems, NULL);
-      /* TODO: Store stages alongside sems. */
-      stgs[i] = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+      stgs[i] = (uintptr_t)yf_list_removeat(subm->wait_stgs, NULL);
     }
     cmde->subm_info.waitSemaphoreCount = sem_n;
     cmde->subm_info.pWaitSemaphores = sems;
