@@ -153,19 +153,6 @@ int yf_cmdexec_execprio(YF_context ctx)
   T_priv *priv = ctx->cmde.priv;
   int r = 0;
 
-  const size_t fence_n = yf_list_getlen(priv->fences);
-  if (fence_n > 0) {
-    VkFence fences[fence_n];
-    VkResult res;
-    for (unsigned i = 0; i < fence_n; ++i)
-      fences[i] = yf_list_removeat(priv->fences, NULL);
-    do
-      res = vkWaitForFences(ctx->device, fence_n, fences, VK_TRUE, YF_CMDEWAIT);
-    while (res == VK_TIMEOUT);
-    if (res != VK_SUCCESS)
-      r = -1;
-  }
-
   const YF_cmdres *cmdr_list;
   unsigned cmdr_n;
   yf_cmdpool_checkprio(ctx, &cmdr_list, &cmdr_n);
