@@ -217,7 +217,6 @@ static int init_queue(YF_context ctx, T_cmde *cmde)
   VkResult res = vkCreateFence(ctx->device, &fence_info, NULL, &cmde->fence);
   if (res != VK_SUCCESS) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
-    deinit_queue(ctx, cmde);
     return -1;
   }
 
