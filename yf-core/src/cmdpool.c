@@ -71,7 +71,7 @@ int yf_cmdpool_create(YF_context ctx, unsigned capacity)
 
   priv->cmdp.last_i = 0;
   priv->cmdp.cur_n = 0;
-  priv->cmdp.cap = YF_MAX(YF_CMDPMIN, YF_MIN(YF_CMDPMAX, capacity));
+  priv->cmdp.cap = YF_CLAMP(capacity, YF_CMDPMIN, YF_CMDPMAX);
   if (init_entries(ctx, &priv->cmdp) != 0) {
     destroy_priv(ctx);
     return  -1;
