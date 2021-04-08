@@ -19,26 +19,26 @@
 #include "data-gltf.h"
 #include "vertex.h"
 
-#define YF_SYMBOL_STR  0
-#define YF_SYMBOL_OP   1
-#define YF_SYMBOL_NUM  2
-#define YF_SYMBOL_BOOL 3
-#define YF_SYMBOL_NULL 4
-#define YF_SYMBOL_END  5
-#define YF_SYMBOL_ERR  6
+#define YF_TOKEN_STR  0
+#define YF_TOKEN_NUM  1
+#define YF_TOKEN_BOOL 2
+#define YF_TOKEN_NULL 3
+#define YF_TOKEN_OP   4
+#define YF_TOKEN_END  5
+#define YF_TOKEN_ERR  6
 
-#define YF_MAXTOKENS 1024
+#define YF_TOKENMAX 1024
 
-/* Type defining a symbol. */
+/* Type defining a token. */
 typedef struct {
-  int symbol;
-  char tokens[YF_MAXTOKENS];
-} T_symbol;
+  int token;
+  char data[YF_TOKENMAX];
+} T_token;
 
-/* Gets the next symbol from a file stream.
-   This function returns 'symbol->symbol'. Upon failure, the value returned
-   is equal to 'YF_SYMBOL_ERR' - the global error variable is not set. */
-static int next_symbol(FILE *file, T_symbol *symbol);
+/* Gets the next token from a file stream.
+   This function returns 'token->token'. Upon failure, the value returned
+   is equal to 'YF_TOKEN_ERR' - the global error variable is not set. */
+static int next_token(FILE *file, T_token *token);
 
 /* Type defining a string. */
 typedef char *T_str;
@@ -400,115 +400,115 @@ typedef struct {
 
 /* Consumes the current property.
    This allows unknown/unimplemented properties to be ignored. */
-static int consume_prop(FILE *file, T_symbol *symbol);
+static int consume_prop(FILE *file, T_token *token);
 
 /* Parses an array of unknown size. */
-static int parse_array(FILE *file, T_symbol *symbol,
+static int parse_array(FILE *file, T_token *token,
     void **array, size_t *n, size_t elem_sz,
-    int (*fn)(FILE *, T_symbol *, size_t, void *), void *arg);
+    int (*fn)(FILE *, T_token *, size_t, void *), void *arg);
 
 /* Parses a string. */
-static int parse_str(FILE *file, T_symbol *symbol, T_str *str);
+static int parse_str(FILE *file, T_token *token, T_str *str);
 
 /* Parses a floating-point number. */
-static int parse_num(FILE *file, T_symbol *symbol, T_num *num);
+static int parse_num(FILE *file, T_token *token, T_num *num);
 
 /* Parses an element of an array of floating-point numbers. */
-static int parse_num_array(FILE *file, T_symbol *symbol,
+static int parse_num_array(FILE *file, T_token *token,
     size_t index, void *num_pp);
 
 /* Parses an integer number. */
-static int parse_int(FILE *file, T_symbol *symbol, T_int *intr);
+static int parse_int(FILE *file, T_token *token, T_int *intr);
 
 /* Parses an element of an array of integer numbers. */
-static int parse_int_array(FILE *file, T_symbol *symbol,
+static int parse_int_array(FILE *file, T_token *token,
     size_t index, void *int_pp);
 
 /* Parses a boolean value. */
-static int parse_bool(FILE *file, T_symbol *symbol, T_bool *booln);
+static int parse_bool(FILE *file, T_token *token, T_bool *booln);
 
 /* Parses the root glTF object. */
-static int parse_gltf(FILE *file, T_symbol *symbol, T_gltf *gltf);
+static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf);
 
 /* Parses the 'glTF.asset' property. */
-static int parse_asset(FILE *file, T_symbol *symbol, T_asset *asset);
+static int parse_asset(FILE *file, T_token *token, T_asset *asset);
 
 /* Parses the 'glTF.scene' property. */
-static int parse_scene(FILE *file, T_symbol *symbol, T_int *scene);
+static int parse_scene(FILE *file, T_token *token, T_int *scene);
 
 /* Parses the 'glTF.scenes' property. */
-static int parse_scenes(FILE *file, T_symbol *symbol,
+static int parse_scenes(FILE *file, T_token *token,
     size_t index, void *scenes_p);
 
 /* Parses the 'glTF.nodes' property. */
-static int parse_nodes(FILE *file, T_symbol *symbol,
+static int parse_nodes(FILE *file, T_token *token,
     size_t index, void *nodes_p);
 
 /* Parses the 'glTF.cameras' property. */
-static int parse_cameras(FILE *file, T_symbol *symbol,
+static int parse_cameras(FILE *file, T_token *token,
     size_t index, void *cameras_p);
 
 /* Parses the 'glTF.meshes.primitives.targets' property. */
-static int parse_targets(FILE *file, T_symbol *symbol,
+static int parse_targets(FILE *file, T_token *token,
     size_t index, void *targets_p);
 
 /* Parses the 'glTF.meshes.primitives' property. */
-static int parse_primitives(FILE *file, T_symbol *symbol,
+static int parse_primitives(FILE *file, T_token *token,
     size_t index, void *primitives_p);
 
 /* Parses the 'glTF.meshes' property. */
-static int parse_meshes(FILE *file, T_symbol *symbol,
+static int parse_meshes(FILE *file, T_token *token,
     size_t index, void *meshes_p);
 
 /* Parses the 'glTF.skins' property. */
-static int parse_skins(FILE *file, T_symbol *symbol,
+static int parse_skins(FILE *file, T_token *token,
     size_t index, void *skins_p);
 
 /* Parses the 'glTF.*.textureInfo property. */
-static int parse_textureinfo(FILE *file, T_symbol *symbol,
+static int parse_textureinfo(FILE *file, T_token *token,
     T_textureinfo *textureinfo);
 
 /* Parses the 'glTF.materials' property. */
-static int parse_materials(FILE *file, T_symbol *symbol,
+static int parse_materials(FILE *file, T_token *token,
     size_t index, void *materials_p);
 
 /* Parses the 'glTF.animations.channels' property. */
-static int parse_channels(FILE *file, T_symbol *symbol,
+static int parse_channels(FILE *file, T_token *token,
     size_t index, void *channels_p);
 
 /* Parses the 'glTF.animations.samplers' property. */
-static int parse_asamplers(FILE *file, T_symbol *symbol,
+static int parse_asamplers(FILE *file, T_token *token,
     size_t index, void *asamplers_p);
 
 /* Parses the 'glTF.animations' property. */
-static int parse_animations(FILE *file, T_symbol *symbol,
+static int parse_animations(FILE *file, T_token *token,
     size_t index, void *animations_p);
 
 /* Parses the 'glTF.accessors.sparse' property. */
-static int parse_sparse(FILE *file, T_symbol *symbol, T_sparse *sparse);
+static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse);
 
 /* Parses the 'glTF.accessors' property. */
-static int parse_accessors(FILE *file, T_symbol *symbol,
+static int parse_accessors(FILE *file, T_token *token,
     size_t index, void *accessors_p);
 
 /* Parses the 'glTF.bufferViews' property. */
-static int parse_bufferviews(FILE *file, T_symbol *symbol,
+static int parse_bufferviews(FILE *file, T_token *token,
     size_t index, void *bufferviews_p);
 
 /* Parses the 'glTF.buffers' property. */
-static int parse_buffers(FILE *file, T_symbol *symbol,
+static int parse_buffers(FILE *file, T_token *token,
     size_t index, void *buffers_p);
 
 /* Parses the 'glTF.textures' property. */
-static int parse_textures(FILE *file, T_symbol *symbol,
+static int parse_textures(FILE *file, T_token *token,
     size_t index, void *textures_p);
 
 /* Parses the 'glTF.images' property. */
-static int parse_images(FILE *file, T_symbol *symbol,
+static int parse_images(FILE *file, T_token *token,
     size_t index, void *images_p);
 
 /* Parses the 'glTF.samplers' property. */
-static int parse_samplers(FILE *file, T_symbol *symbol,
+static int parse_samplers(FILE *file, T_token *token,
     size_t index, void *samplers_p);
 
 /* Loads a single mesh from glTF contents. */
@@ -566,17 +566,17 @@ int yf_loadgltf(const char *pathname, YF_meshdt *data)
     return -1;
   }
 
-  T_symbol symbol = {0};
-  next_symbol(file, &symbol);
+  T_token token = {0};
+  next_token(file, &token);
   /* TODO: .glb */
-  if (symbol.symbol != YF_SYMBOL_OP && symbol.tokens[0] != '{') {
+  if (token.token != YF_TOKEN_OP && token.data[0] != '{') {
     yf_seterr(YF_ERR_INVFILE, __func__);
     fclose(file);
     return -1;
   }
 
   T_gltf gltf = {0};
-  if (parse_gltf(file, &symbol, &gltf) != 0) {
+  if (parse_gltf(file, &token, &gltf) != 0) {
     deinit_gltf(&gltf);
     fclose(file);
     return -1;
@@ -598,14 +598,14 @@ int yf_loadgltf(const char *pathname, YF_meshdt *data)
   return 0;
 }
 
-static int next_symbol(FILE *file, T_symbol *symbol)
+static int next_token(FILE *file, T_token *token)
 {
-  static_assert(YF_MAXTOKENS > 1);
+  static_assert(YF_TOKENMAX > 1);
 
   int c;
   do c = getc(file); while (isspace(c));
 
-  symbol->tokens[0] = c;
+  token->data[0] = c;
   size_t i = 0;
 
   switch (c) {
@@ -613,38 +613,28 @@ static int next_symbol(FILE *file, T_symbol *symbol)
     /* XXX: Delim. quotation marks not stored. */
     do {
       c = getc(file);
-      symbol->tokens[i] = c;
+      token->data[i] = c;
       if (c == '"') {
-        symbol->symbol = YF_SYMBOL_STR;
+        token->token = YF_TOKEN_STR;
         break;
       }
       if (c == EOF) {
-        symbol->symbol = YF_SYMBOL_ERR;
+        token->token = YF_TOKEN_ERR;
         break;
       }
       if (c == '\\') {
         c = getc(file);
         if (c == '"') {
-          symbol->tokens[i] = '\"';
+          token->data[i] = '\"';
         } else if (c == '\\') {
-          symbol->tokens[i] = '\\';
+          token->data[i] = '\\';
         } else {
           /* TODO: Other escape sequences. */
-          symbol->symbol = YF_SYMBOL_ERR;
+          token->token = YF_TOKEN_ERR;
           break;
         }
       }
-    } while (++i < YF_MAXTOKENS-1);
-    break;
-
-  case ':':
-  case ',':
-  case '[':
-  case ']':
-  case '{':
-  case '}':
-    symbol->symbol = YF_SYMBOL_OP;
-    ++i;
+    } while (++i < YF_TOKENMAX-1);
     break;
 
   case '-':
@@ -659,104 +649,114 @@ static int next_symbol(FILE *file, T_symbol *symbol)
   case '7':
   case '8':
   case '9':
-    while (++i < YF_MAXTOKENS-1) {
+    while (++i < YF_TOKENMAX-1) {
       c = getc(file);
       if (isxdigit(c) || c == '.' || c == '-' || c == '+') {
-        symbol->tokens[i] = c;
+        token->data[i] = c;
         continue;
       }
       if (c != EOF)
         ungetc(c, file);
       break;
     }
-    symbol->symbol = YF_SYMBOL_NUM;
+    token->token = YF_TOKEN_NUM;
     break;
 
   case 't':
-    while (++i < YF_MAXTOKENS-1) {
+    while (++i < YF_TOKENMAX-1) {
       c = getc(file);
       if (islower(c))
-        symbol->tokens[i] = c;
+        token->data[i] = c;
       else
         break;
     }
     if (c != EOF)
       ungetc(c, file);
-    symbol->tokens[i] = '\0';
-    if (strcmp("true", symbol->tokens) == 0)
-      symbol->symbol = YF_SYMBOL_BOOL;
+    token->data[i] = '\0';
+    if (strcmp("true", token->data) == 0)
+      token->token = YF_TOKEN_BOOL;
     else
-      symbol->symbol = YF_SYMBOL_ERR;
+      token->token = YF_TOKEN_ERR;
     break;
 
   case 'f':
-    while (++i < YF_MAXTOKENS-1) {
+    while (++i < YF_TOKENMAX-1) {
       c = getc(file);
       if (islower(c))
-        symbol->tokens[i] = c;
+        token->data[i] = c;
       else
         break;
     }
     if (c != EOF)
       ungetc(c, file);
-    symbol->tokens[i] = '\0';
-    if (strcmp("false", symbol->tokens) == 0)
-      symbol->symbol = YF_SYMBOL_BOOL;
+    token->data[i] = '\0';
+    if (strcmp("false", token->data) == 0)
+      token->token = YF_TOKEN_BOOL;
     else
-      symbol->symbol = YF_SYMBOL_ERR;
+      token->token = YF_TOKEN_ERR;
     break;
 
   case 'n':
-    while (++i < YF_MAXTOKENS-1) {
+    while (++i < YF_TOKENMAX-1) {
       c = getc(file);
       if (islower(c))
-        symbol->tokens[i] = c;
+        token->data[i] = c;
       else
         break;
     }
     if (c != EOF)
       ungetc(c, file);
-    symbol->tokens[i] = '\0';
-    if (strcmp("null", symbol->tokens) == 0)
-      symbol->symbol = YF_SYMBOL_NULL;
+    token->data[i] = '\0';
+    if (strcmp("null", token->data) == 0)
+      token->token = YF_TOKEN_NULL;
     else
-      symbol->symbol = YF_SYMBOL_ERR;
+      token->token = YF_TOKEN_ERR;
+    break;
+
+  case ':':
+  case ',':
+  case '[':
+  case ']':
+  case '{':
+  case '}':
+    token->token = YF_TOKEN_OP;
+    ++i;
     break;
 
   case EOF:
-    symbol->symbol = YF_SYMBOL_END;
+    token->token = YF_TOKEN_END;
     break;
 
   default:
-    symbol->symbol = YF_SYMBOL_ERR;
+    token->token = YF_TOKEN_ERR;
   }
 
-  symbol->tokens[i] = '\0';
-  return symbol->symbol;
+  token->data[i] = '\0';
+  return token->token;
 }
 
-static int consume_prop(FILE *file, T_symbol *symbol)
+static int consume_prop(FILE *file, T_token *token)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
+  assert(token != NULL);
+  assert(token->token == YF_TOKEN_STR);
 
-  next_symbol(file, symbol); /* ':' */
+  next_token(file, token); /* ':' */
 
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ':') {
+  if (token->token != YF_TOKEN_OP || token->data[0] != ':') {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
 
-  switch (next_symbol(file, symbol)) {
-  case YF_SYMBOL_STR:
-  case YF_SYMBOL_NUM:
-  case YF_SYMBOL_BOOL:
-  case YF_SYMBOL_NULL:
+  switch (next_token(file, token)) {
+  case YF_TOKEN_STR:
+  case YF_TOKEN_NUM:
+  case YF_TOKEN_BOOL:
+  case YF_TOKEN_NULL:
     break;
 
-  case YF_SYMBOL_OP: {
-    char cl, op = symbol->tokens[0];
+  case YF_TOKEN_OP: {
+    char cl, op = token->data[0];
     switch (op) {
     case '[':
       cl = ']';
@@ -770,16 +770,16 @@ static int consume_prop(FILE *file, T_symbol *symbol)
     }
     int n = 1;
     do {
-      switch (next_symbol(file, symbol)) {
-      case YF_SYMBOL_OP:
-        if (symbol->tokens[0] == op)
+      switch (next_token(file, token)) {
+      case YF_TOKEN_OP:
+        if (token->data[0] == op)
           ++n;
-        else if (symbol->tokens[0] == cl)
+        else if (token->data[0] == cl)
           --n;
         break;
 
-      case YF_SYMBOL_END:
-      case YF_SYMBOL_ERR:
+      case YF_TOKEN_END:
+      case YF_TOKEN_ERR:
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
       }
@@ -794,23 +794,23 @@ static int consume_prop(FILE *file, T_symbol *symbol)
   return 0;
 }
 
-static int parse_array(FILE *file, T_symbol *symbol,
+static int parse_array(FILE *file, T_token *token,
     void **array, size_t *n, size_t elem_sz,
-    int (*fn)(FILE *, T_symbol *, size_t, void *), void *arg)
+    int (*fn)(FILE *, T_token *, size_t, void *), void *arg)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(n != NULL && *n == 0);
   assert(elem_sz > 0);
   assert(fn != NULL);
 
-  next_symbol(file, symbol); /* ':' */
+  next_token(file, token); /* ':' */
   size_t i = 0;
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] != ']') {
+    switch (next_token(file, token)) {
+    case YF_TOKEN_OP:
+      if (token->data[0] != ']') {
         if (i == *n) {
           const size_t new_n = i == 0 ? 1 : i<<1;
           void *tmp = realloc(*array, new_n*elem_sz);
@@ -822,7 +822,7 @@ static int parse_array(FILE *file, T_symbol *symbol,
           *n = new_n;
           memset((char *)*array+i*elem_sz, 0, (new_n-i)*elem_sz);
         }
-        if (fn(file, symbol, i++, arg) != 0)
+        if (fn(file, token, i++, arg) != 0)
           return -1;
       }
       break;
@@ -831,7 +831,7 @@ static int parse_array(FILE *file, T_symbol *symbol,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != ']');
+  } while (token->token != YF_TOKEN_OP || token->data[0] != ']');
 
   if (i < *n) {
     *n = i;
@@ -842,45 +842,45 @@ static int parse_array(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_str(FILE *file, T_symbol *symbol, T_str *str)
+static int parse_str(FILE *file, T_token *token, T_str *str)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(str != NULL);
 
-  switch (symbol->symbol) {
-  case YF_SYMBOL_OP:
+  switch (token->token) {
+  case YF_TOKEN_OP:
     break;
   default:
-    next_symbol(file, symbol);
+    next_token(file, token);
   }
-  if (next_symbol(file, symbol) != YF_SYMBOL_STR) {
+  if (next_token(file, token) != YF_TOKEN_STR) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
 
-  *str = malloc(1+strlen(symbol->tokens));
+  *str = malloc(1+strlen(token->data));
   if (*str == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     return -1;
   }
-  strcpy(*str, symbol->tokens);
+  strcpy(*str, token->data);
   return 0;
 }
 
-static int parse_num(FILE *file, T_symbol *symbol, T_num *num)
+static int parse_num(FILE *file, T_token *token, T_num *num)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(num != NULL);
 
-  switch (symbol->symbol) {
-  case YF_SYMBOL_OP:
+  switch (token->token) {
+  case YF_TOKEN_OP:
     break;
   default:
-    next_symbol(file, symbol);
+    next_token(file, token);
   }
-  if (next_symbol(file, symbol) != YF_SYMBOL_NUM) {
+  if (next_token(file, token) != YF_TOKEN_NUM) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
@@ -888,9 +888,9 @@ static int parse_num(FILE *file, T_symbol *symbol, T_num *num)
   errno = 0;
   char *end;
 #ifdef YF_USE_FLOAT64
-  *num = strtod(symbol->tokens, &end);
+  *num = strtod(token->data, &end);
 #else
-  *num = strtof(symbol->tokens, &end);
+  *num = strtof(token->data, &end);
 #endif
   if (errno != 0 || *end != '\0') {
     yf_seterr(YF_ERR_OTHER, __func__);
@@ -899,39 +899,39 @@ static int parse_num(FILE *file, T_symbol *symbol, T_num *num)
   return 0;
 }
 
-static int parse_num_array(FILE *file, T_symbol *symbol,
+static int parse_num_array(FILE *file, T_token *token,
     size_t index, void *num_pp)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(num_pp != NULL);
 
   T_num *num_p = *(T_num **)num_pp;
   assert(num_p != NULL);
 
-  return parse_num(file, symbol, num_p+index);
+  return parse_num(file, token, num_p+index);
 }
 
-static int parse_int(FILE *file, T_symbol *symbol, T_int *intr)
+static int parse_int(FILE *file, T_token *token, T_int *intr)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(intr != NULL);
 
-  switch (symbol->symbol) {
-  case YF_SYMBOL_OP:
+  switch (token->token) {
+  case YF_TOKEN_OP:
     break;
   default:
-    next_symbol(file, symbol);
+    next_token(file, token);
   }
-  if (next_symbol(file, symbol) != YF_SYMBOL_NUM) {
+  if (next_token(file, token) != YF_TOKEN_NUM) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
 
   errno = 0;
   char *end;
-  *intr = strtoll(symbol->tokens, &end, 0);
+  *intr = strtoll(token->data, &end, 0);
   if (errno != 0 || *end != '\0') {
     yf_seterr(YF_ERR_OTHER, __func__);
     return -1;
@@ -939,135 +939,135 @@ static int parse_int(FILE *file, T_symbol *symbol, T_int *intr)
   return 0;
 }
 
-static int parse_int_array(FILE *file, T_symbol *symbol,
+static int parse_int_array(FILE *file, T_token *token,
     size_t index, void *int_pp)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(int_pp != NULL);
 
   T_int *int_p = *(T_int **)int_pp;
   assert(int_p != NULL);
 
-  return parse_int(file, symbol, int_p+index);
+  return parse_int(file, token, int_p+index);
 }
 
-static int parse_bool(FILE *file, T_symbol *symbol, T_bool *booln)
+static int parse_bool(FILE *file, T_token *token, T_bool *booln)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(booln != NULL);
 
-  switch (symbol->symbol) {
-  case YF_SYMBOL_OP:
+  switch (token->token) {
+  case YF_TOKEN_OP:
     break;
   default:
-    next_symbol(file, symbol);
+    next_token(file, token);
   }
-  if (next_symbol(file, symbol) != YF_SYMBOL_BOOL) {
+  if (next_token(file, token) != YF_TOKEN_BOOL) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
 
-  if (strcmp("true", symbol->tokens) == 0)
+  if (strcmp("true", token->data) == 0)
     *booln = YF_TRUE;
   else
     *booln = YF_FALSE;
   return 0;
 }
 
-static int parse_gltf(FILE *file, T_symbol *symbol, T_gltf *gltf)
+static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(gltf != NULL);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '{');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '{');
 
   gltf->scene = YF_INT_MIN;
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("asset", symbol->tokens) == 0) {
-        if (parse_asset(file, symbol, &gltf->asset) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("asset", token->data) == 0) {
+        if (parse_asset(file, token, &gltf->asset) != 0)
           return -1;
-      } else if (strcmp("scene", symbol->tokens) == 0) {
-        if (parse_scene(file, symbol, &gltf->scene) != 0)
+      } else if (strcmp("scene", token->data) == 0) {
+        if (parse_scene(file, token, &gltf->scene) != 0)
           return -1;
-      } else if (strcmp("scenes", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->scenes.v,
+      } else if (strcmp("scenes", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->scenes.v,
               &gltf->scenes.n, sizeof *gltf->scenes.v, parse_scenes,
               &gltf->scenes) != 0)
           return -1;
-      } else if (strcmp("nodes", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->nodes.v,
+      } else if (strcmp("nodes", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->nodes.v,
               &gltf->nodes.n, sizeof *gltf->nodes.v, parse_nodes,
               &gltf->nodes) != 0)
           return -1;
-      } else if (strcmp("cameras", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->cameras.v,
+      } else if (strcmp("cameras", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->cameras.v,
               &gltf->cameras.n, sizeof *gltf->cameras.v, parse_cameras,
               &gltf->cameras) != 0)
           return -1;
-      } else if (strcmp("meshes", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->meshes.v,
+      } else if (strcmp("meshes", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->meshes.v,
               &gltf->meshes.n, sizeof *gltf->meshes.v, parse_meshes,
               &gltf->meshes) != 0)
           return -1;
-      } else if (strcmp("skins", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->skins.v,
+      } else if (strcmp("skins", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->skins.v,
               &gltf->skins.n, sizeof *gltf->skins.v, parse_skins,
               &gltf->skins) != 0)
           return -1;
-      } else if (strcmp("materials", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->materials.v,
+      } else if (strcmp("materials", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->materials.v,
               &gltf->materials.n, sizeof *gltf->materials.v, parse_materials,
               &gltf->materials) != 0)
           return -1;
-      } else if (strcmp("animations", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->animations.v,
+      } else if (strcmp("animations", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->animations.v,
               &gltf->animations.n, sizeof *gltf->animations.v,
               parse_animations, &gltf->animations) != 0)
           return -1;
-      } else if (strcmp("accessors", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->accessors.v,
+      } else if (strcmp("accessors", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->accessors.v,
               &gltf->accessors.n, sizeof *gltf->accessors.v, parse_accessors,
               &gltf->accessors) != 0)
           return -1;
-      } else if (strcmp("bufferViews", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->bufferviews.v,
+      } else if (strcmp("bufferViews", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->bufferviews.v,
               &gltf->bufferviews.n, sizeof *gltf->bufferviews.v,
               parse_bufferviews, &gltf->bufferviews) != 0)
           return -1;
-      } else if (strcmp("buffers", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->buffers.v,
+      } else if (strcmp("buffers", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->buffers.v,
               &gltf->buffers.n, sizeof *gltf->buffers.v, parse_buffers,
               &gltf->buffers) != 0)
           return -1;
-      } else if (strcmp("textures", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->textures.v,
+      } else if (strcmp("textures", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->textures.v,
               &gltf->textures.n, sizeof *gltf->textures.v, parse_textures,
               &gltf->textures) != 0)
           return -1;
-      } else if (strcmp("images", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->images.v,
+      } else if (strcmp("images", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->images.v,
               &gltf->images.n, sizeof *gltf->images.v, parse_images,
               &gltf->images) != 0)
           return -1;
-      } else if (strcmp("samplers", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&gltf->samplers.v,
+      } else if (strcmp("samplers", token->data) == 0) {
+        if (parse_array(file, token, (void **)&gltf->samplers.v,
               &gltf->samplers.n, sizeof *gltf->samplers.v, parse_samplers,
               &gltf->samplers) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1080,45 +1080,45 @@ static int parse_gltf(FILE *file, T_symbol *symbol, T_gltf *gltf)
   return 0;
 }
 
-static int parse_asset(FILE *file, T_symbol *symbol, T_asset *asset)
+static int parse_asset(FILE *file, T_token *token, T_asset *asset)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(asset != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "asset") == 0);
+  assert(token->token == YF_TOKEN_STR);
+  assert(strcmp(token->data, "asset") == 0);
 
-  next_symbol(file, symbol); /* ':' */
-  next_symbol(file, symbol); /* '{' */
+  next_token(file, token); /* ':' */
+  next_token(file, token); /* '{' */
 
-  if (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '{') {
+  if (token->token != YF_TOKEN_OP || token->data[0] != '{') {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("copyright", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &asset->copyright) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("copyright", token->data) == 0) {
+        if (parse_str(file, token, &asset->copyright) != 0)
           return -1;
-      } else if (strcmp("generator", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &asset->generator) != 0)
+      } else if (strcmp("generator", token->data) == 0) {
+        if (parse_str(file, token, &asset->generator) != 0)
           return -1;
-      } else if (strcmp("version", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &asset->version) != 0)
+      } else if (strcmp("version", token->data) == 0) {
+        if (parse_str(file, token, &asset->version) != 0)
           return -1;
-      } else if (strcmp("minVersion", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &asset->min_version) != 0)
+      } else if (strcmp("minVersion", token->data) == 0) {
+        if (parse_str(file, token, &asset->min_version) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1131,48 +1131,48 @@ static int parse_asset(FILE *file, T_symbol *symbol, T_asset *asset)
   return 0;
 }
 
-static int parse_scene(FILE *file, T_symbol *symbol, T_int *scene)
+static int parse_scene(FILE *file, T_token *token, T_int *scene)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(scene != NULL);
-  assert(symbol->symbol == YF_SYMBOL_STR);
-  assert(strcmp(symbol->tokens, "scene") == 0);
+  assert(token->token == YF_TOKEN_STR);
+  assert(strcmp(token->data, "scene") == 0);
 
-  return parse_int(file, symbol, scene);
+  return parse_int(file, token, scene);
 }
 
-static int parse_scenes(FILE *file, T_symbol *symbol,
+static int parse_scenes(FILE *file, T_token *token,
     size_t index, void *scenes_p)
 {
   T_scenes *scenes = scenes_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(scenes != NULL);
   assert(index < scenes->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("nodes", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&scenes->v[index].nodes,
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("nodes", token->data) == 0) {
+        if (parse_array(file, token, (void **)&scenes->v[index].nodes,
               &scenes->v[index].node_n, sizeof *scenes->v[index].nodes,
               parse_int_array, &scenes->v[index].nodes) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &scenes->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &scenes->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1185,91 +1185,91 @@ static int parse_scenes(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_nodes(FILE *file, T_symbol *symbol,
+static int parse_nodes(FILE *file, T_token *token,
     size_t index, void *nodes_p)
 {
   T_nodes *nodes = nodes_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(nodes != NULL);
   assert(index < nodes->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   nodes->v[index].mesh = YF_INT_MIN;
   nodes->v[index].camera = YF_INT_MIN;
   nodes->v[index].skin = YF_INT_MIN;
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("children", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&nodes->v[index].children,
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("children", token->data) == 0) {
+        if (parse_array(file, token, (void **)&nodes->v[index].children,
               &nodes->v[index].child_n, sizeof *nodes->v[index].children,
               parse_int_array, &nodes->v[index].children) != 0)
           return -1;
-      } else if (strcmp("camera", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &nodes->v[index].camera) != 0)
+      } else if (strcmp("camera", token->data) == 0) {
+        if (parse_int(file, token, &nodes->v[index].camera) != 0)
           return -1;
-      } else if (strcmp("mesh", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &nodes->v[index].mesh) != 0)
+      } else if (strcmp("mesh", token->data) == 0) {
+        if (parse_int(file, token, &nodes->v[index].mesh) != 0)
           return -1;
-      } else if (strcmp("matrix", symbol->tokens) == 0) {
+      } else if (strcmp("matrix", token->data) == 0) {
         nodes->v[index].xform_mask = YF_GLTF_XFORM_M;
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* [ */
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '[' */
         for (size_t i = 0; i < 16; ++i) {
-          if (parse_num(file, symbol, nodes->v[index].matrix+i) != 0)
+          if (parse_num(file, token, nodes->v[index].matrix+i) != 0)
             return -1;
         }
-        next_symbol(file, symbol); /* ']' */
-      } else if (strcmp("translation", symbol->tokens) == 0) {
+        next_token(file, token); /* ']' */
+      } else if (strcmp("translation", token->data) == 0) {
         nodes->v[index].xform_mask |= YF_GLTF_XFORM_T;
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* [ */
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '[' */
         for (size_t i = 0; i < 3; ++i) {
-          if (parse_num(file, symbol, nodes->v[index].trs.t+i) != 0)
+          if (parse_num(file, token, nodes->v[index].trs.t+i) != 0)
             return -1;
         }
-        next_symbol(file, symbol); /* ']' */
-      } else if (strcmp("rotation", symbol->tokens) == 0) {
+        next_token(file, token); /* ']' */
+      } else if (strcmp("rotation", token->data) == 0) {
         nodes->v[index].xform_mask |= YF_GLTF_XFORM_R;
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* [ */
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '[' */
         for (size_t i = 0; i < 4; ++i) {
-          if (parse_num(file, symbol, nodes->v[index].trs.r+i) != 0)
+          if (parse_num(file, token, nodes->v[index].trs.r+i) != 0)
             return -1;
         }
-        next_symbol(file, symbol); /* ']' */
-      } else if (strcmp("scale", symbol->tokens) == 0) {
+        next_token(file, token); /* ']' */
+      } else if (strcmp("scale", token->data) == 0) {
         nodes->v[index].xform_mask |= YF_GLTF_XFORM_S;
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* [ */
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '[' */
         for (size_t i = 0; i < 3; ++i) {
-          if (parse_num(file, symbol, nodes->v[index].trs.s+i) != 0)
+          if (parse_num(file, token, nodes->v[index].trs.s+i) != 0)
             return -1;
         }
-        next_symbol(file, symbol); /* ']' */
-      } else if (strcmp("skin", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &nodes->v[index].skin) != 0)
+        next_token(file, token); /* ']' */
+      } else if (strcmp("skin", token->data) == 0) {
+        if (parse_int(file, token, &nodes->v[index].skin) != 0)
           return -1;
-      } else if (strcmp("weights", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&nodes->v[index].weights,
+      } else if (strcmp("weights", token->data) == 0) {
+        if (parse_array(file, token, (void **)&nodes->v[index].weights,
               &nodes->v[index].weight_n, sizeof *nodes->v[index].weights,
               parse_num_array, &nodes->v[index].weights) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &nodes->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &nodes->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}') {
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}') {
         const unsigned mask = nodes->v[index].xform_mask;
         if (mask != YF_GLTF_XFORM_NONE && !(mask & YF_GLTF_XFORM_M)) {
           if (!(mask & YF_GLTF_XFORM_R))
@@ -1293,108 +1293,108 @@ static int parse_nodes(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_cameras(FILE *file, T_symbol *symbol,
+static int parse_cameras(FILE *file, T_token *token,
     size_t index, void *cameras_p)
 {
   T_cameras *cameras = cameras_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(cameras != NULL);
   assert(index < cameras->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("type", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol);
-        if (strcmp("perspective", symbol->tokens) == 0) {
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("type", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token);
+        if (strcmp("perspective", token->data) == 0) {
           cameras->v[index].type = YF_GLTF_CAMERA_PERSP;
-        } else if (strcmp("orthographic", symbol->tokens) == 0) {
+        } else if (strcmp("orthographic", token->data) == 0) {
           cameras->v[index].type = YF_GLTF_CAMERA_ORTHO;
         } else {
           yf_seterr(YF_ERR_INVFILE, __func__);
           return -1;
         }
-      } else if (strcmp("perspective", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* '{' */
+      } else if (strcmp("perspective", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '{' */
         do {
-          switch (next_symbol(file, symbol)) {
-          case YF_SYMBOL_STR:
-            if (strcmp("yfov", symbol->tokens) == 0) {
-              if (parse_num(file, symbol, &cameras->v[index].persp.yfov) != 0)
+          switch (next_token(file, token)) {
+          case YF_TOKEN_STR:
+            if (strcmp("yfov", token->data) == 0) {
+              if (parse_num(file, token, &cameras->v[index].persp.yfov) != 0)
                 return -1;
-            } else if (strcmp("aspectRatio", symbol->tokens) == 0) {
-              if (parse_num(file, symbol,
+            } else if (strcmp("aspectRatio", token->data) == 0) {
+              if (parse_num(file, token,
                     &cameras->v[index].persp.aspect_ratio) != 0)
                 return -1;
-            } else if (strcmp("znear", symbol->tokens) == 0) {
-              if (parse_num(file, symbol, &cameras->v[index].persp.znear) != 0)
+            } else if (strcmp("znear", token->data) == 0) {
+              if (parse_num(file, token, &cameras->v[index].persp.znear) != 0)
                 return -1;
-            } else if (strcmp("zfar", symbol->tokens) == 0) {
-              if (parse_num(file, symbol, &cameras->v[index].persp.zfar) != 0)
+            } else if (strcmp("zfar", token->data) == 0) {
+              if (parse_num(file, token, &cameras->v[index].persp.zfar) != 0)
                 return -1;
             } else {
-              if (consume_prop(file, symbol) != 0)
+              if (consume_prop(file, token) != 0)
                 return -1;
             }
             break;
 
-          case YF_SYMBOL_OP:
+          case YF_TOKEN_OP:
             break;
 
           default:
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
           }
-        } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
-      } else if (strcmp("orthographic", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* '{' */
+        } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+      } else if (strcmp("orthographic", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '{' */
         do {
-          switch (next_symbol(file, symbol)) {
-          case YF_SYMBOL_STR:
-            if (strcmp("xmag", symbol->tokens) == 0) {
-              if (parse_num(file, symbol, &cameras->v[index].ortho.xmag) != 0)
+          switch (next_token(file, token)) {
+          case YF_TOKEN_STR:
+            if (strcmp("xmag", token->data) == 0) {
+              if (parse_num(file, token, &cameras->v[index].ortho.xmag) != 0)
                 return -1;
-            } else if (strcmp("ymag", symbol->tokens) == 0) {
-              if (parse_num(file, symbol, &cameras->v[index].ortho.ymag) != 0)
+            } else if (strcmp("ymag", token->data) == 0) {
+              if (parse_num(file, token, &cameras->v[index].ortho.ymag) != 0)
                 return -1;
-            } else if (strcmp("znear", symbol->tokens) == 0) {
-              if (parse_num(file, symbol, &cameras->v[index].ortho.znear) != 0)
+            } else if (strcmp("znear", token->data) == 0) {
+              if (parse_num(file, token, &cameras->v[index].ortho.znear) != 0)
                 return -1;
-            } else if (strcmp("zfar", symbol->tokens) == 0) {
-              if (parse_num(file, symbol, &cameras->v[index].ortho.zfar) != 0)
+            } else if (strcmp("zfar", token->data) == 0) {
+              if (parse_num(file, token, &cameras->v[index].ortho.zfar) != 0)
                 return -1;
             } else {
-              if (consume_prop(file, symbol) != 0)
+              if (consume_prop(file, token) != 0)
                 return -1;
             }
             break;
 
-          case YF_SYMBOL_OP:
+          case YF_TOKEN_OP:
             break;
 
           default:
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
           }
-        } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &cameras->v[index].name) != 0)
+        } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &cameras->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1407,42 +1407,42 @@ static int parse_cameras(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_targets(FILE *file, T_symbol *symbol,
+static int parse_targets(FILE *file, T_token *token,
     size_t index, void *targets_p)
 {
   T_targets *targets = targets_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(targets != NULL);
   assert(index < targets->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   targets->v[index].position = YF_INT_MIN;
   targets->v[index].normal = YF_INT_MIN;
   targets->v[index].tangent = YF_INT_MIN;
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("POSITION", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &targets->v[index].position) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("POSITION", token->data) == 0) {
+        if (parse_int(file, token, &targets->v[index].position) != 0)
           return -1;
-      } else if (strcmp("NORMAL", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &targets->v[index].normal) != 0)
+      } else if (strcmp("NORMAL", token->data) == 0) {
+        if (parse_int(file, token, &targets->v[index].normal) != 0)
           return -1;
-      } else if (strcmp("TANGENT", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &targets->v[index].tangent) != 0)
+      } else if (strcmp("TANGENT", token->data) == 0) {
+        if (parse_int(file, token, &targets->v[index].tangent) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1455,17 +1455,17 @@ static int parse_targets(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_primitives(FILE *file, T_symbol *symbol,
+static int parse_primitives(FILE *file, T_token *token,
     size_t index, void *primitives_p)
 {
   T_primitives *primitives = primitives_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(primitives != NULL);
   assert(index < primitives->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   primitives->v[index].indices = YF_INT_MIN;
   primitives->v[index].material = YF_INT_MIN;
@@ -1474,92 +1474,92 @@ static int parse_primitives(FILE *file, T_symbol *symbol,
     primitives->v[index].attributes[i] = YF_INT_MIN;
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("attributes", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* '{' */
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("attributes", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '{' */
         do {
-          switch (next_symbol(file, symbol)) {
-          case YF_SYMBOL_STR:
-            if (strcmp("POSITION", symbol->tokens) == 0) {
-              if (parse_int(file, symbol,
+          switch (next_token(file, token)) {
+          case YF_TOKEN_STR:
+            if (strcmp("POSITION", token->data) == 0) {
+              if (parse_int(file, token,
                     &primitives->v[index].attributes[YF_GLTF_ATTR_POS])
                   != 0)
                 return -1;
-            } else if (strcmp("NORMAL", symbol->tokens) == 0) {
-              if (parse_int(file, symbol,
+            } else if (strcmp("NORMAL", token->data) == 0) {
+              if (parse_int(file, token,
                     &primitives->v[index].attributes[YF_GLTF_ATTR_NORM])
                   != 0)
                 return -1;
-            } else if (strcmp("TANGENT", symbol->tokens) == 0) {
-              if (parse_int(file, symbol,
+            } else if (strcmp("TANGENT", token->data) == 0) {
+              if (parse_int(file, token,
                     &primitives->v[index].attributes[YF_GLTF_ATTR_TAN])
                   != 0)
                 return -1;
-            } else if (strcmp("TEXCOORD_0", symbol->tokens) == 0) {
-              if (parse_int(file, symbol,
+            } else if (strcmp("TEXCOORD_0", token->data) == 0) {
+              if (parse_int(file, token,
                     &primitives->v[index].attributes[YF_GLTF_ATTR_TC0])
                   != 0)
                 return -1;
-            } else if (strcmp("TEXCOORD_1", symbol->tokens) == 0) {
-              if (parse_int(file, symbol,
+            } else if (strcmp("TEXCOORD_1", token->data) == 0) {
+              if (parse_int(file, token,
                     &primitives->v[index].attributes[YF_GLTF_ATTR_TC1])
                   != 0)
                 return -1;
-            } else if (strcmp("COLOR_0", symbol->tokens) == 0) {
-              if (parse_int(file, symbol,
+            } else if (strcmp("COLOR_0", token->data) == 0) {
+              if (parse_int(file, token,
                     &primitives->v[index].attributes[YF_GLTF_ATTR_CLR0])
                   != 0)
                 return -1;
-            } else if (strcmp("JOINTS_0", symbol->tokens) == 0) {
-              if (parse_int(file, symbol,
+            } else if (strcmp("JOINTS_0", token->data) == 0) {
+              if (parse_int(file, token,
                     &primitives->v[index].attributes[YF_GLTF_ATTR_JNT0])
                   != 0)
                 return -1;
-            } else if (strcmp("WEIGHTS_0", symbol->tokens) == 0) {
-              if (parse_int(file, symbol,
+            } else if (strcmp("WEIGHTS_0", token->data) == 0) {
+              if (parse_int(file, token,
                     &primitives->v[index].attributes[YF_GLTF_ATTR_WGT0])
                   != 0)
                 return -1;
             } else {
-              if (consume_prop(file, symbol) != 0)
+              if (consume_prop(file, token) != 0)
                 return -1;
             }
             break;
 
-          case YF_SYMBOL_OP:
+          case YF_TOKEN_OP:
             break;
 
           default:
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
           }
-        } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
-      } else if (strcmp("indices", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &primitives->v[index].indices) != 0)
+        } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+      } else if (strcmp("indices", token->data) == 0) {
+        if (parse_int(file, token, &primitives->v[index].indices) != 0)
           return -1;
-      } else if (strcmp("material", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &primitives->v[index].material) != 0)
+      } else if (strcmp("material", token->data) == 0) {
+        if (parse_int(file, token, &primitives->v[index].material) != 0)
           return -1;
-      } else if (strcmp("mode", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &primitives->v[index].mode) != 0)
+      } else if (strcmp("mode", token->data) == 0) {
+        if (parse_int(file, token, &primitives->v[index].mode) != 0)
           return -1;
-      } else if (strcmp("targets", symbol->tokens) == 0) {
-        if (parse_array(file, symbol,
+      } else if (strcmp("targets", token->data) == 0) {
+        if (parse_array(file, token,
               (void **)&primitives->v[index].targets.v,
               &primitives->v[index].targets.n,
               sizeof *primitives->v[index].targets.v,
               parse_targets, &primitives->v[index].targets) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1572,44 +1572,44 @@ static int parse_primitives(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_meshes(FILE *file, T_symbol *symbol,
+static int parse_meshes(FILE *file, T_token *token,
     size_t index, void *meshes_p)
 {
   T_meshes *meshes = meshes_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(meshes != NULL);
   assert(index < meshes->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("primitives", symbol->tokens) == 0) {
-        if (parse_array(file, symbol,
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("primitives", token->data) == 0) {
+        if (parse_array(file, token,
               (void **)&meshes->v[index].primitives.v,
               &meshes->v[index].primitives.n,
               sizeof *meshes->v[index].primitives.v,
               parse_primitives, &meshes->v[index].primitives) != 0)
           return -1;
-      } else if (strcmp("weights", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&meshes->v[index].weights,
+      } else if (strcmp("weights", token->data) == 0) {
+        if (parse_array(file, token, (void **)&meshes->v[index].weights,
               &meshes->v[index].weight_n, sizeof *meshes->v[index].weights,
               parse_num_array, &meshes->v[index].weights) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &meshes->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &meshes->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1622,46 +1622,46 @@ static int parse_meshes(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_skins(FILE *file, T_symbol *symbol,
+static int parse_skins(FILE *file, T_token *token,
     size_t index, void *skins_p)
 {
   T_skins *skins = skins_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(skins != NULL);
   assert(index < skins->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   skins->v[index].inv_bind_matrices = YF_INT_MIN;
   skins->v[index].skeleton = YF_INT_MIN;
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("inverseBindMatrices", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &skins->v[index].inv_bind_matrices) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("inverseBindMatrices", token->data) == 0) {
+        if (parse_int(file, token, &skins->v[index].inv_bind_matrices) != 0)
           return -1;
-      } else if (strcmp("skeleton", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &skins->v[index].skeleton) != 0)
+      } else if (strcmp("skeleton", token->data) == 0) {
+        if (parse_int(file, token, &skins->v[index].skeleton) != 0)
           return -1;
-      } else if (strcmp("joints", symbol->tokens) == 0) {
-        if (parse_array(file, symbol, (void **)&skins->v[index].joints,
+      } else if (strcmp("joints", token->data) == 0) {
+        if (parse_array(file, token, (void **)&skins->v[index].joints,
               &skins->v[index].joint_n, sizeof *skins->v[index].joints,
               parse_int_array, &skins->v[index].joints) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &skins->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &skins->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1674,37 +1674,37 @@ static int parse_skins(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_textureinfo(FILE *file, T_symbol *symbol,
+static int parse_textureinfo(FILE *file, T_token *token,
     T_textureinfo *textureinfo)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(textureinfo != NULL);
   assert(textureinfo->tex_coord == 0);
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("index", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &textureinfo->index) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("index", token->data) == 0) {
+        if (parse_int(file, token, &textureinfo->index) != 0)
           return -1;
-      } else if (strcmp("texCoord", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &textureinfo->tex_coord) != 0)
+      } else if (strcmp("texCoord", token->data) == 0) {
+        if (parse_int(file, token, &textureinfo->tex_coord) != 0)
           return -1;
-      } else if (strcmp("scale", symbol->tokens) == 0) {
-        if (parse_num(file, symbol, &textureinfo->scale) != 0)
+      } else if (strcmp("scale", token->data) == 0) {
+        if (parse_num(file, token, &textureinfo->scale) != 0)
           return -1;
-      } else if (strcmp("strength", symbol->tokens) == 0) {
-        if (parse_num(file, symbol, &textureinfo->strength) != 0)
+      } else if (strcmp("strength", token->data) == 0) {
+        if (parse_num(file, token, &textureinfo->strength) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1717,17 +1717,17 @@ static int parse_textureinfo(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_materials(FILE *file, T_symbol *symbol,
+static int parse_materials(FILE *file, T_token *token,
     size_t index, void *materials_p)
 {
   T_materials *materials = materials_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(materials != NULL);
   assert(index < materials->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   materials->v[index].pbrmr.base_clr_fac[0] = 1.0;
   materials->v[index].pbrmr.base_clr_fac[1] = 1.0;
@@ -1745,108 +1745,106 @@ static int parse_materials(FILE *file, T_symbol *symbol,
   materials->v[index].alpha_cutoff = 0.5;
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("pbrMetallicRoughness", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* '{' */
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("pbrMetallicRoughness", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '{' */
         do {
-          switch (next_symbol(file, symbol)) {
-          case YF_SYMBOL_STR:
-            if (strcmp("baseColorFactor", symbol->tokens) == 0) {
-              next_symbol(file, symbol); /* ':' */
-              next_symbol(file, symbol); /* [ */
+          switch (next_token(file, token)) {
+          case YF_TOKEN_STR:
+            if (strcmp("baseColorFactor", token->data) == 0) {
+              next_token(file, token); /* ':' */
+              next_token(file, token); /* '[' */
               for (size_t i = 0; i < 4; ++i) {
-                if (parse_num(file, symbol,
+                if (parse_num(file, token,
                       materials->v[index].pbrmr.base_clr_fac+i) != 0)
                   return -1;
               }
-              next_symbol(file, symbol); /* ']' */
-            } else if (strcmp("baseColorTexture", symbol->tokens) == 0) {
-              if (parse_textureinfo(file, symbol,
+              next_token(file, token); /* ']' */
+            } else if (strcmp("baseColorTexture", token->data) == 0) {
+              if (parse_textureinfo(file, token,
                     &materials->v[index].pbrmr.base_clr_tex) != 0)
                 return -1;
-              next_symbol(file, symbol); /* ',' } */
-            } else if (strcmp("metallicFactor", symbol->tokens) == 0) {
-              if (parse_num(file, symbol,
+              next_token(file, token); /* ',' } */
+            } else if (strcmp("metallicFactor", token->data) == 0) {
+              if (parse_num(file, token,
                     &materials->v[index].pbrmr.metallic_fac) != 0)
                 return -1;
-            } else if (strcmp("roughnessFactor", symbol->tokens) == 0) {
-              if (parse_num(file, symbol,
+            } else if (strcmp("roughnessFactor", token->data) == 0) {
+              if (parse_num(file, token,
                     &materials->v[index].pbrmr.roughness_fac) != 0)
                 return -1;
-            } else if (strcmp("metallicRoughnessTexture",
-                  symbol->tokens) == 0)
-            {
-              if (parse_textureinfo(file, symbol,
+            } else if (strcmp("metallicRoughnessTexture", token->data) == 0) {
+              if (parse_textureinfo(file, token,
                     &materials->v[index].pbrmr.metal_rough_tex) != 0)
                 return -1;
-              next_symbol(file, symbol); /* ',' } */
+              next_token(file, token); /* ',' } */
             } else {
-              if (consume_prop(file, symbol) != 0)
+              if (consume_prop(file, token) != 0)
                 return -1;
             }
             break;
 
-          case YF_SYMBOL_OP:
+          case YF_TOKEN_OP:
             break;
 
           default:
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
           }
-        } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
-      } else if (strcmp("normalTexture", symbol->tokens) == 0) {
-        if (parse_textureinfo(file, symbol, &materials->v[index].normal_tex)
+        } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+      } else if (strcmp("normalTexture", token->data) == 0) {
+        if (parse_textureinfo(file, token, &materials->v[index].normal_tex)
             != 0)
           return -1;
-      } else if (strcmp("occlusionTexture", symbol->tokens) == 0) {
-        if (parse_textureinfo(file, symbol,
+      } else if (strcmp("occlusionTexture", token->data) == 0) {
+        if (parse_textureinfo(file, token,
               &materials->v[index].occlusion_tex) != 0)
           return -1;
-      } else if (strcmp("emissiveFactor", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* [ */
+      } else if (strcmp("emissiveFactor", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '[' */
         for (size_t i = 0; i < 3; ++i) {
-          if (parse_num(file, symbol, materials->v[index].emissive_fac+i)
+          if (parse_num(file, token, materials->v[index].emissive_fac+i)
               != 0)
             return -1;
         }
-        next_symbol(file, symbol); /* ']' */
-      } else if (strcmp("emissiveTexture", symbol->tokens) == 0) {
-        if (parse_textureinfo(file, symbol,
+        next_token(file, token); /* ']' */
+      } else if (strcmp("emissiveTexture", token->data) == 0) {
+        if (parse_textureinfo(file, token,
               &materials->v[index].emissive_tex) != 0)
           return -1;
-      } else if (strcmp("alphaMode", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol);
-        if (strcmp("OPAQUE", symbol->tokens) == 0) {
+      } else if (strcmp("alphaMode", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token);
+        if (strcmp("OPAQUE", token->data) == 0) {
           materials->v[index].alpha_mode = YF_GLTF_ALPHA_OPAQUE;
-        } else if (strcmp("MASK", symbol->tokens) == 0) {
+        } else if (strcmp("MASK", token->data) == 0) {
           materials->v[index].alpha_mode = YF_GLTF_ALPHA_MASK;
-        } else if (strcmp("BLEND", symbol->tokens) == 0) {
+        } else if (strcmp("BLEND", token->data) == 0) {
           materials->v[index].alpha_mode = YF_GLTF_ALPHA_BLEND;
         } else {
           yf_seterr(YF_ERR_INVFILE, __func__);
           return -1;
         }
-      } else if (strcmp("alphaCutoff", symbol->tokens) == 0) {
-        if (parse_num(file, symbol, &materials->v[index].alpha_cutoff) != 0)
+      } else if (strcmp("alphaCutoff", token->data) == 0) {
+        if (parse_num(file, token, &materials->v[index].alpha_cutoff) != 0)
           return -1;
-      } else if (strcmp("doubleSided", symbol->tokens) == 0) {
-        if (parse_bool(file, symbol, &materials->v[index].double_sided) != 0)
+      } else if (strcmp("doubleSided", token->data) == 0) {
+        if (parse_bool(file, token, &materials->v[index].double_sided) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &materials->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &materials->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1859,70 +1857,70 @@ static int parse_materials(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_channels(FILE *file, T_symbol *symbol,
+static int parse_channels(FILE *file, T_token *token,
     size_t index, void *channels_p)
 {
   T_channels *channels = channels_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(channels != NULL);
   assert(index < channels->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("sampler", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &channels->v[index].sampler) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("sampler", token->data) == 0) {
+        if (parse_int(file, token, &channels->v[index].sampler) != 0)
           return -1;
-      } else if (strcmp("target", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* '{' */
+      } else if (strcmp("target", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '{' */
         do {
-          switch (next_symbol(file, symbol)) {
-          case YF_SYMBOL_STR:
-            if (strcmp("node", symbol->tokens) == 0) {
-              if (parse_int(file, symbol, &channels->v[index].target.node) != 0)
+          switch (next_token(file, token)) {
+          case YF_TOKEN_STR:
+            if (strcmp("node", token->data) == 0) {
+              if (parse_int(file, token, &channels->v[index].target.node) != 0)
                 return -1;
-            } else if (strcmp("path", symbol->tokens) == 0) {
-              next_symbol(file, symbol); /* ':' */
-              next_symbol(file, symbol);
-              if (strcmp("translation", symbol->tokens) == 0) {
+            } else if (strcmp("path", token->data) == 0) {
+              next_token(file, token); /* ':' */
+              next_token(file, token);
+              if (strcmp("translation", token->data) == 0) {
                 channels->v[index].target.path = YF_GLTF_PATH_XLATE;
-              } else if (strcmp("rotation", symbol->tokens) == 0) {
+              } else if (strcmp("rotation", token->data) == 0) {
                 channels->v[index].target.path = YF_GLTF_PATH_ROTATE;
-              } else if (strcmp("scale", symbol->tokens) == 0) {
+              } else if (strcmp("scale", token->data) == 0) {
                 channels->v[index].target.path = YF_GLTF_PATH_SCALE;
-              } else if (strcmp("weights", symbol->tokens) == 0) {
+              } else if (strcmp("weights", token->data) == 0) {
                 channels->v[index].target.path = YF_GLTF_PATH_WEIGHT;
               } else {
                 yf_seterr(YF_ERR_INVFILE, __func__);
                 return -1;
               }
             } else {
-              if (consume_prop(file, symbol) != 0)
+              if (consume_prop(file, token) != 0)
                 return -1;
             }
             break;
 
-          case YF_SYMBOL_OP:
+          case YF_TOKEN_OP:
             break;
 
           default:
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
           }
-        } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
+        } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1935,48 +1933,48 @@ static int parse_channels(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_asamplers(FILE *file, T_symbol *symbol,
+static int parse_asamplers(FILE *file, T_token *token,
     size_t index, void *asamplers_p)
 {
   T_asamplers *asamplers = asamplers_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(asamplers != NULL);
   assert(index < asamplers->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("input", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &asamplers->v[index].input) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("input", token->data) == 0) {
+        if (parse_int(file, token, &asamplers->v[index].input) != 0)
           return -1;
-      } else if (strcmp("output", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &asamplers->v[index].output) != 0)
+      } else if (strcmp("output", token->data) == 0) {
+        if (parse_int(file, token, &asamplers->v[index].output) != 0)
           return -1;
-      } else if (strcmp("interpolation", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol);
-        if (strcmp("LINEAR", symbol->tokens) == 0) {
+      } else if (strcmp("interpolation", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token);
+        if (strcmp("LINEAR", token->data) == 0) {
           asamplers->v[index].interpolation = YF_GLTF_ERP_LINEAR;
-        } else if (strcmp("STEP", symbol->tokens) == 0) {
+        } else if (strcmp("STEP", token->data) == 0) {
           asamplers->v[index].interpolation = YF_GLTF_ERP_STEP;
-        } else if (strcmp("CUBICSPLINE", symbol->tokens) == 0) {
+        } else if (strcmp("CUBICSPLINE", token->data) == 0) {
           asamplers->v[index].interpolation = YF_GLTF_ERP_CUBIC;
         } else {
           yf_seterr(YF_ERR_INVFILE, __func__);
           return -1;
         }
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -1989,46 +1987,46 @@ static int parse_asamplers(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_animations(FILE *file, T_symbol *symbol,
+static int parse_animations(FILE *file, T_token *token,
     size_t index, void *animations_p)
 {
   T_animations *animations = animations_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(animations != NULL);
   assert(index < animations->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("channels", symbol->tokens) == 0) {
-        if (parse_array(file, symbol,
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("channels", token->data) == 0) {
+        if (parse_array(file, token,
               (void **)&animations->v[index].channels.v,
               &animations->v[index].channels.n,
               sizeof *animations->v[index].channels.v,
               parse_channels, &animations->v[index].channels) != 0)
           return -1;
-      } else if (strcmp("samplers", symbol->tokens) == 0) {
-        if (parse_array(file, symbol,
+      } else if (strcmp("samplers", token->data) == 0) {
+        if (parse_array(file, token,
               (void **)&animations->v[index].samplers.v,
               &animations->v[index].samplers.n,
               sizeof *animations->v[index].samplers.v,
               parse_asamplers, &animations->v[index].samplers) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &animations->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &animations->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -2041,81 +2039,81 @@ static int parse_animations(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_sparse(FILE *file, T_symbol *symbol, T_sparse *sparse)
+static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
 {
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(sparse != NULL);
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("count", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &sparse->count) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("count", token->data) == 0) {
+        if (parse_int(file, token, &sparse->count) != 0)
           return -1;
-      } else if (strcmp("indices", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* '{' */
+      } else if (strcmp("indices", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '{' */
         do {
-          switch (next_symbol(file, symbol)) {
-          case YF_SYMBOL_STR:
-            if (strcmp("bufferView", symbol->tokens) == 0) {
-              if (parse_int(file, symbol, &sparse->indices.buffer_view) != 0)
+          switch (next_token(file, token)) {
+          case YF_TOKEN_STR:
+            if (strcmp("bufferView", token->data) == 0) {
+              if (parse_int(file, token, &sparse->indices.buffer_view) != 0)
                 return -1;
-            } else if (strcmp("byteOffset", symbol->tokens) == 0) {
-              if (parse_int(file, symbol, &sparse->indices.byte_off) != 0)
+            } else if (strcmp("byteOffset", token->data) == 0) {
+              if (parse_int(file, token, &sparse->indices.byte_off) != 0)
                 return -1;
-            } else if (strcmp("componentType", symbol->tokens) == 0) {
-              if (parse_int(file, symbol, &sparse->indices.comp_type) != 0)
+            } else if (strcmp("componentType", token->data) == 0) {
+              if (parse_int(file, token, &sparse->indices.comp_type) != 0)
                 return -1;
             } else {
-              if (consume_prop(file, symbol) != 0)
+              if (consume_prop(file, token) != 0)
                 return -1;
             }
             break;
 
-          case YF_SYMBOL_OP:
+          case YF_TOKEN_OP:
             break;
 
           default:
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
           }
-        } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
-      } else if (strcmp("values", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* '{' */
+        } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+      } else if (strcmp("values", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '{' */
         do {
-          switch (next_symbol(file, symbol)) {
-          case YF_SYMBOL_STR:
-            if (strcmp("bufferView", symbol->tokens) == 0) {
-              if (parse_int(file, symbol, &sparse->values.buffer_view) != 0)
+          switch (next_token(file, token)) {
+          case YF_TOKEN_STR:
+            if (strcmp("bufferView", token->data) == 0) {
+              if (parse_int(file, token, &sparse->values.buffer_view) != 0)
                 return -1;
-            } else if (strcmp("byteOffset", symbol->tokens) == 0) {
-              if (parse_int(file, symbol, &sparse->values.byte_off) != 0)
+            } else if (strcmp("byteOffset", token->data) == 0) {
+              if (parse_int(file, token, &sparse->values.byte_off) != 0)
                 return -1;
             } else {
-              if (consume_prop(file, symbol) != 0)
+              if (consume_prop(file, token) != 0)
                 return -1;
             }
             break;
 
-          case YF_SYMBOL_OP:
+          case YF_TOKEN_OP:
             break;
 
           default:
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
           }
-        } while (symbol->symbol != YF_SYMBOL_OP || symbol->tokens[0] != '}');
+        } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -2128,95 +2126,95 @@ static int parse_sparse(FILE *file, T_symbol *symbol, T_sparse *sparse)
   return 0;
 }
 
-static int parse_accessors(FILE *file, T_symbol *symbol,
+static int parse_accessors(FILE *file, T_token *token,
     size_t index, void *accessors_p)
 {
   T_accessors *accessors = accessors_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(accessors != NULL);
   assert(index < accessors->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   accessors->v[index].buffer_view = YF_INT_MIN;
   accessors->v[index].sparse.indices.buffer_view = YF_INT_MIN;
   accessors->v[index].sparse.values.buffer_view = YF_INT_MIN;
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("bufferView", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &accessors->v[index].buffer_view) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("bufferView", token->data) == 0) {
+        if (parse_int(file, token, &accessors->v[index].buffer_view) != 0)
           return -1;
-      } else if (strcmp("byteOffset", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &accessors->v[index].byte_off) != 0)
+      } else if (strcmp("byteOffset", token->data) == 0) {
+        if (parse_int(file, token, &accessors->v[index].byte_off) != 0)
           return -1;
-      } else if (strcmp("count", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &accessors->v[index].count) != 0)
+      } else if (strcmp("count", token->data) == 0) {
+        if (parse_int(file, token, &accessors->v[index].count) != 0)
           return -1;
-      } else if (strcmp("componentType", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &accessors->v[index].comp_type) != 0)
+      } else if (strcmp("componentType", token->data) == 0) {
+        if (parse_int(file, token, &accessors->v[index].comp_type) != 0)
           return -1;
-      } else if (strcmp("type", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol);
-        if (strcmp("SCALAR", symbol->tokens) == 0) {
+      } else if (strcmp("type", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token);
+        if (strcmp("SCALAR", token->data) == 0) {
           accessors->v[index].type = YF_GLTF_TYPE_SCALAR;
-        } else if (strcmp("VEC2", symbol->tokens) == 0) {
+        } else if (strcmp("VEC2", token->data) == 0) {
           accessors->v[index].type = YF_GLTF_TYPE_VEC2;
-        } else if (strcmp("VEC3", symbol->tokens) == 0) {
+        } else if (strcmp("VEC3", token->data) == 0) {
           accessors->v[index].type = YF_GLTF_TYPE_VEC3;
-        } else if (strcmp("VEC4", symbol->tokens) == 0) {
+        } else if (strcmp("VEC4", token->data) == 0) {
           accessors->v[index].type = YF_GLTF_TYPE_VEC4;
-        } else if (strcmp("MAT2", symbol->tokens) == 0) {
+        } else if (strcmp("MAT2", token->data) == 0) {
           accessors->v[index].type = YF_GLTF_TYPE_MAT2;
-        } else if (strcmp("MAT3", symbol->tokens) == 0) {
+        } else if (strcmp("MAT3", token->data) == 0) {
           accessors->v[index].type = YF_GLTF_TYPE_MAT3;
-        } else if (strcmp("MAT4", symbol->tokens) == 0) {
+        } else if (strcmp("MAT4", token->data) == 0) {
           accessors->v[index].type = YF_GLTF_TYPE_MAT4;
         } else {
           yf_seterr(YF_ERR_INVFILE, __func__);
           return -1;
         }
-      } else if (strcmp("min", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* '[' */
+      } else if (strcmp("min", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '[' */
         for (size_t i = 0; i < 16; ++i) {
-          if (parse_num(file, symbol, accessors->v[index].min.m4+i) != 0)
+          if (parse_num(file, token, accessors->v[index].min.m4+i) != 0)
             return -1;
-          next_symbol(file, symbol); /* ',' ']' */
-          if (symbol->symbol == YF_SYMBOL_OP && symbol->tokens[0] == ']')
+          next_token(file, token); /* ',' ']' */
+          if (token->token == YF_TOKEN_OP && token->data[0] == ']')
             break;
         }
-      } else if (strcmp("max", symbol->tokens) == 0) {
-        next_symbol(file, symbol); /* ':' */
-        next_symbol(file, symbol); /* '[' */
+      } else if (strcmp("max", token->data) == 0) {
+        next_token(file, token); /* ':' */
+        next_token(file, token); /* '[' */
         for (size_t i = 0; i < 16; ++i) {
-          if (parse_num(file, symbol, accessors->v[index].max.m4+i) != 0)
+          if (parse_num(file, token, accessors->v[index].max.m4+i) != 0)
             return -1;
-          next_symbol(file, symbol); /* ',' ']' */
-          if (symbol->symbol == YF_SYMBOL_OP && symbol->tokens[0] == ']')
+          next_token(file, token); /* ',' ']' */
+          if (token->token == YF_TOKEN_OP && token->data[0] == ']')
             break;
         }
-      } else if (strcmp("normalized", symbol->tokens) == 0) {
-        if (parse_bool(file, symbol, &accessors->v[index].normalized) != 0)
+      } else if (strcmp("normalized", token->data) == 0) {
+        if (parse_bool(file, token, &accessors->v[index].normalized) != 0)
           return -1;
-      } else if (strcmp("sparse", symbol->tokens) == 0) {
-        if (parse_sparse(file, symbol, &accessors->v[index].sparse) != 0)
+      } else if (strcmp("sparse", token->data) == 0) {
+        if (parse_sparse(file, token, &accessors->v[index].sparse) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &accessors->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &accessors->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -2229,47 +2227,47 @@ static int parse_accessors(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_bufferviews(FILE *file, T_symbol *symbol,
+static int parse_bufferviews(FILE *file, T_token *token,
     size_t index, void *bufferviews_p)
 {
   T_bufferviews *bufferviews = bufferviews_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(bufferviews != NULL);
   assert(index < bufferviews->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("buffer", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &bufferviews->v[index].buffer) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("buffer", token->data) == 0) {
+        if (parse_int(file, token, &bufferviews->v[index].buffer) != 0)
           return -1;
-      } else if (strcmp("byteOffset", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &bufferviews->v[index].byte_off) != 0)
+      } else if (strcmp("byteOffset", token->data) == 0) {
+        if (parse_int(file, token, &bufferviews->v[index].byte_off) != 0)
           return -1;
-      } else if (strcmp("byteLength", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &bufferviews->v[index].byte_len) != 0)
+      } else if (strcmp("byteLength", token->data) == 0) {
+        if (parse_int(file, token, &bufferviews->v[index].byte_len) != 0)
           return -1;
-      } else if (strcmp("byteStride", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &bufferviews->v[index].byte_strd) != 0)
+      } else if (strcmp("byteStride", token->data) == 0) {
+        if (parse_int(file, token, &bufferviews->v[index].byte_strd) != 0)
           return -1;
-      } else if (strcmp("target", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &bufferviews->v[index].target) != 0)
+      } else if (strcmp("target", token->data) == 0) {
+        if (parse_int(file, token, &bufferviews->v[index].target) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &bufferviews->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &bufferviews->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -2282,38 +2280,38 @@ static int parse_bufferviews(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_buffers(FILE *file, T_symbol *symbol,
+static int parse_buffers(FILE *file, T_token *token,
     size_t index, void *buffers_p)
 {
   T_buffers *buffers = buffers_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(buffers != NULL);
   assert(index < buffers->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("byteLength", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &buffers->v[index].byte_len) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("byteLength", token->data) == 0) {
+        if (parse_int(file, token, &buffers->v[index].byte_len) != 0)
           return -1;
-      } else if (strcmp("uri", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &buffers->v[index].uri) != 0)
+      } else if (strcmp("uri", token->data) == 0) {
+        if (parse_str(file, token, &buffers->v[index].uri) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &buffers->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &buffers->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -2326,40 +2324,40 @@ static int parse_buffers(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_textures(FILE *file, T_symbol *symbol,
+static int parse_textures(FILE *file, T_token *token,
     size_t index, void *textures_p)
 {
   T_textures *textures = textures_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(textures != NULL);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   textures->v[index].sampler = YF_INT_MIN;
   textures->v[index].source = YF_INT_MIN;
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("sampler", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &textures->v[index].sampler) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("sampler", token->data) == 0) {
+        if (parse_int(file, token, &textures->v[index].sampler) != 0)
           return -1;
-      } else if (strcmp("source", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &textures->v[index].source) != 0)
+      } else if (strcmp("source", token->data) == 0) {
+        if (parse_int(file, token, &textures->v[index].source) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &textures->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &textures->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -2372,43 +2370,43 @@ static int parse_textures(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_images(FILE *file, T_symbol *symbol,
+static int parse_images(FILE *file, T_token *token,
     size_t index, void *images_p)
 {
   T_images *images = images_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(images != NULL);
   assert(index < images->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   images->v[index].buffer_view = YF_INT_MIN;
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("uri", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &images->v[index].uri) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("uri", token->data) == 0) {
+        if (parse_str(file, token, &images->v[index].uri) != 0)
           return -1;
-      } else if (strcmp("mimeType", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &images->v[index].mime_type) != 0)
+      } else if (strcmp("mimeType", token->data) == 0) {
+        if (parse_str(file, token, &images->v[index].mime_type) != 0)
           return -1;
-      } else if (strcmp("bufferView", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &images->v[index].buffer_view) != 0)
+      } else if (strcmp("bufferView", token->data) == 0) {
+        if (parse_int(file, token, &images->v[index].buffer_view) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &images->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &images->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -2421,47 +2419,47 @@ static int parse_images(FILE *file, T_symbol *symbol,
   return 0;
 }
 
-static int parse_samplers(FILE *file, T_symbol *symbol,
+static int parse_samplers(FILE *file, T_token *token,
     size_t index, void *samplers_p)
 {
   T_samplers *samplers = samplers_p;
 
   assert(!feof(file));
-  assert(symbol != NULL);
+  assert(token != NULL);
   assert(samplers != NULL);
   assert(index < samplers->n);
-  assert(symbol->symbol == YF_SYMBOL_OP);
-  assert(symbol->tokens[0] == '[' || symbol->tokens[0] == ',');
+  assert(token->token == YF_TOKEN_OP);
+  assert(token->data[0] == '[' || token->data[0] == ',');
 
   samplers->v[index].wrap_s = YF_GLTF_WRAP_REPEAT;
   samplers->v[index].wrap_t = YF_GLTF_WRAP_REPEAT;
 
   do {
-    switch (next_symbol(file, symbol)) {
-    case YF_SYMBOL_STR:
-      if (strcmp("minFilter", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &samplers->v[index].min_filter) != 0)
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+      if (strcmp("minFilter", token->data) == 0) {
+        if (parse_int(file, token, &samplers->v[index].min_filter) != 0)
           return -1;
-      } else if (strcmp("magFilter", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &samplers->v[index].mag_filter) != 0)
+      } else if (strcmp("magFilter", token->data) == 0) {
+        if (parse_int(file, token, &samplers->v[index].mag_filter) != 0)
           return -1;
-      } else if (strcmp("wrapS", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &samplers->v[index].wrap_s) != 0)
+      } else if (strcmp("wrapS", token->data) == 0) {
+        if (parse_int(file, token, &samplers->v[index].wrap_s) != 0)
           return -1;
-      } else if (strcmp("wrapT", symbol->tokens) == 0) {
-        if (parse_int(file, symbol, &samplers->v[index].wrap_t) != 0)
+      } else if (strcmp("wrapT", token->data) == 0) {
+        if (parse_int(file, token, &samplers->v[index].wrap_t) != 0)
           return -1;
-      } else if (strcmp("name", symbol->tokens) == 0) {
-        if (parse_str(file, symbol, &samplers->v[index].name) != 0)
+      } else if (strcmp("name", token->data) == 0) {
+        if (parse_str(file, token, &samplers->v[index].name) != 0)
           return -1;
       } else {
-        if (consume_prop(file, symbol) != 0)
+        if (consume_prop(file, token) != 0)
           return -1;
       }
       break;
 
-    case YF_SYMBOL_OP:
-      if (symbol->tokens[0] == '}')
+    case YF_TOKEN_OP:
+      if (token->data[0] == '}')
         return 0;
       break;
 
@@ -2482,8 +2480,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
 
   if (gltf->accessors.n == 0 || gltf->bufferviews.n == 0 ||
       gltf->buffers.n == 0 || gltf->meshes.n == 0 ||
-      gltf->meshes.v[0].primitives.n == 0)
-  {
+      gltf->meshes.v[0].primitives.n == 0) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
@@ -2600,8 +2597,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
       } else {
         for (size_t j = 0; j < v_n; ++j) {
           if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
-              fread(verts[j].pos, comp_sz, comp_n, file) < comp_n)
-          {
+              fread(verts[j].pos, comp_sz, comp_n, file) < comp_n) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             free(verts);
             free(inds);
@@ -2635,8 +2631,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
       } else {
         for (size_t j = 0; j < v_n; ++j) {
           if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
-              fread(verts[j].norm, comp_sz, comp_n, file) < comp_n)
-          {
+              fread(verts[j].norm, comp_sz, comp_n, file) < comp_n) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             free(verts);
             free(inds);
@@ -2671,8 +2666,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
       } else {
         for (size_t j = 0; j < v_n; ++j) {
           if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
-              fread(verts[j].tc, comp_sz, comp_n, file) < comp_n)
-          {
+              fread(verts[j].tc, comp_sz, comp_n, file) < comp_n) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             free(verts);
             free(inds);
@@ -2740,8 +2734,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
 
     if (byte_strd == 0) {
       if (fseek(file, byte_off, SEEK_SET) != 0 ||
-          fread(inds, comp_sz, i_n, file) < i_n)
-      {
+          fread(inds, comp_sz, i_n, file) < i_n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         free(verts);
         free(inds);
@@ -2751,8 +2744,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
     } else {
       for (size_t j = 0; j < i_n; ++j) {
         if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
-            fread((char *)inds+comp_sz*j, comp_sz, comp_n, file) < comp_n)
-        {
+            fread((char *)inds+comp_sz*j, comp_sz, comp_n, file) < comp_n) {
           yf_seterr(YF_ERR_INVFILE, __func__);
           free(verts);
           free(inds);
