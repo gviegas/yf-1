@@ -507,7 +507,30 @@ static int load_texdt(const T_png *png, YF_texdt *data)
 
   /* filter reversion */
   const uint8_t bypp = YF_MAX(1, (channels*bit_depth)>>3);
-  for (size_t i = 0; i < height; ++i) {
+
+  switch (buf[0]) {
+  case 0:
+  case 2:
+    /* none/up */
+    break;
+  case 1:
+  case 4:
+    /* sub/paeth */
+    for (size_t i = 1+bypp; i < scln_sz; ++i)
+      buf[i] += buf[i-bypp];
+    break;
+  case 3:
+    /* avg */
+    for (size_t i = 1+bypp; i < scln_sz; ++i)
+      buf[i] += buf[i-bypp]>>1;
+    break;
+  default:
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    free(buf);
+    return -1;
+  }
+
+  for (size_t i = 1; i < height; ++i) {
     switch (buf[i*scln_sz]) {
     case 0:
       /* none */
@@ -521,56 +544,40 @@ static int load_texdt(const T_png *png, YF_texdt *data)
       break;
     case 2:
       /* up */
-      if (i > 0) {
-        for (size_t j = 1; j < scln_sz; ++j) {
-          const size_t k = i*scln_sz+j;
-          buf[k] += buf[k-scln_sz];
-        }
+      for (size_t j = 1; j < scln_sz; ++j) {
+        const size_t k = i*scln_sz+j;
+        buf[k] += buf[k-scln_sz];
       }
       break;
     case 3:
       /* avg */
-      if (i > 0) {
-        for (size_t j = 1; j <= bypp; ++j) {
-          const size_t k = i*scln_sz+j;
-          buf[k] += buf[k-scln_sz]>>1;
-        }
-        for (size_t j = 1+bypp; j < scln_sz; ++j) {
-          const size_t k = i*scln_sz+j;
-          const uint16_t a = buf[k-bypp];
-          const uint16_t b = buf[k-scln_sz];
-          buf[k] += (a+b)>>1;
-        }
-      } else {
-        for (size_t j = 1+bypp; j < scln_sz; ++j) {
-          const size_t k = i*scln_sz+j;
-          buf[k] += buf[k-bypp]>>1;
-        }
+      for (size_t j = 1; j <= bypp; ++j) {
+        const size_t k = i*scln_sz+j;
+        buf[k] += buf[k-scln_sz]>>1;
+      }
+      for (size_t j = 1+bypp; j < scln_sz; ++j) {
+        const size_t k = i*scln_sz+j;
+        const uint16_t a = buf[k-bypp];
+        const uint16_t b = buf[k-scln_sz];
+        buf[k] += (a+b)>>1;
       }
       break;
     case 4:
       /* paeth */
-      if (i > 0) {
-        for (size_t j = 1; j <= bypp; ++j) {
-          const size_t k = i*scln_sz+j;
-          buf[k] += buf[k-scln_sz];
-        }
-        for (size_t j = 1+bypp; j < scln_sz; ++j) {
-          const size_t k = i*scln_sz+j;
-          const int16_t a = buf[k-bypp];
-          const int16_t b = buf[k-scln_sz];
-          const int16_t c = buf[k-scln_sz-bypp];
-          const int16_t p = a+b-c;
-          const uint16_t pa = abs(p-a);
-          const uint16_t pb = abs(p-b);
-          const uint16_t pc = abs(p-c);
-          buf[k] += pa<=pb && pa<=pc ? a : (pb<=pc ? b : c);
-        }
-      } else {
-        for (size_t j = 1+bypp; j < scln_sz; ++j) {
-          const size_t k = i*scln_sz+j;
-          buf[k] += buf[k-bypp];
-        }
+      for (size_t j = 1; j <= bypp; ++j) {
+        const size_t k = i*scln_sz+j;
+        buf[k] += buf[k-scln_sz];
+      }
+      for (size_t j = 1+bypp; j < scln_sz; ++j) {
+        const size_t k = i*scln_sz+j;
+        const int16_t a = buf[k-bypp];
+        const int16_t b = buf[k-scln_sz];
+        const int16_t c = buf[k-scln_sz-bypp];
+        const int16_t p = a+b-c;
+        const uint16_t pa = abs(p-a);
+        const uint16_t pb = abs(p-b);
+        const uint16_t pc = abs(p-c);
+        buf[k] += pa<=pb && pa<=pc ? a : (pb<=pc ? b : c);
       }
       break;
     default:
