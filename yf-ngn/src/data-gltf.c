@@ -625,7 +625,7 @@ static int next_token(FILE *file, T_token *token)
       if (c == '\\') {
         c = getc(file);
         if (c == '"') {
-          token->data[i] = '\"';
+          token->data[i] = '"';
         } else if (c == '\\') {
           token->data[i] = '\\';
         } else {
@@ -986,7 +986,7 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
 
   gltf->scene = YF_INT_MIN;
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("asset", token->data) == 0) {
@@ -1075,7 +1075,7 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1096,7 +1096,7 @@ static int parse_asset(FILE *file, T_token *token, T_asset *asset)
     return -1;
   }
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("copyright", token->data) == 0) {
@@ -1126,7 +1126,7 @@ static int parse_asset(FILE *file, T_token *token, T_asset *asset)
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1154,7 +1154,7 @@ static int parse_scenes(FILE *file, T_token *token,
   assert(token->token == YF_TOKEN_OP);
   assert(token->data[0] == '[' || token->data[0] == ',');
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("nodes", token->data) == 0) {
@@ -1180,7 +1180,7 @@ static int parse_scenes(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1201,7 +1201,7 @@ static int parse_nodes(FILE *file, T_token *token,
   nodes->v[index].camera = YF_INT_MIN;
   nodes->v[index].skin = YF_INT_MIN;
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("children", token->data) == 0) {
@@ -1288,7 +1288,7 @@ static int parse_nodes(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1305,7 +1305,7 @@ static int parse_cameras(FILE *file, T_token *token,
   assert(token->token == YF_TOKEN_OP);
   assert(token->data[0] == '[' || token->data[0] == ',');
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("type", token->data) == 0) {
@@ -1402,7 +1402,7 @@ static int parse_cameras(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1423,7 +1423,7 @@ static int parse_targets(FILE *file, T_token *token,
   targets->v[index].normal = YF_INT_MIN;
   targets->v[index].tangent = YF_INT_MIN;
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("POSITION", token->data) == 0) {
@@ -1450,7 +1450,7 @@ static int parse_targets(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1473,7 +1473,7 @@ static int parse_primitives(FILE *file, T_token *token,
   for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i)
     primitives->v[index].attributes[i] = YF_INT_MIN;
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("attributes", token->data) == 0) {
@@ -1484,43 +1484,35 @@ static int parse_primitives(FILE *file, T_token *token,
           case YF_TOKEN_STR:
             if (strcmp("POSITION", token->data) == 0) {
               if (parse_int(file, token,
-                    &primitives->v[index].attributes[YF_GLTF_ATTR_POS])
-                  != 0)
+                    &primitives->v[index].attributes[YF_GLTF_ATTR_POS]) != 0)
                 return -1;
             } else if (strcmp("NORMAL", token->data) == 0) {
               if (parse_int(file, token,
-                    &primitives->v[index].attributes[YF_GLTF_ATTR_NORM])
-                  != 0)
+                    &primitives->v[index].attributes[YF_GLTF_ATTR_NORM]) != 0)
                 return -1;
             } else if (strcmp("TANGENT", token->data) == 0) {
               if (parse_int(file, token,
-                    &primitives->v[index].attributes[YF_GLTF_ATTR_TAN])
-                  != 0)
+                    &primitives->v[index].attributes[YF_GLTF_ATTR_TAN]) != 0)
                 return -1;
             } else if (strcmp("TEXCOORD_0", token->data) == 0) {
               if (parse_int(file, token,
-                    &primitives->v[index].attributes[YF_GLTF_ATTR_TC0])
-                  != 0)
+                    &primitives->v[index].attributes[YF_GLTF_ATTR_TC0]) != 0)
                 return -1;
             } else if (strcmp("TEXCOORD_1", token->data) == 0) {
               if (parse_int(file, token,
-                    &primitives->v[index].attributes[YF_GLTF_ATTR_TC1])
-                  != 0)
+                    &primitives->v[index].attributes[YF_GLTF_ATTR_TC1]) != 0)
                 return -1;
             } else if (strcmp("COLOR_0", token->data) == 0) {
               if (parse_int(file, token,
-                    &primitives->v[index].attributes[YF_GLTF_ATTR_CLR0])
-                  != 0)
+                    &primitives->v[index].attributes[YF_GLTF_ATTR_CLR0]) != 0)
                 return -1;
             } else if (strcmp("JOINTS_0", token->data) == 0) {
               if (parse_int(file, token,
-                    &primitives->v[index].attributes[YF_GLTF_ATTR_JNT0])
-                  != 0)
+                    &primitives->v[index].attributes[YF_GLTF_ATTR_JNT0]) != 0)
                 return -1;
             } else if (strcmp("WEIGHTS_0", token->data) == 0) {
               if (parse_int(file, token,
-                    &primitives->v[index].attributes[YF_GLTF_ATTR_WGT0])
-                  != 0)
+                    &primitives->v[index].attributes[YF_GLTF_ATTR_WGT0]) != 0)
                 return -1;
             } else {
               if (consume_prop(file, token) != 0)
@@ -1567,7 +1559,7 @@ static int parse_primitives(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1584,7 +1576,7 @@ static int parse_meshes(FILE *file, T_token *token,
   assert(token->token == YF_TOKEN_OP);
   assert(token->data[0] == '[' || token->data[0] == ',');
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("primitives", token->data) == 0) {
@@ -1617,7 +1609,7 @@ static int parse_meshes(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1637,7 +1629,7 @@ static int parse_skins(FILE *file, T_token *token,
   skins->v[index].inv_bind_matrices = YF_INT_MIN;
   skins->v[index].skeleton = YF_INT_MIN;
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("inverseBindMatrices", token->data) == 0) {
@@ -1669,7 +1661,7 @@ static int parse_skins(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1682,7 +1674,7 @@ static int parse_textureinfo(FILE *file, T_token *token,
   assert(textureinfo != NULL);
   assert(textureinfo->tex_coord == 0);
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("index", token->data) == 0) {
@@ -1712,7 +1704,7 @@ static int parse_textureinfo(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1744,7 +1736,7 @@ static int parse_materials(FILE *file, T_token *token,
   materials->v[index].emissive_tex.index = YF_INT_MIN;
   materials->v[index].alpha_cutoff = 0.5;
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("pbrMetallicRoughness", token->data) == 0) {
@@ -1766,7 +1758,7 @@ static int parse_materials(FILE *file, T_token *token,
               if (parse_textureinfo(file, token,
                     &materials->v[index].pbrmr.base_clr_tex) != 0)
                 return -1;
-              next_token(file, token); /* ',' } */
+              next_token(file, token); /* ',' or '}' */
             } else if (strcmp("metallicFactor", token->data) == 0) {
               if (parse_num(file, token,
                     &materials->v[index].pbrmr.metallic_fac) != 0)
@@ -1779,7 +1771,7 @@ static int parse_materials(FILE *file, T_token *token,
               if (parse_textureinfo(file, token,
                     &materials->v[index].pbrmr.metal_rough_tex) != 0)
                 return -1;
-              next_token(file, token); /* ',' } */
+              next_token(file, token); /* ',' or '}' */
             } else {
               if (consume_prop(file, token) != 0)
                 return -1;
@@ -1852,7 +1844,7 @@ static int parse_materials(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1869,7 +1861,7 @@ static int parse_channels(FILE *file, T_token *token,
   assert(token->token == YF_TOKEN_OP);
   assert(token->data[0] == '[' || token->data[0] == ',');
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("sampler", token->data) == 0) {
@@ -1928,7 +1920,7 @@ static int parse_channels(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1945,7 +1937,7 @@ static int parse_asamplers(FILE *file, T_token *token,
   assert(token->token == YF_TOKEN_OP);
   assert(token->data[0] == '[' || token->data[0] == ',');
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("input", token->data) == 0) {
@@ -1982,7 +1974,7 @@ static int parse_asamplers(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -1999,7 +1991,7 @@ static int parse_animations(FILE *file, T_token *token,
   assert(token->token == YF_TOKEN_OP);
   assert(token->data[0] == '[' || token->data[0] == ',');
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("channels", token->data) == 0) {
@@ -2034,7 +2026,7 @@ static int parse_animations(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -2045,7 +2037,7 @@ static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
   assert(token != NULL);
   assert(sparse != NULL);
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("count", token->data) == 0) {
@@ -2121,7 +2113,7 @@ static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -2142,7 +2134,7 @@ static int parse_accessors(FILE *file, T_token *token,
   accessors->v[index].sparse.indices.buffer_view = YF_INT_MIN;
   accessors->v[index].sparse.values.buffer_view = YF_INT_MIN;
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("bufferView", token->data) == 0) {
@@ -2184,7 +2176,7 @@ static int parse_accessors(FILE *file, T_token *token,
         for (size_t i = 0; i < 16; ++i) {
           if (parse_num(file, token, accessors->v[index].min.m4+i) != 0)
             return -1;
-          next_token(file, token); /* ',' ']' */
+          next_token(file, token); /* ',' or ']' */
           if (token->token == YF_TOKEN_OP && token->data[0] == ']')
             break;
         }
@@ -2194,7 +2186,7 @@ static int parse_accessors(FILE *file, T_token *token,
         for (size_t i = 0; i < 16; ++i) {
           if (parse_num(file, token, accessors->v[index].max.m4+i) != 0)
             return -1;
-          next_token(file, token); /* ',' ']' */
+          next_token(file, token); /* ',' or ']' */
           if (token->token == YF_TOKEN_OP && token->data[0] == ']')
             break;
         }
@@ -2222,7 +2214,7 @@ static int parse_accessors(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -2239,7 +2231,7 @@ static int parse_bufferviews(FILE *file, T_token *token,
   assert(token->token == YF_TOKEN_OP);
   assert(token->data[0] == '[' || token->data[0] == ',');
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("buffer", token->data) == 0) {
@@ -2275,7 +2267,7 @@ static int parse_bufferviews(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -2292,7 +2284,7 @@ static int parse_buffers(FILE *file, T_token *token,
   assert(token->token == YF_TOKEN_OP);
   assert(token->data[0] == '[' || token->data[0] == ',');
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("byteLength", token->data) == 0) {
@@ -2319,7 +2311,7 @@ static int parse_buffers(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -2338,7 +2330,7 @@ static int parse_textures(FILE *file, T_token *token,
   textures->v[index].sampler = YF_INT_MIN;
   textures->v[index].source = YF_INT_MIN;
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("sampler", token->data) == 0) {
@@ -2365,7 +2357,7 @@ static int parse_textures(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -2384,7 +2376,7 @@ static int parse_images(FILE *file, T_token *token,
 
   images->v[index].buffer_view = YF_INT_MIN;
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("uri", token->data) == 0) {
@@ -2414,7 +2406,7 @@ static int parse_images(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
@@ -2434,7 +2426,7 @@ static int parse_samplers(FILE *file, T_token *token,
   samplers->v[index].wrap_s = YF_GLTF_WRAP_REPEAT;
   samplers->v[index].wrap_t = YF_GLTF_WRAP_REPEAT;
 
-  do {
+  while (1) {
     switch (next_token(file, token)) {
     case YF_TOKEN_STR:
       if (strcmp("minFilter", token->data) == 0) {
@@ -2467,7 +2459,7 @@ static int parse_samplers(FILE *file, T_token *token,
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
-  } while (1);
+  }
 
   return 0;
 }
