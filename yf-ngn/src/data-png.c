@@ -143,8 +143,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
 
   uint8_t sign[sizeof l_sign];
   if (fread(sign, sizeof sign, 1, file) < 1 ||
-      memcmp(l_sign, sign, sizeof sign) != 0)
-  {
+      memcmp(l_sign, sign, sizeof sign) != 0) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     fclose(file);
     return -1;
@@ -174,8 +173,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
   static_assert(YF_PNG_IHDRSZ <= YF_PNG_VARSZ);
 
   if (type != YF_PNG_IHDR || len != YF_PNG_IHDRSZ ||
-      fread(chunk->var, len, 1, file) < 1)
-  {
+      fread(chunk->var, len, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     free(chunk);
     fclose(file);
@@ -207,8 +205,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
         ihdr.bit_depth != 8 && ihdr.bit_depth != 16) ||
       (ihdr.color_type != 0 && ihdr.color_type != 2 && ihdr.color_type != 3 &&
         ihdr.color_type != 4 && ihdr.color_type != 6) ||
-      ihdr.compression != 0 || ihdr.filter != 0 || ihdr.interlace > 1)
-  {
+      ihdr.compression != 0 || ihdr.filter != 0 || ihdr.interlace > 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     free(chunk);
     fclose(file);
@@ -275,8 +272,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
     /* PLTE */
     } else if (type == YF_PNG_PLTE) {
       if (ihdr.color_type == 0 || ihdr.color_type == 4 || len % 3 != 0 ||
-          plte != NULL || idat != NULL)
-      {
+          plte != NULL || idat != NULL) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         free(idat);
         free(plte);
@@ -403,6 +399,7 @@ static int load_texdt(const T_png *png, YF_texdt *data)
 
   /* TODO: Check color profile. */
   /* TODO: Check format support. */
+  /* TODO: Choose sRGB formats whenever possible. */
   switch (png->ihdr->color_type) {
   case 0:
     /* greyscale */
@@ -705,8 +702,7 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
 
   memcpy(&zhdr, strm, 2);
   if (zhdr.cm != 8 || zhdr.cinfo > 7 || zhdr.fdict != 0 ||
-      ((strm[0]<<8)+strm[1]) % 31 != 0)
-  {
+      ((strm[0]<<8)+strm[1]) % 31 != 0) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
@@ -882,7 +878,7 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
       }
 
       /* data decoding */
-      do {
+      while (1) {
         uint16_t idx = 0;
         do {
           uint8_t bit = 0;
@@ -941,7 +937,7 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
           /* end of block */
           break;
         }
-      } while (1);
+      }
 
       free(literal.tree);
       free(distance.tree);
