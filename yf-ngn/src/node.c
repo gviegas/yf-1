@@ -235,6 +235,15 @@ int yf_node_setname(YF_node node, const char *name)
   return 0;
 }
 
+int yf_node_cmpname(YF_node node, const char *str)
+{
+  assert(node != NULL);
+
+  const char *s1 = node->name == NULL ? "" : node->name;
+  const char *s2 = str == NULL ? "" : str;
+  return strcmp(s1, s2);
+}
+
 int yf_node_getobj(YF_node node, void **obj)
 {
   assert(node != NULL);

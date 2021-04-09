@@ -125,11 +125,21 @@ char *yf_node_getname(YF_node node, char *dst, size_t n);
 int yf_node_setname(YF_node node, const char *name);
 
 /**
+ * Compares the name of a node with a given string.
+ *
+ * @param node: The node.
+ * @param str: The string to compare.
+ * @return: A value greater than, equal to, or less than zero if the node's
+ *  name is, respectively, greater than, equal to, or less than 'str'.
+ */
+int yf_node_cmpname(YF_node node, const char *str);
+
+/**
  * Gets the object that a given node represents.
  *
  * @param node: The node.
  * @param obj: The destination for the object. Can be 'NULL'.
- * @return The 'YF_NODEOBJ' value indicating the object type.
+ * @return: The 'YF_NODEOBJ' value indicating the object type.
  */
 int yf_node_getobj(YF_node node, void **obj);
 
