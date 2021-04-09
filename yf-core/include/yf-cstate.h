@@ -59,7 +59,7 @@ YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index);
 /**
  * Deinitializes a compute state.
  *
- * param cst: The state to deinitialize. Can be 'NULL'.
+ * @param cst: The state to deinitialize. Can be 'NULL'.
  */
 void yf_cstate_deinit(YF_cstate cst);
 
