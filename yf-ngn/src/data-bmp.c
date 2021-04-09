@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <assert.h>
 
 #ifdef _DEFAULT_SOURCE
@@ -142,8 +143,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
 
   T_bmpfh fh;
   if (fread(&fh.type, 1, YF_BMPFH_SZ, file) < YF_BMPFH_SZ ||
-      le16toh(fh.type) != YF_BMP_TYPE)
-  {
+      le16toh(fh.type) != YF_BMP_TYPE) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     fclose(file);
     return -1;
@@ -162,6 +162,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
   int32_t h;
   uint16_t bpp;
   uint32_t compr;
+  uint32_t ci_n;
   uint32_t mask_rgba[4];
   uint32_t lshf_rgba[4];
   uint32_t bitn_rgba[4];
@@ -181,6 +182,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
     h = le32toh(ih.height);
     bpp = le16toh(ih.bpp);
     compr = le32toh(ih.compression);
+    ci_n = le32toh(ih.ci_n);
     /* the info header supports non-alpha colors only */
     mask_rgba[3] = 0;
     lshf_rgba[3] = bpp;
@@ -190,8 +192,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
       break;
     case YF_BMP_COMPR_BITFLD:
       if (rd_n == data_off ||
-          fread(mask_rgba, sizeof *mask_rgba, 3, file) < 3)
-      {
+          fread(mask_rgba, sizeof *mask_rgba, 3, file) < 3) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         fclose(file);
         return -1;
@@ -222,6 +223,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
     h = le32toh(v4h.height);
     bpp = le16toh(v4h.bpp);
     compr = le32toh(v4h.compression);
+    ci_n = le32toh(v4h.ci_n);
     mask_rgba[3] = (bpp == 16 || bpp == 32) ? le32toh(v4h.mask_a) : 0;
     YF_SETLSHF(lshf_rgba[3], mask_rgba[3], bpp);
     YF_SETBITN(bitn_rgba[3], mask_rgba[3], bpp, lshf_rgba[3]);
@@ -254,6 +256,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
     h = le32toh(v5h.height);
     bpp = le16toh(v5h.bpp);
     compr = le32toh(v5h.compression);
+    ci_n = le32toh(v5h.ci_n);
     mask_rgba[3] = (bpp == 16 || bpp == 32) ? le32toh(v5h.mask_a) : 0;
     YF_SETLSHF(lshf_rgba[3], mask_rgba[3], bpp);
     YF_SETBITN(bitn_rgba[3], mask_rgba[3], bpp, lshf_rgba[3]);
@@ -283,11 +286,13 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
     fclose(file);
     return -1;
   }
+  /*
   if (rd_n != data_off && fseek(file, data_off, SEEK_SET) != 0) {
     yf_seterr(YF_ERR_OTHER, __func__);
     fclose(file);
     return -1;
   }
+  */
 
   size_t channels = mask_rgba[3] != 0 ? 4 : 3;
   unsigned char *dt = malloc(channels * w * (h < 0 ? -h : h));
@@ -323,6 +328,40 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
 #endif
 
   switch (bpp) {
+  case 8: {
+    if (ci_n == 0)
+      ci_n = 256;
+    uint32_t ci[ci_n];
+    if (fread(ci, sizeof *ci, ci_n, file) < ci_n) {
+      yf_seterr(YF_ERR_INVFILE, __func__);
+      fclose(file);
+      free(dt);
+      return -1;
+    }
+    size_t padding = w & 3 ? 4 - (w & 3) : 0;
+    size_t scln_sz = w + padding;
+    if ((scln = malloc(scln_sz)) == NULL) {
+      yf_seterr(YF_ERR_NOMEM, __func__);
+      fclose(file);
+      free(dt);
+      return -1;
+    }
+    for (int32_t i = from; i != to; i += inc) {
+      if (fread(scln, 1, scln_sz, file) < scln_sz) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        fclose(file);
+        free(dt);
+        free(scln);
+        return -1;
+      }
+      for (int32_t j = 0; j < w; ++j) {
+        size_t dt_i = channels*w*i + channels*j;
+        size_t ci_i = scln[j];
+        memcpy(dt+dt_i, ci+ci_i, channels);
+      }
+    }
+  } break;
+
   case 16: {
     if (compr == YF_BMP_COMPR_RGB) {
       mask_rgba[0] = 0x7c00;
