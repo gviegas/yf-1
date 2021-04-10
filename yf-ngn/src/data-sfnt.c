@@ -25,11 +25,19 @@
 
 #include "data-sfnt.h"
 
+/* TODO: Use OS/2 metrics when this is defined. */
+#ifdef _WIN32
+# define YF_SFNT_NEED_OS2
+#endif
+
+/* XXX: 'name' table not used currently. */
+#undef YF_SFNT_NEED_NAME
+
 #define YF_SFNT_MAKETAG(c1, c2, c3, c4) \
   ((c1 << 24) | (c2 << 16) | (c3 << 8) | c4)
 
 /*
- * Common
+ * Common tables
  */
 
 /* Font directory. */
@@ -169,15 +177,16 @@ typedef struct {
 #define YF_SFNT_MAXPSZ 32
 static_assert(offsetof(T_maxp, comp_dep_max) == YF_SFNT_MAXPSZ-2, "!offsetof");
 
+#ifdef YF_SFNT_NEED_NAME
 /* Naming. */
-#define YF_SFNT_NAMETAG YF_SFNT_MAKETAG('n', 'a', 'm', 'e')
+# define YF_SFNT_NAMETAG YF_SFNT_MAKETAG('n', 'a', 'm', 'e')
 
 typedef struct {
   uint16_t format;
   uint16_t count;
   uint16_t str_off;
 } T_nameh;
-#define YF_SFNT_NAMEHSZ 6
+# define YF_SFNT_NAMEHSZ 6
 static_assert(offsetof(T_nameh, str_off) == YF_SFNT_NAMEHSZ-2, "!offsetof");
 
 typedef struct {
@@ -188,14 +197,14 @@ typedef struct {
   uint16_t len;
   uint16_t off;
 } T_namee;
-#define YF_SFNT_NAMEESZ 12
+# define YF_SFNT_NAMEESZ 12
 static_assert(sizeof(T_namee) == YF_SFNT_NAMEESZ, "!sizeof");
 
 typedef struct {
   uint16_t len;
   uint16_t off;
 } T_namel;
-#define YF_SFNT_NAMELSZ 4
+# define YF_SFNT_NAMELSZ 4
 static_assert(sizeof(T_namel) == YF_SFNT_NAMELSZ, "!sizeof");
 
 typedef struct {
@@ -205,9 +214,11 @@ typedef struct {
   uint16_t lang_n;
   T_namel *namels;
 } T_name;
+#endif /* YF_SFNT_NEED_NAME */
 
+#ifdef YF_SFTN_NEED_OS2
 /* OS/2 & Windows metrics. */
-#define YF_SFNT_OS2TAG YF_SFNT_MAKETAG('O', 'S', '/', '2')
+# define YF_SFNT_OS2TAG YF_SFNT_MAKETAG('O', 'S', '/', '2')
 
 typedef struct {
   /* v0 */
@@ -251,38 +262,16 @@ typedef struct {
   uint16_t break_char;
   uint16_t max_ctx;
   /* v5 */
-  uint16_t lo_optical_pt_sz;
-  uint16_t up_optical_pt_sz;
+  uint16_t lo_optic_pt_sz;
+  uint16_t up_optic_pt_sz;
 } T_os2;
-#define YF_SFNT_OS2V0  78
-#define YF_SFNT_OS2SZ 100
-static_assert(offsetof(T_os2, up_optical_pt_sz) == YF_SFNT_OS2SZ-2,
-    "!offsetof");
-
-/* PostScript info. */
-#define YF_SFNT_POSTTAG YF_SFNT_MAKETAG('p', 'o', 's', 't')
-
-typedef struct {
-  uint32_t version;
-  uint32_t italic_ang;
-  int16_t undln_pos;
-  int16_t undln_thick;
-  uint32_t fixed_pitch;
-  uint32_t mem42_min;
-  uint32_t mem42_max;
-  uint32_t mem1_min;
-  uint32_t mem1_max;
-} T_posth;
-#define YF_SFNT_POSTHSZ 32
-static_assert(offsetof(T_posth, mem1_max) == YF_SFNT_POSTHSZ-4, "!offsetof");
-
-typedef struct {
-  T_posth posth;
-  /* XXX: Glyph names won't see any use. */
-} T_post;
+# define YF_SFNT_OS2V0  78
+# define YF_SFNT_OS2SZ 100
+static_assert(offsetof(T_os2, up_optic_pt_sz) == YF_SFNT_OS2SZ-2, "!offsetof");
+#endif /* YF_SFNT_NEED_OS2 */
 
 /*
- * TrueType
+ * TTF tables
  */
 
 /* Control values. */
@@ -356,6 +345,10 @@ typedef struct {
   uint8_t *program;
 } T_prep;
 
+/*
+ * SFNT
+ */
+
 /* SFNT tables. */
 typedef struct {
   T_dir *dir;
@@ -364,9 +357,12 @@ typedef struct {
   T_hhea *hhea;
   T_hmtx *hmtx;
   T_maxp *maxp;
+#ifdef YF_SFNT_NEED_NAME
   T_name *name;
+#endif
+#ifdef YF_SFNT_NEED_OS2
   T_os2 *os2;
-  T_post *post;
+#endif
   struct {
     T_cvt *cvt;
     T_fpgm *fpgm;
@@ -376,6 +372,10 @@ typedef struct {
     T_prep *prep;
   } ttf;
 } T_sfnt;
+
+/*
+ * Font
+ */
 
 /* Font metrics. */
 typedef struct {
@@ -414,6 +414,7 @@ typedef struct {
   };
 } T_fontmap;
 
+#ifdef YF_SFNT_NEED_NAME
 /* Font strings. */
 typedef struct {
   char *copyright;
@@ -431,6 +432,7 @@ typedef struct {
   char *typographic_subfamily;
   char *sample_text;
 } T_fontstr;
+#endif /* YF_SFNT_NEED_NAME */
 
 /* Font. */
 typedef struct {
@@ -442,7 +444,9 @@ typedef struct {
   uint16_t comp_elem_max;
   T_fontmet met;
   T_fontmap map;
+#ifdef YF_SFNT_NEED_NAME
   T_fontstr str;
+#endif
   struct {
     /* glyph offsets stored pre-multiplied/byte-swapped */
     uint32_t *loca;
@@ -451,7 +455,7 @@ typedef struct {
   } ttf;
 } T_font;
 
-/* Verifies if file is valid. */
+/* Verifies whether file is valid. */
 static int verify_file(FILE *file);
 
 /* Loads a font containing TrueType outline. */
@@ -467,9 +471,11 @@ static int get_metrics(const T_sfnt *sfnt, T_fontmet *fmet);
 static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
     T_fontmap *fmap);
 
+#ifdef YF_SFNT_NEED_NAME
 /* Fills font strings. */
 static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
     T_fontstr *fstr);
+#endif
 
 /* Hashes glyphs of a 'T_fontmap' sparse format. */
 static size_t hash_fmap(const void *x);
@@ -564,15 +570,16 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
   const uint32_t maxp_tag = YF_SFNT_MAXPTAG;
   uint32_t maxp_off = 0;
   uint32_t maxp_len = 0;
+#ifdef YF_SFNT_NEED_NAME
   const uint32_t name_tag = YF_SFNT_NAMETAG;
   uint32_t name_off = 0;
   uint32_t name_len = 0;
+#endif /* YF_SFNT_NEED_NAME */
+#ifdef YF_SFNT_NEED_OS2
   const uint32_t os2_tag = YF_SFNT_OS2TAG;
   uint32_t os2_off = 0;
   uint32_t os2_len = 0;
-  const uint32_t post_tag = YF_SFNT_POSTTAG;
-  uint32_t post_off = 0;
-  uint32_t post_len = 0;
+#endif /* YF_SFNT_NEED_OS2 */
 
   for (uint16_t i = 0; i < tab_n; ++i) {
     const uint32_t tag = be32toh(sfnt.dir->dires[i].tag);
@@ -591,29 +598,45 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     } else if (tag == maxp_tag) {
       maxp_off = be32toh(sfnt.dir->dires[i].off);
       maxp_len = be32toh(sfnt.dir->dires[i].len);
+#ifdef YF_SFNT_NEED_NAME
     } else if (tag == name_tag) {
       name_off = be32toh(sfnt.dir->dires[i].off);
       name_len = be32toh(sfnt.dir->dires[i].len);
+#endif /* YF_SFNT_NEED_NAME */
+#ifdef YF_SFNT_NEED_OS2
     } else if (tag == os2_tag) {
       os2_off = be32toh(sfnt.dir->dires[i].off);
       os2_len = be32toh(sfnt.dir->dires[i].len);
-    } else if (tag == post_tag) {
-      post_off = be32toh(sfnt.dir->dires[i].off);
-      post_len = be32toh(sfnt.dir->dires[i].len);
+#endif /* YF_SFNT_NEED_OS2 */
     }
   }
-  if (cmap_off == 0 || head_off == 0 || hhea_off == 0 || hmtx_off == 0 ||
-      maxp_off == 0 || name_off == 0 || os2_off == 0 || post_off == 0 ||
-      cmap_len < YF_SFNT_CMAPHSZ || head_len != YF_SFNT_HEADSZ ||
-      hhea_len != YF_SFNT_HHEASZ || hmtx_len < YF_SFNT_HMTXESZ ||
-      maxp_len != YF_SFNT_MAXPSZ || name_len < YF_SFNT_NAMEHSZ ||
-      os2_len < YF_SFNT_OS2V0 || post_len < YF_SFNT_POSTHSZ)
-  {
+
+  if (cmap_off == 0 || cmap_len < YF_SFNT_CMAPHSZ ||
+      head_off == 0 || head_len != YF_SFNT_HEADSZ ||
+      hhea_off == 0 || hhea_len != YF_SFNT_HHEASZ ||
+      hmtx_off == 0 || hmtx_len < YF_SFNT_HMTXESZ ||
+      maxp_off == 0 || maxp_len != YF_SFNT_MAXPSZ) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
+#ifdef YF_SFNT_NEED_NAME
+  if (name_off == 0 || name_len < YF_SFNT_NAMEHSZ) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    deinit_tables(&sfnt);
+    fclose(file);
+    return -1;
+  }
+#endif /* YF_SFNT_NEED_NAME */
+#ifdef YF_SFNT_NEED_OS2
+  if (os2_off == 0 || os2_len < YF_SFNT_OS2V0) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    deinit_tables(&sfnt);
+    fclose(file);
+    return -1;
+  }
+#endif /* YF_SFNT_NEED_OS2 */
 
   /* head table */
   sfnt.head = calloc(1, sizeof(T_head));
@@ -624,8 +647,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, head_off, SEEK_SET) != 0 ||
-      fread(sfnt.head, head_len, 1, file) < 1)
-  {
+      fread(sfnt.head, head_len, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -641,8 +663,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, hhea_off, SEEK_SET) != 0 ||
-      fread(sfnt.hhea, hhea_len, 1, file) < 1)
-  {
+      fread(sfnt.hhea, hhea_len, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -659,8 +680,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, maxp_off, SEEK_SET) != 0 ||
-      fread(sfnt.maxp, maxp_len, 1, file) < 1)
-  {
+      fread(sfnt.maxp, maxp_len, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -686,8 +706,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, hmtx_off, SEEK_SET) != 0 ||
-      fread(sfnt.hmtx->hmtxes, sizeof(T_hmtxe), hmetric_n, file) < hmetric_n)
-  {
+      fread(sfnt.hmtx->hmtxes, sizeof(T_hmtxe), hmetric_n, file) < hmetric_n) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -710,6 +729,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     }
   }
 
+#ifdef YF_SFNT_NEED_OS2
   /* os2 table */
   sfnt.os2 = calloc(1, sizeof(T_os2));
   if (sfnt.os2 == NULL) {
@@ -719,30 +739,13 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, os2_off, SEEK_SET) != 0 ||
-      fread(sfnt.os2, os2_len, 1, file) < 1)
-  {
+      fread(sfnt.os2, os2_len, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
-
-  /* post table */
-  sfnt.post = calloc(1, sizeof(T_post));
-  if (sfnt.post == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(&sfnt);
-    fclose(file);
-    return -1;
-  }
-  if (fseek(file, post_off, SEEK_SET) != 0 ||
-      fread(&sfnt.post->posth, YF_SFNT_POSTHSZ, 1, file) < 1)
-  {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(&sfnt);
-    fclose(file);
-    return -1;
-  }
+#endif /* YF_SFNT_NEED_OS2 */
 
   /* cmap table */
   sfnt.cmap = calloc(1, sizeof(T_cmap));
@@ -753,8 +756,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, cmap_off, SEEK_SET) != 0 ||
-      fread(&sfnt.cmap->cmaph, YF_SFNT_CMAPHSZ, 1, file) < 1)
-  {
+      fread(&sfnt.cmap->cmaph, YF_SFNT_CMAPHSZ, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -777,6 +779,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
 
+#ifdef YF_SFNT_NEED_NAME
   /* name table */
   sfnt.name = calloc(1, sizeof(T_name));
   if (sfnt.name == NULL) {
@@ -786,8 +789,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, name_off, SEEK_SET) != 0 ||
-      fread(&sfnt.name->nameh, YF_SFNT_NAMEHSZ, 1, file) < 1)
-  {
+      fread(&sfnt.name->nameh, YF_SFNT_NAMEHSZ, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -831,8 +833,8 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
       return -1;
     }
   }
+#endif /* YF_SFNT_NEED_NAME */
 
-  /* TODO: Check if this is a ttf file before this call. */
   if (load_ttf(&sfnt, file) != 0) {
     deinit_tables(&sfnt);
     fclose(file);
@@ -853,17 +855,17 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
   font->comp_elem_max = be16toh(sfnt.maxp->comp_elem_max);
 
   if (get_metrics(&sfnt, &font->met) != 0 ||
-      set_mapping(sfnt.cmap, file, cmap_off, &font->map) != 0)
-  {
+      set_mapping(sfnt.cmap, file, cmap_off, &font->map) != 0) {
     deinit_tables(&sfnt);
     free(font);
     fclose(file);
     return -1;
   }
 
-  /* TODO: This is unlikely to be of any use. */
+#ifdef YF_SFNT_NEED_NAME
   const uint32_t str_off = name_off + be16toh(sfnt.name->nameh.str_off);
   fill_str(sfnt.name, file, str_off, &font->str);
+#endif
 
   if (sfnt.ttf.glyf != NULL && sfnt.ttf.loca != NULL) {
     if (sfnt.head->loca_fmt == 0) {
@@ -889,8 +891,12 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     font->ttf.glyf = sfnt.ttf.glyf->glyphs;
     sfnt.ttf.glyf->glyphs = NULL;
   } else {
-    /* TODO */
-    assert(0);
+    /* XXX: Should not happen while ttf is the only supported font. */
+    yf_seterr(YF_ERR_UNSUP, __func__);
+    deinit_font(font);
+    deinit_tables(&sfnt);
+    fclose(file);
+    return -1;
   }
 
   data->font = font;
@@ -948,8 +954,7 @@ static int verify_file(FILE *file)
     free(buf);
 
     if (chsum != be32toh(dires[i].chsum) &&
-        be32toh(dires[i].tag) != YF_SFNT_HEADTAG)
-    {
+        be32toh(dires[i].tag) != YF_SFNT_HEADTAG) {
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
@@ -1024,8 +1029,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
       return -1;
     }
     if (fseek(file, cvt_off, SEEK_SET) != 0 ||
-        fread(sfnt->ttf.cvt->ctrl_vals, cvt_len, 1, file) < 1)
-    {
+        fread(sfnt->ttf.cvt->ctrl_vals, cvt_len, 1, file) < 1) {
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
@@ -1044,8 +1048,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
       return -1;
     }
     if (fseek(file, fpgm_off, SEEK_SET) != 0 ||
-        fread(sfnt->ttf.fpgm->instrs, fpgm_len, 1, file) < 1)
-    {
+        fread(sfnt->ttf.fpgm->instrs, fpgm_len, 1, file) < 1) {
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
@@ -1064,8 +1067,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
       return -1;
     }
     if (fseek(file, prep_off, SEEK_SET) != 0 ||
-        fread(sfnt->ttf.prep->program, prep_len, 1, file) < 1)
-    {
+        fread(sfnt->ttf.prep->program, prep_len, 1, file) < 1) {
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
@@ -1079,8 +1081,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
       return -1;
     }
     if (fseek(file, gasp_off, SEEK_SET) != 0 ||
-        fread(&sfnt->ttf.gasp->gasph, YF_SFNT_GASPHSZ, 1, file) < 1)
-    {
+        fread(&sfnt->ttf.gasp->gasph, YF_SFNT_GASPHSZ, 1, file) < 1) {
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
@@ -1110,8 +1111,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
     return -1;
   }
   if (fseek(file, loca_off, SEEK_SET) != 0 ||
-      fread(loca_data, loca_len, 1, file) < 1)
-  {
+      fread(loca_data, loca_len, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     free(loca_data);
     return -1;
@@ -1133,8 +1133,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
     return -1;
   }
   if (fseek(file, glyf_off, SEEK_SET) != 0 ||
-      fread(sfnt->ttf.glyf->glyphs, glyf_len, 1, file) < 1)
-  {
+      fread(sfnt->ttf.glyf->glyphs, glyf_len, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     return -1;
   }
@@ -1163,13 +1162,16 @@ static void deinit_tables(T_sfnt *sfnt)
     free(sfnt->hmtx);
   }
   free(sfnt->maxp);
+#ifdef YF_SFNT_NEED_NAME
   if (sfnt->name != NULL) {
     free(sfnt->name->namees);
     free(sfnt->name->namels);
     free(sfnt->name);
   }
+#endif /* YF_SFNT_NEED_NAME */
+#ifdef YF_SFNT_NEED_OS2
   free(sfnt->os2);
-  free(sfnt->post);
+#endif /* YF_SFNT_NEED_OS2 */
 
   if (sfnt->ttf.cvt != NULL) {
     free(sfnt->ttf.cvt->ctrl_vals);
@@ -1268,8 +1270,7 @@ static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
 
       sub_off = off + be32toh(cmap->cmapes[j].off);
       if (fseek(file, sub_off, SEEK_SET) != 0 ||
-          fread(&sub_hdr, sizeof sub_hdr, 1, file) < 1)
-      {
+          fread(&sub_hdr, sizeof sub_hdr, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
       }
@@ -1383,6 +1384,7 @@ static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
   return 0;
 }
 
+#ifdef YF_SFNT_NEED_NAME
 static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
     T_fontstr *fstr)
 {
@@ -1483,8 +1485,7 @@ static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
     }
     (*str_p)[len] = '\0';
     if (fseek(file, str_off+off, SEEK_SET) != 0 ||
-        fread(*str_p, len, 1, file) < 1)
-    {
+        fread(*str_p, len, 1, file) < 1) {
       yf_seterr(YF_ERR_INVFILE, __func__);
       return -1;
     }
@@ -1492,6 +1493,7 @@ static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
 
   return 0;
 }
+#endif /* YF_SFNT_NEED_NAME */
 
 static size_t hash_fmap(const void *x)
 {
@@ -1500,7 +1502,6 @@ static size_t hash_fmap(const void *x)
 
 static int cmp_fmap(const void *a, const void *b)
 {
-  /*return (uint16_t)a - (uint16_t)b;*/
   return ((uintptr_t)a & 0xffff) - ((uintptr_t)b & 0xffff);
 }
 
@@ -1511,6 +1512,7 @@ static void deinit_font(void *font)
 
   T_font *fnt = font;
 
+#ifdef YF_SFNT_NEED_NAME
   free(fnt->str.copyright);
   free(fnt->str.family);
   free(fnt->str.subfamily);
@@ -1525,6 +1527,7 @@ static void deinit_font(void *font)
   free(fnt->str.typographic_family);
   free(fnt->str.typographic_subfamily);
   free(fnt->str.sample_text);
+#endif /* YF_SFNT_NEED_NAME */
 
   switch (fnt->map.map) {
   case YF_SFNT_MAP_SPARSE:
@@ -1560,6 +1563,10 @@ static void scale_metrics(void *font, uint16_t pt, uint16_t dpi,
   if (y_max != NULL)
     *y_max = roundf(fnt->met.y_max*scale);
 }
+
+/*
+ * Glyph
+ */
 
 /* Checks whether a glyph is made of parts (compound/composite). */
 #define YF_SFNT_ISCOMPND(fnt, id) \
@@ -1813,6 +1820,7 @@ static int fetch_simple(T_font *font, uint16_t id, T_component *comp)
     } while (repeat_n-- > 0);
 
   } while (flag_n >= 0);
+
   return 0;
 }
 
@@ -1901,6 +1909,7 @@ static int fetch_compnd(T_font *font, uint16_t id, T_component *comps,
 
     ++idx;
   } while (flags & 32);
+
   return 0;
 }
 
@@ -1958,16 +1967,16 @@ static int scale_outline(T_outline *outln)
       return -1;
     }
     uint16_t pt_i = 0;
-    uint16_t begn = 0;
-    uint16_t curr = 0;
+    uint16_t beg = 0;
+    uint16_t cur = 0;
 
     for (uint16_t j = 0; j < comp.end_n; ++j) {
       uint16_t end = comp.ends[j];
       do {
-        if (outln->comps[i].pts[curr].on_curve) {
+        if (outln->comps[i].pts[cur].on_curve) {
           comp.pts[pt_i].on_curve = 1;
-          comp.pts[pt_i].x = YF_SFNT_FLTTOFIX(outln->comps[i].pts[curr].x*fac);
-          comp.pts[pt_i].y = YF_SFNT_FLTTOFIX(outln->comps[i].pts[curr].y*fac);
+          comp.pts[pt_i].x = YF_SFNT_FLTTOFIX(outln->comps[i].pts[cur].x*fac);
+          comp.pts[pt_i].y = YF_SFNT_FLTTOFIX(outln->comps[i].pts[cur].y*fac);
           if (++pt_i == comp.pt_n) {
             comp.pt_n = YF_MIN(comp.pt_n<<1, 0xffff);
             void *tmp = realloc(comp.pts, comp.pt_n * sizeof *comp.pts);
@@ -1980,9 +1989,9 @@ static int scale_outline(T_outline *outln)
           continue;
         }
 
-        const uint16_t p0_i = curr == begn ? end : curr-1;
-        const uint16_t p1_i = curr;
-        const uint16_t p2_i = curr == end ? begn : curr+1;
+        const uint16_t p0_i = cur == beg ? end : cur-1;
+        const uint16_t p1_i = cur;
+        const uint16_t p2_i = cur == end ? beg : cur+1;
 
         struct { int on; int32_t x, y; } curve[3] = {
           {
@@ -2054,9 +2063,9 @@ static int scale_outline(T_outline *outln)
           }
         }
 
-      } while (curr++ != end);
+      } while (cur++ != end);
 
-      begn = end+1;
+      beg = end+1;
       comp.ends[j] = pt_i-1;
     }
 
