@@ -251,7 +251,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
   unsigned exec_n = 0;
 #endif
 
-  do {
+  while (1) {
     yf_cmdbuf_settarget(l_vars.cb, tgt);
     yf_cmdbuf_setvport(l_vars.cb, 0, &scn->vport);
     yf_cmdbuf_setsciss(l_vars.cb, 0, scn->sciss);
@@ -355,7 +355,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     } else {
       break;
     }
-  } while (1);
+  }
 
 #ifdef YF_DEVEL
   printf("\n[YF] OUTPUT (%s):\n number of executions: %u\n\n",
@@ -393,7 +393,7 @@ static int init_vars(void)
   assert(inst_min > 0);
   size_t buf_sz;
 
-  do {
+  while (1) {
     int failed = 0;
     buf_sz = YF_GLOBSZ;
     for (unsigned i = 0; i < YF_RESRQ_N; ++i) {
@@ -445,7 +445,7 @@ static int init_vars(void)
         inst_sum += insts[i];
       }
     }
-  } while (1);
+  }
 
   if ((l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz)) == NULL ||
       (l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
@@ -454,8 +454,7 @@ static int init_vars(void)
       (l_vars.terrs = yf_list_init(NULL)) == NULL ||
       (l_vars.parts = yf_list_init(NULL)) == NULL ||
       (l_vars.quads = yf_list_init(NULL)) == NULL ||
-      (l_vars.labls = yf_list_init(NULL)) == NULL)
-  {
+      (l_vars.labls = yf_list_init(NULL)) == NULL) {
     yf_resmgr_clear();
     yf_buffer_deinit(l_vars.buf);
     yf_list_deinit(l_vars.res_obtd);
@@ -592,7 +591,7 @@ static int render_mdl(YF_scene scn)
   YF_iter it = YF_NILIT;
   T_kv_mdl *val = NULL;
 
-  do {
+  while (1) {
     val = yf_hashset_next(l_vars.mdls, &it);
     if (YF_IT_ISNIL(it))
       break;
@@ -639,7 +638,7 @@ static int render_mdl(YF_scene scn)
 
     yf_hashset_remove(l_vars.mdls, val);
     it = YF_NILIT;
-  } while (1);
+  }
 
   return 0;
 }
@@ -665,7 +664,7 @@ static int render_mdl_inst(YF_scene scn)
   if (done == NULL)
     return -1;
 
-  do {
+  while (1) {
     val = yf_hashset_next(l_vars.mdls_inst, &it);
     if (YF_IT_ISNIL(it))
       break;
@@ -673,7 +672,7 @@ static int render_mdl_inst(YF_scene scn)
     rem = val->mdl_n;
     n = 0;
 
-    do {
+    while (1) {
       rq_i = 0;
       for (; rq_i < sz; ++rq_i) {
         if (insts[rq_i] >= rem)
@@ -742,9 +741,9 @@ static int render_mdl_inst(YF_scene scn)
         yf_list_deinit(done);
         return -1;
       }
-    } while (1);
+    }
 
-  } while (1);
+  }
 
   while ((val = yf_list_removeat(done, NULL)) != NULL)
     yf_hashset_remove(l_vars.mdls_inst, val);
@@ -765,7 +764,7 @@ static int render_terr(YF_scene scn)
   YF_iter it = YF_NILIT;
   YF_terrain terr = NULL;
 
-  do {
+  while (1) {
     terr = yf_list_next(l_vars.terrs, &it);
     if (YF_IT_ISNIL(it))
       break;
@@ -815,7 +814,7 @@ static int render_terr(YF_scene scn)
 
     yf_list_removeat(l_vars.terrs, &it);
     it = YF_NILIT;
-  } while (1);
+  }
 
   return 0;
 }
@@ -831,7 +830,7 @@ static int render_part(YF_scene scn)
   YF_iter it = YF_NILIT;
   YF_particle part = NULL;
 
-  do {
+  while (1) {
     part = yf_list_next(l_vars.parts, &it);
     if (YF_IT_ISNIL(it))
       break;
@@ -875,7 +874,7 @@ static int render_part(YF_scene scn)
 
     yf_list_removeat(l_vars.parts, &it);
     it = YF_NILIT;
-  } while (1);
+  }
 
   return 0;
 }
@@ -891,7 +890,7 @@ static int render_quad(YF_scene scn)
   YF_iter it = YF_NILIT;
   YF_quad quad = NULL;
 
-  do {
+  while (1) {
     quad = yf_list_next(l_vars.quads, &it);
     if (YF_IT_ISNIL(it))
       break;
@@ -935,7 +934,7 @@ static int render_quad(YF_scene scn)
 
     yf_list_removeat(l_vars.quads, &it);
     it = YF_NILIT;
-  } while (1);
+  }
 
   return 0;
 }
@@ -951,7 +950,7 @@ static int render_labl(YF_scene scn)
   YF_iter it = YF_NILIT;
   YF_label labl = NULL;
 
-  do {
+  while (1) {
     labl = yf_list_next(l_vars.labls, &it);
     if (YF_IT_ISNIL(it))
       break;
@@ -993,7 +992,7 @@ static int render_labl(YF_scene scn)
 
     yf_list_removeat(l_vars.labls, &it);
     it = YF_NILIT;
-  } while (1);
+  }
 
   return 0;
 }
