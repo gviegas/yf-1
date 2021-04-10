@@ -69,8 +69,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
   YF_WINDING_FROM(conf->winding, fface);
 
   if (topol == INT_MAX || polym == INT_MAX ||
-      cullm == INT_MAX || fface == INT_MAX)
-  {
+      cullm == INT_MAX || fface == INT_MAX) {
     yf_seterr(YF_ERR_DEVGEN, __func__);
     yf_gstate_deinit(gst);
     return NULL;
@@ -121,8 +120,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
     VkShaderModule module = yf_getmod(ctx, conf->stgs[i].mod);
     if (module == VK_NULL_HANDLE ||
         !YF_STAGE_ONE(conf->stgs[i].stage) ||
-        (conf->stgs[i].stage & stg_mask) != 0)
-    {
+        (conf->stgs[i].stage & stg_mask) != 0) {
       yf_seterr(YF_ERR_INVARG, __func__);
       yf_gstate_deinit(gst);
       free(ss);
