@@ -25,6 +25,11 @@
 
 #include "data-sfnt.h"
 
+/* TODO: Use OS/2 metrics when this is defined. */
+#ifdef _WIN32
+# define YF_SFNT_NEED_OS2
+#endif
+
 #define YF_SFNT_MAKETAG(c1, c2, c3, c4) \
   ((c1 << 24) | (c2 << 16) | (c3 << 8) | c4)
 
@@ -206,6 +211,7 @@ typedef struct {
   T_namel *namels;
 } T_name;
 
+#ifdef YF_SFTN_NEED_OS2
 /* OS/2 & Windows metrics. */
 #define YF_SFNT_OS2TAG YF_SFNT_MAKETAG('O', 'S', '/', '2')
 
@@ -258,6 +264,7 @@ typedef struct {
 #define YF_SFNT_OS2SZ 100
 static_assert(offsetof(T_os2, up_optical_pt_sz) == YF_SFNT_OS2SZ-2,
     "!offsetof");
+#endif /* YF_SFNT_NEED_OS2 */
 
 /*
  * TrueType
@@ -343,7 +350,9 @@ typedef struct {
   T_hmtx *hmtx;
   T_maxp *maxp;
   T_name *name;
+#ifdef YF_SFNT_NEED_OS2
   T_os2 *os2;
+#endif
   struct {
     T_cvt *cvt;
     T_fpgm *fpgm;
@@ -544,9 +553,11 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
   const uint32_t name_tag = YF_SFNT_NAMETAG;
   uint32_t name_off = 0;
   uint32_t name_len = 0;
+#ifdef YF_SFNT_NEED_OS2
   const uint32_t os2_tag = YF_SFNT_OS2TAG;
   uint32_t os2_off = 0;
   uint32_t os2_len = 0;
+#endif
 
   for (uint16_t i = 0; i < tab_n; ++i) {
     const uint32_t tag = be32toh(sfnt.dir->dires[i].tag);
@@ -568,22 +579,31 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     } else if (tag == name_tag) {
       name_off = be32toh(sfnt.dir->dires[i].off);
       name_len = be32toh(sfnt.dir->dires[i].len);
+#ifdef YF_SFNT_NEED_OS2
     } else if (tag == os2_tag) {
       os2_off = be32toh(sfnt.dir->dires[i].off);
       os2_len = be32toh(sfnt.dir->dires[i].len);
+#endif
     }
   }
-  if (cmap_off == 0 || head_off == 0 || hhea_off == 0 || hmtx_off == 0 ||
-      maxp_off == 0 || name_off == 0 || os2_off == 0 ||
+  if (cmap_off == 0 || head_off == 0 || hhea_off == 0 ||
+      hmtx_off == 0 || maxp_off == 0 || name_off == 0 ||
       cmap_len < YF_SFNT_CMAPHSZ || head_len != YF_SFNT_HEADSZ ||
       hhea_len != YF_SFNT_HHEASZ || hmtx_len < YF_SFNT_HMTXESZ ||
-      maxp_len != YF_SFNT_MAXPSZ || name_len < YF_SFNT_NAMEHSZ ||
-      os2_len < YF_SFNT_OS2V0) {
+      maxp_len != YF_SFNT_MAXPSZ || name_len < YF_SFNT_NAMEHSZ) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
+#ifdef YF_SFNT_NEED_OS2
+  if (os2_off == 0 || os2_len < YF_SFNT_OS2V0) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
+    deinit_tables(&sfnt);
+    fclose(file);
+    return -1;
+  }
+#endif
 
   /* head table */
   sfnt.head = calloc(1, sizeof(T_head));
@@ -594,8 +614,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, head_off, SEEK_SET) != 0 ||
-      fread(sfnt.head, head_len, 1, file) < 1)
-  {
+      fread(sfnt.head, head_len, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -611,8 +630,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, hhea_off, SEEK_SET) != 0 ||
-      fread(sfnt.hhea, hhea_len, 1, file) < 1)
-  {
+      fread(sfnt.hhea, hhea_len, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -629,8 +647,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, maxp_off, SEEK_SET) != 0 ||
-      fread(sfnt.maxp, maxp_len, 1, file) < 1)
-  {
+      fread(sfnt.maxp, maxp_len, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -656,8 +673,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, hmtx_off, SEEK_SET) != 0 ||
-      fread(sfnt.hmtx->hmtxes, sizeof(T_hmtxe), hmetric_n, file) < hmetric_n)
-  {
+      fread(sfnt.hmtx->hmtxes, sizeof(T_hmtxe), hmetric_n, file) < hmetric_n) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -680,6 +696,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     }
   }
 
+#ifdef YF_SFNT_NEED_OS2
   /* os2 table */
   sfnt.os2 = calloc(1, sizeof(T_os2));
   if (sfnt.os2 == NULL) {
@@ -689,13 +706,13 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, os2_off, SEEK_SET) != 0 ||
-      fread(sfnt.os2, os2_len, 1, file) < 1)
-  {
+      fread(sfnt.os2, os2_len, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
     return -1;
   }
+#endif
 
   /* cmap table */
   sfnt.cmap = calloc(1, sizeof(T_cmap));
@@ -706,8 +723,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, cmap_off, SEEK_SET) != 0 ||
-      fread(&sfnt.cmap->cmaph, YF_SFNT_CMAPHSZ, 1, file) < 1)
-  {
+      fread(&sfnt.cmap->cmaph, YF_SFNT_CMAPHSZ, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -739,8 +755,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     return -1;
   }
   if (fseek(file, name_off, SEEK_SET) != 0 ||
-      fread(&sfnt.name->nameh, YF_SFNT_NAMEHSZ, 1, file) < 1)
-  {
+      fread(&sfnt.name->nameh, YF_SFNT_NAMEHSZ, 1, file) < 1) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -806,8 +821,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
   font->comp_elem_max = be16toh(sfnt.maxp->comp_elem_max);
 
   if (get_metrics(&sfnt, &font->met) != 0 ||
-      set_mapping(sfnt.cmap, file, cmap_off, &font->map) != 0)
-  {
+      set_mapping(sfnt.cmap, file, cmap_off, &font->map) != 0) {
     deinit_tables(&sfnt);
     free(font);
     fclose(file);
@@ -1121,7 +1135,9 @@ static void deinit_tables(T_sfnt *sfnt)
     free(sfnt->name->namels);
     free(sfnt->name);
   }
+#ifdef YF_SFNT_NEED_OS2
   free(sfnt->os2);
+#endif
 
   if (sfnt->ttf.cvt != NULL) {
     free(sfnt->ttf.cvt->ctrl_vals);
