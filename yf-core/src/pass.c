@@ -139,8 +139,7 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
   for (unsigned i = 0; i < dsc_n; ++i) {
     if (dscs[i].format == VK_FORMAT_UNDEFINED || dscs[i].samples == INT_MAX ||
         dscs[i].loadOp == INT_MAX || dscs[i].storeOp == INT_MAX ||
-        dscs[i].stencilLoadOp == INT_MAX || dscs[i].stencilStoreOp == INT_MAX)
-    {
+        dscs[i].stencilLoadOp == INT_MAX || dscs[i].stencilStoreOp == INT_MAX) {
       yf_seterr(YF_ERR_INVARG, __func__);
       yf_pass_deinit(pass);
       free(dscs);
@@ -197,8 +196,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
   const YF_limits *lim = yf_getlimits(pass->ctx);
   if (layers > lim->pass.layer_max ||
       dim.width > lim->pass.dim_max.width ||
-      dim.height > lim->pass.dim_max.height)
-  {
+      dim.height > lim->pass.dim_max.height) {
     yf_seterr(YF_ERR_LIMIT, __func__);
     return NULL;
   }
@@ -206,8 +204,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
   const unsigned resolve_n = resolves == NULL ? 0 : color_n;
   const unsigned depth_n = depth_stencil == NULL ? 0 : 1;
   if (layers < 1 || color_n != pass->color_n ||
-      resolve_n != pass->resolve_n || depth_n != pass->depth_n)
-  {
+      resolve_n != pass->resolve_n || depth_n != pass->depth_n) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return NULL;
   }
