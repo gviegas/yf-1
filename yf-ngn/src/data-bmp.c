@@ -225,8 +225,6 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
     compr = le32toh(v4h.compression);
     ci_n = le32toh(v4h.ci_n);
     mask_rgba[3] = (bpp == 16 || bpp == 32) ? le32toh(v4h.mask_a) : 0;
-    YF_SETLSHF(lshf_rgba[3], mask_rgba[3], bpp);
-    YF_SETBITN(bitn_rgba[3], mask_rgba[3], bpp, lshf_rgba[3]);
     switch (compr) {
     case YF_BMP_COMPR_RGB:
       break;
@@ -258,8 +256,6 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
     compr = le32toh(v5h.compression);
     ci_n = le32toh(v5h.ci_n);
     mask_rgba[3] = (bpp == 16 || bpp == 32) ? le32toh(v5h.mask_a) : 0;
-    YF_SETLSHF(lshf_rgba[3], mask_rgba[3], bpp);
-    YF_SETBITN(bitn_rgba[3], mask_rgba[3], bpp, lshf_rgba[3]);
     switch (compr) {
     case YF_BMP_COMPR_RGB:
       break;
@@ -286,13 +282,11 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
     fclose(file);
     return -1;
   }
-  /*
-  if (rd_n != data_off && fseek(file, data_off, SEEK_SET) != 0) {
-    yf_seterr(YF_ERR_OTHER, __func__);
+  if (bpp > 8 && rd_n != data_off && fseek(file, data_off, SEEK_SET) != 0) {
+    yf_seterr(YF_ERR_INVFILE, __func__);
     fclose(file);
     return -1;
   }
-  */
 
   size_t channels = mask_rgba[3] != 0 ? 4 : 3;
   unsigned char *dt = malloc(channels * w * (h < 0 ? -h : h));
@@ -368,12 +362,10 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
       mask_rgba[1] = 0x03e0;
       mask_rgba[2] = 0x001f;
     }
-    YF_SETLSHF(lshf_rgba[0], mask_rgba[0], bpp);
-    YF_SETLSHF(lshf_rgba[1], mask_rgba[1], bpp);
-    YF_SETLSHF(lshf_rgba[2], mask_rgba[2], bpp);
-    YF_SETBITN(bitn_rgba[0], mask_rgba[0], bpp, lshf_rgba[0]);
-    YF_SETBITN(bitn_rgba[1], mask_rgba[1], bpp, lshf_rgba[1]);
-    YF_SETBITN(bitn_rgba[2], mask_rgba[2], bpp, lshf_rgba[2]);
+    for (size_t i = 0; i < channels; ++i) {
+      YF_SETLSHF(lshf_rgba[i], mask_rgba[i], bpp);
+      YF_SETBITN(bitn_rgba[i], mask_rgba[i], bpp, lshf_rgba[i]);
+    }
     size_t padding = (w & 1) << 1;
     size_t scln_sz = (w << 1) + padding;
     if ((scln = malloc(scln_sz)) == NULL) {
@@ -383,15 +375,12 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
       return -1;
     }
     /* each channel will be scaled to the 8-bit range */
-    uint32_t diff_rgba[3] = {
+    uint32_t diff_rgba[4] = {
       YF_MIN(8, 8-bitn_rgba[0]),
       YF_MIN(8, 8-bitn_rgba[1]),
-      YF_MIN(8, 8-bitn_rgba[2])
+      YF_MIN(8, 8-bitn_rgba[2]),
+      YF_MIN(8, 8-bitn_rgba[3])
     };
-    uint32_t scale;
-    uint32_t comp;
-    uint16_t pix16;
-    size_t dt_i;
     for (int32_t i = from; i != to; i += inc) {
       if (fread(scln, 1, scln_sz, file) < scln_sz) {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -401,12 +390,11 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
         return -1;
       }
       for (int32_t j = 0; j < w; ++j) {
-        pix16 = ((uint16_t *)scln)[j];
-        pix16 = le16toh(pix16);
+        uint16_t pix16 = le16toh(((uint16_t *)scln)[j]);
         for (size_t k = 0; k < channels; ++k) {
-          dt_i = channels*w*i + channels*j + k;
-          comp = (pix16 & mask_rgba[k]) >> lshf_rgba[k];
-          scale = 1 << diff_rgba[k];
+          size_t dt_i = channels*w*i + channels*j + k;
+          uint32_t comp = (pix16 & mask_rgba[k]) >> lshf_rgba[k];
+          uint32_t scale = 1 << diff_rgba[k];
           dt[dt_i] = comp * scale + comp % scale;
         }
       }
@@ -433,7 +421,6 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
       k[0] = 0;
       k[2] = 2;
     }
-    size_t dt_i;
     for (int32_t i = from; i != to; i += inc) {
       if (fread(scln, 1, scln_sz, file) < scln_sz) {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -443,7 +430,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
         return -1;
       }
       for (int32_t j = 0; j < w; ++j) {
-        dt_i = channels*w*i + channels*j;
+        size_t dt_i = channels*w*i + channels*j;
         dt[dt_i++] = scln[3*j+k[0]];
         dt[dt_i++] = scln[3*j+k[1]];
         dt[dt_i++] = scln[3*j+k[2]];
@@ -457,9 +444,8 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
       mask_rgba[1] = 0x0000ff00;
       mask_rgba[2] = 0x000000ff;
     }
-    YF_SETLSHF(lshf_rgba[0], mask_rgba[0], bpp);
-    YF_SETLSHF(lshf_rgba[1], mask_rgba[1], bpp);
-    YF_SETLSHF(lshf_rgba[2], mask_rgba[2], bpp);
+    for (size_t i = 0; i < channels; ++i)
+      YF_SETLSHF(lshf_rgba[i], mask_rgba[i], bpp);
     /* no padding needed */
     size_t scln_sz = w << 2;
     if ((scln = malloc(scln_sz)) == NULL) {
@@ -468,8 +454,6 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
       free(dt);
       return -1;
     }
-    uint32_t pix32;
-    size_t dt_i;
     for (int32_t i = from; i != to; i += inc) {
       if (fread(scln, 1, scln_sz, file) < scln_sz) {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -479,10 +463,9 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
         return -1;
       }
       for (int32_t j = 0; j < w; ++j) {
-        pix32 = ((uint32_t *)scln)[j];
-        pix32 = le32toh(pix32);
+        uint32_t pix32 = le32toh(((uint32_t *)scln)[j]);
         for (size_t k = 0; k < channels; ++k) {
-          dt_i = channels*w*i + channels*j + k;
+          size_t dt_i = channels*w*i + channels*j + k;
           dt[dt_i] = (pix32 & mask_rgba[k]) >> lshf_rgba[k];
         }
       }
