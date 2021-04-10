@@ -259,28 +259,6 @@ typedef struct {
 static_assert(offsetof(T_os2, up_optical_pt_sz) == YF_SFNT_OS2SZ-2,
     "!offsetof");
 
-/* PostScript info. */
-#define YF_SFNT_POSTTAG YF_SFNT_MAKETAG('p', 'o', 's', 't')
-
-typedef struct {
-  uint32_t version;
-  uint32_t italic_ang;
-  int16_t undln_pos;
-  int16_t undln_thick;
-  uint32_t fixed_pitch;
-  uint32_t mem42_min;
-  uint32_t mem42_max;
-  uint32_t mem1_min;
-  uint32_t mem1_max;
-} T_posth;
-#define YF_SFNT_POSTHSZ 32
-static_assert(offsetof(T_posth, mem1_max) == YF_SFNT_POSTHSZ-4, "!offsetof");
-
-typedef struct {
-  T_posth posth;
-  /* XXX: Glyph names won't see any use. */
-} T_post;
-
 /*
  * TrueType
  */
@@ -366,7 +344,6 @@ typedef struct {
   T_maxp *maxp;
   T_name *name;
   T_os2 *os2;
-  T_post *post;
   struct {
     T_cvt *cvt;
     T_fpgm *fpgm;
@@ -570,9 +547,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
   const uint32_t os2_tag = YF_SFNT_OS2TAG;
   uint32_t os2_off = 0;
   uint32_t os2_len = 0;
-  const uint32_t post_tag = YF_SFNT_POSTTAG;
-  uint32_t post_off = 0;
-  uint32_t post_len = 0;
 
   for (uint16_t i = 0; i < tab_n; ++i) {
     const uint32_t tag = be32toh(sfnt.dir->dires[i].tag);
@@ -597,18 +571,14 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     } else if (tag == os2_tag) {
       os2_off = be32toh(sfnt.dir->dires[i].off);
       os2_len = be32toh(sfnt.dir->dires[i].len);
-    } else if (tag == post_tag) {
-      post_off = be32toh(sfnt.dir->dires[i].off);
-      post_len = be32toh(sfnt.dir->dires[i].len);
     }
   }
   if (cmap_off == 0 || head_off == 0 || hhea_off == 0 || hmtx_off == 0 ||
-      maxp_off == 0 || name_off == 0 || os2_off == 0 || post_off == 0 ||
+      maxp_off == 0 || name_off == 0 || os2_off == 0 ||
       cmap_len < YF_SFNT_CMAPHSZ || head_len != YF_SFNT_HEADSZ ||
       hhea_len != YF_SFNT_HHEASZ || hmtx_len < YF_SFNT_HMTXESZ ||
       maxp_len != YF_SFNT_MAXPSZ || name_len < YF_SFNT_NAMEHSZ ||
-      os2_len < YF_SFNT_OS2V0 || post_len < YF_SFNT_POSTHSZ)
-  {
+      os2_len < YF_SFNT_OS2V0) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
     fclose(file);
@@ -720,23 +690,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
   }
   if (fseek(file, os2_off, SEEK_SET) != 0 ||
       fread(sfnt.os2, os2_len, 1, file) < 1)
-  {
-    yf_seterr(YF_ERR_INVFILE, __func__);
-    deinit_tables(&sfnt);
-    fclose(file);
-    return -1;
-  }
-
-  /* post table */
-  sfnt.post = calloc(1, sizeof(T_post));
-  if (sfnt.post == NULL) {
-    yf_seterr(YF_ERR_NOMEM, __func__);
-    deinit_tables(&sfnt);
-    fclose(file);
-    return -1;
-  }
-  if (fseek(file, post_off, SEEK_SET) != 0 ||
-      fread(&sfnt.post->posth, YF_SFNT_POSTHSZ, 1, file) < 1)
   {
     yf_seterr(YF_ERR_INVFILE, __func__);
     deinit_tables(&sfnt);
@@ -1169,7 +1122,6 @@ static void deinit_tables(T_sfnt *sfnt)
     free(sfnt->name);
   }
   free(sfnt->os2);
-  free(sfnt->post);
 
   if (sfnt->ttf.cvt != NULL) {
     free(sfnt->ttf.cvt->ctrl_vals);
