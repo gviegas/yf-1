@@ -218,8 +218,7 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
   l_gdec->clrcol.used = calloc(col_max, sizeof *l_gdec->clrcol.used);
 
   if (l_gdec->dtb.allocs == NULL || l_gdec->dtb.used == NULL ||
-      l_gdec->clrcol.vals == NULL || l_gdec->clrcol.used == NULL)
-  {
+      l_gdec->clrcol.vals == NULL || l_gdec->clrcol.used == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
     free(l_gdec->dtb.allocs);
     free(l_gdec->dtb.used);
@@ -467,11 +466,8 @@ static int decode_vport(const YF_cmd *cmd)
       cmd->vport.vport.x+cmd->vport.vport.width > lim->viewport.bounds_max ||
       cmd->vport.vport.y < lim->viewport.bounds_min ||
       cmd->vport.vport.y+cmd->vport.vport.height > lim->viewport.bounds_max ||
-      cmd->vport.vport.min_depth < 0.0f ||
-      cmd->vport.vport.min_depth > 1.0f ||
-      cmd->vport.vport.max_depth < 0.0f ||
-      cmd->vport.vport.max_depth > 1.0f)
-  {
+      cmd->vport.vport.min_depth < 0.0f || cmd->vport.vport.min_depth > 1.0f ||
+      cmd->vport.vport.max_depth < 0.0f || cmd->vport.vport.max_depth > 1.0f) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
   }
@@ -646,8 +642,7 @@ static int decode_draw(const YF_cmd *cmd)
         continue;
 
       if (i >= l_gdec->gst->dtb_n ||
-          l_gdec->dtb.allocs[i] >= l_gdec->gst->dtbs[i]->set_n)
-      {
+          l_gdec->dtb.allocs[i] >= l_gdec->gst->dtbs[i]->set_n) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
       }
@@ -768,8 +763,7 @@ static int decode_disp(const YF_cmd *cmd)
         continue;
 
       if (i >= l_cdec->cst->dtb_n ||
-          l_cdec->dtb.allocs[i] >= l_cdec->cst->dtbs[i]->set_n)
-      {
+          l_cdec->dtb.allocs[i] >= l_cdec->cst->dtbs[i]->set_n) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
       }
