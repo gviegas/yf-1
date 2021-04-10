@@ -215,8 +215,7 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
   if (layer > img->layers || level > img->levels ||
       off.x + dim.width > img->dim.width ||
       off.y + dim.height > img->dim.height ||
-      off.z + dim.depth > img->dim.depth)
-  {
+      off.z + dim.depth > img->dim.depth) {
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
   }
