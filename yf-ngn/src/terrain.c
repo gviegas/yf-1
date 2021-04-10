@@ -150,6 +150,8 @@ static int init_grid(YF_terrain terr)
     YF_GRID_CPYI();
   }
 
+#undef YF_GRID_CPYI
+
   float x0, z0;
   float pos_off;
   if (wdt > dep) {
