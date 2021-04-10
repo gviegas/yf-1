@@ -20,7 +20,7 @@
 #define YF_INITCAP 1024
 
 #if !defined(_POSIX_C_SOURCE) || (_POSIX_C_SOURCE < 200809L)
-/* TODO: Provide an implementation of 'getline'. */
+/* TODO: Provide an implementation of 'getline()'. */
 # error "Invalid platform"
 #endif
 
@@ -87,6 +87,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
   FILE *file = fopen(pathname, "r");
   if (file == NULL) {
     yf_seterr(YF_ERR_NOFILE, __func__);
+    yf_hashset_deinit(map);
     return -1;
   }
 
@@ -98,7 +99,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
     if (sscanf(line, fmt_v, v, v+1, v+2) == 3) {
       /* position */
       if (pos_n == pos_cap) {
-        pos_cap = pos_n == 0 ? YF_INITCAP : pos_cap<<1;
+        pos_cap = pos_n == 0 ? YF_INITCAP : pos_cap << 1;
         YF_vec3 *tmp = realloc(poss, pos_cap * sizeof *poss);
         if (tmp == NULL) {
           yf_seterr(YF_ERR_NOMEM, __func__);
@@ -112,7 +113,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
     } else if (sscanf(line, fmt_vt, vt, vt+1) == 2) {
       /* tex. coord. */
       if (tex_n == tex_cap) {
-        tex_cap = tex_n == 0 ? YF_INITCAP : tex_cap*2;
+        tex_cap = tex_n == 0 ? YF_INITCAP : tex_cap << 1;
         YF_vec2 *tmp = realloc(texs, tex_cap * sizeof *texs);
         if (tmp == NULL) {
           yf_seterr(YF_ERR_NOMEM, __func__);
@@ -126,7 +127,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
     } else if (sscanf(line, fmt_vn, vn, vn+1, vn+2) == 3) {
       /* normal */
       if (norm_n == norm_cap) {
-        norm_cap = norm_n == 0 ? YF_INITCAP : norm_cap<<1;
+        norm_cap = norm_n == 0 ? YF_INITCAP : norm_cap << 1;
         YF_vec3 *tmp = realloc(norms, norm_cap * sizeof *norms);
         if (tmp == NULL) {
           yf_seterr(YF_ERR_NOMEM, __func__);
@@ -166,7 +167,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
 
       /* quads will need two triangles and thus, six indices */
       if (idx_n + 6 > idx_cap) {
-        idx_cap = idx_n == 0 ? YF_INITCAP : idx_cap<<1;
+        idx_cap = idx_n == 0 ? YF_INITCAP : idx_cap << 1;
         unsigned *tmp = realloc(inds, idx_cap * sizeof *inds);
         if (tmp == NULL) {
           yf_seterr(YF_ERR_NOMEM, __func__);
@@ -190,7 +191,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
             face[i] = stored_val->value;
           } else {
             if (vtx_n == vtx_cap) {
-              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
+              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap << 1;
               YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
               if (tmp == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
@@ -231,7 +232,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
             face[i] = stored_val->value;
           } else {
             if (vtx_n == vtx_cap) {
-              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
+              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap << 1;
               YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
               if (tmp == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
@@ -272,7 +273,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
             face[i] = stored_val->value;
           } else {
             if (vtx_n == vtx_cap) {
-              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
+              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap << 1;
               YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
               if (tmp == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
@@ -312,7 +313,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
             face[i] = stored_val->value;
           } else {
             if (vtx_n == vtx_cap) {
-              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap<<1;
+              vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap << 1;
               YF_vmdl *tmp = realloc(verts, vtx_cap * sizeof *verts);
               if (tmp == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
