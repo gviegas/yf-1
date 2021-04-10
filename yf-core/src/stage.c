@@ -67,8 +67,7 @@ int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod)
 
   long n = 0;
   if (fseek(file, 0, SEEK_END) != 0 || (n = ftell(file)) <= 0 ||
-      n % YF_MODWRD != 0)
-  {
+      n % YF_MODWRD != 0) {
     yf_seterr(YF_ERR_INVFILE, __func__);
     fclose(file);
     return -1;
