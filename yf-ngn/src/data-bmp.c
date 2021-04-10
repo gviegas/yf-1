@@ -472,6 +472,15 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
     }
   } break;
 
+  case 1:
+  case 2:
+  case 4:
+  case 64:
+    yf_seterr(YF_ERR_UNSUP, __func__);
+    fclose(file);
+    free(dt);
+    return -1;
+
   default:
     yf_seterr(YF_ERR_INVFILE, __func__);
     fclose(file);
