@@ -193,6 +193,8 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
     break;
   default:
     assert(0);
+    yf_seterr(YF_ERR_OTHER, __func__);
+    return -1;
   }
 
   if (data.data == NULL) {
