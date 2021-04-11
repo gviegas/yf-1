@@ -193,12 +193,12 @@ void yf_scene_setcolor(YF_scene scn, YF_color color)
 
 void yf_scene_deinit(YF_scene scn)
 {
-  /* TODO: Deinitialize shared vars. on exit. */
-  if (scn != NULL) {
-    yf_camera_deinit(scn->cam);
-    yf_node_deinit(scn->node);
-    free(scn);
-  }
+  if (scn == NULL)
+    return;
+
+  yf_camera_deinit(scn->cam);
+  yf_node_deinit(scn->node);
+  free(scn);
 }
 
 int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
@@ -366,6 +366,12 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
 
   clear_obj();
   return 0;
+}
+
+/* Called by 'coreobj' on exit. */
+void yf_unsetscn(void)
+{
+  deinit_vars();
 }
 
 static int init_vars(void)

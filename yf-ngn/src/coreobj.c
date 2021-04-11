@@ -19,6 +19,9 @@ static YF_context l_ctx = NULL;
 /* Pass instance (managed somewhere else). */
 extern YF_pass yf_g_pass;
 
+/* Unsets scene shared variables (defined somewhere else). */
+void yf_unsetscn(void);
+
 /* Flag stating whether or not the exit handler was installed already. */
 static int l_installed = 0;
 
@@ -70,8 +73,7 @@ static int set_handler(void)
 
 static void handle_exit(void)
 {
+  yf_unsetscn();
   yf_pass_deinit(yf_g_pass);
-  yf_g_pass = NULL;
   yf_context_deinit(l_ctx);
-  l_ctx = NULL;
 }
