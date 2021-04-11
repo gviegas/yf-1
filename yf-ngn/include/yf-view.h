@@ -26,6 +26,9 @@ typedef struct YF_view_o *YF_view;
 /**
  * Initializes a new view.
  *
+ * If a view already exists, this function fails and sets the global error
+ * to 'YF_ERR_EXIST'.
+ *
  * @param win: The window to associate the view with.
  * @return: On success, returns a new view. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
