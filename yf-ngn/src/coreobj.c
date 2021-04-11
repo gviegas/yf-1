@@ -8,6 +8,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifndef __STDC_NO_ATOMICS__
+# include <stdatomic.h>
+#else
+# error "C11 atomics required"
+#endif
+
 #include "coreobj.h"
 #include "error.h"
 
@@ -36,12 +42,17 @@ static void handle_exit(void);
 
 YF_context yf_getctx(void)
 {
-  if (l_ctx == NULL) {
+  static atomic_flag flag = ATOMIC_FLAG_INIT;
+
+  if (atomic_flag_test_and_set(&flag)) {
+    while (l_ctx == NULL)
+      ;
+  } else if (l_ctx == NULL) {
+    set_handler();
     if ((l_ctx = yf_context_init()) == NULL)
       exit_fatal(__func__);
-    else
-      set_handler();
   }
+
   return l_ctx;
 }
 
