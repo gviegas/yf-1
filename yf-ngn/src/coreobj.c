@@ -17,28 +17,20 @@
 #include "coreobj.h"
 #include "error.h"
 
-/* TODO: Thread-safe. */
-
 /* Context instance. */
 static YF_context l_ctx = NULL;
 
 /* Pass instance (managed somewhere else). */
 extern YF_pass yf_g_pass;
 
-/* Unsets scene shared variables (defined somewhere else). */
+/* Unsets shared scene variables (defined somewhere else). */
 void yf_unsetscn(void);
-
-/* Flag stating whether or not the exit handler was installed already. */
-static int l_installed = 0;
-
-/* Exits with failure. */
-static _Noreturn void exit_fatal(const char *info);
-
-/* Sets the exit handler. */
-static int set_handler(void);
 
 /* Handles deinitialization before exiting. */
 static void handle_exit(void);
+
+/* Exits with failure. */
+static _Noreturn void exit_fatal(const char *info);
 
 YF_context yf_getctx(void)
 {
@@ -48,8 +40,7 @@ YF_context yf_getctx(void)
     while (l_ctx == NULL)
       ;
   } else if (l_ctx == NULL) {
-    set_handler();
-    if ((l_ctx = yf_context_init()) == NULL)
+    if (atexit(handle_exit) != 0 || (l_ctx = yf_context_init()) == NULL)
       exit_fatal(__func__);
   }
 
@@ -70,28 +61,24 @@ YF_pass yf_getpass(void)
   return yf_g_pass;
 }
 
-static _Noreturn void exit_fatal(const char *info)
-{
-#ifndef YF_DEVEL
-  yf_printerr();
-#endif
-  printf("\n[YF] Fatal: Could not initialize core object.\n(%s)\n", info);
-  exit(EXIT_FAILURE);
-}
-
-static int set_handler(void)
-{
-  if (!l_installed) {
-    if (atexit(handle_exit) != 0)
-      return -1;
-    l_installed = 1;
-  }
-  return 0;
-}
-
 static void handle_exit(void)
 {
   yf_unsetscn();
   yf_pass_deinit(yf_g_pass);
   yf_context_deinit(l_ctx);
+}
+
+static _Noreturn void exit_fatal(const char *info)
+{
+#ifndef YF_DEVEL
+  yf_printerr();
+#endif
+
+  fprintf(stderr, "\n[YF] Fatal:\n! Failed to initialize core object");
+  if (info != NULL)
+    fprintf(stderr, "\n! %s\n\n", info);
+  else
+    fprintf(stderr, "\n\n");
+
+  exit(EXIT_FAILURE);
 }
