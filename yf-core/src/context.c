@@ -78,16 +78,18 @@ YF_context yf_context_init(void)
   }
 
   if (yf_loadvk() != 0) {
-    yf_context_deinit(NULL);
+    atomic_flag_clear(&l_flag);
     return NULL;
   }
 
   YF_context ctx = calloc(1, sizeof(YF_context_o));
   if (ctx == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
-    yf_context_deinit(NULL);
+    yf_unldvk();
+    atomic_flag_clear(&l_flag);
     return NULL;
   }
+
   if (init_instance(ctx) != 0) {
     yf_context_deinit(ctx);
     return NULL;
@@ -100,6 +102,7 @@ YF_context yf_context_init(void)
     yf_context_deinit(ctx);
     return NULL;
   }
+
   if (yf_cmdpool_create(ctx, YF_CMDPCAP) != 0) {
     yf_context_deinit(ctx);
     return NULL;
@@ -114,10 +117,8 @@ YF_context yf_context_init(void)
 
 void yf_context_deinit(YF_context ctx)
 {
-  if (ctx == NULL) {
-    atomic_flag_clear(&l_flag);
+  if (ctx == NULL)
     return;
-  }
 
   vkDeviceWaitIdle(ctx->device);
 
