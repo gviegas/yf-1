@@ -139,11 +139,12 @@ static void yield_res(void);
 /* Clears data structures of all objects. */
 static void clear_obj(void);
 
+/* Deinitializes shared variables and releases resources. */
+static void deinit_vars(void);
+
 /* Functions used by the model sets. */
 static size_t hash_mdl(const void *x);
-
 static int cmp_mdl(const void *a, const void *b);
-
 static int dealloc_mdl(void *val, void *arg);
 
 YF_scene yf_scene_init(void)
@@ -456,16 +457,7 @@ static int init_vars(void)
       (l_vars.parts = yf_list_init(NULL)) == NULL ||
       (l_vars.quads = yf_list_init(NULL)) == NULL ||
       (l_vars.labls = yf_list_init(NULL)) == NULL) {
-    yf_resmgr_clear();
-    yf_buffer_deinit(l_vars.buf);
-    yf_list_deinit(l_vars.res_obtd);
-    yf_hashset_deinit(l_vars.mdls);
-    yf_hashset_deinit(l_vars.mdls_inst);
-    yf_list_deinit(l_vars.terrs);
-    yf_list_deinit(l_vars.parts);
-    yf_list_deinit(l_vars.quads);
-    yf_list_deinit(l_vars.labls);
-    memset(&l_vars, 0, sizeof l_vars);
+    deinit_vars();
     return -1;
   }
   return 0;
@@ -1211,6 +1203,31 @@ static void clear_obj(void)
   yf_list_clear(l_vars.parts);
   yf_list_clear(l_vars.quads);
   yf_list_clear(l_vars.labls);
+}
+
+static void deinit_vars(void)
+{
+  if (l_vars.ctx == NULL)
+    return;
+
+  yf_resmgr_clear();
+  yf_buffer_deinit(l_vars.buf);
+  yf_list_deinit(l_vars.res_obtd);
+
+  if (l_vars.mdls != NULL) {
+    yf_hashset_each(l_vars.mdls, dealloc_mdl, NULL);
+    yf_hashset_deinit(l_vars.mdls);
+  }
+  if (l_vars.mdls_inst != NULL) {
+    yf_hashset_each(l_vars.mdls_inst, dealloc_mdl, NULL);
+    yf_hashset_deinit(l_vars.mdls_inst);
+  }
+  yf_list_deinit(l_vars.terrs);
+  yf_list_deinit(l_vars.parts);
+  yf_list_deinit(l_vars.quads);
+  yf_list_deinit(l_vars.labls);
+
+  memset(&l_vars, 0, sizeof l_vars);
 }
 
 static size_t hash_mdl(const void *x)
