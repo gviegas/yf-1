@@ -148,9 +148,6 @@ static int dealloc_mdl(void *val, void *arg);
 
 YF_scene yf_scene_init(void)
 {
-  if (l_vars.ctx == NULL && init_vars() != 0)
-    return NULL;
-
   YF_scene scn = calloc(1, sizeof(struct YF_scene_o));
   if (scn == NULL) {
     yf_seterr(YF_ERR_NOMEM, __func__);
@@ -208,6 +205,10 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
   assert(scn != NULL);
   assert(pass != NULL);
   assert(tgt != NULL);
+
+  /* XXX: This is done here because 'resmgr' needs a valid 'pass'. */
+  if (l_vars.ctx == NULL && init_vars() != 0)
+    return -1;
 
   yf_camera_adjust(scn->cam, (YF_float)dim.width / (YF_float)dim.height);
   YF_VIEWPORT_FROMDIM2(dim, scn->vport);
