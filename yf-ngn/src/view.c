@@ -8,6 +8,12 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#ifndef __STDC_NO_ATOMICS__
+# include <stdatomic.h>
+#else
+# error "C11 atomics required"
+#endif
+
 #include "yf/com/yf-clock.h"
 #include "yf/com/yf-error.h"
 #include "yf/core/yf-image.h"
@@ -33,9 +39,17 @@ struct YF_view_o {
 /* Global pass instance. */
 YF_pass yf_g_pass = NULL;
 
+/* Flag to disallow the creation of multiple views. */
+static atomic_flag l_flag = ATOMIC_FLAG_INIT;
+
 YF_view yf_view_init(YF_window win)
 {
   assert(win != NULL);
+
+  if (atomic_flag_test_and_set(&l_flag)) {
+    yf_seterr(YF_ERR_EXIST, __func__);
+    return NULL;
+  }
 
   YF_view view = calloc(1, sizeof(struct YF_view_o));
   if (view == NULL) {
@@ -221,10 +235,11 @@ void yf_view_deinit(YF_view view)
   free(view->tgts);
 
   /* XXX: Pass deinitialization handled on 'coreobj'. */
-  /*yf_pass_deinit(view->pass);*/
 
   yf_image_deinit(view->depth_img);
   yf_wsi_deinit(view->wsi);
 
   free(view);
+
+  atomic_flag_clear(&l_flag);
 }
