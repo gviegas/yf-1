@@ -58,8 +58,15 @@ YF_context yf_getctx(void)
 
 YF_pass yf_getpass(void)
 {
-  if (yf_g_pass == NULL)
+  static atomic_flag flag = ATOMIC_FLAG_INIT;
+
+  if (atomic_flag_test_and_set(&flag)) {
+    while (yf_g_pass == NULL)
+      ;
+  } else if (yf_g_pass == NULL) {
     exit_fatal(__func__);
+  }
+
   return yf_g_pass;
 }
 
