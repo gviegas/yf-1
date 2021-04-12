@@ -2,7 +2,7 @@
  * YF
  * yf-vinput.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_VINPUT_H
@@ -66,6 +66,10 @@ typedef struct {
  * The vertex input defines a set of attributes residing in the same vertex
  * buffer. A buffer object bound as vertex buffer during command encoding must
  * adhere to the input layout.
+ *
+ * Non-interleaved data requires one 'vinput' per attribute. Interleaved data
+ * uses the 'offset' member of each attribute to indicate their locations in
+ * the vertex buffer.
  */
 typedef struct {
   const YF_vattr *attrs;
