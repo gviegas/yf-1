@@ -37,8 +37,6 @@ YF_scene yf_scene_init(void);
  *
  * Only nodes that descend from a scene's root node will be rendered when
  * rendering the scene.
- * The location of a node in the scene graph has no practical ordering
- * implications.
  *
  * @param scn: The scene.
  * @return: The scene's node.
