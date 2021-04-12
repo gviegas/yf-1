@@ -58,7 +58,7 @@ const YF_limits *yf_getlimits(YF_context ctx)
   lim->image.dim_3d_max = dl->maxImageDimension3D;
   lim->image.layer_max = dl->maxImageArrayLayers;
 
-  lim->dtable.res_max = dl->maxPerStageResources;
+  lim->dtable.stg_res_max = dl->maxPerStageResources;
   lim->dtable.unif_max = dl->maxPerStageDescriptorUniformBuffers;
   lim->dtable.mut_max = dl->maxPerStageDescriptorStorageBuffers;
   lim->dtable.img_max = dl->maxPerStageDescriptorStorageImages;
@@ -69,7 +69,7 @@ const YF_limits *yf_getlimits(YF_context ctx)
   lim->dtable.cpy_mut_sz_max = dl->maxStorageBufferRange;
 
   lim->vinput.attr_max = dl->maxVertexInputAttributes;
-  lim->vinput.offs_max = dl->maxVertexInputAttributeOffset;
+  lim->vinput.off_max = dl->maxVertexInputAttributeOffset;
   lim->vinput.strd_max = dl->maxVertexInputBindingStride;
 
   lim->pass.color_max = dl->maxColorAttachments;

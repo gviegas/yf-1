@@ -37,7 +37,7 @@ typedef struct YF_limits {
   } image;
 
   struct {
-    unsigned res_max;
+    unsigned stg_res_max;
     unsigned unif_max;
     unsigned mut_max;
     unsigned img_max;
@@ -50,7 +50,7 @@ typedef struct YF_limits {
 
   struct {
     unsigned attr_max;
-    unsigned offs_max;
+    unsigned off_max;
     unsigned strd_max;
   } vinput;
 

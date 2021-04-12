@@ -50,7 +50,7 @@ void yf_print_lim(const YF_limits *lim)
   printf("\nimage - max 3d: %u", lim->image.dim_3d_max);
   printf("\nimage - max layers: %u", lim->image.layer_max);
 
-  printf("\ndtable - max resources: %u", lim->dtable.res_max);
+  printf("\ndtable - max per stage resources: %u", lim->dtable.stg_res_max);
   printf("\ndtable - max uniforms buffers: %u", lim->dtable.unif_max);
   printf("\ndtable - max mutables buffers: %u", lim->dtable.mut_max);
   printf("\ndtable - max r/w images: %u", lim->dtable.img_max);
@@ -62,7 +62,7 @@ void yf_print_lim(const YF_limits *lim)
   printf("\ndtable - max copy size (mutable): %lu", lim->dtable.cpy_mut_sz_max);
 
   printf("\nvinput - max input attributes: %u", lim->vinput.attr_max);
-  printf("\nvinput - max input offset: %u", lim->vinput.offs_max);
+  printf("\nvinput - max input offset: %u", lim->vinput.off_max);
   printf("\nvinput - max input stride: %u", lim->vinput.strd_max);
 
   printf("\npass - max color attachments: %u", lim->pass.color_max);
