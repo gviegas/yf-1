@@ -2,7 +2,7 @@
  * YF
  * yf-hashset.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_HASHSET_H
@@ -23,8 +23,8 @@ typedef struct YF_hashset_o *YF_hashset;
 /**
  * Initializes a new hashset.
  *
- * @param hash: The hashing function to use.
- * @param cmp: The comparison function to use.
+ * @param hash: The hashing function to use. Can be 'NULL'.
+ * @param cmp: The comparison function to use. Can be 'NULL'.
  * @return: On success, returns a new hashset. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
@@ -122,7 +122,7 @@ void *yf_hashset_next(YF_hashset set, YF_iter *it);
  * This function completes when the end of the hashset is reached or when
  * the provided callback returns a non-zero value.
  *
- * The hashset must not be altered until 'yf_hashset_each' completes.
+ * The hashset must not be altered until 'yf_hashset_each()' completes.
  *
  * @param set: The hashset.
  * @param callb: The callback to execute for each value.
