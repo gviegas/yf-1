@@ -57,8 +57,8 @@ unsigned yf_wsi_getlimit(YF_wsi wsi);
 /**
  * Queries the index of the next writable image.
  *
- * The acquired image corresponds to the one retrieved from 'yf_wsi_getimages'
- * using the returned value as an index.
+ * The acquired image corresponds to the one retrieved from
+ * 'yf_wsi_getimages()' using this function's return value as an index.
  *
  * @param wsi: The wsi.
  * @param nonblocking: Whether or not the call will block waiting for an image.
