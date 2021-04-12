@@ -2,7 +2,7 @@
  * YF
  * yf-list.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_LIST_H
@@ -22,7 +22,7 @@ typedef struct YF_list_o *YF_list;
 /**
  * Initializes a new linked list.
  *
- * @param cmp: The comparison function to use.
+ * @param cmp: The comparison function to use. Can be 'NULL'.
  * @return: On success, returns a new list. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
@@ -48,7 +48,7 @@ int yf_list_insert(YF_list list, const void *val);
  * The value is inserted after the iterator's current value.
  *
  * When called with an invalid iterator, this function is equivalent to
- * 'yf_list_insert' (i.e., the value is inserted at the beginning of the list).
+ * 'yf_list_insert()', i.e., 'val' is inserted at the beginning of the list.
  *
  * The iterator, if not 'NULL', is updated to point to the inserted value.
  * All other non-nil iterators that refer to 'list' become invalid.
@@ -122,7 +122,7 @@ void *yf_list_next(YF_list list, YF_iter *it);
  * This function completes when the end of the list is reached or when the
  * provided callback returns a non-zero value.
  *
- * The list must not be altered until 'yf_list_each' completes.
+ * The list must not be altered until 'yf_list_each()' completes.
  *
  * @param list: The list.
  * @param callb: The callback to execute for each value.
