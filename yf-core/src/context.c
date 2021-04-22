@@ -396,7 +396,7 @@ static int set_layers(YF_context ctx)
   for (size_t i = 0; i < opt_n; ++i) {
     for (size_t j = 0; j < prop_n; ++j) {
       if (strcmp(opt_lays[i], props[j].layerName) == 0) {
-        ctx->layers[ctx->layer_n] = malloc(strlen(opt_lays[i]+1));
+        ctx->layers[ctx->layer_n] = malloc(strlen(opt_lays[i])+1);
         if (ctx->layers[ctx->layer_n] == NULL) {
           yf_seterr(YF_ERR_NOMEM, __func__);
           free(props);
@@ -482,7 +482,7 @@ static int set_inst_exts(YF_context ctx)
   for (size_t i = 0; i < req_n; ++i) {
     for (size_t j = 0; j < prop_n; ++j) {
       if (strcmp(req_exts[i], props[j].extensionName) == 0) {
-        ctx->inst_exts[i] = malloc(strlen(req_exts[i]+1));
+        ctx->inst_exts[i] = malloc(strlen(req_exts[i])+1);
         if (ctx->inst_exts[i] == NULL) {
           yf_seterr(YF_ERR_NOMEM, __func__);
           free(props);
@@ -555,7 +555,7 @@ static int set_dev_exts(YF_context ctx)
   for (size_t i = 0; i < req_n; ++i) {
     for (size_t j = 0; j < prop_n; ++j) {
       if (strcmp(req_exts[i], props[j].extensionName) == 0) {
-        ctx->dev_exts[i] = malloc(strlen(req_exts[i]+1));
+        ctx->dev_exts[i] = malloc(strlen(req_exts[i])+1);
         if (ctx->dev_exts[i] == NULL) {
           yf_seterr(YF_ERR_NOMEM, __func__);
           free(props);
