@@ -42,8 +42,8 @@ layout(set=1, binding=0) uniform U_inst {
 layout(location=0) in vec3 pos;
 layout(location=3) in vec4 clr;
 
-out IO_vtx {
-  layout(location=3) vec4 clr;
+layout(location=0) out IO_vtx {
+  vec4 clr;
 } out_vtx;
 
 void main()

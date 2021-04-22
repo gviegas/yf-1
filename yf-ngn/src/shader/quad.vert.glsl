@@ -45,9 +45,9 @@ layout(location=0) in vec3 pos;
 layout(location=1) in vec2 tc;
 layout(location=3) in vec4 clr;
 
-out IO_vtx {
-  layout(location=1) vec2 tc;
-  layout(location=3) vec4 clr;
+layout(location=0) out IO_vtx {
+  vec2 tc;
+  vec4 clr;
 } out_vtx;
 
 void main()
