@@ -21,7 +21,7 @@
 # define YF_SHD_DIR "bin/"
 #endif
 #ifndef YF_SHD_FILEEXT
-# define YF_SHD_FILEEXT ".spv"
+# define YF_SHD_FILEEXT ""
 #endif
 
 /* XXX: This arbitrary defaults are expected to be replaced by 'setallocn'. */
