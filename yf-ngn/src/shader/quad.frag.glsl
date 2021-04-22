@@ -12,9 +12,9 @@
  */
 layout(set=1, binding=1) uniform sampler2D u_tex;
 
-in IO_vtx {
-  layout(location=1) vec2 tc;
-  layout(location=3) vec4 clr;
+layout(location=0) in IO_vtx {
+  vec2 tc;
+  vec4 clr;
 } in_vtx;
 
 layout(location=0) out vec4 clr0;
