@@ -827,10 +827,29 @@ static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd)
 
 static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd)
 {
+  assert(cmd->cpyimg.dst->dim.width >=
+      cmd->cpyimg.dst_off.x + cmd->cpyimg.dim.width);
+  assert(cmd->cpyimg.dst->dim.height >=
+      cmd->cpyimg.dst_off.y + cmd->cpyimg.dim.height);
+  assert(cmd->cpyimg.dst->dim.depth >=
+      cmd->cpyimg.dst_off.z + cmd->cpyimg.dim.depth);
   assert(cmd->cpyimg.dst->layers >=
-    cmd->cpyimg.dst_layer + cmd->cpyimg.layer_n);
+      cmd->cpyimg.dst_layer + cmd->cpyimg.layer_n);
+  assert(cmd->cpyimg.dst->levels > cmd->cpyimg.dst_level);
+
+  assert(cmd->cpyimg.src->dim.width >=
+      cmd->cpyimg.src_off.x + cmd->cpyimg.dim.width);
+  assert(cmd->cpyimg.src->dim.height >=
+      cmd->cpyimg.src_off.y + cmd->cpyimg.dim.height);
+  assert(cmd->cpyimg.src->dim.depth >=
+      cmd->cpyimg.src_off.z + cmd->cpyimg.dim.depth);
   assert(cmd->cpyimg.src->layers >=
-    cmd->cpyimg.src_layer + cmd->cpyimg.layer_n);
+      cmd->cpyimg.src_layer + cmd->cpyimg.layer_n);
+  assert(cmd->cpyimg.src->levels > cmd->cpyimg.src_level);
+
+  assert(cmd->cpyimg.dim.width > 0);
+  assert(cmd->cpyimg.dim.height > 0);
+  assert(cmd->cpyimg.dim.depth > 0);
   assert(cmd->cpyimg.layer_n > 0);
 
   const YF_cmdres *cmdr;
@@ -854,26 +873,33 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd)
   if (cmd->cpyimg.src->layout != VK_IMAGE_LAYOUT_GENERAL)
     yf_image_transition(cmd->cpyimg.src, cmdr->pool_res);
 
-  /* TODO: Provide a way to select the mip level. */
   VkImageCopy region = {
     .srcSubresource = {
       .aspectMask = cmd->cpyimg.src->aspect,
-      .mipLevel = 0,
+      .mipLevel = cmd->cpyimg.src_level,
       .baseArrayLayer = cmd->cpyimg.src_layer,
       .layerCount = cmd->cpyimg.layer_n
     },
-    .srcOffset = {0, 0, 0},
+    .srcOffset = {
+      .x = cmd->cpyimg.src_off.x,
+      .y = cmd->cpyimg.src_off.y,
+      .z = cmd->cpyimg.src_off.z
+    },
     .dstSubresource = {
       .aspectMask = cmd->cpyimg.dst->aspect,
-      .mipLevel = 0,
+      .mipLevel = cmd->cpyimg.dst_level,
       .baseArrayLayer = cmd->cpyimg.dst_layer,
       .layerCount = cmd->cpyimg.layer_n
     },
-    .dstOffset = {0, 0, 0},
+    .dstOffset = {
+      .x = cmd->cpyimg.dst_off.x,
+      .y = cmd->cpyimg.dst_off.y,
+      .z = cmd->cpyimg.dst_off.z
+    },
     .extent = {
-      YF_MIN(cmd->cpyimg.dst->dim.width, cmd->cpyimg.src->dim.width),
-      YF_MIN(cmd->cpyimg.dst->dim.height, cmd->cpyimg.src->dim.height),
-      YF_MIN(cmd->cpyimg.dst->dim.depth, cmd->cpyimg.src->dim.depth)
+      .width = cmd->cpyimg.dim.width,
+      .height = cmd->cpyimg.dim.height,
+      .depth = cmd->cpyimg.dim.depth
     }
   };
 
