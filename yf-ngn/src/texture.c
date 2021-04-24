@@ -215,14 +215,7 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
     const YF_off3 off = {0};
     yf_cmdbuf_copyimg(cb, new_img, off, 0, 0, val->value.img, off, 0, 0,
         dim, layers);
-    /*
-    if (yf_cmdbuf_end(cb) != 0 || yf_context_exec(l_ctx) != 0) {
-      yf_image_deinit(new_img);
-      return -1;
-    }
-    */
-    yf_cmdbuf_sync(cb);
-    if (yf_cmdbuf_end(cb) != 0) {
+    if (yf_cmdbuf_end(cb) != 0 || yf_cmdbuf_exec(l_ctx) != 0) {
       yf_image_deinit(new_img);
       return -1;
     }
@@ -241,10 +234,10 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
   }
 
   unsigned layer = val->value.lay_i;
-  unsigned lay_cap = layers;
-  for (; val->value.lay_used[layer]; layer = (layer+1) % lay_cap);
-  const YF_off3 off = {0};
+  for (; val->value.lay_used[layer]; layer = (layer+1) % layers)
+    ;
 
+  const YF_off3 off = {0};
   if (yf_image_copy(val->value.img, off, dim, layer, 0, data->data) != 0) {
     if (val->value.lay_n == 0) {
       yf_hashset_remove(l_imges, val);
@@ -257,7 +250,7 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
 
   val->value.lay_used[layer] = 1;
   val->value.lay_n++;
-  val->value.lay_i = (layer+1) % lay_cap;
+  val->value.lay_i = (layer+1) % layers;
   tex->imge = &val->value;
   tex->layer = layer;
   return 0;
