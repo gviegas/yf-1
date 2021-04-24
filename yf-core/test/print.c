@@ -16,9 +16,9 @@ void yf_print_ctx(YF_context ctx)
 {
   YF_PTITLE;
 
-  printf("\nqueue indices (subm/pres): %d/%d",
-      ctx->queue_i, ctx->pres_queue_i);
-  printf("\nqueue mask: graph ? %s, comp ? %s",
+  printf("\nqueue indices:\n subm: %d\n pres: %d", ctx->queue_i,
+      ctx->pres_queue_i);
+  printf("\nqueue mask:\n graph? %s\n comp? %s",
       ctx->queue_mask & YF_QUEUE_GRAPH ? "yes" : "no",
       ctx->queue_mask & YF_QUEUE_COMP ? "yes" : "no");
   printf("\ninstance version: %u.%u", VK_VERSION_MAJOR(ctx->inst_version),
