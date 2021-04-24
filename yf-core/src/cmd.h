@@ -2,7 +2,7 @@
  * YF
  * cmd.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_CMD_H
@@ -98,9 +98,14 @@ typedef struct {
 /* The parameters of a 'copy image' command. */
 typedef struct {
   YF_image dst;
+  YF_off3 dst_off;
   unsigned dst_layer;
+  unsigned dst_level;
   YF_image src;
+  YF_off3 src_off;
   unsigned src_layer;
+  unsigned src_level;
+  YF_dim3 dim;
   unsigned layer_n;
 } YF_cmd_cpyimg;
 

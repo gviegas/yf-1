@@ -238,13 +238,19 @@ void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_offs,
  *
  * @param cmdb: The command buffer.
  * @param dst: The destination image.
+ * @param dst_off: The offset of the destination image.
  * @param dst_layer: The first layer of the destination image.
+ * @param dst_level: The mip level of the destination image.
  * @param src: The source image.
+ * @param src_off: The offset of the source image.
  * @param src_layer: The first layer of the source image.
+ * @param src_level: The mip level of the source image.
+ * @param dim: The extent to copy.
  * @param layer_n: The number of layers to copy.
  */
-void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, unsigned dst_layer,
-    YF_image src, unsigned src_layer, unsigned layer_n);
+void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, YF_off3 dst_off,
+    unsigned dst_layer, unsigned dst_level, YF_image src, YF_off3 src_off,
+    unsigned src_layer, unsigned src_level, YF_dim3 dim, unsigned layer_n);
 
 /*
  * Synchronization
