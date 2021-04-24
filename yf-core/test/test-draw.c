@@ -15,8 +15,8 @@
 
 #include "yf-core.h"
 
-#define YF_WINW 484
-#define YF_WINH 363
+#define YF_WINW 512
+#define YF_WINH 384
 #define YF_WINT "Draw"
 
 /* Shared variables. */
@@ -95,7 +95,7 @@ static void init(void)
     YF_VRATE_VERT
   };
 
-  /* Wsi */
+  /* WSI */
   YF_window win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
   assert(win != NULL);
 
@@ -178,9 +178,9 @@ static void init(void)
   };
 
   const struct T_vertex verts[3] = {
-    {{-1.0f,  1.0f, 0.5f}, {0.95f, 0.16f, 0.28f, 1.0f}},
-    {{ 1.0f,  1.0f, 0.5f}, {0.73f, 0.62f, 0.31f, 1.0f}},
-    {{ 0.0f, -1.0f, 0.5f}, {0.42f, 0.84f, 0.41f, 1.0f}}
+    {{-1.0f,  1.0f, 0.5f}, {0.525f, 0.305f, 0.483f, 1.0f}},
+    {{ 1.0f,  1.0f, 0.5f}, {0.773f, 0.893f, 0.200f, 1.0f}},
+    {{ 0.0f, -1.0f, 0.5f}, {0.912f, 0.450f, 0.335f, 1.0f}}
   };
 
   if (yf_buffer_copy(buf, 0, m, sizeof m) != 0)
@@ -214,7 +214,7 @@ static void init(void)
 /* Updates content. */
 static void update(void)
 {
-  /* Event polling */
+  /* Events */
   yf_pollevt(YF_EVT_KEYKB);
 
   /* Command buffer */
