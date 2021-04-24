@@ -419,8 +419,9 @@ void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_offs,
   cmdb->cmds[i].cpybuf.size = size;
 }
 
-void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, unsigned dst_layer,
-    YF_image src, unsigned src_layer, unsigned layer_n)
+void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, YF_off3 dst_off,
+    unsigned dst_layer, unsigned dst_level, YF_image src, YF_off3 src_off,
+    unsigned src_layer, unsigned src_level, YF_dim3 dim, unsigned layer_n)
 {
   assert(cmdb != NULL);
   assert(dst != NULL);
@@ -436,9 +437,14 @@ void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, unsigned dst_layer,
   }
   cmdb->cmds[i].cmd = YF_CMD_CPYIMG;
   cmdb->cmds[i].cpyimg.dst = dst;
+  cmdb->cmds[i].cpyimg.dst_off = dst_off;
   cmdb->cmds[i].cpyimg.dst_layer = dst_layer;
+  cmdb->cmds[i].cpyimg.dst_level = dst_level;
   cmdb->cmds[i].cpyimg.src = src;
+  cmdb->cmds[i].cpyimg.src_off = src_off;
   cmdb->cmds[i].cpyimg.src_layer = src_layer;
+  cmdb->cmds[i].cpyimg.src_level = src_level;
+  cmdb->cmds[i].cpyimg.dim = dim;
   cmdb->cmds[i].cpyimg.layer_n = layer_n;
 }
 
