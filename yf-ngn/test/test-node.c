@@ -9,7 +9,7 @@
 
 #include "yf-node.h"
 
-/* Iteration callback for node. */
+/* Iteration callback for 'node_traverse()'. */
 static int do_each_node(YF_node node, void *arg)
 {
   char name[16];
@@ -19,7 +19,7 @@ static int do_each_node(YF_node node, void *arg)
   return r;
 }
 
-/* Tests node. */
+/* Tests node functionality. */
 int yf_test_node(void)
 {
   YF_node n1, n2, n3, n4, n5;

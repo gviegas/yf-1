@@ -83,7 +83,7 @@ static void on_key(int key, int state,
   }
 }
 
-/* Updates content */
+/* Updates content. */
 static void update(double elapsed_time)
 {
   printf("update (%.4f)\n", elapsed_time);

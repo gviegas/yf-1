@@ -26,7 +26,7 @@
   } \
   puts(""); } while (0)
 
-/* Tests vector and matrix. */
+/* Tests vector and matrix functionality. */
 int yf_test_vecmat(void)
 {
   YF_vec3 v = {1.0f, 0.0f, 0.0f};

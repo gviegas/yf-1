@@ -8,6 +8,7 @@
 #ifndef YF_TEST_H
 #define YF_TEST_H
 
+/* Type defining a single test to execute. */
 typedef struct {
   char name[64];
   int (*fn)(int argc, char *argv[]);
