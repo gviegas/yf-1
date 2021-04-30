@@ -172,5 +172,16 @@ int yf_test_render(void)
 
   yf_view_start(l_vars.view, 60, update);
 
+  for (size_t i = 0; i < YF_MDLN; ++i)
+    yf_model_deinit(l_vars.mdls[i]);
+  yf_texture_deinit(l_vars.tex1);
+  yf_texture_deinit(l_vars.tex2);
+  yf_mesh_deinit(l_vars.mesh1);
+  yf_mesh_deinit(l_vars.mesh2);
+  yf_scene_deinit(l_vars.scn1);
+  yf_scene_deinit(l_vars.scn2);
+  yf_view_deinit(l_vars.view);
+  yf_window_deinit(l_vars.win);
+
   return 0;
 }
