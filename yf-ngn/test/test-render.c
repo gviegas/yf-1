@@ -16,6 +16,7 @@
 #define YF_WINW 600
 #define YF_WINH 480
 #define YF_WINT "test-render"
+#define YF_FPS 60
 #define YF_MDLN 10
 
 /* Local variables. */
@@ -96,7 +97,7 @@ static void update(double elapsed_time)
       yf_view_setscene(l_vars.view, l_vars.scn1);
       scn_i = 1;
     } else {
-      yf_view_setscene(l_vars.view, l_vars.scn1);
+      yf_view_setscene(l_vars.view, l_vars.scn2);
       scn_i = 2;
     }
     return;
@@ -168,9 +169,11 @@ int yf_test_render(void)
     yf_node_insert(scn1_nd, nd);
   }
 
-  yf_view_setscene(l_vars.view, l_vars.scn1);
+  yf_scene_setcolor(l_vars.scn1, YF_COLOR_YELLOW);
+  yf_scene_setcolor(l_vars.scn2, YF_COLOR_BLUE);
 
-  yf_view_start(l_vars.view, 60, update);
+  yf_view_setscene(l_vars.view, l_vars.scn1);
+  yf_view_start(l_vars.view, YF_FPS, update);
 
   for (size_t i = 0; i < YF_MDLN; ++i)
     yf_model_deinit(l_vars.mdls[i]);
