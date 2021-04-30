@@ -114,6 +114,20 @@ static int test_label(void)
   return r;
 }
 
+/* Render test. */
+#define YF_TEST_RENDER "render"
+
+int yf_test_render(void);
+
+static int test_render(void)
+{
+  YF_TEST_SUBT;
+  puts("");
+  int r = yf_test_render();
+  puts("");
+  return r;
+}
+
 /* Miscellaneous test. */
 #define YF_TEST_MISC "misc"
 
@@ -136,6 +150,7 @@ static const char *l_ids[] = {
   YF_TEST_PARTICLE,
   YF_TEST_QUAD,
   YF_TEST_LABEL,
+  YF_TEST_RENDER,
   YF_TEST_MISC,
   YF_TEST_ALL
 };
@@ -169,6 +184,9 @@ static int test(int argc, char *argv[])
   } else if (strcmp(argv[0], YF_TEST_LABEL) == 0) {
     test_n = 1;
     results = test_label() == 0;
+  } else if (strcmp(argv[0], YF_TEST_RENDER) == 0) {
+    test_n = 1;
+    results = test_render() == 0;
   } else if (strcmp(argv[0], YF_TEST_MISC) == 0) {
     test_n = 1;
     results = test_misc() == 0;
@@ -181,6 +199,7 @@ static int test(int argc, char *argv[])
       test_particle,
       test_quad,
       test_label,
+      test_render,
       test_misc
     };
     test_n = sizeof tests / sizeof tests[0];
