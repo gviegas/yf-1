@@ -125,7 +125,7 @@ static void update(double elapsed_time)
 }
 
 /* Tests rendering. */
-static int yf_test_render(void)
+int yf_test_render(void)
 {
   YF_evtfn evtfn = {.key_kb = on_key};
   yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
