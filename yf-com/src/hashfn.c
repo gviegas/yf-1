@@ -9,5 +9,5 @@
 
 size_t yf_hash(const void *ptr)
 {
-  return (size_t)ptr;
+    return (size_t)ptr;
 }
