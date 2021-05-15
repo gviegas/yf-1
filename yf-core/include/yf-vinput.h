@@ -49,9 +49,9 @@
  * Type defining a single vertex attribute.
  */
 typedef struct {
-  unsigned location;
-  int typefmt;
-  size_t offset;
+    unsigned location;
+    int typefmt;
+    size_t offset;
 } YF_vattr;
 
 /**
@@ -72,10 +72,10 @@ typedef struct {
  * the vertex buffer.
  */
 typedef struct {
-  const YF_vattr *attrs;
-  unsigned attr_n;
-  size_t stride;
-  int vrate;
+    const YF_vattr *attrs;
+    unsigned attr_n;
+    size_t stride;
+    int vrate;
 } YF_vinput;
 
 #endif /* YF_YF_VINPUT_H */

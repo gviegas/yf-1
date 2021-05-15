@@ -24,9 +24,9 @@ typedef struct YF_cstate_o *YF_cstate;
  * Type defining a compute state configuration.
  */
 typedef struct {
-  YF_stage stg;
-  YF_dtable *dtbs;
-  unsigned dtb_n;
+    YF_stage stg;
+    YF_dtable *dtbs;
+    unsigned dtb_n;
 } YF_cconf;
 
 /**

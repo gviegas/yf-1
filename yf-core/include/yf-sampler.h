@@ -28,12 +28,12 @@
  * type defines a sampler resource.
  */
 typedef struct {
-  struct {
-    int u, v, w;
-  } wrapmode;
-  struct {
-    int mag, min, mipmap;
-  } filter;
+    struct {
+        int u, v, w;
+    } wrapmode;
+    struct {
+        int mag, min, mipmap;
+    } filter;
 } YF_sampler;
 
 #endif /* YF_YF_SAMPLER_H */

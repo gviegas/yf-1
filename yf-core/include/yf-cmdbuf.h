@@ -114,7 +114,7 @@ void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt);
  * @param vport: The viewport.
  */
 void yf_cmdbuf_setvport(YF_cmdbuf cmdb, unsigned index,
-    const YF_viewport *vport);
+                        const YF_viewport *vport);
 
 /**
  * Sets the scissor of a viewport.
@@ -143,7 +143,7 @@ void yf_cmdbuf_setdtable(YF_cmdbuf cmdb, unsigned index, unsigned alloc_i);
  * @param offset: The offset from the beginning of the buffer.
  */
 void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
-    size_t offset);
+                       size_t offset);
 
 /**
  * Sets the index buffer.
@@ -155,7 +155,7 @@ void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
  *  underlying type).
  */
 void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset,
-    unsigned stride);
+                       unsigned stride);
 
 /*
  * Clear
@@ -202,7 +202,7 @@ void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value);
  * @param inst_id: The starting instance ID for use in the shader.
  */
 void yf_cmdbuf_draw(YF_cmdbuf cmdb, int indexed, unsigned index_base,
-    unsigned vert_n, unsigned inst_n, int vert_id, int inst_id);
+                    unsigned vert_n, unsigned inst_n, int vert_id, int inst_id);
 
 /*
  * Dispatching
@@ -231,7 +231,7 @@ void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim);
  * @param size: The number of bytes to copy.
  */
 void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_offs,
-    YF_buffer src, size_t src_offs, size_t size);
+                       YF_buffer src, size_t src_offs, size_t size);
 
 /**
  * Copies data between images.
@@ -249,8 +249,9 @@ void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_offs,
  * @param layer_n: The number of layers to copy.
  */
 void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, YF_off3 dst_off,
-    unsigned dst_layer, unsigned dst_level, YF_image src, YF_off3 src_off,
-    unsigned src_layer, unsigned src_level, YF_dim3 dim, unsigned layer_n);
+                       unsigned dst_layer, unsigned dst_level,
+                       YF_image src, YF_off3 src_off, unsigned src_layer,
+                       unsigned src_level, YF_dim3 dim, unsigned layer_n);
 
 /*
  * Synchronization

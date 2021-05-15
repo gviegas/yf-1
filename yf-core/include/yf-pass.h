@@ -41,30 +41,30 @@ typedef struct YF_target_o *YF_target;
  * Type describing a color attachment for use in a pass.
  */
 typedef struct {
-  int pixfmt;
-  int samples;
-  int loadop;
-  int storeop;
+    int pixfmt;
+    int samples;
+    int loadop;
+    int storeop;
 } YF_colordsc;
 
 /**
  * Type describing a depth/stencil attachment for use in a pass.
  */
 typedef struct {
-  int pixfmt;
-  int samples;
-  int depth_loadop;
-  int depth_storeop;
-  int stencil_loadop;
-  int stencil_storeop;
+    int pixfmt;
+    int samples;
+    int depth_loadop;
+    int depth_storeop;
+    int stencil_loadop;
+    int stencil_storeop;
 } YF_depthdsc;
 
 /**
  * Type defining the resource of a target's attachment.
  */
 typedef struct {
-  YF_image img;
-  unsigned layer_base;
+    YF_image img;
+    unsigned layer_base;
 } YF_attach;
 
 /**
@@ -80,8 +80,8 @@ typedef struct {
  *  the global error is set to indicate the cause.
  */
 YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
-    unsigned color_n, const YF_colordsc *resolves,
-    const YF_depthdsc *depth_stencil);
+                     unsigned color_n, const YF_colordsc *resolves,
+                     const YF_depthdsc *depth_stencil);
 
 /**
  * Makes a new target for use with a given pass.
@@ -98,8 +98,9 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
  *  and the global error is set to indicate the cause.
  */
 YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
-    const YF_attach *colors, unsigned color_n, const YF_attach *resolves,
-    const YF_attach *depth_stencil);
+                             const YF_attach *colors, unsigned color_n,
+                             const YF_attach *resolves,
+                             const YF_attach *depth_stencil);
 
 /**
  * Unmakes a pass' target.

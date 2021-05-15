@@ -36,9 +36,9 @@ typedef unsigned YF_modid;
  * Type defining a single shader stage.
  */
 typedef struct {
-  int stage;
-  YF_modid mod;
-  const char entry_point[48];
+    int stage;
+    YF_modid mod;
+    const char entry_point[48];
 } YF_stage;
 
 /**

@@ -18,7 +18,7 @@
 YF_DECLS_BEGIN
 
 /**
- * Opaque type defining formatted multidimensional data.
+ * Opaque type defining formatted multidimensional data in device memory.
  */
 typedef struct YF_image_o *YF_image;
 
@@ -120,7 +120,7 @@ typedef struct YF_image_o *YF_image;
  *  the global error is set to indicate the cause.
  */
 YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
-    unsigned layers, unsigned levels, unsigned samples);
+                       unsigned layers, unsigned levels, unsigned samples);
 
 /**
  * Copies local data to an image.
@@ -139,7 +139,7 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
  *  and the global error is set to indicate the cause.
  */
 int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
-    unsigned level, const void *data);
+                  unsigned level, const void *data);
 
 /**
  * Gets values of an image.
@@ -152,7 +152,7 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
  * @param samples: The destination for the sample count value. Can be 'NULL'.
  */
 void yf_image_getval(YF_image img, int *pixfmt, YF_dim3 *dim,
-    unsigned *layers, unsigned *levels, unsigned *samples);
+                     unsigned *layers, unsigned *levels, unsigned *samples);
 
 /**
  * Deinitializes an image.
@@ -169,82 +169,82 @@ void yf_image_deinit(YF_image img);
  * @param sz: The destination for the computed size.
  */
 #define YF_PIXFMT_SIZEOF(pf, sz) do { \
-  switch (pf) { \
-  case YF_PIXFMT_R8UNORM: \
-  case YF_PIXFMT_R8SRGB: \
-  case YF_PIXFMT_R8INT: \
-  case YF_PIXFMT_R8UINT: \
-  case YF_PIXFMT_S8UINT: \
-    sz = 1; \
-    break; \
-  case YF_PIXFMT_RG8UNORM: \
-  case YF_PIXFMT_R16UNORM: \
-  case YF_PIXFMT_RG8SRGB: \
-  case YF_PIXFMT_RG8INT: \
-  case YF_PIXFMT_R16INT: \
-  case YF_PIXFMT_RG8UINT: \
-  case YF_PIXFMT_R16UINT: \
-  case YF_PIXFMT_R16FLOAT: \
-  case YF_PIXFMT_D16UNORM: \
-    sz = 2; \
-    break; \
-  case YF_PIXFMT_RGB8UNORM: \
-  case YF_PIXFMT_BGR8UNORM: \
-  case YF_PIXFMT_RGB8SRGB: \
-  case YF_PIXFMT_BGR8SRGB: \
-  case YF_PIXFMT_RGB8INT: \
-  case YF_PIXFMT_BGR8INT: \
-  case YF_PIXFMT_RGB8UINT: \
-  case YF_PIXFMT_BGR8UINT: \
-  case YF_PIXFMT_D16UNORMS8UINT: \
-    sz = 3; \
-    break; \
-  case YF_PIXFMT_RGBA8UNORM: \
-  case YF_PIXFMT_BGRA8UNORM: \
-  case YF_PIXFMT_RG16UNORM: \
-  case YF_PIXFMT_RGBA8SRGB: \
-  case YF_PIXFMT_BGRA8SRGB: \
-  case YF_PIXFMT_RGBA8INT: \
-  case YF_PIXFMT_BGRA8INT: \
-  case YF_PIXFMT_RG16INT: \
-  case YF_PIXFMT_R32INT: \
-  case YF_PIXFMT_RGBA8UINT: \
-  case YF_PIXFMT_BGRA8UINT: \
-  case YF_PIXFMT_RG16UINT: \
-  case YF_PIXFMT_R32UINT: \
-  case YF_PIXFMT_RG16FLOAT: \
-  case YF_PIXFMT_R32FLOAT: \
-  case YF_PIXFMT_D24UNORMS8UINT: \
-    sz = 4; \
-    break; \
-  case YF_PIXFMT_RGB16UNORM: \
-  case YF_PIXFMT_RGB16INT: \
-  case YF_PIXFMT_RGB16UINT: \
-  case YF_PIXFMT_RGB16FLOAT: \
-    sz = 6; \
-    break; \
-  case YF_PIXFMT_RGBA16UNORM: \
-  case YF_PIXFMT_RGBA16INT: \
-  case YF_PIXFMT_RG32INT: \
-  case YF_PIXFMT_RGBA16UINT: \
-  case YF_PIXFMT_RG32UINT: \
-  case YF_PIXFMT_RGBA16FLOAT: \
-  case YF_PIXFMT_RG32FLOAT: \
-    sz = 8; \
-    break; \
-  case YF_PIXFMT_RGB32INT: \
-  case YF_PIXFMT_RGB32UINT: \
-  case YF_PIXFMT_RGB32FLOAT: \
-    sz = 12; \
-    break; \
-  case YF_PIXFMT_RGBA32INT: \
-  case YF_PIXFMT_RGBA32UINT: \
-  case YF_PIXFMT_RGBA32FLOAT: \
-    sz = 16; \
-    break; \
-  default: \
-    sz = 0; \
-  } } while (0)
+    switch (pf) { \
+    case YF_PIXFMT_R8UNORM: \
+    case YF_PIXFMT_R8SRGB: \
+    case YF_PIXFMT_R8INT: \
+    case YF_PIXFMT_R8UINT: \
+    case YF_PIXFMT_S8UINT: \
+        sz = 1; \
+        break; \
+    case YF_PIXFMT_RG8UNORM: \
+    case YF_PIXFMT_R16UNORM: \
+    case YF_PIXFMT_RG8SRGB: \
+    case YF_PIXFMT_RG8INT: \
+    case YF_PIXFMT_R16INT: \
+    case YF_PIXFMT_RG8UINT: \
+    case YF_PIXFMT_R16UINT: \
+    case YF_PIXFMT_R16FLOAT: \
+    case YF_PIXFMT_D16UNORM: \
+        sz = 2; \
+        break; \
+    case YF_PIXFMT_RGB8UNORM: \
+    case YF_PIXFMT_BGR8UNORM: \
+    case YF_PIXFMT_RGB8SRGB: \
+    case YF_PIXFMT_BGR8SRGB: \
+    case YF_PIXFMT_RGB8INT: \
+    case YF_PIXFMT_BGR8INT: \
+    case YF_PIXFMT_RGB8UINT: \
+    case YF_PIXFMT_BGR8UINT: \
+    case YF_PIXFMT_D16UNORMS8UINT: \
+        sz = 3; \
+        break; \
+    case YF_PIXFMT_RGBA8UNORM: \
+    case YF_PIXFMT_BGRA8UNORM: \
+    case YF_PIXFMT_RG16UNORM: \
+    case YF_PIXFMT_RGBA8SRGB: \
+    case YF_PIXFMT_BGRA8SRGB: \
+    case YF_PIXFMT_RGBA8INT: \
+    case YF_PIXFMT_BGRA8INT: \
+    case YF_PIXFMT_RG16INT: \
+    case YF_PIXFMT_R32INT: \
+    case YF_PIXFMT_RGBA8UINT: \
+    case YF_PIXFMT_BGRA8UINT: \
+    case YF_PIXFMT_RG16UINT: \
+    case YF_PIXFMT_R32UINT: \
+    case YF_PIXFMT_RG16FLOAT: \
+    case YF_PIXFMT_R32FLOAT: \
+    case YF_PIXFMT_D24UNORMS8UINT: \
+        sz = 4; \
+        break; \
+    case YF_PIXFMT_RGB16UNORM: \
+    case YF_PIXFMT_RGB16INT: \
+    case YF_PIXFMT_RGB16UINT: \
+    case YF_PIXFMT_RGB16FLOAT: \
+        sz = 6; \
+        break; \
+    case YF_PIXFMT_RGBA16UNORM: \
+    case YF_PIXFMT_RGBA16INT: \
+    case YF_PIXFMT_RG32INT: \
+    case YF_PIXFMT_RGBA16UINT: \
+    case YF_PIXFMT_RG32UINT: \
+    case YF_PIXFMT_RGBA16FLOAT: \
+    case YF_PIXFMT_RG32FLOAT: \
+        sz = 8; \
+        break; \
+    case YF_PIXFMT_RGB32INT: \
+    case YF_PIXFMT_RGB32UINT: \
+    case YF_PIXFMT_RGB32FLOAT: \
+        sz = 12; \
+        break; \
+    case YF_PIXFMT_RGBA32INT: \
+    case YF_PIXFMT_RGBA32UINT: \
+    case YF_PIXFMT_RGBA32FLOAT: \
+        sz = 16; \
+        break; \
+    default: \
+        sz = 0; \
+    } } while (0)
 
 YF_DECLS_END
 

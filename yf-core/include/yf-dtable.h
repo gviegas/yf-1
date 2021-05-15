@@ -19,8 +19,8 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a descriptor table.
  *
- * The descriptor table is used to define a set of resource types used by
- * shader programs.
+ * The descriptor table defines a set of resource types that can be used by
+ * related shader programs.
  */
 typedef struct YF_dtable_o *YF_dtable;
 
@@ -38,10 +38,10 @@ typedef struct YF_dtable_o *YF_dtable;
  * Type defining an entry in a descriptor table.
  */
 typedef struct {
-  unsigned binding;
-  int dtype;
-  unsigned elements;
-  void *info;
+    unsigned binding;
+    int dtype;
+    unsigned elements;
+    void *info;
 } YF_dentry;
 
 /**
@@ -54,7 +54,7 @@ typedef struct {
  *  and the global error is set to indicate the cause.
  */
 YF_dtable yf_dtable_init(YF_context ctx, const YF_dentry *entries,
-    unsigned entry_n);
+                         unsigned entry_n);
 
 /**
  * Allocates resources for a given descriptor table.
@@ -99,8 +99,8 @@ void yf_dtable_dealloc(YF_dtable dtb);
  *  and the global error is set to indicate the cause.
  */
 int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
-    YF_slice elements, const YF_buffer *bufs, const size_t *offsets,
-    const size_t *sizes);
+                      YF_slice elements, const YF_buffer *bufs,
+                      const size_t *offsets, const size_t *sizes);
 
 /**
  * Copies image data to a descriptor.
@@ -115,7 +115,8 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
  *  and the global error is set to indicate the cause.
  */
 int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
-    YF_slice elements, const YF_image *imgs, const unsigned *layers);
+                      YF_slice elements, const YF_image *imgs,
+                      const unsigned *layers);
 
 /**
  * Deinitializes a descriptor table.
