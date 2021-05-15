@@ -12,11 +12,11 @@
 
 /* Type defining a specific event implementation. */
 typedef struct {
-  int (*poll)(unsigned evt_mask);
+    int (*poll)(unsigned evt_mask);
 
-  /* Called when an event handler is set.
-     The new value can be queried from 'yf_getevtfn()'. */
-  void (*changed)(int evt);
+    /* Called when an event handler is set.
+       The new value can be queried from 'yf_getevtfn()'. */
+    void (*changed)(int evt);
 } YF_evt_imp;
 
 /* Gets the event implementation. */
