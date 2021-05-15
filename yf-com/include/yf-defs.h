@@ -2,7 +2,7 @@
  * YF
  * yf-defs.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_DEFS_H
@@ -33,10 +33,10 @@
 /**
  * Versioning utilities.
  */
-#define YF_VERSION_MAKE(major, minor, patch) ( \
-  (((major) << 20) & 0xfff00000) | \
-  (((minor) << 10) & 0x000ffc00) | \
-  ((patch) & 0x000003ff) )
+#define YF_VERSION_MAKE(major, minor, patch) \
+    ( (((major) << 20) & 0xfff00000) | \
+      (((minor) << 10) & 0x000ffc00) | \
+      ((patch) & 0x000003ff) )
 
 #define YF_MAJOR_GET(version) (((version) >> 20) & 0x00000fff)
 #define YF_MINOR_GET(version) (((version) >> 10) & 0x000003ff)

@@ -21,50 +21,50 @@ typedef float YF_float;
  * Type defining a range of size 'n', starting at index 'i'.
  */
 typedef struct {
-  unsigned i;
-  unsigned n;
+    unsigned i;
+    unsigned n;
 } YF_slice;
 
 /**
  * Type defining a 2D offset.
  */
 typedef struct {
-  int x;
-  int y;
+    int x;
+    int y;
 } YF_off2;
 
 /**
  * Type defining a 3D offset.
  */
 typedef struct {
-  int x;
-  int y;
-  int z;
+    int x;
+    int y;
+    int z;
 } YF_off3;
 
 /**
  * Type defining a 2D size.
  */
 typedef struct {
-  unsigned width;
-  unsigned height;
+    unsigned width;
+    unsigned height;
 } YF_dim2;
 
 /**
  * Type defining a 3D size.
  */
 typedef struct {
-  unsigned width;
-  unsigned height;
-  unsigned depth;
+    unsigned width;
+    unsigned height;
+    unsigned depth;
 } YF_dim3;
 
 /**
  * Type defining a rectangle.
  */
 typedef struct {
-  YF_off2 origin;
-  YF_dim2 size;
+    YF_off2 origin;
+    YF_dim2 size;
 } YF_rect;
 
 /**
@@ -84,10 +84,10 @@ typedef struct {
  * Type defining a normalized RGBA color.
  */
 typedef struct {
-  float r;
-  float g;
-  float b;
-  float a;
+    float r;
+    float g;
+    float b;
+    float a;
 } YF_color;
 
 /**
@@ -110,12 +110,12 @@ typedef struct {
  * Type defining a viewport.
  */
 typedef struct {
-  float x;
-  float y;
-  float width;
-  float height;
-  float min_depth;
-  float max_depth;
+    float x;
+    float y;
+    float width;
+    float height;
+    float min_depth;
+    float max_depth;
 } YF_viewport;
 
 /**
@@ -125,12 +125,12 @@ typedef struct {
  * @param vport: The 'YF_viewport' to set.
  */
 #define YF_VIEWPORT_FROMDIM2(dim, vport) do { \
-  (vport).x = 0.0f; \
-  (vport).y = 0.0f; \
-  (vport).width = (dim).width; \
-  (vport).height = (dim).height; \
-  (vport).min_depth = 0.0f; \
-  (vport).max_depth = 1.0f; } while (0)
+    (vport).x = 0.0f; \
+    (vport).y = 0.0f; \
+    (vport).width = (dim).width; \
+    (vport).height = (dim).height; \
+    (vport).min_depth = 0.0f; \
+    (vport).max_depth = 1.0f; } while (0)
 
 /**
  * Makes a scissor from a given viewport.
@@ -139,9 +139,9 @@ typedef struct {
  * @param sciss_rect: The 'YF_rect' to set.
  */
 #define YF_VIEWPORT_SCISSOR(vport, sciss_rect) do { \
-  (sciss_rect).origin.x = (vport).x; \
-  (sciss_rect).origin.y = (vport).y; \
-  (sciss_rect).size.width = (vport).width; \
-  (sciss_rect).size.height = (vport).height; } while (0)
+    (sciss_rect).origin.x = (vport).x; \
+    (sciss_rect).origin.y = (vport).y; \
+    (sciss_rect).size.width = (vport).width; \
+    (sciss_rect).size.height = (vport).height; } while (0)
 
 #endif /* YF_YF_TYPES_H */

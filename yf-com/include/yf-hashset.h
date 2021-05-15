@@ -129,7 +129,7 @@ void *yf_hashset_next(YF_hashset set, YF_iter *it);
  * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
  */
 void yf_hashset_each(YF_hashset set, int (*callb)(void *val, void *arg),
-    void *arg);
+                     void *arg);
 
 /**
  * Gets the number of elements stored in a hashset.
