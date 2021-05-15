@@ -37,7 +37,7 @@ typedef struct YF_window_o *YF_window;
  *  and the global error is set to indicate the cause.
  */
 YF_window yf_window_init(unsigned width, unsigned height, const char *title,
-    unsigned creat_mask);
+                         unsigned creat_mask);
 
 /**
  * Opens a window.

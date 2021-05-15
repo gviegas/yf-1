@@ -13,7 +13,7 @@
 #if defined(__linux__)
 /*
 # include <wayland-client-core.h>
-*/
+ */
 # include <xcb/xcb.h>
 #else
 /* TODO */
