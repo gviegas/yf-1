@@ -58,7 +58,7 @@ void *yf_collection_getres(YF_collection coll, int collres, const char *name);
  *  and the global error is set to indicate the cause.
  */
 int yf_collection_manage(YF_collection coll, int collres, const char *name,
-    void *res);
+                         void *res);
 
 /**
  * Checks whether or not a collection contains a given resource.

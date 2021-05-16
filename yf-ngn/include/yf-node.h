@@ -65,7 +65,7 @@ void yf_node_prune(YF_node node);
  *  and the global error is set to indicate the cause.
  */
 int yf_node_traverse(YF_node node, int (*callb)(YF_node descendant, void *arg),
-    void *arg);
+                     void *arg);
 
 /**
  * Checks whether or not a given node descends from another.

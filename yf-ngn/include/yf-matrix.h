@@ -177,7 +177,7 @@ void yf_mat4_xlate(YF_mat4 m, YF_float tx, YF_float ty, YF_float tz);
  * @param up: The up vector.
  */
 void yf_mat4_lookat(YF_mat4 m, const YF_vec3 eye, const YF_vec3 center,
-    const YF_vec3 up);
+                    const YF_vec3 up);
 
 /**
  * Computes a finite perspective projection matrix.
@@ -189,7 +189,7 @@ void yf_mat4_lookat(YF_mat4 m, const YF_vec3 eye, const YF_vec3 center,
  * @param zfar: The distance to the far clipping plane.
  */
 void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
-    YF_float znear, YF_float zfar);
+                   YF_float znear, YF_float zfar);
 
 /**
  * Computes an infinite perspective projection matrix.
@@ -200,7 +200,7 @@ void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
  * @param znear: The distance to the near clipping plane.
  */
 void yf_mat4_infpersp(YF_mat4 m, YF_float yfov, YF_float aspect,
-    YF_float znear);
+                      YF_float znear);
 
 /**
  * Computes an orthographic projection matrix.
@@ -212,7 +212,7 @@ void yf_mat4_infpersp(YF_mat4 m, YF_float yfov, YF_float aspect,
  * @param zfar: The distance to the far clipping plane.
  */
 void yf_mat4_ortho(YF_mat4 m, YF_float xmag, YF_float ymag,
-    YF_float znear, YF_float zfar);
+                   YF_float znear, YF_float zfar);
 
 YF_DECLS_END
 

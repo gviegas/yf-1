@@ -68,7 +68,7 @@ int yf_view_render(YF_view view);
  *  global error is set to indicate the cause.
  */
 int yf_view_start(YF_view view, unsigned fps,
-    void (*update)(double elapsed_time));
+                  void (*update)(double elapsed_time));
 
 /**
  * Stops a view's rendering loop.
