@@ -128,7 +128,7 @@ static int decode_clrdep(const YF_cmd *cmd);
 /* Decodes a 'clear stencil' command. */
 static int decode_clrsten(const YF_cmd *cmd);
 
-/* Decodes a 'draw' command. */
+/* Decodes a 'draw' or 'drawi' command. */
 static int decode_draw(const YF_cmd *cmd);
 
 /* Decodes a 'dispatch' command. */
@@ -265,6 +265,7 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
             r = decode_clrsten(cmd);
             break;
         case YF_CMD_DRAW:
+        case YF_CMD_DRAWI:
             r = decode_draw(cmd);
             break;
         case YF_CMD_CPYBUF:
@@ -736,11 +737,11 @@ static int decode_draw(const YF_cmd *cmd)
 
     /* draw */
     int r;
-    if (cmd->draw.indexed) {
+    if (cmd->cmd == YF_CMD_DRAWI) {
         if ((l_gdec->gdec & YF_GDEC_DRAWI) == YF_GDEC_DRAWI) {
-            vkCmdDrawIndexed(l_gdec->cmdr->pool_res, cmd->draw.vert_n,
-                             cmd->draw.inst_n, cmd->draw.index_base,
-                             cmd->draw.vert_id, cmd->draw.inst_id);
+            vkCmdDrawIndexed(l_gdec->cmdr->pool_res, cmd->drawi.vert_n,
+                             cmd->drawi.inst_n, cmd->drawi.index_base,
+                             cmd->drawi.vert_off, cmd->drawi.inst_id);
             r = 0;
         } else {
             yf_seterr(YF_ERR_INVCMD, __func__);

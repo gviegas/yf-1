@@ -235,7 +235,7 @@ static void update(void)
     yf_cmdbuf_setvbuf(cb, 0, l_vars.buf, sizeof(float[16]));
     yf_cmdbuf_clearcolor(cb, 0, YF_COLOR_BLACK);
     yf_cmdbuf_cleardepth(cb, 1.0f);
-    yf_cmdbuf_draw(cb, 0, 0, 3, 1, 0, 0);
+    yf_cmdbuf_draw(cb, 0, 3, 0, 1);
 
     if (yf_cmdbuf_end(cb) != 0)
         assert(0);

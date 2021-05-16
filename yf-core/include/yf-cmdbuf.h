@@ -191,18 +191,29 @@ void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value);
  */
 
 /**
- * Draws primitives as specified by the bound state.
+ * Draws primitives.
  *
  * @param cmdb: The command buffer.
- * @param indexed: Whether or not this is an indexed draw.
- * @param index_base: The base index.
- * @param vert_n: The vertex count.
- * @param inst_n: The instance count.
- * @param vert_id: The starting vertex ID for use in the shader.
- * @param inst_id: The starting instance ID for use in the shader.
+ * @param vert_id: The initial vertex ID for use in the shader.
+ * @param vert_n: The number of vertices to draw.
+ * @param inst_id: The initial instance ID for use in the shader.
+ * @param inst_n: The number of instances to draw.
  */
-void yf_cmdbuf_draw(YF_cmdbuf cmdb, int indexed, unsigned index_base,
-                    unsigned vert_n, unsigned inst_n, int vert_id, int inst_id);
+void yf_cmdbuf_draw(YF_cmdbuf cmdb, unsigned vert_id, unsigned vert_n,
+                    unsigned inst_id, unsigned inst_n);
+
+/**
+ * Draws primitives using indices.
+ *
+ * @param cmdb: The command buffer.
+ * @param index_base: The base index for index buffer access.
+ * @param vert_off: The offset to use when computing the vertex ID.
+ * @param vert_n: The number of vertices to draw.
+ * @param inst_id: The initial instance ID for use in the shader.
+ * @param inst_n: The number of instances to draw.
+ */
+void yf_cmdbuf_drawi(YF_cmdbuf cmdb, unsigned index_base, int vert_off,
+                     unsigned vert_n, unsigned inst_id, unsigned inst_n);
 
 /*
  * Dispatching

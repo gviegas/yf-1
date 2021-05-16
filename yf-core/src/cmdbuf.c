@@ -342,8 +342,8 @@ void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value)
     }
 }
 
-void yf_cmdbuf_draw(YF_cmdbuf cmdb, int indexed, unsigned index_base,
-                    unsigned vert_n, unsigned inst_n, int vert_id, int inst_id)
+void yf_cmdbuf_draw(YF_cmdbuf cmdb, unsigned vert_id, unsigned vert_n,
+                    unsigned inst_id, unsigned inst_n)
 {
     assert(cmdb != NULL);
 
@@ -359,12 +359,39 @@ void yf_cmdbuf_draw(YF_cmdbuf cmdb, int indexed, unsigned index_base,
             return;
         }
         cmdb->cmds[i].cmd = YF_CMD_DRAW;
-        cmdb->cmds[i].draw.indexed = indexed;
-        cmdb->cmds[i].draw.index_base = index_base;
-        cmdb->cmds[i].draw.vert_n = vert_n;
-        cmdb->cmds[i].draw.inst_n = inst_n;
         cmdb->cmds[i].draw.vert_id = vert_id;
+        cmdb->cmds[i].draw.vert_n = vert_n;
         cmdb->cmds[i].draw.inst_id = inst_id;
+        cmdb->cmds[i].draw.inst_n = inst_n;
+        break;
+    default:
+        yf_seterr(YF_ERR_INVARG, __func__);
+        cmdb->invalid = 1;
+    }
+}
+
+void yf_cmdbuf_drawi(YF_cmdbuf cmdb, unsigned index_base, int vert_off,
+                     unsigned vert_n, unsigned inst_id, unsigned inst_n)
+{
+    assert(cmdb != NULL);
+
+    if (cmdb->invalid)
+        return;
+
+    unsigned i;
+    switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
+        i = cmdb->cmd_n++;
+        if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
+            cmdb->invalid = 1;
+            return;
+        }
+        cmdb->cmds[i].cmd = YF_CMD_DRAWI;
+        cmdb->cmds[i].drawi.index_base = index_base;
+        cmdb->cmds[i].drawi.vert_off = vert_off;
+        cmdb->cmds[i].drawi.vert_n = vert_n;
+        cmdb->cmds[i].drawi.inst_id = inst_id;
+        cmdb->cmds[i].drawi.inst_n = inst_n;
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);

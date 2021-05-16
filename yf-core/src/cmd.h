@@ -73,13 +73,20 @@ typedef struct {
 
 /* The parameters of a 'draw' command. */
 typedef struct {
-    int indexed;
-    unsigned index_base;
+    unsigned vert_id;
     unsigned vert_n;
+    unsigned inst_id;
     unsigned inst_n;
-    int vert_id;
-    int inst_id;
 } YF_cmd_draw;
+
+/* The parameters of a 'draw indexed' command. */
+typedef struct {
+    unsigned index_base;
+    int vert_off;
+    unsigned vert_n;
+    unsigned inst_id;
+    unsigned inst_n;
+} YF_cmd_drawi;
 
 /* The parameters of a 'dispatch' command. */
 typedef struct {
@@ -125,6 +132,7 @@ typedef struct {
         YF_cmd_clrdep clrdep;
         YF_cmd_clrsten clrsten;
         YF_cmd_draw draw;
+        YF_cmd_drawi drawi;
         YF_cmd_disp disp;
         YF_cmd_cpybuf cpybuf;
         YF_cmd_cpyimg cpyimg;
@@ -144,9 +152,10 @@ typedef struct {
 #define YF_CMD_CLRDEP  9
 #define YF_CMD_CLRSTEN 10
 #define YF_CMD_DRAW    11
-#define YF_CMD_DISP    12
-#define YF_CMD_CPYBUF  13
-#define YF_CMD_CPYIMG  14
-#define YF_CMD_SYNC    15
+#define YF_CMD_DRAWI   12
+#define YF_CMD_DISP    13
+#define YF_CMD_CPYBUF  14
+#define YF_CMD_CPYIMG  15
+#define YF_CMD_SYNC    16
 
 #endif /* YF_CMD_H */
