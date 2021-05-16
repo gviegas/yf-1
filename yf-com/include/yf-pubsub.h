@@ -65,7 +65,7 @@ void yf_publish(const void *pub, int pubsub);
  *  and the global error is set to indicate the cause.
  */
 int yf_subscribe(const void *pub, const void *sub, unsigned pubsub_mask,
-    void (*callb)(void *pub, int pubsub, void *arg), void *arg);
+                 void (*callb)(void *pub, int pubsub, void *arg), void *arg);
 
 YF_DECLS_END
 

@@ -25,27 +25,27 @@ typedef struct YF_particle_o *YF_particle;
  * Type defining particle system parameters.
  */
 typedef struct {
-  struct {
-    YF_vec3 norm;
-    YF_float size;
-  } emitter;
-  struct {
-    YF_float duration_min;
-    YF_float duration_max;
-    YF_float spawn_min;
-    YF_float spawn_max;
-    YF_float death_min;
-    YF_float death_max;
-    int once;
-  } lifetime;
-  struct {
-    YF_vec4 min;
-    YF_vec4 max;
-  } color;
-  struct {
-    YF_vec3 min;
-    YF_vec3 max;
-  } velocity;
+    struct {
+        YF_vec3 norm;
+        YF_float size;
+    } emitter;
+    struct {
+        YF_float duration_min;
+        YF_float duration_max;
+        YF_float spawn_min;
+        YF_float spawn_max;
+        YF_float death_min;
+        YF_float death_max;
+        int once;
+    } lifetime;
+    struct {
+        YF_vec4 min;
+        YF_vec4 max;
+    } color;
+    struct {
+        YF_vec3 min;
+        YF_vec3 max;
+    } velocity;
 } YF_psys;
 
 /**

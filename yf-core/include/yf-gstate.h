@@ -54,17 +54,17 @@ typedef struct YF_gstate_o *YF_gstate;
  * Type defining a graphics state configuration.
  */
 typedef struct {
-  YF_pass pass;
-  const YF_stage *stgs;
-  unsigned stg_n;
-  const YF_dtable *dtbs;
-  unsigned dtb_n;
-  const YF_vinput *vins;
-  unsigned vin_n;
-  int primitive;
-  int polymode;
-  int cullmode;
-  int winding;
+    YF_pass pass;
+    const YF_stage *stgs;
+    unsigned stg_n;
+    const YF_dtable *dtbs;
+    unsigned dtb_n;
+    const YF_vinput *vins;
+    unsigned vin_n;
+    int primitive;
+    int polymode;
+    int cullmode;
+    int winding;
 } YF_gconf;
 
 /**

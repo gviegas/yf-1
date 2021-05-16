@@ -25,18 +25,18 @@ extern const YF_evt_imp yf_g_evtxcb;
 
 /* Type defining global xcb variables. */
 typedef struct {
-  xcb_connection_t *conn;
-  xcb_visualid_t visual;
-  xcb_window_t root_win;
-  uint32_t white_px;
-  uint32_t black_px;
-  struct {
-    xcb_atom_t proto;
-    xcb_atom_t del;
-    xcb_atom_t title;
-    xcb_atom_t utf8;
-    xcb_atom_t clss;
-  } atom;
+    xcb_connection_t *conn;
+    xcb_visualid_t visual;
+    xcb_window_t root_win;
+    uint32_t white_px;
+    uint32_t black_px;
+    struct {
+        xcb_atom_t proto;
+        xcb_atom_t del;
+        xcb_atom_t title;
+        xcb_atom_t utf8;
+        xcb_atom_t clss;
+    } atom;
 } YF_varsxcb;
 
 /* Global variables instance.

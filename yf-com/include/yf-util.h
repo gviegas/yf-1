@@ -22,6 +22,6 @@
  * Clamps 'x' to the ['min','max'] range.
  */
 #define YF_CLAMP(x, min, max) \
-  ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
+    ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 
 #endif /* YF_YF_UTIL_H */

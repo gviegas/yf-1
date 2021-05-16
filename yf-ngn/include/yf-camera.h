@@ -34,7 +34,7 @@ typedef struct YF_camera_o *YF_camera;
  *  and the global error is set to indicate the cause.
  */
 YF_camera yf_camera_init(const YF_vec3 origin, const YF_vec3 target,
-    YF_float aspect);
+                         YF_float aspect);
 
 /**
  * Places the camera at a given position.

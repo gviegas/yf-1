@@ -2,20 +2,20 @@
  * YF
  * yf-iter.h
  *
- * Copyright © 2020 Gustavo C. Viegas.
+ * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_ITER_H
 #define YF_YF_ITER_H
 
-#include <string.h>
 #include <stdint.h>
+#include <string.h>
 
 /**
  * Type defining an iterator.
  */
 typedef struct {
-  size_t data[2];
+    size_t data[2];
 } YF_iter;
 
 /**
@@ -32,7 +32,7 @@ typedef struct {
  *  zero is returned.
  */
 #define YF_IT_ISEQ(it1, it2) \
-  (memcmp((it1).data, (it2).data, sizeof (it1).data) == 0)
+    (memcmp((it1).data, (it2).data, sizeof (it1).data) == 0)
 
 /**
  * Checks whether or not a given iterator is nil.

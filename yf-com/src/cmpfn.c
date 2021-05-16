@@ -11,5 +11,5 @@
 
 int yf_cmp(const void *ptr1, const void *ptr2)
 {
-  return (ptrdiff_t)ptr1 - (ptrdiff_t)ptr2;
+    return (ptrdiff_t)ptr1 - (ptrdiff_t)ptr2;
 }

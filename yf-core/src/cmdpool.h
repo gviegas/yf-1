@@ -13,8 +13,8 @@
 
 /* Type defining a resource acquired from the command pool. */
 typedef struct {
-  VkCommandBuffer pool_res;
-  int res_id;
+    VkCommandBuffer pool_res;
+    int res_id;
 } YF_cmdres;
 
 /* Creates a new command pool. */
@@ -32,11 +32,12 @@ void yf_cmdpool_reset(YF_context ctx, YF_cmdres *cmdr);
 /* Gets the priority command pool resource for a given context.
    If there is no resource in use, one is created and started. */
 const YF_cmdres *yf_cmdpool_getprio(YF_context ctx,
-    void (*callb)(int res, void *arg), void *arg);
+                                    void (*callb)(int res, void *arg),
+                                    void *arg);
 
 /* Checks which priority resources have been used and are pending execution. */
 void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdres **cmdr_list,
-    unsigned *cmdr_n);
+                          unsigned *cmdr_n);
 
 /* Notifies that a pending priority resource did execute. */
 void yf_cmdpool_notifyprio(YF_context ctx, int result);

@@ -28,31 +28,32 @@ static void *l_handle = NULL;
 #if defined(__linux__) || defined(__APPLE__)
 int yf_loadvk(void)
 {
-  if (l_handle != NULL)
+    if (l_handle != NULL)
+        return 0;
+
+    l_handle = dlopen(YF_LIBVK, RTLD_LAZY);
+    if (l_handle == NULL) {
+        yf_seterr(YF_ERR_DEVGEN, __func__);
+        return -1;
+    }
+
+    *(void **)(&vkGetInstanceProcAddr) = dlsym(l_handle,
+                                               "vkGetInstanceProcAddr");
+    if (vkGetInstanceProcAddr == NULL) {
+        yf_seterr(YF_ERR_DEVGEN, __func__);
+        yf_unldvk();
+        return -1;
+    }
+
     return 0;
-
-  l_handle = dlopen(YF_LIBVK, RTLD_LAZY);
-  if (l_handle == NULL) {
-    yf_seterr(YF_ERR_DEVGEN, __func__);
-    return -1;
-  }
-
-  *(void **)(&vkGetInstanceProcAddr) = dlsym(l_handle, "vkGetInstanceProcAddr");
-  if (vkGetInstanceProcAddr == NULL) {
-    yf_seterr(YF_ERR_DEVGEN, __func__);
-    yf_unldvk();
-    return -1;
-  }
-
-  return 0;
 }
 
 void yf_unldvk(void)
 {
-  if (l_handle != NULL) {
-    dlclose(l_handle);
-    l_handle = NULL;
-  }
+    if (l_handle != NULL) {
+        dlclose(l_handle);
+        l_handle = NULL;
+    }
 }
 #elif defined(_WIN32)
 # error "Unimplemented"
@@ -62,173 +63,173 @@ void yf_unldvk(void)
 
 int yf_setiprocvk(VkInstance instance)
 {
-  if (l_handle == NULL && yf_loadvk() != 0)
-    return -1;
+    if (l_handle == NULL && yf_loadvk() != 0)
+        return -1;
 
-  if (instance == NULL) {
-    YF_IPROCVK(NULL, vkGetInstanceProcAddr);
-    YF_IPROCVK(NULL, vkEnumerateInstanceVersion);
-    YF_IPROCVK(NULL, vkEnumerateInstanceExtensionProperties);
-    YF_IPROCVK(NULL, vkEnumerateInstanceLayerProperties);
-    YF_IPROCVK(NULL, vkCreateInstance);
-  } else {
-    YF_IPROCVK(instance, vkDestroyInstance);
-    YF_IPROCVK(instance, vkEnumeratePhysicalDevices);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceProperties);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceQueueFamilyProperties);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceMemoryProperties);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceFormatProperties);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceFeatures);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceProperties2);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceQueueFamilyProperties2);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceMemoryProperties2);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceFormatProperties2);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceFeatures2);
-    YF_IPROCVK(instance, vkEnumerateDeviceExtensionProperties);
-    YF_IPROCVK(instance, vkCreateDevice);
-    YF_IPROCVK(instance, vkDestroySurfaceKHR);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceSurfaceSupportKHR);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceSurfaceFormatsKHR);
-    YF_IPROCVK(instance, vkGetPhysicalDeviceSurfacePresentModesKHR);
+    if (instance == NULL) {
+        YF_IPROCVK(NULL, vkGetInstanceProcAddr);
+        YF_IPROCVK(NULL, vkEnumerateInstanceVersion);
+        YF_IPROCVK(NULL, vkEnumerateInstanceExtensionProperties);
+        YF_IPROCVK(NULL, vkEnumerateInstanceLayerProperties);
+        YF_IPROCVK(NULL, vkCreateInstance);
+    } else {
+        YF_IPROCVK(instance, vkDestroyInstance);
+        YF_IPROCVK(instance, vkEnumeratePhysicalDevices);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceProperties);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceQueueFamilyProperties);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceMemoryProperties);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceFormatProperties);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceFeatures);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceProperties2);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceQueueFamilyProperties2);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceMemoryProperties2);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceFormatProperties2);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceFeatures2);
+        YF_IPROCVK(instance, vkEnumerateDeviceExtensionProperties);
+        YF_IPROCVK(instance, vkCreateDevice);
+        YF_IPROCVK(instance, vkDestroySurfaceKHR);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceSurfaceSupportKHR);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceSurfaceCapabilitiesKHR);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceSurfaceFormatsKHR);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceSurfacePresentModesKHR);
 #ifdef VK_USE_PLATFORM_WAYLAND_KHR
-    YF_IPROCVK(instance, vkCreateWaylandSurfaceKHR); /* VK_KHR_wayland_surface */
-    YF_IPROCVK(instance, vkGetPhysicalDeviceWaylandPresentationSupportKHR); /* VK_KHR_wayland_surface */
+        YF_IPROCVK(instance, vkCreateWaylandSurfaceKHR); /* VK_KHR_wayland_surface */
+        YF_IPROCVK(instance, vkGetPhysicalDeviceWaylandPresentationSupportKHR); /* VK_KHR_wayland_surface */
 #endif
 #ifdef VK_USE_PLATFORM_WIN32_KHR
-    YF_IPROCVK(instance, vkCreateWin32SurfaceKHR); /* VK_KHR_win32_surface */
-    YF_IPROCVK(instance, vkGetPhysicalDeviceWin32PresentationSupportKHR); /* VK_KHR_win32_surface */
+        YF_IPROCVK(instance, vkCreateWin32SurfaceKHR); /* VK_KHR_win32_surface */
+        YF_IPROCVK(instance, vkGetPhysicalDeviceWin32PresentationSupportKHR); /* VK_KHR_win32_surface */
 #endif
 #ifdef VK_USE_PLATFORM_XCB_KHR
-    YF_IPROCVK(instance, vkCreateXcbSurfaceKHR); /* VK_KHR_xcb_surface */
-    YF_IPROCVK(instance, vkGetPhysicalDeviceXcbPresentationSupportKHR); /* VK_KHR_xcb_surface */
+        YF_IPROCVK(instance, vkCreateXcbSurfaceKHR); /* VK_KHR_xcb_surface */
+        YF_IPROCVK(instance, vkGetPhysicalDeviceXcbPresentationSupportKHR); /* VK_KHR_xcb_surface */
 #endif
 #ifdef VK_USE_PLATFORM_METAL_EXT
-    YF_IPROCVK(instance, vkCreateMetalSurfaceEXT); /* VK_EXT_metal_surface */
+        YF_IPROCVK(instance, vkCreateMetalSurfaceEXT); /* VK_EXT_metal_surface */
 #endif
-    YF_IPROCVK(instance, vkGetDeviceProcAddr);
-  }
+        YF_IPROCVK(instance, vkGetDeviceProcAddr);
+    }
 
-  return 0;
+    return 0;
 }
 
 int yf_setdprocvk(VkDevice device)
 {
-  if (l_handle == NULL || device == NULL) {
-    yf_seterr(YF_ERR_INVARG, __func__);
-    return -1;
-  }
+    if (l_handle == NULL || device == NULL) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
 
-  YF_DPROCVK(device, vkGetDeviceProcAddr);
-  YF_DPROCVK(device, vkDestroyDevice);
-  YF_DPROCVK(device, vkGetDeviceQueue);
-  YF_DPROCVK(device, vkCreateCommandPool);
-  YF_DPROCVK(device, vkTrimCommandPool);
-  YF_DPROCVK(device, vkResetCommandPool);
-  YF_DPROCVK(device, vkDestroyCommandPool);
-  YF_DPROCVK(device, vkAllocateCommandBuffers);
-  YF_DPROCVK(device, vkResetCommandBuffer);
-  YF_DPROCVK(device, vkFreeCommandBuffers);
-  YF_DPROCVK(device, vkBeginCommandBuffer);
-  YF_DPROCVK(device, vkEndCommandBuffer);
-  YF_DPROCVK(device, vkQueueSubmit);
-  YF_DPROCVK(device, vkCmdExecuteCommands);
-  YF_DPROCVK(device, vkCreateFence);
-  YF_DPROCVK(device, vkDestroyFence);
-  YF_DPROCVK(device, vkGetFenceStatus);
-  YF_DPROCVK(device, vkResetFences);
-  YF_DPROCVK(device, vkWaitForFences);
-  YF_DPROCVK(device, vkCreateSemaphore);
-  YF_DPROCVK(device, vkDestroySemaphore);
-  YF_DPROCVK(device, vkGetSemaphoreCounterValue);
-  YF_DPROCVK(device, vkWaitSemaphores);
-  YF_DPROCVK(device, vkSignalSemaphore);
-  YF_DPROCVK(device, vkCmdPipelineBarrier);
-  YF_DPROCVK(device, vkQueueWaitIdle);
-  YF_DPROCVK(device, vkDeviceWaitIdle);
-  YF_DPROCVK(device, vkCreateRenderPass);
-  YF_DPROCVK(device, vkDestroyRenderPass);
-  YF_DPROCVK(device, vkCreateFramebuffer);
-  YF_DPROCVK(device, vkDestroyFramebuffer);
-  YF_DPROCVK(device, vkCmdBeginRenderPass);
-  YF_DPROCVK(device, vkCmdEndRenderPass);
-  YF_DPROCVK(device, vkCmdNextSubpass);
-  YF_DPROCVK(device, vkCreateShaderModule);
-  YF_DPROCVK(device, vkDestroyShaderModule);
-  YF_DPROCVK(device, vkCreateGraphicsPipelines);
-  YF_DPROCVK(device, vkCreateComputePipelines);
-  YF_DPROCVK(device, vkDestroyPipeline);
-  YF_DPROCVK(device, vkCmdBindPipeline);
-  YF_DPROCVK(device, vkCreatePipelineCache);
-  YF_DPROCVK(device, vkMergePipelineCaches);
-  YF_DPROCVK(device, vkGetPipelineCacheData);
-  YF_DPROCVK(device, vkDestroyPipelineCache);
-  YF_DPROCVK(device, vkAllocateMemory);
-  YF_DPROCVK(device, vkFreeMemory);
-  YF_DPROCVK(device, vkMapMemory);
-  YF_DPROCVK(device, vkUnmapMemory);
-  YF_DPROCVK(device, vkCreateBuffer);
-  YF_DPROCVK(device, vkDestroyBuffer);
-  YF_DPROCVK(device, vkCreateBufferView);
-  YF_DPROCVK(device, vkDestroyBufferView);
-  YF_DPROCVK(device, vkCreateImage);
-  YF_DPROCVK(device, vkDestroyImage);
-  YF_DPROCVK(device, vkCreateImageView);
-  YF_DPROCVK(device, vkDestroyImageView);
-  YF_DPROCVK(device, vkGetBufferMemoryRequirements);
-  YF_DPROCVK(device, vkGetImageMemoryRequirements);
-  YF_DPROCVK(device, vkBindBufferMemory);
-  YF_DPROCVK(device, vkBindImageMemory);
-  YF_DPROCVK(device, vkCreateSampler);
-  YF_DPROCVK(device, vkDestroySampler);
-  YF_DPROCVK(device, vkCreateDescriptorSetLayout);
-  YF_DPROCVK(device, vkDestroyDescriptorSetLayout);
-  YF_DPROCVK(device, vkGetDescriptorSetLayoutSupport);
-  YF_DPROCVK(device, vkCreatePipelineLayout);
-  YF_DPROCVK(device, vkDestroyPipelineLayout);
-  YF_DPROCVK(device, vkCreateDescriptorPool);
-  YF_DPROCVK(device, vkDestroyDescriptorPool);
-  YF_DPROCVK(device, vkResetDescriptorPool);
-  YF_DPROCVK(device, vkAllocateDescriptorSets);
-  YF_DPROCVK(device, vkFreeDescriptorSets);
-  YF_DPROCVK(device, vkUpdateDescriptorSets);
-  YF_DPROCVK(device, vkCmdBindDescriptorSets);
-  YF_DPROCVK(device, vkCmdPushConstants);
-  YF_DPROCVK(device, vkCmdClearColorImage);
-  YF_DPROCVK(device, vkCmdClearDepthStencilImage);
-  YF_DPROCVK(device, vkCmdClearAttachments);
-  YF_DPROCVK(device, vkCmdFillBuffer);
-  YF_DPROCVK(device, vkCmdUpdateBuffer);
-  YF_DPROCVK(device, vkCmdCopyBuffer);
-  YF_DPROCVK(device, vkCmdCopyImage);
-  YF_DPROCVK(device, vkCmdCopyBufferToImage);
-  YF_DPROCVK(device, vkCmdCopyImageToBuffer);
-  YF_DPROCVK(device, vkCmdBlitImage);
-  YF_DPROCVK(device, vkCmdResolveImage);
-  YF_DPROCVK(device, vkCmdDraw);
-  YF_DPROCVK(device, vkCmdDrawIndexed);
-  YF_DPROCVK(device, vkCmdDrawIndirect);
-  YF_DPROCVK(device, vkCmdDrawIndexedIndirect);
-  YF_DPROCVK(device, vkCmdBindVertexBuffers);
-  YF_DPROCVK(device, vkCmdBindIndexBuffer);
-  YF_DPROCVK(device, vkCmdSetViewport);
-  YF_DPROCVK(device, vkCmdSetLineWidth);
-  YF_DPROCVK(device, vkCmdSetDepthBias);
-  YF_DPROCVK(device, vkCmdSetScissor);
-  YF_DPROCVK(device, vkCmdSetDepthBounds);
-  YF_DPROCVK(device, vkCmdSetStencilCompareMask);
-  YF_DPROCVK(device, vkCmdSetStencilWriteMask);
-  YF_DPROCVK(device, vkCmdSetStencilReference);
-  YF_DPROCVK(device, vkCmdSetBlendConstants);
-  YF_DPROCVK(device, vkCmdDispatch);
-  YF_DPROCVK(device, vkCmdDispatchIndirect);
-  YF_DPROCVK(device, vkCreateSwapchainKHR);
-  YF_DPROCVK(device, vkDestroySwapchainKHR);
-  YF_DPROCVK(device, vkGetSwapchainImagesKHR);
-  YF_DPROCVK(device, vkAcquireNextImageKHR);
-  YF_DPROCVK(device, vkQueuePresentKHR);
+    YF_DPROCVK(device, vkGetDeviceProcAddr);
+    YF_DPROCVK(device, vkDestroyDevice);
+    YF_DPROCVK(device, vkGetDeviceQueue);
+    YF_DPROCVK(device, vkCreateCommandPool);
+    YF_DPROCVK(device, vkTrimCommandPool);
+    YF_DPROCVK(device, vkResetCommandPool);
+    YF_DPROCVK(device, vkDestroyCommandPool);
+    YF_DPROCVK(device, vkAllocateCommandBuffers);
+    YF_DPROCVK(device, vkResetCommandBuffer);
+    YF_DPROCVK(device, vkFreeCommandBuffers);
+    YF_DPROCVK(device, vkBeginCommandBuffer);
+    YF_DPROCVK(device, vkEndCommandBuffer);
+    YF_DPROCVK(device, vkQueueSubmit);
+    YF_DPROCVK(device, vkCmdExecuteCommands);
+    YF_DPROCVK(device, vkCreateFence);
+    YF_DPROCVK(device, vkDestroyFence);
+    YF_DPROCVK(device, vkGetFenceStatus);
+    YF_DPROCVK(device, vkResetFences);
+    YF_DPROCVK(device, vkWaitForFences);
+    YF_DPROCVK(device, vkCreateSemaphore);
+    YF_DPROCVK(device, vkDestroySemaphore);
+    YF_DPROCVK(device, vkGetSemaphoreCounterValue);
+    YF_DPROCVK(device, vkWaitSemaphores);
+    YF_DPROCVK(device, vkSignalSemaphore);
+    YF_DPROCVK(device, vkCmdPipelineBarrier);
+    YF_DPROCVK(device, vkQueueWaitIdle);
+    YF_DPROCVK(device, vkDeviceWaitIdle);
+    YF_DPROCVK(device, vkCreateRenderPass);
+    YF_DPROCVK(device, vkDestroyRenderPass);
+    YF_DPROCVK(device, vkCreateFramebuffer);
+    YF_DPROCVK(device, vkDestroyFramebuffer);
+    YF_DPROCVK(device, vkCmdBeginRenderPass);
+    YF_DPROCVK(device, vkCmdEndRenderPass);
+    YF_DPROCVK(device, vkCmdNextSubpass);
+    YF_DPROCVK(device, vkCreateShaderModule);
+    YF_DPROCVK(device, vkDestroyShaderModule);
+    YF_DPROCVK(device, vkCreateGraphicsPipelines);
+    YF_DPROCVK(device, vkCreateComputePipelines);
+    YF_DPROCVK(device, vkDestroyPipeline);
+    YF_DPROCVK(device, vkCmdBindPipeline);
+    YF_DPROCVK(device, vkCreatePipelineCache);
+    YF_DPROCVK(device, vkMergePipelineCaches);
+    YF_DPROCVK(device, vkGetPipelineCacheData);
+    YF_DPROCVK(device, vkDestroyPipelineCache);
+    YF_DPROCVK(device, vkAllocateMemory);
+    YF_DPROCVK(device, vkFreeMemory);
+    YF_DPROCVK(device, vkMapMemory);
+    YF_DPROCVK(device, vkUnmapMemory);
+    YF_DPROCVK(device, vkCreateBuffer);
+    YF_DPROCVK(device, vkDestroyBuffer);
+    YF_DPROCVK(device, vkCreateBufferView);
+    YF_DPROCVK(device, vkDestroyBufferView);
+    YF_DPROCVK(device, vkCreateImage);
+    YF_DPROCVK(device, vkDestroyImage);
+    YF_DPROCVK(device, vkCreateImageView);
+    YF_DPROCVK(device, vkDestroyImageView);
+    YF_DPROCVK(device, vkGetBufferMemoryRequirements);
+    YF_DPROCVK(device, vkGetImageMemoryRequirements);
+    YF_DPROCVK(device, vkBindBufferMemory);
+    YF_DPROCVK(device, vkBindImageMemory);
+    YF_DPROCVK(device, vkCreateSampler);
+    YF_DPROCVK(device, vkDestroySampler);
+    YF_DPROCVK(device, vkCreateDescriptorSetLayout);
+    YF_DPROCVK(device, vkDestroyDescriptorSetLayout);
+    YF_DPROCVK(device, vkGetDescriptorSetLayoutSupport);
+    YF_DPROCVK(device, vkCreatePipelineLayout);
+    YF_DPROCVK(device, vkDestroyPipelineLayout);
+    YF_DPROCVK(device, vkCreateDescriptorPool);
+    YF_DPROCVK(device, vkDestroyDescriptorPool);
+    YF_DPROCVK(device, vkResetDescriptorPool);
+    YF_DPROCVK(device, vkAllocateDescriptorSets);
+    YF_DPROCVK(device, vkFreeDescriptorSets);
+    YF_DPROCVK(device, vkUpdateDescriptorSets);
+    YF_DPROCVK(device, vkCmdBindDescriptorSets);
+    YF_DPROCVK(device, vkCmdPushConstants);
+    YF_DPROCVK(device, vkCmdClearColorImage);
+    YF_DPROCVK(device, vkCmdClearDepthStencilImage);
+    YF_DPROCVK(device, vkCmdClearAttachments);
+    YF_DPROCVK(device, vkCmdFillBuffer);
+    YF_DPROCVK(device, vkCmdUpdateBuffer);
+    YF_DPROCVK(device, vkCmdCopyBuffer);
+    YF_DPROCVK(device, vkCmdCopyImage);
+    YF_DPROCVK(device, vkCmdCopyBufferToImage);
+    YF_DPROCVK(device, vkCmdCopyImageToBuffer);
+    YF_DPROCVK(device, vkCmdBlitImage);
+    YF_DPROCVK(device, vkCmdResolveImage);
+    YF_DPROCVK(device, vkCmdDraw);
+    YF_DPROCVK(device, vkCmdDrawIndexed);
+    YF_DPROCVK(device, vkCmdDrawIndirect);
+    YF_DPROCVK(device, vkCmdDrawIndexedIndirect);
+    YF_DPROCVK(device, vkCmdBindVertexBuffers);
+    YF_DPROCVK(device, vkCmdBindIndexBuffer);
+    YF_DPROCVK(device, vkCmdSetViewport);
+    YF_DPROCVK(device, vkCmdSetLineWidth);
+    YF_DPROCVK(device, vkCmdSetDepthBias);
+    YF_DPROCVK(device, vkCmdSetScissor);
+    YF_DPROCVK(device, vkCmdSetDepthBounds);
+    YF_DPROCVK(device, vkCmdSetStencilCompareMask);
+    YF_DPROCVK(device, vkCmdSetStencilWriteMask);
+    YF_DPROCVK(device, vkCmdSetStencilReference);
+    YF_DPROCVK(device, vkCmdSetBlendConstants);
+    YF_DPROCVK(device, vkCmdDispatch);
+    YF_DPROCVK(device, vkCmdDispatchIndirect);
+    YF_DPROCVK(device, vkCreateSwapchainKHR);
+    YF_DPROCVK(device, vkDestroySwapchainKHR);
+    YF_DPROCVK(device, vkGetSwapchainImagesKHR);
+    YF_DPROCVK(device, vkAcquireNextImageKHR);
+    YF_DPROCVK(device, vkQueuePresentKHR);
 
-  return 0;
+    return 0;
 }
 
 /*

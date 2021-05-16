@@ -12,19 +12,19 @@
 #include "vk.h"
 
 typedef struct YF_wsi_o {
-  YF_context ctx;
-  YF_window win;
+    YF_context ctx;
+    YF_window win;
 
-  VkSurfaceKHR surface;
-  VkSwapchainKHR swapchain;
-  VkSwapchainCreateInfoKHR sc_info;
-  unsigned min_img_n;
-  unsigned acq_limit;
+    VkSurfaceKHR surface;
+    VkSwapchainKHR swapchain;
+    VkSwapchainCreateInfoKHR sc_info;
+    unsigned min_img_n;
+    unsigned acq_limit;
 
-  YF_image *imgs;
-  int *imgs_acq;
-  VkSemaphore *imgs_sem;
-  unsigned img_n;
+    YF_image *imgs;
+    int *imgs_acq;
+    VkSemaphore *imgs_sem;
+    unsigned img_n;
 } YF_wsi_o;
 
 /* Checks whether a given physical device supports presentation. */
