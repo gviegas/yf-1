@@ -14,16 +14,16 @@
 
 /* Type defining the mesh data. */
 typedef struct {
-  struct {
-    int vtype;
-    void *data;
-    size_t n;
-  } v;
-  struct {
-    void *data;
-    short stride;
-    size_t n;
-  } i;
+    struct {
+        int vtype;
+        void *data;
+        size_t n;
+    } v;
+    struct {
+        void *data;
+        short stride;
+        size_t n;
+    } i;
 } YF_meshdt;
 
 /* Initializes a new mesh object from mesh data directly. */

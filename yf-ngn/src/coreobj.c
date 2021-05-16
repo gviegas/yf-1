@@ -34,51 +34,51 @@ static _Noreturn void exit_fatal(const char *info);
 
 YF_context yf_getctx(void)
 {
-  static atomic_flag flag = ATOMIC_FLAG_INIT;
+    static atomic_flag flag = ATOMIC_FLAG_INIT;
 
-  if (atomic_flag_test_and_set(&flag)) {
-    while (l_ctx == NULL)
-      ;
-  } else if (l_ctx == NULL) {
-    if (atexit(handle_exit) != 0 || (l_ctx = yf_context_init()) == NULL)
-      exit_fatal(__func__);
-  }
+    if (atomic_flag_test_and_set(&flag)) {
+        while (l_ctx == NULL)
+            ;
+    } else if (l_ctx == NULL) {
+        if (atexit(handle_exit) != 0 || (l_ctx = yf_context_init()) == NULL)
+            exit_fatal(__func__);
+    }
 
-  return l_ctx;
+    return l_ctx;
 }
 
 YF_pass yf_getpass(void)
 {
-  static atomic_flag flag = ATOMIC_FLAG_INIT;
+    static atomic_flag flag = ATOMIC_FLAG_INIT;
 
-  if (atomic_flag_test_and_set(&flag)) {
-    while (yf_g_pass == NULL)
-      ;
-  } else if (yf_g_pass == NULL) {
-    exit_fatal(__func__);
-  }
+    if (atomic_flag_test_and_set(&flag)) {
+        while (yf_g_pass == NULL)
+            ;
+    } else if (yf_g_pass == NULL) {
+        exit_fatal(__func__);
+    }
 
-  return yf_g_pass;
+    return yf_g_pass;
 }
 
 static void handle_exit(void)
 {
-  yf_unsetscn();
-  yf_pass_deinit(yf_g_pass);
-  yf_context_deinit(l_ctx);
+    yf_unsetscn();
+    yf_pass_deinit(yf_g_pass);
+    yf_context_deinit(l_ctx);
 }
 
 static _Noreturn void exit_fatal(const char *info)
 {
 #ifndef YF_DEVEL
-  yf_printerr();
+    yf_printerr();
 #endif
 
-  fprintf(stderr, "\n[YF] Fatal:\n! Failed to initialize core object");
-  if (info != NULL)
-    fprintf(stderr, "\n! %s\n\n", info);
-  else
-    fprintf(stderr, "\n\n");
+    fprintf(stderr, "\n[YF] Fatal:\n! Failed to initialize core object");
+    if (info != NULL)
+        fprintf(stderr, "\n! %s\n\n", info);
+    else
+        fprintf(stderr, "\n\n");
 
-  exit(EXIT_FAILURE);
+    exit(EXIT_FAILURE);
 }
