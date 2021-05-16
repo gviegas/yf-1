@@ -37,9 +37,9 @@ int yf_setdprocvk(VkDevice device);
 #define YF_DEFVK(name)  PFN_##name name
 
 #define YF_IPROCVK(inst, name) \
-  name = (PFN_##name)vkGetInstanceProcAddr(inst, #name)
+    name = (PFN_##name)vkGetInstanceProcAddr(inst, #name)
 #define YF_DPROCVK(dev, name) \
-  name = (PFN_##name)vkGetDeviceProcAddr(dev, #name)
+    name = (PFN_##name)vkGetDeviceProcAddr(dev, #name)
 
 /*
  * Instance-level proc. (null instance)

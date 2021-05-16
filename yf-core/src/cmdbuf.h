@@ -12,12 +12,12 @@
 #include "cmd.h"
 
 typedef struct YF_cmdbuf_o {
-  YF_context ctx;
-  int cmdbuf;
-  YF_cmd *cmds;
-  unsigned cmd_n;
-  unsigned cmd_cap;
-  int invalid;
+    YF_context ctx;
+    int cmdbuf;
+    YF_cmd *cmds;
+    unsigned cmd_n;
+    unsigned cmd_cap;
+    int invalid;
 } YF_cmdbuf_o;
 
 /* Decodes a command buffer and enqueues the resulting object for execution.

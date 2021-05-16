@@ -12,13 +12,13 @@
 #include "vk.h"
 
 typedef struct YF_cstate_o {
-  YF_context ctx;
-  YF_stage stg;
-  YF_dtable *dtbs;
-  unsigned dtb_n;
+    YF_context ctx;
+    YF_stage stg;
+    YF_dtable *dtbs;
+    unsigned dtb_n;
 
-  VkPipelineLayout layout;
-  VkPipeline pipeline;
+    VkPipelineLayout layout;
+    VkPipeline pipeline;
 } YF_cstate_o;
 
 #endif /* YF_CSTATE_H */
