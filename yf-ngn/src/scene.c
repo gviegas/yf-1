@@ -633,7 +633,7 @@ static int render_mdl(YF_scene scn)
         yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
         if ((mesh = yf_model_getmesh(val->mdl)) != NULL)
-            yf_mesh_draw(mesh, l_vars.cb, 1, 0);
+            yf_mesh_draw(mesh, l_vars.cb, 1);
         else
             /* TODO: Handle models lacking mesh. */
             assert(0);
@@ -733,7 +733,7 @@ static int render_mdl_inst(YF_scene scn)
             yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
             if ((mesh = yf_model_getmesh(val->mdls[rem])) != NULL)
-                yf_mesh_draw(mesh, l_vars.cb, n, 0);
+                yf_mesh_draw(mesh, l_vars.cb, n);
             else
                 /* TODO: Handle models lacking mesh. */
                 assert(0);
@@ -814,7 +814,7 @@ static int render_terr(YF_scene scn)
         yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
         mesh = yf_terrain_getmesh(terr);
-        yf_mesh_draw(mesh, l_vars.cb, 1, 0);
+        yf_mesh_draw(mesh, l_vars.cb, 1);
 
         yf_list_removeat(l_vars.terrs, &it);
         it = YF_NILIT;
@@ -874,7 +874,7 @@ static int render_part(YF_scene scn)
         yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
         mesh = yf_particle_getmesh(part);
-        yf_mesh_draw(mesh, l_vars.cb, 1, 0);
+        yf_mesh_draw(mesh, l_vars.cb, 1);
 
         yf_list_removeat(l_vars.parts, &it);
         it = YF_NILIT;
@@ -934,7 +934,7 @@ static int render_quad(YF_scene scn)
         yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
         mesh = yf_quad_getmesh(quad);
-        yf_mesh_draw(mesh, l_vars.cb, 1, 0);
+        yf_mesh_draw(mesh, l_vars.cb, 1);
 
         yf_list_removeat(l_vars.quads, &it);
         it = YF_NILIT;
@@ -992,7 +992,7 @@ static int render_labl(YF_scene scn)
         yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
         mesh = yf_label_getmesh(labl);
-        yf_mesh_draw(mesh, l_vars.cb, 1, 0);
+        yf_mesh_draw(mesh, l_vars.cb, 1);
 
         yf_list_removeat(l_vars.labls, &it);
         it = YF_NILIT;

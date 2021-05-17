@@ -33,6 +33,6 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data);
 int yf_mesh_setvtx(YF_mesh mesh, YF_slice range, const void *data);
 
 /* Encodes vertex/index state and draws a given mesh. */
-void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n, int inst_id);
+void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n);
 
 #endif /* YF_MESH_H */

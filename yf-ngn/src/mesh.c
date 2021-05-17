@@ -234,7 +234,7 @@ int yf_mesh_setvtx(YF_mesh mesh, YF_slice range, const void *data)
     return yf_buffer_copy(l_buf, off, data, sz);
 }
 
-void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n, int inst_id)
+void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
 {
     assert(mesh != NULL);
     assert(cmdb != NULL);
@@ -242,9 +242,9 @@ void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n, int inst_id)
     yf_cmdbuf_setvbuf(cmdb, 0, l_buf, mesh->v.offset);
     if (mesh->i.n != 0) {
         yf_cmdbuf_setibuf(cmdb, l_buf, mesh->i.offset, mesh->i.stride);
-        yf_cmdbuf_draw(cmdb, 1, 0, mesh->i.n, inst_n, 0, inst_id);
+        yf_cmdbuf_drawi(cmdb, 0, 0, mesh->i.n, 0, inst_n);
     } else {
-        yf_cmdbuf_draw(cmdb, 0, 0, mesh->v.n, inst_n, 0, inst_id);
+        yf_cmdbuf_draw(cmdb, 0, mesh->v.n, 0, inst_n);
     }
 }
 
