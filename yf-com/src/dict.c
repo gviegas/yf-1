@@ -114,3 +114,53 @@ YF_dict yf_dict_init(YF_hashfn hash, YF_cmpfn cmp)
 
     return dict;
 }
+
+int yf_dict_insert(YF_dict dict, const void *key, const void *val)
+{
+    assert(dict != NULL);
+
+    size_t k, x = dict->hash(key);
+    YF_HASH(k, dict->a, x, dict->b, dict->w);
+
+    // TODO...
+    return -1;
+}
+
+void *yf_dict_remove(YF_dict dict, const void *key)
+{
+    assert(dict != NULL);
+
+    size_t k, x = dict->hash(key);
+    YF_HASH(k, dict->a, x, dict->b, dict->w);
+
+    // TODO...
+    return NULL;
+}
+
+int yf_dict_contains(YF_dict dict, const void *key)
+{
+    assert(dict != NULL);
+
+    size_t k, x = dict->hash(key);
+    YF_HASH(k, dict->a, x, dict->b, dict->w);
+
+    // TODO
+    return 0;
+}
+
+size_t yf_dict_getlen(YF_dict dict)
+{
+    assert(dict != NULL);
+    return dict->count;
+}
+
+void yf_dict_deinit(YF_dict dict)
+{
+    assert(dict != NULL);
+
+    for (size_t i = 0; i < 1ULL<<dict->w; ++i)
+        free(dict->buckets[i].list);
+
+    free(dict->buckets);
+    free(dict);
+}
