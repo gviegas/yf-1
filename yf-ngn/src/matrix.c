@@ -258,8 +258,8 @@ void yf_mat3_rotx(YF_mat3 m, YF_float angle)
 #endif
     yf_mat3_iden(m);
     m[4] = c;
-    m[5] = s;
-    m[7] = -s;
+    m[5] = -s;
+    m[7] = s;
     m[8] = c;
 }
 
@@ -274,8 +274,8 @@ void yf_mat3_roty(YF_mat3 m, YF_float angle)
 #endif
     yf_mat3_iden(m);
     m[0] = c;
-    m[2] = -s;
-    m[6] = s;
+    m[2] = s;
+    m[6] = -s;
     m[8] = c;
 }
 
@@ -290,8 +290,8 @@ void yf_mat3_rotz(YF_mat3 m, YF_float angle)
 #endif
     yf_mat3_iden(m);
     m[0] = c;
-    m[1] = s;
-    m[3] = -s;
+    m[1] = -s;
+    m[3] = s;
     m[4] = c;
 }
 
@@ -306,8 +306,8 @@ void yf_mat4_rotx(YF_mat4 m, YF_float angle)
 #endif
     yf_mat4_iden(m);
     m[5] = c;
-    m[6] = s;
-    m[9] = -s;
+    m[6] = -s;
+    m[9] = s;
     m[10] = c;
 }
 
@@ -322,8 +322,8 @@ void yf_mat4_roty(YF_mat4 m, YF_float angle)
 #endif
     yf_mat4_iden(m);
     m[0] = c;
-    m[2] = -s;
-    m[8] = s;
+    m[2] = s;
+    m[8] = -s;
     m[10] = c;
 }
 
@@ -338,8 +338,8 @@ void yf_mat4_rotz(YF_mat4 m, YF_float angle)
 #endif
     yf_mat4_iden(m);
     m[0] = c;
-    m[1] = s;
-    m[4] = -s;
+    m[1] = -s;
+    m[4] = s;
     m[5] = c;
 }
 
@@ -366,13 +366,13 @@ void yf_mat3_rot(YF_mat3 m, YF_float angle, const YF_vec3 axis)
     const YF_float sy = s * v[1];
     const YF_float sz = s * v[2];
     m[0] = c + one_minus_c * xx;
-    m[1] = one_minus_c * xy + sz;
-    m[2] = one_minus_c * xz - sy;
-    m[3] = one_minus_c * xy - sz;
+    m[1] = one_minus_c * xy - sz;
+    m[2] = one_minus_c * xz + sy;
+    m[3] = one_minus_c * xy + sz;
     m[4] = c + one_minus_c * yy;
-    m[5] = one_minus_c * yz + sx;
-    m[6] = one_minus_c * xz + sy;
-    m[7] = one_minus_c * yz - sx;
+    m[5] = one_minus_c * yz - sx;
+    m[6] = one_minus_c * xz - sy;
+    m[7] = one_minus_c * yz + sx;
     m[8] = c + one_minus_c * zz;
 }
 
@@ -400,13 +400,13 @@ void yf_mat4_rot(YF_mat4 m, YF_float angle, const YF_vec3 axis)
     const YF_float sz = s * v[2];
     yf_mat4_iden(m);
     m[0] = c + one_minus_c * xx;
-    m[1] = one_minus_c * xy + sz;
-    m[2] = one_minus_c * xz - sy;
-    m[4] = one_minus_c * xy - sz;
+    m[1] = one_minus_c * xy - sz;
+    m[2] = one_minus_c * xz + sy;
+    m[4] = one_minus_c * xy + sz;
     m[5] = c + one_minus_c * yy;
-    m[6] = one_minus_c * yz + sx;
-    m[8] = one_minus_c * xz + sy;
-    m[9] = one_minus_c * yz - sx;
+    m[6] = one_minus_c * yz - sx;
+    m[8] = one_minus_c * xz - sy;
+    m[9] = one_minus_c * yz + sx;
     m[10] = c + one_minus_c * zz;
 }
 
