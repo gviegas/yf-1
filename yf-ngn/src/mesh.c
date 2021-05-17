@@ -203,7 +203,7 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
             return NULL;
         }
         l_blks[0].offset = 0;
-        yf_buffer_getval(l_buf, &l_blks[0].size);
+        l_blks[0].size = yf_buffer_getsize(l_buf);
     }
 
     YF_mesh mesh = calloc(1, sizeof(struct YF_mesh_o));
@@ -292,8 +292,7 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
             if (resize_blks(new_cap) < new_cap)
                 return -1;
         }
-        size_t buf_len;
-        yf_buffer_getval(l_buf, &buf_len);
+        size_t buf_len = yf_buffer_getsize(l_buf);
         size_t new_len = buf_len + sz;
         int merge_last = 0;
         if (l_blk_n > 0) {
@@ -347,8 +346,7 @@ static size_t resize_buf(size_t new_len)
     while (sz < new_len)
         sz <<= 1;
 
-    size_t buf_len;
-    yf_buffer_getval(l_buf, &buf_len);
+    size_t buf_len = yf_buffer_getsize(l_buf);
 
     if (sz != buf_len) {
         YF_buffer new_buf;
