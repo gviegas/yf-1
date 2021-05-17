@@ -37,16 +37,14 @@ typedef struct {
     void *list;
     size_t max_n;
     size_t cur_n;
-    size_t last_i;
 } T_bucket;
 
 struct YF_dict_o {
     YF_hashfn hash;
     YF_cmpfn cmp;
-    unsigned w;
     T_bucket *buckets;
-    size_t bucket_n;
-    size_t value_n;
+    size_t w;
+    size_t count;
     unsigned long long lcg_state;
     size_t a;
     size_t b;
@@ -88,4 +86,31 @@ static void make_factors(unsigned long long *state, size_t *a, size_t *b)
     *a = ax | 1;
     *b = bx;
 #endif
+}
+
+YF_dict yf_dict_init(YF_hashfn hash, YF_cmpfn cmp)
+{
+    YF_dict dict = malloc(sizeof(struct YF_dict_o));
+
+    if (dict == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return NULL;
+    }
+
+    dict->hash = hash != NULL ? hash : yf_hash;
+    dict->cmp = cmp != NULL ? cmp : yf_cmp;
+    dict->w = YF_WMINBITS;
+    dict->count = 0;
+    dict->buckets = calloc(1 << dict->w, sizeof *dict->buckets);
+
+    if (dict->buckets == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(dict);
+        return NULL;
+    }
+
+    make_seed(&dict->lcg_state);
+    make_factors(&dict->lcg_state, &dict->a, &dict->b);
+
+    return dict;
 }
