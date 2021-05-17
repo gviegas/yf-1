@@ -88,12 +88,10 @@ int yf_buffer_copy(YF_buffer buf, size_t offset, const void *data, size_t size)
     return 0;
 }
 
-void yf_buffer_getval(YF_buffer buf, size_t *size)
+size_t yf_buffer_getsize(YF_buffer buf)
 {
     assert(buf != NULL);
-
-    if (size != NULL)
-        *size = buf->size;
+    return buf->size;
 }
 
 void yf_buffer_deinit(YF_buffer buf)

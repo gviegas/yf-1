@@ -43,12 +43,12 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size);
 int yf_buffer_copy(YF_buffer buf, size_t offset, const void *data, size_t size);
 
 /**
- * Gets values of a buffer.
+ * Gets the buffer size.
  *
  * @param buf: The buffer.
- * @param size: The destination for the size value.
+ * @return: The buffer size.
  */
-void yf_buffer_getval(YF_buffer buf, size_t *size);
+size_t yf_buffer_getsize(YF_buffer buf);
 
 /**
  * Deinitializes a buffer.
