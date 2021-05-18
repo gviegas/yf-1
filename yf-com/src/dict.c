@@ -34,7 +34,12 @@
 #define YF_MAXLOADF 0.75
 
 typedef struct {
-    void *list;
+    const void *key;
+    const void *val;
+} T_pair;
+
+typedef struct {
+    T_pair *pairs;
     size_t max_n;
     size_t cur_n;
 } T_bucket;
@@ -144,7 +149,14 @@ int yf_dict_contains(YF_dict dict, const void *key)
     size_t k, x = dict->hash(key);
     YF_HASH(k, dict->a, x, dict->b, dict->w);
 
-    // TODO
+    if (dict->buckets[k].cur_n == 0)
+        return 0;
+
+    for (size_t i = 0; i < dict->buckets[k].cur_n; ++i) {
+        if (dict->cmp(dict->buckets[k].pairs[i].key, key) == 0)
+            return 1;
+    }
+
     return 0;
 }
 
@@ -159,7 +171,7 @@ void yf_dict_deinit(YF_dict dict)
     assert(dict != NULL);
 
     for (size_t i = 0; i < 1ULL<<dict->w; ++i)
-        free(dict->buckets[i].list);
+        free(dict->buckets[i].pairs);
 
     free(dict->buckets);
     free(dict);
