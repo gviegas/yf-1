@@ -127,8 +127,34 @@ int yf_dict_insert(YF_dict dict, const void *key, const void *val)
     size_t k, x = dict->hash(key);
     YF_HASH(k, dict->a, x, dict->b, dict->w);
 
-    // TODO...
-    return -1;
+    T_bucket *bucket = dict->buckets+k;
+
+    if (bucket->cur_n == bucket->max_n) {
+        const size_t new_n = bucket->max_n == 0 ? 1 : bucket->max_n << 1;
+        void *tmp = realloc(bucket->pairs, sizeof(T_pair) * new_n);
+
+        if (tmp == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        bucket->pairs = tmp;
+        bucket->max_n = new_n;
+    }
+
+    for (size_t i = 0; i < bucket->cur_n; ++i) {
+        if (dict->cmp(bucket->pairs[i].key, key) == 0) {
+            yf_seterr(YF_ERR_EXIST, __func__);
+            return -1;
+        }
+    }
+
+    bucket->pairs[bucket->cur_n++] = (T_pair){key, val};
+    ++dict->count;
+
+    // TODO: Check if rehash is needed
+
+    return 0;
 }
 
 void *yf_dict_remove(YF_dict dict, const void *key)
