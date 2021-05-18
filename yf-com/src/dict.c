@@ -164,8 +164,31 @@ void *yf_dict_remove(YF_dict dict, const void *key)
     size_t k, x = dict->hash(key);
     YF_HASH(k, dict->a, x, dict->b, dict->w);
 
-    // TODO...
-    return NULL;
+    T_bucket *bucket = dict->buckets+k;
+    size_t i = 0;
+
+    for (; i < bucket->cur_n; ++i) {
+        if (dict->cmp(bucket->pairs[i].key, key) == 0)
+            break;
+    }
+
+    if (i == bucket->cur_n) {
+        yf_seterr(YF_ERR_NOTFND, __func__);
+        return NULL;
+    }
+
+    const void *val = bucket->pairs[i].val;
+
+    if (i+1 < bucket->cur_n)
+        memmove(bucket->pairs+i, bucket->pairs+i+1,
+                sizeof(T_pair) * (bucket->cur_n - i - 1));
+
+    --bucket->cur_n;
+    --dict->count;
+
+    // TODO: Check if rehash is needed
+
+    return (void *)val;
 }
 
 int yf_dict_contains(YF_dict dict, const void *key)
