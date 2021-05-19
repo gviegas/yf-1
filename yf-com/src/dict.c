@@ -11,6 +11,10 @@
 #include <time.h>
 #include <assert.h>
 
+#ifdef YF_DEVEL
+# include <stdio.h>
+#endif
+
 #ifdef __linux__
 # include <sys/random.h>
 #endif
@@ -337,3 +341,27 @@ void yf_dict_deinit(YF_dict dict)
     free(dict->buckets);
     free(dict);
 }
+
+/*
+ * DEVEL
+ */
+
+#ifdef YF_DEVEL
+
+void yf_print_dict(YF_dict dict)
+{
+    printf("\ndict:\n w: %lu\n count: %lu\n lcg_state: %llu\n a: %lu\n b: %lu",
+           dict->w, dict->count, dict->lcg_state, dict->a, dict->b);
+
+    for (size_t i = 0; i < 1ULL<<dict->w; ++i) {
+        printf("\n buckets[%lu]:\n  max_n: %lu\n  cur_n: %lu", i,
+               dict->buckets[i].max_n, dict->buckets[i].cur_n);
+        for (size_t j = 0; j < dict->buckets[i].cur_n; ++j)
+            printf("\n  pairs[%lu]: %p/%p", j, dict->buckets[i].pairs[j].key,
+                   dict->buckets[i].pairs[j].val);
+    }
+
+    puts("");
+}
+
+#endif
