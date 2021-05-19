@@ -30,8 +30,8 @@
 # define YF_WBITS    64
 #endif
 
-#define YF_MINLOADF 0.25
-#define YF_MAXLOADF 0.75
+#define YF_MINLOADF 0.25f
+#define YF_MAXLOADF 0.75f
 
 typedef struct {
     const void *key;
@@ -93,6 +93,118 @@ static void make_factors(unsigned long long *state, size_t *a, size_t *b)
 #endif
 }
 
+/* Rehashes a dictionary. */
+static int rehash(YF_dict dict)
+{
+    assert(dict != NULL);
+
+    const float fac = (float)dict->count / (1ULL<<dict->w);
+    size_t new_w;
+
+    if (fac < YF_MINLOADF) {
+        if (dict->w == YF_WMINBITS)
+            return 0;
+
+        new_w = dict->w - 1;
+
+    } else if (fac > YF_MAXLOADF) {
+        if (dict->w == YF_WMAXBITS)
+            return 0;
+
+        new_w = dict->w + 1;
+        void *tmp = realloc(dict->buckets, sizeof(T_bucket) * (1ULL<<new_w));
+
+        if (tmp == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        dict->buckets = tmp;
+        memset(&dict->buckets[1ULL<<dict->w], 0,
+               sizeof(T_bucket) * (1ULL<<dict->w));
+
+    } else {
+        return 0;
+    }
+
+    const size_t ctrl_w = new_w > dict->w ? new_w : dict->w;
+    size_t *ctrl = calloc(1ULL << ctrl_w, sizeof(size_t));
+
+    if (ctrl == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    for (size_t i = 0; i < 1ULL<<dict->w; ++i) {
+        if (ctrl[i] >= dict->buckets[i].cur_n)
+            continue;
+
+        size_t j = dict->buckets[i].cur_n;
+
+        while (ctrl[i] < j) {
+            T_pair *pair = dict->buckets[i].pairs+j-1;
+
+            size_t k, x = dict->hash(pair->key);
+            YF_HASH(k, dict->a, x, dict->b, new_w);
+
+            T_bucket *bucket = dict->buckets+k;
+
+            if (ctrl[k] == bucket->max_n) {
+                const size_t new_n = ctrl[k] == 0 ? 1 : ctrl[k] << 1;
+                void *tmp = realloc(bucket->pairs, sizeof(T_pair) * new_n);
+
+                if (tmp == NULL) {
+                    /* XXX: Dictionary is in an invalid state */
+                    yf_seterr(YF_ERR_NOMEM, __func__);
+                    free(ctrl);
+                    return -1;
+                }
+
+                bucket->max_n = new_n;
+                bucket->cur_n++;
+                bucket->pairs = tmp;
+                bucket->pairs[ctrl[k]] = *pair;
+                ctrl[k]++;
+                j--;
+
+            } else if (ctrl[k] == bucket->cur_n) {
+                bucket->cur_n++;
+                bucket->pairs[ctrl[k]] = *pair;
+                ctrl[k]++;
+                j--;
+
+            } else if (k != i || ctrl[k] != j-1) {
+                const T_pair tmp = bucket->pairs[ctrl[k]];
+                bucket->pairs[ctrl[k]] = *pair;
+                *pair = tmp;
+                ctrl[k]++;
+
+            } else {
+                ctrl[k]++;
+                break;
+            }
+        }
+
+        dict->buckets[i].cur_n = ctrl[i];
+    }
+
+    free(ctrl);
+
+    if (new_w < dict->w) {
+        for (size_t i = 1ULL<<new_w; i < 1ULL<<dict->w; ++i)
+            free(dict->buckets[i].pairs);
+
+        void *tmp = realloc(dict->buckets, sizeof(T_bucket) * (1ULL<<new_w));
+
+        if (tmp != NULL)
+            dict->buckets = tmp;
+    }
+
+    dict->w = new_w;
+
+    return 0;
+}
+
 YF_dict yf_dict_init(YF_hashfn hash, YF_cmpfn cmp)
 {
     YF_dict dict = malloc(sizeof(struct YF_dict_o));
@@ -152,7 +264,7 @@ int yf_dict_insert(YF_dict dict, const void *key, const void *val)
     bucket->pairs[bucket->cur_n++] = (T_pair){key, val};
     ++dict->count;
 
-    // TODO: Check if rehash is needed
+    rehash(dict);
 
     return 0;
 }
@@ -186,7 +298,7 @@ void *yf_dict_remove(YF_dict dict, const void *key)
     --bucket->cur_n;
     --dict->count;
 
-    // TODO: Check if rehash is needed
+    rehash(dict);
 
     return (void *)val;
 }
