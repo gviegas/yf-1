@@ -139,6 +139,10 @@ static int rehash(YF_dict dict)
         return -1;
     }
 
+    int r = 0;
+
+cancel:
+
     for (size_t i = 0; i < 1ULL<<dict->w; ++i) {
         if (ctrl[i] >= dict->buckets[i].cur_n)
             continue;
@@ -158,10 +162,24 @@ static int rehash(YF_dict dict)
                 void *tmp = realloc(bucket->pairs, sizeof(T_pair) * new_n);
 
                 if (tmp == NULL) {
-                    /* XXX: Dictionary is in an invalid state */
+                    /* XXX: Dictionary is in an invalid state, this rehash
+                       operation needs to be cancelled. */
                     yf_seterr(YF_ERR_NOMEM, __func__);
-                    free(ctrl);
-                    return -1;
+                    r = -1;
+
+                    if (new_w < dict->w) {
+                        new_w = dict->w;
+                    } else {
+                        const size_t tmp = new_w;
+                        new_w = dict->w;
+                        dict->w = tmp;
+                    }
+
+                    memset(ctrl, 0, sizeof *ctrl * (1ULL<<ctrl_w));
+
+                    /* rolling back to previous state do not require new
+                       allocations, thus it is guaranteed to succeed */
+                    goto cancel;
                 }
 
                 bucket->max_n = new_n;
@@ -206,7 +224,7 @@ static int rehash(YF_dict dict)
 
     dict->w = new_w;
 
-    return 0;
+    return r;
 }
 
 YF_dict yf_dict_init(YF_hashfn hash, YF_cmpfn cmp)
