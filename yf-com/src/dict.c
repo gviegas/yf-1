@@ -368,6 +368,68 @@ int yf_dict_contains(YF_dict dict, const void *key)
     return 0;
 }
 
+void *yf_dict_next(YF_dict dict, YF_iter *it, void **key)
+{
+    assert(dict != NULL);
+
+    T_pair *pair = NULL;
+
+    if (it == NULL) {
+        for (size_t i = 0; i < 1ULL<<dict->w; ++i) {
+            if (dict->buckets[i].cur_n == 0)
+                continue;
+
+            pair = dict->buckets[i].pairs;
+            break;
+        }
+
+    } else if (YF_IT_ISNIL(*it)) {
+        for (size_t i = 0; i < 1ULL<<dict->w; ++i) {
+            if (dict->buckets[i].cur_n == 0)
+                continue;
+
+            it->data[0] = i;
+            it->data[1] = 0;
+            pair = dict->buckets[i].pairs;
+            break;
+        }
+
+    } else {
+        const size_t bucket_i = it->data[0];
+        const size_t pair_i = it->data[1];
+
+        if (dict->buckets[bucket_i].cur_n > pair_i+1) {
+            it->data[1]++;
+            pair = &dict->buckets[bucket_i].pairs[pair_i+1];
+
+        } else {
+            *it = YF_NILIT;
+
+            for (size_t i = bucket_i+1; i < 1ULL<<dict->w; ++i) {
+                if (dict->buckets[i].cur_n == 0)
+                    continue;
+
+                it->data[0] = i;
+                it->data[1] = 0;
+                pair = dict->buckets[i].pairs;
+                break;
+            }
+        }
+    }
+
+    if (pair != NULL) {
+        if (key != NULL)
+            *key = (void *)pair->key;
+
+        return (void *)pair->val;
+    }
+
+    if (key != NULL)
+        *key = NULL;
+
+    return NULL;
+}
+
 size_t yf_dict_getlen(YF_dict dict)
 {
     assert(dict != NULL);

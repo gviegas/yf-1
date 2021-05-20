@@ -80,6 +80,16 @@ void *yf_dict_search(YF_dict dict, const void *key);
 int yf_dict_contains(YF_dict dict, const void *key);
 
 /**
+ * Gets the next key/value pair in a dictionary.
+ *
+ * @param dict: The dictionary.
+ * @param it: The iterator. Can be 'NULL'.
+ * @param key: The destination for the key. Can be 'NULL'.
+ * @return: The next value, or 'NULL' if there are no more values to retrieve.
+ */
+void *yf_dict_next(YF_dict dict, YF_iter *it, void **key);
+
+/**
  * Gets the number of key/value pairs stored in a dictionary.
  *
  * @param dict: The dictionary.
