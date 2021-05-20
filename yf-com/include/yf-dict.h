@@ -51,6 +51,16 @@ int yf_dict_insert(YF_dict dict, const void *key, const void *val);
 void *yf_dict_remove(YF_dict dict, const void *key);
 
 /**
+ * Replaces the value stored under a given key of a dictionary.
+ *
+ * @param dict: The dictionary.
+ * @param key: The key.
+ * @param val: The new value.
+ * @return: The old value, or 'NULL' if not found.
+ */
+void *yf_dict_replace(YF_dict dict, const void *key, const void *val);
+
+/**
  * Searches for a key in a dictionary.
  *
  * @param dict: The dictionary.

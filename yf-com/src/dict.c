@@ -307,6 +307,30 @@ void *yf_dict_remove(YF_dict dict, const void *key)
     return (void *)val;
 }
 
+void *yf_dict_replace(YF_dict dict, const void *key, const void *val)
+{
+    assert(dict != NULL);
+
+    size_t k, x = dict->hash(key);
+    YF_HASH(k, dict->a, x, dict->b, dict->w);
+
+    T_bucket *bucket = dict->buckets+k;
+
+    for (size_t i = 0; i < bucket->cur_n; ++i) {
+        if (dict->cmp(bucket->pairs[i].key, key) != 0)
+            continue;
+
+        const void *old_val = bucket->pairs[i].val;
+        bucket->pairs[i].val = val;
+
+        return (void *)old_val;
+    }
+
+    yf_seterr(YF_ERR_NOTFND, __func__);
+
+    return NULL;
+}
+
 void *yf_dict_search(YF_dict dict, const void *key)
 {
     assert(dict != NULL);
@@ -321,7 +345,7 @@ void *yf_dict_search(YF_dict dict, const void *key)
             return (void *)pair->val;
     }
 
-    yf_seterr(YF_ERR_NOTFND, NULL);
+    yf_seterr(YF_ERR_NOTFND, __func__);
 
     return NULL;
 }
