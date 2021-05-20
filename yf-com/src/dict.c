@@ -454,9 +454,42 @@ size_t yf_dict_getlen(YF_dict dict)
     return dict->count;
 }
 
-void yf_dict_deinit(YF_dict dict)
+void yf_dict_clear(YF_dict dict)
 {
     assert(dict != NULL);
+
+    if (dict->count == 0)
+        return;
+
+    for (size_t i = 1ULL<<YF_WMINBITS; i < 1ULL<<dict->w; ++i) {
+        if (dict->buckets[i].max_n != 0) {
+            free(dict->buckets[i].pairs);
+            dict->count -= dict->buckets[i].cur_n;
+        }
+    }
+
+    T_bucket *bucket = dict->buckets;
+
+    while (dict->count > 0) {
+        if (bucket->cur_n != 0) {
+            dict->count -= bucket->cur_n;
+            bucket->cur_n = 0;
+        }
+
+        bucket++;
+    }
+
+    dict->w = YF_WMINBITS;
+    void *tmp = realloc(dict->buckets, sizeof(T_bucket) * (1ULL<<dict->w));
+
+    if (tmp != NULL)
+        dict->buckets = tmp;
+}
+
+void yf_dict_deinit(YF_dict dict)
+{
+    if (dict == NULL)
+        return;
 
     for (size_t i = 0; i < 1ULL<<dict->w; ++i)
         free(dict->buckets[i].pairs);

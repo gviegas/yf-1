@@ -108,6 +108,13 @@ void yf_dict_each(YF_dict dict, int (*callb)(void *key, void *val, void *arg),
 size_t yf_dict_getlen(YF_dict dict);
 
 /**
+ * Removes all key/value pairs from a dictionary.
+ *
+ * @param dict: The dictionary.
+ */
+void yf_dict_clear(YF_dict dict);
+
+/**
  * Deinitializes a dictionary.
  *
  * @param dict: The dictionary to deinitialize. Can be 'NULL'.
