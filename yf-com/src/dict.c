@@ -307,6 +307,25 @@ void *yf_dict_remove(YF_dict dict, const void *key)
     return (void *)val;
 }
 
+void *yf_dict_search(YF_dict dict, const void *key)
+{
+    assert(dict != NULL);
+
+    size_t k, x = dict->hash(key);
+    YF_HASH(k, dict->a, x, dict->b, dict->w);
+
+    for (size_t i = 0; i < dict->buckets[k].cur_n; ++i) {
+        const T_pair *pair = &dict->buckets[k].pairs[i];
+
+        if (dict->cmp(pair->key, key) == 0)
+            return (void *)pair->val;
+    }
+
+    yf_seterr(YF_ERR_NOTFND, NULL);
+
+    return NULL;
+}
+
 int yf_dict_contains(YF_dict dict, const void *key)
 {
     assert(dict != NULL);

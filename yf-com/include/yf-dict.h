@@ -51,6 +51,15 @@ int yf_dict_insert(YF_dict dict, const void *key, const void *val);
 void *yf_dict_remove(YF_dict dict, const void *key);
 
 /**
+ * Searches for a key in a dictionary.
+ *
+ * @param dict: The dictionary.
+ * @param key: The key.
+ * @return: The value stored under the given key, or 'NULL' if not found.
+ */
+void *yf_dict_search(YF_dict dict, const void *key);
+
+/**
  * Checks whether or not a dictionary contains a given key.
  *
  * @param dict: The dictionary.
