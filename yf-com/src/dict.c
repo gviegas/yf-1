@@ -430,6 +430,24 @@ void *yf_dict_next(YF_dict dict, YF_iter *it, void **key)
     return NULL;
 }
 
+void yf_dict_each(YF_dict dict, int (*callb)(void *key, void *val, void *arg),
+                  void *arg)
+{
+    assert(dict != NULL);
+    assert(callb != NULL);
+
+    for (size_t i = 0; i < 1ULL<<dict->w; ++i) {
+        T_bucket *bucket = dict->buckets+i;
+
+        for (size_t j = 0; j < bucket->cur_n; ++j) {
+            T_pair *pair = bucket->pairs+j;
+
+            if (callb((void *)pair->key, (void *)pair->val, arg) != 0)
+                return;
+        }
+    }
+}
+
 size_t yf_dict_getlen(YF_dict dict)
 {
     assert(dict != NULL);

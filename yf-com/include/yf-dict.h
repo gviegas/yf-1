@@ -90,6 +90,16 @@ int yf_dict_contains(YF_dict dict, const void *key);
 void *yf_dict_next(YF_dict dict, YF_iter *it, void **key);
 
 /**
+ * Executes a given function for each key/value pair in a dictionary.
+ *
+ * @param dict: The dictionary.
+ * @param callb: The callback to execute for each key/value pair.
+ * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
+ */
+void yf_dict_each(YF_dict dict, int (*callb)(void *key, void *val, void *arg),
+                  void *arg);
+
+/**
  * Gets the number of key/value pairs stored in a dictionary.
  *
  * @param dict: The dictionary.
