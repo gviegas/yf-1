@@ -37,11 +37,13 @@
 #define YF_MINLOADF 0.25f
 #define YF_MAXLOADF 0.75f
 
+/* Key/value pair. */
 typedef struct {
     const void *key;
     const void *val;
 } T_pair;
 
+/* List of key/value pairs. */
 typedef struct {
     T_pair *pairs;
     size_t max_n;
@@ -59,8 +61,10 @@ struct YF_dict_o {
     size_t b;
 };
 
+/* Hasher. */
 #define YF_HASH(res, a, x, b, w) (res = ((a)*(x)+(b)) >> (YF_WBITS-(w)))
 
+/* LCG. */
 #define YF_LCG(state, xn) do { \
     state = (0x5deece66dULL * (state) + 0xb) % 0x1000000000000ULL; \
     xn = (state) >> 16; } while (0)
@@ -284,7 +288,7 @@ int yf_dict_insert(YF_dict dict, const void *key, const void *val)
     }
 
     bucket->pairs[bucket->cur_n++] = (T_pair){key, val};
-    ++dict->count;
+    dict->count++;
 
     rehash(dict);
 
@@ -317,8 +321,8 @@ void *yf_dict_remove(YF_dict dict, const void *key)
         memmove(bucket->pairs+i, bucket->pairs+i+1,
                 sizeof(T_pair) * (bucket->cur_n - i - 1));
 
-    --bucket->cur_n;
-    --dict->count;
+    bucket->cur_n--;
+    dict->count--;
 
     rehash(dict);
 

@@ -46,7 +46,8 @@ int yf_dict_insert(YF_dict dict, const void *key, const void *val);
  *
  * @param dict: The dictionary.
  * @param key: The key.
- * @return: The removed value, or 'NULL' if not found.
+ * @return: If 'dict' does not contain 'key', returns 'NULL' and sets the
+ *  global error to 'YF_ERR_NOTFND'. Otherwise, returns the removed value.
  */
 void *yf_dict_remove(YF_dict dict, const void *key);
 
@@ -56,7 +57,8 @@ void *yf_dict_remove(YF_dict dict, const void *key);
  * @param dict: The dictionary.
  * @param key: The key.
  * @param val: The new value.
- * @return: The old value, or 'NULL' if not found.
+ * @return: If 'dict' does not contain 'key', returns 'NULL' and sets the
+ *  global error to 'YF_ERR_NOTFND'. Otherwise, returns the old value.
  */
 void *yf_dict_replace(YF_dict dict, const void *key, const void *val);
 
@@ -65,7 +67,8 @@ void *yf_dict_replace(YF_dict dict, const void *key, const void *val);
  *
  * @param dict: The dictionary.
  * @param key: The key.
- * @return: The value stored under the given key, or 'NULL' if not found.
+ * @return: If 'dict' does not contain 'key', returns 'NULL' and sets the
+ *  global error to 'YF_ERR_NOTFND'. Otherwise, returns the stored value.
  */
 void *yf_dict_search(YF_dict dict, const void *key);
 
