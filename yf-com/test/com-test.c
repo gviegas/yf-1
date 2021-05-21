@@ -344,6 +344,176 @@ static int test_list(void)
     return 0;
 }
 
+/* Dictionary test. */
+#define YF_TEST_DICT "dict"
+
+static int dict_cb(void *key, void *val, void *arg)
+{
+    printf("\n %s:\n  key: %p\n  val: %s\n  arg: %lu", __func__,
+           key, (char *)val, (size_t)arg);
+
+    return (size_t)arg;
+}
+
+static int test_dict(void)
+{
+    YF_TEST_SUBT;
+
+    YF_dict dict = yf_dict_init(NULL, NULL);
+    puts("\ninit()");
+
+    const void *key1 = (const void *)1ULL;
+    const void *key2 = (const void *)1234UL;
+    const void *key3 = (const void *)255UL;
+    void *key = NULL;
+    const char *val = NULL;
+    YF_iter it = YF_NILIT;
+
+    puts("\ninsert()");
+    if (yf_dict_getlen(dict) != 0)
+        return -1;
+
+    yf_dict_insert(dict, key1, "a");
+    if (!yf_dict_contains(dict, key1) || yf_dict_getlen(dict) != 1)
+        return -1;
+
+    yf_dict_insert(dict, key2, "b");
+    if (!yf_dict_contains(dict, key2) || yf_dict_getlen(dict) != 2)
+        return 1;
+
+    yf_seterr(YF_ERR_UNKNOWN, NULL);
+    yf_dict_insert(dict, key1, "c");
+    if (yf_dict_getlen(dict) != 2 || yf_geterr() != YF_ERR_EXIST)
+        return -1;
+
+    puts("\nremove()");
+    val = yf_dict_remove(dict, key1);
+    if (val == NULL || strcmp(val, "a") != 0 ||
+        yf_dict_contains(dict, key1) || yf_dict_getlen(dict) != 1)
+        return -1;
+
+    val = yf_dict_remove(dict, key1);
+    if (val != NULL || yf_dict_getlen(dict) != 1)
+        return -1;
+
+    puts("\nsearch()");
+    val = yf_dict_search(dict, key2);
+    if (val == NULL || strcmp(val, "b") != 0 || !yf_dict_contains(dict, key2))
+        return -1;
+
+    yf_seterr(YF_ERR_UNKNOWN, NULL);
+    val = yf_dict_search(dict, key1);
+    if (val != NULL || yf_geterr() != YF_ERR_NOTFND)
+        return -1;
+
+    yf_dict_insert(dict, key3, NULL);
+    if (yf_dict_getlen(dict) != 2 || !yf_dict_contains(dict, key3))
+        return -1;
+
+    puts("\nreplace()");
+    val = yf_dict_replace(dict, key2, "O_o");
+    if (val == NULL || strcmp(val, "b") != 0 || !yf_dict_contains(dict, key2))
+        return -1;
+
+    val = yf_dict_search(dict, key2);
+    if (val == NULL || strcmp(val, "O_o") != 0)
+        return -1;
+
+    yf_seterr(YF_ERR_UNKNOWN, NULL);
+    val = yf_dict_replace(dict, key1, " >o_; quac!");
+    if (val != NULL || yf_geterr() != YF_ERR_NOTFND)
+        return -1;
+
+    it = YF_NILIT;
+    printf("\nnext() begin:");
+    for (;;) {
+        val = yf_dict_next(dict, &it, &key);
+        if (YF_IT_ISNIL(it))
+            break;
+        printf("\n key: %p\n val: %s", key, val);
+    }
+    printf("\nnext() end\n");
+
+    it = YF_NILIT;
+    key = (void *)65535ULL;
+    printf("\nnext() begin (no key dst):");
+    for (;;) {
+        val = yf_dict_next(dict, &it, NULL);
+        if (YF_IT_ISNIL(it))
+            break;
+        printf("\n key: %p\n val: %s", key, val);
+    }
+    printf("\nnext() end\n");
+
+    printf("\nnext() begin (no iter, 3 calls):");
+    for (size_t i = 0; i < 3; ++i) {
+        val = yf_dict_next(dict, NULL, &key);
+        printf("\n key: %p\n val: %s", key, val);
+    }
+    printf("\nnext() end\n");
+
+    key = (void *)127UL;
+    printf("\nnext() begin (no iter, no key dst, 3 calls):");
+    for (size_t i = 0; i < 3; ++i) {
+        val = yf_dict_next(dict, NULL, NULL);
+        printf("\n key: %p\n val: %s", key, val);
+    }
+    printf("\nnext() end\n");
+
+    printf("\neach() begin:");
+    yf_dict_each(dict, dict_cb, NULL);
+    printf("\neach() end\n");
+
+    printf("\neach() begin (early break):");
+    yf_dict_each(dict, dict_cb, (void *)1ULL);
+    printf("\neach() end\n");
+
+    puts("\nclear()");
+    yf_dict_clear(dict);
+    if (yf_dict_getlen(dict) != 0 || yf_dict_contains(dict, key3))
+        return -1;
+
+    yf_dict_deinit(dict);
+    puts("\ndeinit()");
+
+    dict = yf_dict_init(NULL, NULL);
+    puts("\ninit()");
+
+    const size_t count = 1000;
+
+    printf("\ninsert() #%lu\n", count);
+    for (size_t i = 0; i < count; ++i) {
+        if (yf_dict_insert(dict, (void *)i, (void *)(i*i)) != 0)
+            return -1;
+    }
+
+    if (yf_dict_getlen(dict) != count ||
+        yf_dict_contains(dict, (void *)count) ||
+        !yf_dict_contains(dict, (void *)(count-1)) ||
+        !yf_dict_contains(dict, 0) ||
+        !yf_dict_contains(dict, (void *)(count>>1)))
+        return -1;
+
+    printf("\nremove() #%lu\n", count);
+    yf_seterr(YF_ERR_UNKNOWN, NULL);
+    for (size_t i = 0; i < count; ++i) {
+        void *val = yf_dict_remove(dict, (void *)i);
+        if (yf_geterr() == YF_ERR_NOTFND || (size_t)val != i*i)
+            return -1;
+    }
+
+    if (yf_dict_getlen(dict) != 0 ||
+        yf_dict_contains(dict, (void *)(count-1)) ||
+        yf_dict_contains(dict, 0) ||
+        yf_dict_contains(dict, (void *)(count>>1)))
+        return -1;
+
+    yf_dict_deinit(dict);
+    puts("\ndeinit()");
+
+    return 0;
+}
+
 /* Hashset test. */
 #define YF_TEST_HASHSET "hashset"
 
@@ -763,6 +933,7 @@ static const char *l_ids[] = {
     YF_TEST_ERROR,
     YF_TEST_CLOCK,
     YF_TEST_LIST,
+    YF_TEST_DICT,
     YF_TEST_HASHSET,
     YF_TEST_PUBSUB,
     YF_TEST_ALL
@@ -785,6 +956,9 @@ static int test(int argc, char *argv[])
     } else if (strcmp(argv[0], YF_TEST_LIST) == 0) {
         test_n = 1;
         results = test_list() == 0;
+    } else if (strcmp(argv[0], YF_TEST_DICT) == 0) {
+        test_n = 1;
+        results = test_dict() == 0;
     } else if (strcmp(argv[0], YF_TEST_HASHSET) == 0) {
         test_n = 1;
         results = test_hashset() == 0;
@@ -796,6 +970,7 @@ static int test(int argc, char *argv[])
             test_error,
             test_clock,
             test_list,
+            test_dict,
             test_hashset,
             test_pubsub
         };
