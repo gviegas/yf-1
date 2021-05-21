@@ -14,6 +14,7 @@
 #include "yf-clock.h"
 #include "yf-cmpfn.h"
 #include "yf-defs.h"
+#include "yf-dict.h"
 #include "yf-error.h"
 #include "yf-hashfn.h"
 #include "yf-hashset.h"
