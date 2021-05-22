@@ -20,7 +20,7 @@ YF_DECLS_BEGIN
 typedef size_t (*YF_hashfn)(const void *);
 
 /**
- * Computes a hash value from a pointer.
+ * Computes the hash value of a pointer.
  *
  * This is the default hashing function, which uses the pointer itself to
  * produce a hash value.
@@ -29,6 +29,14 @@ typedef size_t (*YF_hashfn)(const void *);
  * @return: The hash value.
  */
 size_t yf_hash(const void *ptr);
+
+/**
+ * Computes the hash value of a string.
+ *
+ * @param str: The null-terminated byte string.
+ * @return: The hash value.
+ */
+size_t yf_hashstr(const void *str);
 
 YF_DECLS_END
 
