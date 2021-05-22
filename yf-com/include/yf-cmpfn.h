@@ -29,6 +29,15 @@ typedef int (*YF_cmpfn)(const void *, const void *);
  */
 int yf_cmp(const void *ptr1, const void *ptr2);
 
+/**
+ * Compares two strings.
+ *
+ * @param str1: The fist string.
+ * @param str2: The second string.
+ * @return: 'strcmp(str1, str2)'.
+ */
+int yf_cmpstr(const void *str1, const void *str2);
+
 YF_DECLS_END
 
 #endif /* YF_YF_CMPFN_H */
