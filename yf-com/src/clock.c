@@ -11,7 +11,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "clock.h"
+#include "yf-clock.h"
 
 double yf_gettime(void)
 {

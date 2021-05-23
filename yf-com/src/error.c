@@ -12,7 +12,7 @@
 # error "C11 threads required"
 #endif
 
-#include "error.h"
+#include "yf-error.h"
 
 #undef YF_STR_MAXLEN
 #define YF_STR_MAXLEN 128

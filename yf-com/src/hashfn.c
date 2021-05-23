@@ -9,7 +9,7 @@
 #include <stdarg.h>
 #include <assert.h>
 
-#include "hashfn.h"
+#include "yf-hashfn.h"
 
 #if SIZE_MAX < 4294967295UL
 # error "Unsupported system"

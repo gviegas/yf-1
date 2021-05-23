@@ -8,9 +8,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "pubsub.h"
-#include "dict.h"
-#include "error.h"
+#include "yf-pubsub.h"
+#include "yf-dict.h"
+#include "yf-error.h"
 
 /* TODO: Thread-safe. */
 

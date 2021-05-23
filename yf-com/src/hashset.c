@@ -13,9 +13,9 @@
 # include <sys/random.h>
 #endif
 
-#include "hashset.h"
-#include "list.h"
-#include "error.h"
+#include "yf-hashset.h"
+#include "yf-list.h"
+#include "yf-error.h"
 
 #undef YF_WMINBITS
 #undef YF_WMAXBITS

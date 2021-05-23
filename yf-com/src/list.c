@@ -8,8 +8,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "list.h"
-#include "error.h"
+#include "yf-list.h"
+#include "yf-error.h"
 
 /* Linked list's entry. */
 typedef struct T_entry {

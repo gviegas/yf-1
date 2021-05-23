@@ -19,8 +19,8 @@
 # include <sys/random.h>
 #endif
 
-#include "dict.h"
-#include "error.h"
+#include "yf-dict.h"
+#include "yf-error.h"
 
 #if SIZE_MAX < 4294967295UL
 # error "Unsupported system"
