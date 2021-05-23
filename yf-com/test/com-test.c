@@ -6,7 +6,9 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <assert.h>
 
 #include "test.h"
@@ -479,7 +481,7 @@ static int test_dict(void)
     dict = yf_dict_init(NULL, NULL);
     puts("\ninit()");
 
-    const size_t count = 1000;
+    size_t count = 1000;
 
     printf("\ninsert() #%lu\n", count);
     for (size_t i = 0; i < count; ++i) {
@@ -507,6 +509,58 @@ static int test_dict(void)
         yf_dict_contains(dict, 0) ||
         yf_dict_contains(dict, (void *)(count>>1)))
         return -1;
+
+    yf_dict_deinit(dict);
+    puts("\ndeinit()");
+
+    dict = yf_dict_init(yf_hashstr, yf_cmpstr);
+    puts("\ninit(str)");
+
+    count = 50;
+    const size_t len = 32;
+    char *strs = malloc(count * len);
+    assert(strs != NULL);
+    srand(time(NULL));
+
+    for (size_t i = 0; i < count; ++i) {
+        int n = 4 + rand() % 20;
+        for (int j = 0; j < n; ++j) {
+            strs[i*len+j] = 32 + rand() % 96;
+        }
+        strs[i*len+n] = '\0';
+    }
+
+    printf("\ninsert() #%lu\n", count);
+    for (size_t i = 0; i < count; ++i) {
+        if (yf_dict_insert(dict, &strs[i*len], (void *)i) != 0)
+            return -1;
+    }
+
+    puts("\ncontains()");
+    for (size_t i = 0; i < count; ++i) {
+        if (!yf_dict_contains(dict, &strs[i*len]))
+            return -1;
+    }
+
+    char str[len];
+    strcpy(str, &strs[(count>>1)*len]);
+    if (!yf_dict_contains(dict, str))
+        return -1;
+
+    yf_seterr(YF_ERR_UNKNOWN, NULL);
+    if (yf_dict_insert(dict, str, (void *)0xff) == 0 ||
+        yf_geterr() != YF_ERR_EXIST)
+        return -1;
+
+    printf("\nremove() #%lu\n", count);
+    yf_seterr(YF_ERR_UNKNOWN, NULL);
+    for (size_t i = 0; i < count; ++i) {
+        yf_dict_remove(dict, &strs[i*len]);
+        if (yf_geterr() == YF_ERR_NOTFND)
+            return -1;
+    }
+
+    free(strs);
 
     yf_dict_deinit(dict);
     puts("\ndeinit()");
