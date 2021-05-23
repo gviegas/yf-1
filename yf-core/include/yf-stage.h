@@ -30,7 +30,7 @@ YF_DECLS_BEGIN
  * Modules are context-managed objects representing executable code for a
  * programmable pipeline stage.
  */
-typedef unsigned YF_modid;
+typedef size_t YF_modid;
 
 /**
  * Type defining a single shader stage.
@@ -38,7 +38,7 @@ typedef unsigned YF_modid;
 typedef struct {
     int stage;
     YF_modid mod;
-    const char entry_point[48];
+    const char entry_point[128];
 } YF_stage;
 
 /**
