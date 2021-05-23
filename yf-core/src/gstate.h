@@ -69,6 +69,7 @@ typedef struct YF_gstate_o {
         break; \
     case YF_CULLMODE_ANY: \
         to = VK_CULL_MODE_FRONT_AND_BACK; \
+        break; \
     default: \
         to = INT_MAX; \
     } } while (0)
