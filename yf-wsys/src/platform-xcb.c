@@ -306,12 +306,14 @@ void yf_unldxcb(void)
     if (l_wins != NULL) {
         T_win *win;
         YF_iter it = YF_NILIT;
+
         for (;;) {
             win = yf_list_next(l_wins, &it);
             if (YF_IT_ISNIL(it))
                 break;
             deinit_win(win);
         }
+
         yf_list_deinit(l_wins);
         l_wins = NULL;
     }

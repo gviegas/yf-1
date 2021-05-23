@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "platform.h"
+#include "yf-platform.h"
 
 #if defined(__linux__)
 /*

@@ -24,6 +24,7 @@ YF_window yf_window_init(unsigned width, unsigned height, const char *title,
 {
     if (l_imp.init == NULL)
         yf_getwinimp(&l_imp);
+
     assert(l_imp.init != NULL);
 
     YF_window win = malloc(sizeof(struct YF_window_o));
