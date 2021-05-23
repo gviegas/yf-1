@@ -17,11 +17,11 @@
 #include "scene.h"
 #include "coreobj.h"
 #include "resmgr.h"
-#include "model.h"
-#include "terrain.h"
-#include "particle.h"
-#include "quad.h"
-#include "label.h"
+#include "yf-model.h"
+#include "yf-terrain.h"
+#include "yf-particle.h"
+#include "yf-quad.h"
+#include "yf-label.h"
 
 #ifdef YF_DEVEL
 # include <stdio.h>

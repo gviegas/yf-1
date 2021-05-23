@@ -11,7 +11,7 @@
 
 #include "yf/com/yf-error.h"
 
-#include "particle.h"
+#include "yf-particle.h"
 #include "node.h"
 #include "mesh.h"
 #include "vertex.h"

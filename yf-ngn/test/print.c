@@ -9,11 +9,11 @@
 #include <assert.h>
 
 #include "print.h"
-#include "model.h"
-#include "terrain.h"
-#include "particle.h"
-#include "quad.h"
-#include "label.h"
+#include "yf-model.h"
+#include "yf-terrain.h"
+#include "yf-particle.h"
+#include "yf-quad.h"
+#include "yf-label.h"
 #include "vertex.h"
 
 #undef YF_PTITLE

@@ -8,7 +8,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "vector.h"
+#include "yf-vector.h"
 
 #ifdef YF_USE_FLOAT64
 # define YF_FLT_ISEQ(a, b) (fabs(a-b) < 1e-15)

@@ -13,7 +13,7 @@
 #include "yf/com/yf-util.h"
 #include "yf/com/yf-error.h"
 
-#include "label.h"
+#include "yf-label.h"
 #include "node.h"
 #include "mesh.h"
 #include "texture.h"

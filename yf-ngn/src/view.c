@@ -20,7 +20,7 @@
 #include "yf/core/yf-wsi.h"
 #include "yf/wsys/yf-event.h"
 
-#include "view.h"
+#include "yf-view.h"
 #include "coreobj.h"
 #include "scene.h"
 

@@ -12,7 +12,7 @@
 #include "yf/com/yf-hashset.h"
 #include "yf/com/yf-error.h"
 
-#include "collection.h"
+#include "yf-collection.h"
 #include "mesh.h"
 #include "texture.h"
 #include "font.h"

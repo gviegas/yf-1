@@ -10,7 +10,7 @@
 
 #include "yf/com/yf-error.h"
 
-#include "terrain.h"
+#include "yf-terrain.h"
 #include "node.h"
 #include "mesh.h"
 #include "vertex.h"

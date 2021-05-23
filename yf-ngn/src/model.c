@@ -10,7 +10,7 @@
 
 #include "yf/com/yf-error.h"
 
-#include "model.h"
+#include "yf-model.h"
 #include "node.h"
 
 struct YF_model_o {

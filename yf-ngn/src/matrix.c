@@ -8,7 +8,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "matrix.h"
+#include "yf-matrix.h"
 
 #define YF_MAT_SET(m, s, cn, rn) do { \
     for (unsigned i = 0; i < cn; ++i) { \

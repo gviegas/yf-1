@@ -11,7 +11,7 @@
 
 #include "yf/com/yf-error.h"
 
-#include "quad.h"
+#include "yf-quad.h"
 #include "node.h"
 #include "mesh.h"
 #include "vertex.h"
