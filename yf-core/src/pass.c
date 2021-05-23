@@ -12,7 +12,7 @@
 
 #include "pass.h"
 #include "context.h"
-#include "limits.h"
+#include "yf-limits.h"
 
 #define YF_TGTN 4
 

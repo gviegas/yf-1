@@ -11,7 +11,7 @@
 #include "yf/com/yf-util.h"
 #include "yf/com/yf-error.h"
 
-#include "limits.h"
+#include "yf-limits.h"
 #include "context.h"
 
 /* Destroys the 'YF_limits' data stored in a given context. */

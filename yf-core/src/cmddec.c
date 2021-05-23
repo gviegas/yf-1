@@ -26,8 +26,8 @@
 #include "image.h"
 #include "pass.h"
 #include "dtable.h"
-#include "limits.h"
 #include "vk.h"
+#include "yf-limits.h"
 
 /* Type defining graphics decoding state. */
 typedef struct {

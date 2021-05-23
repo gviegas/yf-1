@@ -16,7 +16,7 @@
 #include "buffer.h"
 #include "context.h"
 #include "memory.h"
-#include "limits.h"
+#include "yf-limits.h"
 
 YF_buffer yf_buffer_init(YF_context ctx, size_t size)
 {

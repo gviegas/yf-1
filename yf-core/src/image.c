@@ -18,7 +18,7 @@
 #include "cmdpool.h"
 #include "cmdbuf.h"
 #include "buffer.h"
-#include "limits.h"
+#include "yf-limits.h"
 
 /* Type defining the private data of a 'YF_iview'. */
 typedef struct {
