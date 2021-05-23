@@ -38,6 +38,17 @@ size_t yf_hash(const void *ptr);
  */
 size_t yf_hashstr(const void *str);
 
+/**
+ * Computes the hash value of a varying number of byte arrays.
+ *
+ * @param buf: The first buffer.
+ * @param len: The length of the first buffer.
+ * @param ...: Variable number of buffer/length pairs. A 'NULL' buffer signals
+ *  the end of the argument list.
+ * @return: The combined hash value.
+ */
+size_t yf_hashv(const void *buf, size_t len, ...);
+
 YF_DECLS_END
 
 #endif /* YF_YF_HASHFN_H */
