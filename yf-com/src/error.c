@@ -30,6 +30,7 @@ void yf_seterr(int err, YF_UNUSED const char *info)
         strncpy(l_info, info, YF_STR_MAXLEN-1)[YF_STR_MAXLEN-1] = '\0';
     else
         l_info[0] = '\0';
+
     yf_printerr();
 #endif
 }
@@ -43,6 +44,7 @@ char *yf_geterrinfo(char *dst, size_t n)
 {
     if (strlen(l_info) < n)
         return strcpy(dst, l_info);
+
     return NULL;
 }
 

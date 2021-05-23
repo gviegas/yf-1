@@ -19,8 +19,10 @@ double yf_gettime(void)
 
 #if defined(_POSIX_C_SOURCE) && (_POSIX_C_SOURCE >= 199309L)
     struct timespec ts;
+
     clock_gettime(CLOCK_MONOTONIC, &ts);
     assert(ts.tv_sec + 1 < DBL_MAX);
+
     tm = (double)ts.tv_sec + (double)ts.tv_nsec * 1.0e-9;
 #else
     /* TODO: Other platforms. */
@@ -39,6 +41,7 @@ void yf_sleep(double seconds)
     ts.tv_sec = seconds;
     ts.tv_nsec = (seconds - floor(seconds)) * 1.0e9;
     int r;
+
     while ((r = clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, &ts_rem)) != 0) {
         assert(r == EINTR);
         ts = ts_rem;
