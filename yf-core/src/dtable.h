@@ -8,7 +8,7 @@
 #ifndef YF_DTABLE_H
 #define YF_DTABLE_H
 
-#include "yf/com/yf-hashset.h"
+#include "yf/com/yf-dict.h"
 
 #include "yf-dtable.h"
 #include "vk.h"
@@ -27,8 +27,8 @@ typedef struct YF_dtable_o {
         unsigned isamp;
     } count;
 
-    YF_hashset iviews;
-    YF_hashset samplers;
+    YF_dict iviews;
+    YF_dict samplers;
     VkDescriptorSetLayout layout;
     VkDescriptorPool pool;
     VkDescriptorSet *sets;
