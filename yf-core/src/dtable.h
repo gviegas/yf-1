@@ -22,9 +22,9 @@ typedef struct YF_dtable_o {
         unsigned unif;
         unsigned mut;
         unsigned img;
-        unsigned sampd;
-        unsigned sampr;
-        unsigned isamp;
+        unsigned spld;
+        unsigned splr;
+        unsigned ispl;
     } count;
 
     YF_dict iviews;

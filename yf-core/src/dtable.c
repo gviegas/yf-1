@@ -18,7 +18,7 @@
 #include "buffer.h"
 #include "image.h"
 
-/* Type defining a key/value for the iview's hashset. */
+/* Type defining key/value for the iview's dictionary. */
 typedef struct {
     struct {
         unsigned alloc_i;
@@ -94,8 +94,8 @@ static int init_layout(YF_dtable dtb)
         return -1;
     }
 
-    unsigned samp_n = dtb->entry_n;
-    unsigned samp_i = 0;
+    unsigned spl_n = dtb->entry_n;
+    unsigned spl_i = 0;
 
     for (unsigned i = 0; i < dtb->entry_n; ++i) {
         bindings[i].binding = dtb->entries[i].binding;
@@ -121,16 +121,16 @@ static int init_layout(YF_dtable dtb)
         case YF_DTYPE_SAMPLED:
             bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
             bindings[i].pImmutableSamplers = NULL;
-            dtb->count.sampd += dtb->entries[i].elements;
+            dtb->count.spld += dtb->entries[i].elements;
             continue;
         case YF_DTYPE_SAMPLER:
             bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-            dtb->count.sampr += dtb->entries[i].elements;
+            dtb->count.splr += dtb->entries[i].elements;
             break;
         case YF_DTYPE_ISAMPLER:
             bindings[i].descriptorType =
                 VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            dtb->count.isamp += dtb->entries[i].elements;
+            dtb->count.ispl += dtb->entries[i].elements;
             break;
         default:
             yf_seterr(YF_ERR_INVARG, __func__);
@@ -141,9 +141,9 @@ static int init_layout(YF_dtable dtb)
 
         /* YF_DTYPE_SAMPLER or YF_DTYPE_ISAMPLER */
 
-        if (samp_i + dtb->entries[i].elements > samp_n) {
-            samp_n = samp_i + dtb->entries[i].elements;
-            VkSampler *tmp = realloc(samplers, samp_n * sizeof *samplers);
+        if (spl_i + dtb->entries[i].elements > spl_n) {
+            spl_n = spl_i + dtb->entries[i].elements;
+            VkSampler *tmp = realloc(samplers, spl_n * sizeof *samplers);
 
             if (tmp == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
@@ -155,7 +155,7 @@ static int init_layout(YF_dtable dtb)
             samplers = tmp;
         }
 
-        for (unsigned j = samp_i; j < samp_i + dtb->entries[i].elements; ++j) {
+        for (unsigned j = spl_i; j < spl_i + dtb->entries[i].elements; ++j) {
             samplers[j] = yf_sampler_make(dtb->ctx, dtb->entries[i].info);
 
             if (samplers[j] == VK_NULL_HANDLE) {
@@ -164,6 +164,7 @@ static int init_layout(YF_dtable dtb)
                 return -1;
             }
 
+            /* XXX */
             if (yf_dict_insert(dtb->samplers, (void *)samplers[j],
                                (void *)samplers[j]) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST) {
@@ -177,8 +178,8 @@ static int init_layout(YF_dtable dtb)
             static_assert(sizeof(void *) >= sizeof *samplers, "!sizeof");
         }
 
-        bindings[i].pImmutableSamplers = samplers+samp_i;
-        samp_i += dtb->entries[i].elements;
+        bindings[i].pImmutableSamplers = samplers+spl_i;
+        spl_i += dtb->entries[i].elements;
     }
 
     VkDescriptorSetLayoutCreateInfo info = {
@@ -188,6 +189,7 @@ static int init_layout(YF_dtable dtb)
         .bindingCount = dtb->entry_n,
         .pBindings = bindings
     };
+
     VkResult res = vkCreateDescriptorSetLayout(dtb->ctx->device, &info, NULL,
                                                &dtb->layout);
     if (res != VK_SUCCESS) {
@@ -199,9 +201,9 @@ static int init_layout(YF_dtable dtb)
 
     free(bindings);
     free(samplers);
+
     return 0;
 }
-
 
 YF_dtable yf_dtable_init(YF_context ctx, const YF_dentry *entries,
                          unsigned entry_n)
@@ -253,6 +255,7 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
 
     VkDescriptorPoolSize sizes[6];
     unsigned sz_i = 0;
+
     if (dtb->count.unif > 0) {
         sizes[sz_i].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         sizes[sz_i].descriptorCount = dtb->count.unif * n;
@@ -268,19 +271,19 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
         sizes[sz_i].descriptorCount = dtb->count.img * n;
         ++sz_i;
     }
-    if (dtb->count.sampd > 0) {
+    if (dtb->count.spld > 0) {
         sizes[sz_i].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-        sizes[sz_i].descriptorCount = dtb->count.sampd * n;
+        sizes[sz_i].descriptorCount = dtb->count.spld * n;
         ++sz_i;
     }
-    if (dtb->count.sampr > 0) {
+    if (dtb->count.splr > 0) {
         sizes[sz_i].type = VK_DESCRIPTOR_TYPE_SAMPLER;
-        sizes[sz_i].descriptorCount = dtb->count.sampr * n;
+        sizes[sz_i].descriptorCount = dtb->count.splr * n;
         ++sz_i;
     }
-    if (dtb->count.isamp > 0) {
+    if (dtb->count.ispl > 0) {
         sizes[sz_i].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        sizes[sz_i].descriptorCount = dtb->count.isamp * n;
+        sizes[sz_i].descriptorCount = dtb->count.ispl * n;
         ++sz_i;
     }
 
@@ -297,7 +300,6 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
 
     res = vkCreateDescriptorPool(dtb->ctx->device, &pool_info, NULL,
                                  &dtb->pool);
-
     if (res != VK_SUCCESS) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
         return -1;
