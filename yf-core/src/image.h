@@ -10,7 +10,7 @@
 
 #include <limits.h>
 
-#include "yf/com/yf-hashset.h"
+#include "yf/com/yf-dict.h"
 
 #include "yf-image.h"
 #include "vk.h"
@@ -22,7 +22,7 @@ typedef struct YF_image_o {
     YF_dim3 dim;
     unsigned layers;
     unsigned levels;
-    YF_hashset iviews;
+    YF_dict iviews;
 
     VkImage image;
     VkDeviceMemory memory;
