@@ -392,16 +392,12 @@ YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
 
     switch (type) {
     case VK_IMAGE_TYPE_1D:
-        if (layers > 1)
-            img->view_type = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-        else
-            img->view_type = VK_IMAGE_VIEW_TYPE_1D;
+        img->view_type =
+            layers > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
         break;
     case VK_IMAGE_TYPE_2D:
-        if (layers > 1)
-            img->view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        else
-            img->view_type = VK_IMAGE_VIEW_TYPE_2D;
+        img->view_type =
+            layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
         break;
     case VK_IMAGE_TYPE_3D:
         if (layers > 1) {
