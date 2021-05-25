@@ -50,6 +50,7 @@ typedef struct {
     uint16_t entry_sel;
     uint16_t rng_shf;
 } T_diro;
+
 #define YF_SFNT_DIROSZ 12
 static_assert(offsetof(T_diro, rng_shf) == YF_SFNT_DIROSZ-2, "!offsetof");
 
@@ -59,6 +60,7 @@ typedef struct {
     uint32_t off;
     uint32_t len;
 } T_dire;
+
 #define YF_SFNT_DIRESZ 16
 static_assert(sizeof(T_dire) == YF_SFNT_DIRESZ, "!sizeof");
 
@@ -74,6 +76,7 @@ typedef struct {
     uint16_t version;
     uint16_t tab_n;
 } T_cmaph;
+
 #define YF_SFNT_CMAPHSZ 4
 static_assert(offsetof(T_cmaph, tab_n) == YF_SFNT_CMAPHSZ-2, "!offsetof");
 
@@ -82,6 +85,7 @@ typedef struct {
     uint16_t encoding;
     uint32_t off;
 } T_cmape;
+
 #define YF_SFNT_CMAPESZ 8
 static_assert(sizeof(T_cmape) == YF_SFNT_CMAPESZ, "!sizeof");
 
@@ -113,6 +117,7 @@ typedef struct {
     int16_t loca_fmt;
     int16_t glyph_fmt;
 } T_head;
+
 #define YF_SFNT_HEADSZ 54
 static_assert(offsetof(T_head, glyph_fmt) == YF_SFNT_HEADSZ-2, "!offsetof");
 
@@ -136,6 +141,7 @@ typedef struct {
     int16_t metric_fmt;
     uint16_t hmetric_n;
 } T_hhea;
+
 #define YF_SFNT_HHEASZ 36
 static_assert(offsetof(T_hhea, hmetric_n) == YF_SFNT_HHEASZ-2, "!offsetof");
 
@@ -146,6 +152,7 @@ typedef struct {
     uint16_t adv_wdt;
     int16_t lsb;
 } T_hmtxe;
+
 #define YF_SFNT_HMTXESZ 4
 static_assert(sizeof(T_hmtxe) == YF_SFNT_HMTXESZ, "!sizeof");
 
@@ -174,6 +181,7 @@ typedef struct {
     uint16_t comp_elem_max;
     uint16_t comp_dep_max;
 } T_maxp;
+
 #define YF_SFNT_MAXPSZ 32
 static_assert(offsetof(T_maxp, comp_dep_max) == YF_SFNT_MAXPSZ-2, "!offsetof");
 
@@ -186,6 +194,7 @@ typedef struct {
     uint16_t count;
     uint16_t str_off;
 } T_nameh;
+
 # define YF_SFNT_NAMEHSZ 6
 static_assert(offsetof(T_nameh, str_off) == YF_SFNT_NAMEHSZ-2, "!offsetof");
 
@@ -197,6 +206,7 @@ typedef struct {
     uint16_t len;
     uint16_t off;
 } T_namee;
+
 # define YF_SFNT_NAMEESZ 12
 static_assert(sizeof(T_namee) == YF_SFNT_NAMEESZ, "!sizeof");
 
@@ -204,6 +214,7 @@ typedef struct {
     uint16_t len;
     uint16_t off;
 } T_namel;
+
 # define YF_SFNT_NAMELSZ 4
 static_assert(sizeof(T_namel) == YF_SFNT_NAMELSZ, "!sizeof");
 
@@ -265,6 +276,7 @@ typedef struct {
     uint16_t lo_optic_pt_sz;
     uint16_t up_optic_pt_sz;
 } T_os2;
+
 # define YF_SFNT_OS2V0  78
 # define YF_SFNT_OS2SZ 100
 static_assert(offsetof(T_os2, up_optic_pt_sz) == YF_SFNT_OS2SZ-2, "!offsetof");
@@ -295,6 +307,7 @@ typedef struct {
     uint16_t version;
     uint16_t rng_n;
 } T_gasph;
+
 #define YF_SFNT_GASPHSZ 4
 static_assert(offsetof(T_gasph, rng_n) == YF_SFNT_GASPHSZ-2, "!offsetof");
 
@@ -302,6 +315,7 @@ typedef struct {
     uint16_t rng_ppem_max;
     uint16_t rng_behav;
 } T_gaspe;
+
 #define YF_SFNT_GASPESZ 4
 static_assert(sizeof(T_gaspe) == YF_SFNT_GASPESZ, "!sizeof");
 
@@ -321,6 +335,7 @@ typedef struct {
     int16_t y_max;
     uint8_t data[];
 } T_glyfd;
+
 #define YF_SFNT_GLYFSZ 10
 static_assert(offsetof(T_glyfd, data) == YF_SFNT_GLYFSZ, "!offsetof");
 
@@ -456,34 +471,729 @@ typedef struct {
 } T_font;
 
 /* Verifies whether file is valid. */
-static int verify_file(FILE *file);
+static int verify_file(FILE *file)
+{
+    assert(!feof(file));
+
+    rewind(file);
+    T_diro diro;
+
+    if (fread(&diro, YF_SFNT_DIROSZ, 1, file) < 1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    const uint16_t tab_n = be16toh(diro.tab_n);
+    T_dire dires[tab_n];
+
+    if (fread(dires, YF_SFNT_DIRESZ, tab_n, file) < tab_n) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    uint32_t chsum, off, dw_n, *buf = NULL;
+
+    for (uint16_t i = 0; i < tab_n; i++) {
+        off = be32toh(dires[i].off);
+
+        if (fseek(file, off, SEEK_SET) != 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+
+        dw_n = (be32toh(dires[i].len) + 3) >> 2;
+        buf = malloc(dw_n << 2);
+
+        if (buf == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        if (fread(buf, 4, dw_n, file) < dw_n) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            free(buf);
+            return -1;
+        }
+
+        chsum = 0;
+
+        for (uint32_t j = 0; j < dw_n; j++)
+            chsum += be32toh(buf[j]);
+
+        free(buf);
+
+        if (chsum != be32toh(dires[i].chsum) &&
+            be32toh(dires[i].tag) != YF_SFNT_HEADTAG) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
 
 /* Loads a font containing TrueType outline. */
-static int load_ttf(T_sfnt *sfnt, FILE *file);
+static int load_ttf(T_sfnt *sfnt, FILE *file)
+{
+    assert(sfnt != NULL);
+    assert(!feof(file));
+
+    const uint16_t tab_n = be16toh(sfnt->dir->diro.tab_n);
+
+    const uint32_t cvt_tag = YF_SFNT_CVTTAG;
+    uint32_t cvt_off = 0;
+    uint32_t cvt_len = 0;
+    const uint32_t fpgm_tag = YF_SFNT_FPGMTAG;
+    uint32_t fpgm_off = 0;
+    uint32_t fpgm_len = 0;
+    const uint32_t gasp_tag = YF_SFNT_GASPTAG;
+    uint32_t gasp_off = 0;
+    uint32_t gasp_len = 0;
+    const uint32_t glyf_tag = YF_SFNT_GLYFTAG;
+    uint32_t glyf_off = 0;
+    uint32_t glyf_len = 0;
+    const uint32_t loca_tag = YF_SFNT_LOCATAG;
+    uint32_t loca_off = 0;
+    uint32_t loca_len = 0;
+    const uint32_t prep_tag = YF_SFNT_PREPTAG;
+    uint32_t prep_off = 0;
+    uint32_t prep_len = 0;
+
+    for (uint16_t i = 0; i < tab_n; i++) {
+        const uint32_t tag = be32toh(sfnt->dir->dires[i].tag);
+
+        if (tag == cvt_tag) {
+            cvt_off = be32toh(sfnt->dir->dires[i].off);
+            cvt_len = be32toh(sfnt->dir->dires[i].len);
+        } else if (tag == fpgm_tag) {
+            fpgm_off = be32toh(sfnt->dir->dires[i].off);
+            fpgm_len = be32toh(sfnt->dir->dires[i].len);
+        } else if (tag == gasp_tag) {
+            gasp_off = be32toh(sfnt->dir->dires[i].off);
+            gasp_len = be32toh(sfnt->dir->dires[i].len);
+        } else if (tag == glyf_tag) {
+            glyf_off = be32toh(sfnt->dir->dires[i].off);
+            glyf_len = be32toh(sfnt->dir->dires[i].len);
+        } else if (tag == loca_tag) {
+            loca_off = be32toh(sfnt->dir->dires[i].off);
+            loca_len = be32toh(sfnt->dir->dires[i].len);
+        } else if (tag == prep_tag) {
+            prep_off = be32toh(sfnt->dir->dires[i].off);
+            prep_len = be32toh(sfnt->dir->dires[i].len);
+        }
+    }
+
+    if (glyf_off == 0 || loca_off == 0) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    /* cvt table (optional) */
+    if (cvt_off != 0) {
+        sfnt->ttf.cvt = calloc(1, sizeof(T_cvt));
+
+        if (sfnt->ttf.cvt == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        sfnt->ttf.cvt->ctrl_vals = malloc(cvt_len);
+
+        if (sfnt->ttf.cvt->ctrl_vals == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        if (fseek(file, cvt_off, SEEK_SET) != 0 ||
+            fread(sfnt->ttf.cvt->ctrl_vals, cvt_len, 1, file) < 1) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    /* fpgm table (optional) */
+    if (fpgm_off != 0) {
+        sfnt->ttf.fpgm = calloc(1, sizeof(T_fpgm));
+
+        if (sfnt->ttf.fpgm == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        sfnt->ttf.fpgm->instrs = malloc(fpgm_len);
+
+        if (sfnt->ttf.fpgm->instrs == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        if (fseek(file, fpgm_off, SEEK_SET) != 0 ||
+            fread(sfnt->ttf.fpgm->instrs, fpgm_len, 1, file) < 1) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    /* prep table (optional) */
+    if (prep_off != 0) {
+        sfnt->ttf.prep = calloc(1, sizeof(T_prep));
+
+        if (sfnt->ttf.prep == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        sfnt->ttf.prep->program = malloc(prep_len);
+
+        if (sfnt->ttf.prep->program == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        if (fseek(file, prep_off, SEEK_SET) != 0 ||
+            fread(sfnt->ttf.prep->program, prep_len, 1, file) < 1) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    /* gasp table (optional) */
+    if (gasp_off != 0 && gasp_len >= YF_SFNT_GASPHSZ) {
+        sfnt->ttf.gasp = calloc(1, sizeof(T_gasp));
+
+        if (sfnt->ttf.gasp == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        if (fseek(file, gasp_off, SEEK_SET) != 0 ||
+            fread(&sfnt->ttf.gasp->gasph, YF_SFNT_GASPHSZ, 1, file) < 1) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+
+        const uint16_t rng_n = be16toh(sfnt->ttf.gasp->gasph.rng_n);
+
+        if (rng_n > 0) {
+            sfnt->ttf.gasp->gaspes = malloc(rng_n * sizeof(T_gaspe));
+
+            if (sfnt->ttf.gasp->gaspes == NULL) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                return -1;
+            }
+
+            if (fread(sfnt->ttf.gasp->gaspes, sizeof(T_gaspe), rng_n,
+                      file) < rng_n) {
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+        }
+    }
+
+    /* loca table */
+    sfnt->ttf.loca = calloc(1, sizeof(T_loca));
+
+    if (sfnt->ttf.loca == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    void *loca_data = malloc(loca_len);
+
+    if (loca_data == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    if (fseek(file, loca_off, SEEK_SET) != 0 ||
+        fread(loca_data, loca_len, 1, file) < 1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        free(loca_data);
+        return -1;
+    }
+
+    if (sfnt->head->loca_fmt == 0)
+        sfnt->ttf.loca->off16 = loca_data;
+    else
+        sfnt->ttf.loca->off32 = loca_data;
+
+    /* glyf table */
+    sfnt->ttf.glyf = calloc(1, sizeof(T_glyf));
+
+    if (sfnt->ttf.glyf == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    sfnt->ttf.glyf->glyphs = malloc(glyf_len);
+
+    if (sfnt->ttf.glyf->glyphs == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    if (fseek(file, glyf_off, SEEK_SET) != 0 ||
+        fread(sfnt->ttf.glyf->glyphs, glyf_len, 1, file) < 1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    return 0;
+}
 
 /* Deinitializes SFNT tables. */
-static void deinit_tables(T_sfnt *sfnt);
+static void deinit_tables(T_sfnt *sfnt)
+{
+    if (sfnt == NULL)
+        return;
+
+    if (sfnt->dir != NULL) {
+        free(sfnt->dir->dires);
+        free(sfnt->dir);
+    }
+
+    if (sfnt->cmap != NULL) {
+        free(sfnt->cmap->cmapes);
+        free(sfnt->cmap);
+    }
+
+    free(sfnt->head);
+    free(sfnt->hhea);
+
+    if (sfnt->hmtx != NULL) {
+        free(sfnt->hmtx->hmtxes);
+        free(sfnt->hmtx->lsbs);
+        free(sfnt->hmtx);
+    }
+
+    free(sfnt->maxp);
+
+#ifdef YF_SFNT_NEED_NAME
+    if (sfnt->name != NULL) {
+        free(sfnt->name->namees);
+        free(sfnt->name->namels);
+        free(sfnt->name);
+    }
+#endif
+
+#ifdef YF_SFNT_NEED_OS2
+    free(sfnt->os2);
+#endif
+
+    if (sfnt->ttf.cvt != NULL) {
+        free(sfnt->ttf.cvt->ctrl_vals);
+        free(sfnt->ttf.cvt);
+    }
+
+    if (sfnt->ttf.fpgm != NULL) {
+        free(sfnt->ttf.fpgm->instrs);
+        free(sfnt->ttf.fpgm);
+    }
+
+    if (sfnt->ttf.gasp != NULL) {
+        free(sfnt->ttf.gasp->gaspes);
+        free(sfnt->ttf.gasp);
+    }
+
+    if (sfnt->ttf.glyf != NULL) {
+        free(sfnt->ttf.glyf->glyphs);
+        free(sfnt->ttf.glyf);
+    }
+
+    if (sfnt->ttf.loca != NULL) {
+        free(sfnt->ttf.loca->off16);
+        free(sfnt->ttf.loca);
+    }
+
+    if (sfnt->ttf.prep != NULL) {
+        free(sfnt->ttf.prep->program);
+        free(sfnt->ttf.prep);
+    }
+
+    /* XXX: The 'sfnt' ptr itself is not freed, since this structure is
+       expected to be allocated from the stack. */
+}
 
 /* Gets font metrics. */
-static int get_metrics(const T_sfnt *sfnt, T_fontmet *fmet);
+static int get_metrics(const T_sfnt *sfnt, T_fontmet *fmet)
+{
+    assert(sfnt != NULL);
+    assert(fmet != NULL);
+
+    fmet->upem = be16toh(sfnt->head->upem);
+    fmet->x_min = be16toh(sfnt->head->x_min);
+    fmet->y_min = be16toh(sfnt->head->y_min);
+    fmet->x_max = be16toh(sfnt->head->x_max);
+    fmet->y_max = be16toh(sfnt->head->y_max);
+    fmet->ascent = be16toh(sfnt->hhea->ascent);
+    fmet->descent = be16toh(sfnt->hhea->descent);
+    fmet->line_gap = be16toh(sfnt->hhea->line_gap);
+    fmet->adv_wdt_max = be16toh(sfnt->hhea->adv_wdt_max);
+    fmet->lsb_min = be16toh(sfnt->hhea->lsb_min);
+    fmet->rsb_min = be16toh(sfnt->hhea->rsb_min);
+
+    const uint16_t hmetric_n = be16toh(sfnt->hhea->hmetric_n);
+    const uint16_t glyph_n = be16toh(sfnt->maxp->glyph_n);
+
+    fmet->glyphs = malloc(glyph_n * sizeof *fmet->glyphs);
+    if (fmet->glyphs == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    uint16_t i;
+    for (i = 0; i < hmetric_n; i++) {
+        fmet->glyphs[i].adv_wdt = be16toh(sfnt->hmtx->hmtxes[i].adv_wdt);
+        fmet->glyphs[i].lsb = be16toh(sfnt->hmtx->hmtxes[i].lsb);
+    }
+    for (; i < glyph_n; i++) {
+        fmet->glyphs[i].adv_wdt = fmet->glyphs[hmetric_n-1].adv_wdt;
+        fmet->glyphs[i].lsb = be16toh(sfnt->hmtx->lsbs[i-hmetric_n]);
+    }
+
+    return 0;
+}
 
 /* Sets mapping of character codes to glyph indices. */
 static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
-                       T_fontmap *fmap);
+                       T_fontmap *fmap)
+{
+    assert(cmap != NULL);
+    assert(!feof(file));
+    assert(fmap != NULL);
+
+    /* encodings */
+    const struct { uint16_t plat, encd, fmt, lang; } encds[] = {
+        {0, 3, 4, 0}, /* Unicode (sparse) */
+        {1, 0, 6, 0}, /* Macintosh (roman, trimmed) */
+        {3, 1, 4, 0}  /* Windows (sparse) */
+    };
+
+    const uint16_t tab_n = be16toh(cmap->cmaph.tab_n);
+    const uint16_t encd_n = sizeof encds / sizeof encds[0];
+    uint16_t encd_i = UINT16_MAX;
+
+    uint32_t sub_off = 0;
+    struct { uint16_t fmt, len, lang; } sub_hdr;
+    static_assert(sizeof sub_hdr == 6, "!sizeof");
+
+    for (uint16_t i = 0; i < encd_n; i++) {
+        for (uint16_t j = 0; j < tab_n; j++) {
+            if (be16toh(cmap->cmapes[j].platform) != encds[i].plat ||
+                be16toh(cmap->cmapes[j].encoding) != encds[i].encd)
+                continue;
+
+            sub_off = off + be32toh(cmap->cmapes[j].off);
+            if (fseek(file, sub_off, SEEK_SET) != 0 ||
+                fread(&sub_hdr, sizeof sub_hdr, 1, file) < 1) {
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+
+            if (be16toh(sub_hdr.fmt) == encds[i].fmt) {
+                encd_i = j;
+                i = UINT16_MAX-1;
+                break;
+            }
+        }
+    }
+
+    if (encd_i == UINT16_MAX) {
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+    }
+
+    switch (be16toh(sub_hdr.fmt)) {
+    case 0:
+        /* TODO */
+        assert(0);
+        return -1;
+
+    case 4: {
+        /* sparse format */
+        struct { uint16_t seg_cnt_x2, search_rng, entry_sel, rng_shf; } sub_4;
+        static_assert(sizeof sub_4 == 8, "!sizeof");
+
+        if (fread(&sub_4, sizeof sub_4, 1, file) < 1) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+
+        const uint16_t seg_cnt = be16toh(sub_4.seg_cnt_x2) >> 1;
+        const size_t len = be16toh(sub_hdr.len) - (sizeof sub_hdr+sizeof sub_4);
+        uint16_t *var = malloc(len);
+
+        if (var == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        if (fread(var, len, 1, file) < 1) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            free(var);
+            return -1;
+        }
+
+        YF_dict glyph_ids = yf_dict_init(NULL, NULL);
+
+        if (glyph_ids == NULL) {
+            free(var);
+            return -1;
+        }
+
+        uint16_t end_code, start_code, code, delta, rng_off, id;
+
+        for (uint16_t i = 0; var[i] != 0xffff; i++) {
+            end_code = be16toh(var[i]);
+            start_code = code = be16toh(var[seg_cnt+i+1]);
+            delta = be16toh(var[2*seg_cnt+i+1]);
+            rng_off = be16toh(var[3*seg_cnt+i+1]);
+
+            if (rng_off != 0) {
+                do {
+                    id = var[3*seg_cnt+i+1 + (rng_off>>1) + (code-start_code)];
+                    id = be16toh(id);
+                    if (yf_dict_insert(glyph_ids, (void *)(uintptr_t)code,
+                                       (void *)(uintptr_t)id) != 0) {
+                        /* TODO */
+                    }
+                } while (code++ < end_code);
+
+            } else {
+                do {
+                    id = delta + code;
+                    if (yf_dict_insert(glyph_ids, (void *)(uintptr_t)code,
+                                       (void *)(uintptr_t)id) != 0) {
+                        /* TODO */
+                    }
+                } while (code++ < end_code);
+            }
+        }
+
+        free(var);
+        fmap->map = YF_SFNT_MAP_SPARSE;
+        fmap->sparse.glyph_ids = glyph_ids;
+
+    } break;
+
+    case 6: {
+        /* trimmed format */
+        struct { uint16_t first_code, entry_n; } sub_6;
+        static_assert(sizeof sub_6 == 4, "!sizeof");
+
+        if (fread(&sub_6, sizeof sub_6, 1, file) < 1) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+
+        const uint16_t first_code = be16toh(sub_6.first_code);
+        const uint16_t entry_n = be16toh(sub_6.entry_n);
+        uint16_t *glyph_ids = malloc(entry_n * sizeof *glyph_ids);
+
+        if (glyph_ids == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        if (fread(glyph_ids, sizeof *glyph_ids, entry_n, file) < entry_n) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            free(glyph_ids);
+            return -1;
+        }
+
+        fmap->map = YF_SFNT_MAP_TRIMMED;
+        fmap->trimmed.first_code = first_code;
+        fmap->trimmed.entry_n = entry_n;
+
+        for (uint16_t i = 0; i < entry_n; i++)
+            glyph_ids[i] = be16toh(glyph_ids[i]);
+
+        fmap->trimmed.glyph_ids = glyph_ids;
+    } break;
+
+    default:
+        assert(0);
+        return -1;
+    }
+
+    return 0;
+}
 
 #ifdef YF_SFNT_NEED_NAME
-/* Fills font strings. */
 static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
-                    T_fontstr *fstr);
-#endif
+                    T_fontstr *fstr)
+{
+    assert(name != NULL);
+    assert(!feof(file));
+    assert(fstr != NULL);
+
+    /* TODO: Select correct platform-encoding-language combination. */
+    const uint16_t plat = htobe16(1);
+    const uint16_t encd = 0;
+    const uint16_t lang = 0;
+
+    const uint16_t name_n = be16toh(name->nameh.count);
+    uint16_t name_i = 0;
+
+    for (; name_i < name_n; name_i++) {
+        if (name->namees[name_i].platform == plat)
+            break;
+    }
+    for (; name_i < name_n; name_i++) {
+        if (name->namees[name_i].encoding == encd)
+            break;
+    }
+    for (; name_i < name_n; name_i++) {
+        if (name->namees[name_i].language == lang)
+            break;
+    }
+
+    if (name_i >= name_n) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    uint16_t nm, len, off;
+    char **str_p;
+
+    for (; name_i < name_n; name_i++) {
+        if (name->namees[name_i].platform != plat ||
+            name->namees[name_i].encoding != encd ||
+            name->namees[name_i].language != lang)
+            break;
+
+        nm = be16toh(name->namees[name_i].name);
+        len = be16toh(name->namees[name_i].len);
+        off = be16toh(name->namees[name_i].off);
+
+        switch (nm) {
+        case 0:
+            str_p = &fstr->copyright;
+            break;
+        case 1:
+            str_p = &fstr->family;
+            break;
+        case 2:
+            str_p = &fstr->subfamily;
+            break;
+        case 3:
+            str_p = &fstr->uid;
+            break;
+        case 4:
+            str_p = &fstr->name;
+            break;
+        case 5:
+            str_p = &fstr->version;
+            break;
+        case 7:
+            str_p = &fstr->trademark;
+            break;
+        case 8:
+            str_p = &fstr->manufacturer;
+            break;
+        case 9:
+            str_p = &fstr->designer;
+            break;
+        case 10:
+            str_p = &fstr->description;
+            break;
+        case 13:
+            str_p = &fstr->license;
+            break;
+        case 16:
+            str_p = &fstr->typographic_family;
+            break;
+        case 17:
+            str_p = &fstr->typographic_subfamily;
+            break;
+        case 19:
+            str_p = &fstr->sample_text;
+            break;
+        default:
+            continue;
+        }
+
+        *str_p = malloc(len+1);
+
+        if (*str_p == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        (*str_p)[len] = '\0';
+
+        if (fseek(file, str_off+off, SEEK_SET) != 0 ||
+            fread(*str_p, len, 1, file) < 1) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+#endif /* YF_SFNT_NEED_NAME */
 
 /* Deinitializes font data. */
-static void deinit_font(void *font);
+static void deinit_font(void *font)
+{
+    if (font == NULL)
+        return;
+
+    T_font *fnt = font;
+
+#ifdef YF_SFNT_NEED_NAME
+    free(fnt->str.copyright);
+    free(fnt->str.family);
+    free(fnt->str.subfamily);
+    free(fnt->str.uid);
+    free(fnt->str.name);
+    free(fnt->str.version);
+    free(fnt->str.trademark);
+    free(fnt->str.manufacturer);
+    free(fnt->str.designer);
+    free(fnt->str.description);
+    free(fnt->str.license);
+    free(fnt->str.typographic_family);
+    free(fnt->str.typographic_subfamily);
+    free(fnt->str.sample_text);
+#endif /* YF_SFNT_NEED_NAME */
+
+    switch (fnt->map.map) {
+    case YF_SFNT_MAP_SPARSE:
+        yf_dict_deinit(fnt->map.sparse.glyph_ids);
+        break;
+    case YF_SFNT_MAP_TRIMMED:
+        free(fnt->map.trimmed.glyph_ids);
+        break;
+    }
+
+    free(fnt->met.glyphs);
+
+    free(fnt->ttf.loca);
+    free(fnt->ttf.glyf);
+
+    free(font);
+}
 
 /* Scales metrics. */
 static void scale_metrics(void *font, uint16_t pt, uint16_t dpi,
                           int16_t *x_min, int16_t *y_min,
-                          int16_t *x_max, int16_t *y_max);
+                          int16_t *x_max, int16_t *y_max)
+{
+    assert(font != NULL);
+
+    T_font *fnt = font;
+    const float scale = (float)(pt*dpi) / (float)(fnt->met.upem*72);
+
+    if (x_min != NULL)
+        *x_min = roundf(fnt->met.x_min*scale);
+    if (y_min != NULL)
+        *y_min = roundf(fnt->met.y_min*scale);
+    if (x_max != NULL)
+        *x_max = roundf(fnt->met.x_max*scale);
+    if (y_max != NULL)
+        *y_max = roundf(fnt->met.y_max*scale);
+}
 
 /* Gets a glyph. */
 static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
@@ -576,8 +1286,9 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     uint32_t os2_len = 0;
 #endif /* YF_SFNT_NEED_OS2 */
 
-    for (uint16_t i = 0; i < tab_n; ++i) {
+    for (uint16_t i = 0; i < tab_n; i++) {
         const uint32_t tag = be32toh(sfnt.dir->dires[i].tag);
+
         if (tag == cmap_tag) {
             cmap_off = be32toh(sfnt.dir->dires[i].off);
             cmap_len = be32toh(sfnt.dir->dires[i].len);
@@ -611,11 +1322,13 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
         hhea_off == 0 || hhea_len != YF_SFNT_HHEASZ ||
         hmtx_off == 0 || hmtx_len < YF_SFNT_HMTXESZ ||
         maxp_off == 0 || maxp_len != YF_SFNT_MAXPSZ) {
+
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
         fclose(file);
         return -1;
     }
+
 #ifdef YF_SFNT_NEED_NAME
     if (name_off == 0 || name_len < YF_SFNT_NAMEHSZ) {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -624,6 +1337,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
         return -1;
     }
 #endif /* YF_SFNT_NEED_NAME */
+
 #ifdef YF_SFNT_NEED_OS2
     if (os2_off == 0 || os2_len < YF_SFNT_OS2V0) {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -838,11 +1552,13 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     }
 
     T_font *font = calloc(1, sizeof *font);
+
     if (font == NULL) {
         deinit_tables(&sfnt);
         fclose(file);
         return -1;
     }
+
     font->glyph_n = be16toh(sfnt.maxp->glyph_n);
     font->pt_max = be16toh(sfnt.maxp->pt_max);
     font->contr_max = be16toh(sfnt.maxp->contr_max);
@@ -867,6 +1583,7 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
         if (sfnt.head->loca_fmt == 0) {
             /* 16-bit offsets: pre-multiply, byte-swap and copy to dw buffer */
             font->ttf.loca = malloc((font->glyph_n + 1) * sizeof(uint32_t));
+
             if (font->ttf.loca == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 deinit_font(font);
@@ -874,18 +1591,23 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
                 fclose(file);
                 return -1;
             }
-            for (uint32_t i = 0; i <= font->glyph_n; ++i)
+
+            for (uint32_t i = 0; i <= font->glyph_n; i++)
                 font->ttf.loca[i] = be16toh(sfnt.ttf.loca->off16[i]) << 1;
+
         } else {
             /* 32-bit offsets: take ownership and byte-swap */
             font->ttf.loca = sfnt.ttf.loca->off32;
             sfnt.ttf.loca->off32 = NULL;
-            for (uint32_t i = 0; i <= font->glyph_n; ++i)
+
+            for (uint32_t i = 0; i <= font->glyph_n; i++)
                 font->ttf.loca[i] = be32toh(font->ttf.loca[i]);
         }
+
         /* take ownership of raw glyph data */
         font->ttf.glyf = sfnt.ttf.glyf->glyphs;
         sfnt.ttf.glyf->glyphs = NULL;
+
     } else {
         /* XXX: Should not happen while ttf is the only supported font. */
         yf_seterr(YF_ERR_UNSUP, __func__);
@@ -902,658 +1624,8 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
 
     deinit_tables(&sfnt);
     fclose(file);
-    return 0;
-}
-
-static int verify_file(FILE *file)
-{
-    assert(!feof(file));
-
-    rewind(file);
-    T_diro diro;
-    if (fread(&diro, YF_SFNT_DIROSZ, 1, file) < 1) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-    const uint16_t tab_n = be16toh(diro.tab_n);
-    T_dire dires[tab_n];
-    if (fread(dires, YF_SFNT_DIRESZ, tab_n, file) < tab_n) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-    uint32_t chsum, off, dw_n, *buf = NULL;
-    for (uint16_t i = 0; i < tab_n; ++i) {
-        off = be32toh(dires[i].off);
-        if (fseek(file, off, SEEK_SET) != 0) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-
-        dw_n = (be32toh(dires[i].len) + 3) >> 2;
-        buf = malloc(dw_n << 2);
-        if (buf == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-
-        if (fread(buf, 4, dw_n, file) < dw_n) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            free(buf);
-            return -1;
-        }
-
-        chsum = 0;
-        for (uint32_t j = 0; j < dw_n; ++j)
-            chsum += be32toh(buf[j]);
-        free(buf);
-
-        if (chsum != be32toh(dires[i].chsum) &&
-            be32toh(dires[i].tag) != YF_SFNT_HEADTAG) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-    }
 
     return 0;
-}
-
-static int load_ttf(T_sfnt *sfnt, FILE *file)
-{
-    assert(sfnt != NULL);
-    assert(!feof(file));
-
-    const uint16_t tab_n = be16toh(sfnt->dir->diro.tab_n);
-
-    const uint32_t cvt_tag = YF_SFNT_CVTTAG;
-    uint32_t cvt_off = 0;
-    uint32_t cvt_len = 0;
-    const uint32_t fpgm_tag = YF_SFNT_FPGMTAG;
-    uint32_t fpgm_off = 0;
-    uint32_t fpgm_len = 0;
-    const uint32_t gasp_tag = YF_SFNT_GASPTAG;
-    uint32_t gasp_off = 0;
-    uint32_t gasp_len = 0;
-    const uint32_t glyf_tag = YF_SFNT_GLYFTAG;
-    uint32_t glyf_off = 0;
-    uint32_t glyf_len = 0;
-    const uint32_t loca_tag = YF_SFNT_LOCATAG;
-    uint32_t loca_off = 0;
-    uint32_t loca_len = 0;
-    const uint32_t prep_tag = YF_SFNT_PREPTAG;
-    uint32_t prep_off = 0;
-    uint32_t prep_len = 0;
-
-    for (uint16_t i = 0; i < tab_n; ++i) {
-        const uint32_t tag = be32toh(sfnt->dir->dires[i].tag);
-        if (tag == cvt_tag) {
-            cvt_off = be32toh(sfnt->dir->dires[i].off);
-            cvt_len = be32toh(sfnt->dir->dires[i].len);
-        } else if (tag == fpgm_tag) {
-            fpgm_off = be32toh(sfnt->dir->dires[i].off);
-            fpgm_len = be32toh(sfnt->dir->dires[i].len);
-        } else if (tag == gasp_tag) {
-            gasp_off = be32toh(sfnt->dir->dires[i].off);
-            gasp_len = be32toh(sfnt->dir->dires[i].len);
-        } else if (tag == glyf_tag) {
-            glyf_off = be32toh(sfnt->dir->dires[i].off);
-            glyf_len = be32toh(sfnt->dir->dires[i].len);
-        } else if (tag == loca_tag) {
-            loca_off = be32toh(sfnt->dir->dires[i].off);
-            loca_len = be32toh(sfnt->dir->dires[i].len);
-        } else if (tag == prep_tag) {
-            prep_off = be32toh(sfnt->dir->dires[i].off);
-            prep_len = be32toh(sfnt->dir->dires[i].len);
-        }
-    }
-    if (glyf_off == 0 || loca_off == 0) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-    /* cvt table (optional) */
-    if (cvt_off != 0) {
-        sfnt->ttf.cvt = calloc(1, sizeof(T_cvt));
-        if (sfnt->ttf.cvt == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        sfnt->ttf.cvt->ctrl_vals = malloc(cvt_len);
-        if (sfnt->ttf.cvt->ctrl_vals == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        if (fseek(file, cvt_off, SEEK_SET) != 0 ||
-            fread(sfnt->ttf.cvt->ctrl_vals, cvt_len, 1, file) < 1) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-    }
-
-    /* fpgm table (optional) */
-    if (fpgm_off != 0) {
-        sfnt->ttf.fpgm = calloc(1, sizeof(T_fpgm));
-        if (sfnt->ttf.fpgm == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        sfnt->ttf.fpgm->instrs = malloc(fpgm_len);
-        if (sfnt->ttf.fpgm->instrs == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        if (fseek(file, fpgm_off, SEEK_SET) != 0 ||
-            fread(sfnt->ttf.fpgm->instrs, fpgm_len, 1, file) < 1) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-    }
-
-    /* prep table (optional) */
-    if (prep_off != 0) {
-        sfnt->ttf.prep = calloc(1, sizeof(T_prep));
-        if (sfnt->ttf.prep == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        sfnt->ttf.prep->program = malloc(prep_len);
-        if (sfnt->ttf.prep->program == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        if (fseek(file, prep_off, SEEK_SET) != 0 ||
-            fread(sfnt->ttf.prep->program, prep_len, 1, file) < 1) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-    }
-
-    /* gasp table (optional) */
-    if (gasp_off != 0 && gasp_len >= YF_SFNT_GASPHSZ) {
-        sfnt->ttf.gasp = calloc(1, sizeof(T_gasp));
-        if (sfnt->ttf.gasp == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        if (fseek(file, gasp_off, SEEK_SET) != 0 ||
-            fread(&sfnt->ttf.gasp->gasph, YF_SFNT_GASPHSZ, 1, file) < 1) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-        const uint16_t rng_n = be16toh(sfnt->ttf.gasp->gasph.rng_n);
-        if (rng_n > 0) {
-            sfnt->ttf.gasp->gaspes = malloc(rng_n * sizeof(T_gaspe));
-            if (sfnt->ttf.gasp->gaspes == NULL) {
-                yf_seterr(YF_ERR_NOMEM, __func__);
-                return -1;
-            }
-            if (fread(sfnt->ttf.gasp->gaspes, sizeof(T_gaspe), rng_n,
-                      file) < rng_n) {
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-        }
-    }
-
-    /* loca table */
-    sfnt->ttf.loca = calloc(1, sizeof(T_loca));
-    if (sfnt->ttf.loca == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-    void *loca_data = malloc(loca_len);
-    if (loca_data == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-    if (fseek(file, loca_off, SEEK_SET) != 0 ||
-        fread(loca_data, loca_len, 1, file) < 1) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        free(loca_data);
-        return -1;
-    }
-    if (sfnt->head->loca_fmt == 0)
-        sfnt->ttf.loca->off16 = loca_data;
-    else
-        sfnt->ttf.loca->off32 = loca_data;
-
-    /* glyf table */
-    sfnt->ttf.glyf = calloc(1, sizeof(T_glyf));
-    if (sfnt->ttf.glyf == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-    sfnt->ttf.glyf->glyphs = malloc(glyf_len);
-    if (sfnt->ttf.glyf->glyphs == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-    if (fseek(file, glyf_off, SEEK_SET) != 0 ||
-        fread(sfnt->ttf.glyf->glyphs, glyf_len, 1, file) < 1) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-    return 0;
-}
-
-static void deinit_tables(T_sfnt *sfnt)
-{
-    if (sfnt == NULL)
-        return;
-
-    if (sfnt->dir != NULL) {
-        free(sfnt->dir->dires);
-        free(sfnt->dir);
-    }
-    if (sfnt->cmap != NULL) {
-        free(sfnt->cmap->cmapes);
-        free(sfnt->cmap);
-    }
-    free(sfnt->head);
-    free(sfnt->hhea);
-    if (sfnt->hmtx != NULL) {
-        free(sfnt->hmtx->hmtxes);
-        free(sfnt->hmtx->lsbs);
-        free(sfnt->hmtx);
-    }
-    free(sfnt->maxp);
-#ifdef YF_SFNT_NEED_NAME
-    if (sfnt->name != NULL) {
-        free(sfnt->name->namees);
-        free(sfnt->name->namels);
-        free(sfnt->name);
-    }
-#endif /* YF_SFNT_NEED_NAME */
-#ifdef YF_SFNT_NEED_OS2
-    free(sfnt->os2);
-#endif /* YF_SFNT_NEED_OS2 */
-
-    if (sfnt->ttf.cvt != NULL) {
-        free(sfnt->ttf.cvt->ctrl_vals);
-        free(sfnt->ttf.cvt);
-    }
-    if (sfnt->ttf.fpgm != NULL) {
-        free(sfnt->ttf.fpgm->instrs);
-        free(sfnt->ttf.fpgm);
-    }
-    if (sfnt->ttf.gasp != NULL) {
-        free(sfnt->ttf.gasp->gaspes);
-        free(sfnt->ttf.gasp);
-    }
-    if (sfnt->ttf.glyf != NULL) {
-        free(sfnt->ttf.glyf->glyphs);
-        free(sfnt->ttf.glyf);
-    }
-    if (sfnt->ttf.loca != NULL) {
-        free(sfnt->ttf.loca->off16);
-        free(sfnt->ttf.loca);
-    }
-    if (sfnt->ttf.prep != NULL) {
-        free(sfnt->ttf.prep->program);
-        free(sfnt->ttf.prep);
-    }
-
-    /* XXX: The 'sfnt' ptr itself is not freed, since this structure is
-       expected to be allocated from the stack. */
-}
-
-static int get_metrics(const T_sfnt *sfnt, T_fontmet *fmet)
-{
-    assert(sfnt != NULL);
-    assert(fmet != NULL);
-
-    fmet->upem = be16toh(sfnt->head->upem);
-    fmet->x_min = be16toh(sfnt->head->x_min);
-    fmet->y_min = be16toh(sfnt->head->y_min);
-    fmet->x_max = be16toh(sfnt->head->x_max);
-    fmet->y_max = be16toh(sfnt->head->y_max);
-    fmet->ascent = be16toh(sfnt->hhea->ascent);
-    fmet->descent = be16toh(sfnt->hhea->descent);
-    fmet->line_gap = be16toh(sfnt->hhea->line_gap);
-    fmet->adv_wdt_max = be16toh(sfnt->hhea->adv_wdt_max);
-    fmet->lsb_min = be16toh(sfnt->hhea->lsb_min);
-    fmet->rsb_min = be16toh(sfnt->hhea->rsb_min);
-
-    const uint16_t hmetric_n = be16toh(sfnt->hhea->hmetric_n);
-    const uint16_t glyph_n = be16toh(sfnt->maxp->glyph_n);
-
-    fmet->glyphs = malloc(glyph_n * sizeof *fmet->glyphs);
-    if (fmet->glyphs == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-
-    uint16_t i;
-    for (i = 0; i < hmetric_n; ++i) {
-        fmet->glyphs[i].adv_wdt = be16toh(sfnt->hmtx->hmtxes[i].adv_wdt);
-        fmet->glyphs[i].lsb = be16toh(sfnt->hmtx->hmtxes[i].lsb);
-    }
-    for (; i < glyph_n; ++i) {
-        fmet->glyphs[i].adv_wdt = fmet->glyphs[hmetric_n-1].adv_wdt;
-        fmet->glyphs[i].lsb = be16toh(sfnt->hmtx->lsbs[i-hmetric_n]);
-    }
-    return 0;
-}
-
-static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
-                       T_fontmap *fmap)
-{
-    assert(cmap != NULL);
-    assert(!feof(file));
-    assert(fmap != NULL);
-
-    /* encodings */
-    const struct { uint16_t plat, encd, fmt, lang; } encds[] = {
-        {0, 3, 4, 0}, /* Unicode (sparse) */
-        {1, 0, 6, 0}, /* Macintosh (roman, trimmed) */
-        {3, 1, 4, 0}  /* Windows (sparse) */
-    };
-
-    const uint16_t tab_n = be16toh(cmap->cmaph.tab_n);
-    const uint16_t encd_n = sizeof encds / sizeof encds[0];
-    uint16_t encd_i = UINT16_MAX;
-
-    uint32_t sub_off = 0;
-    struct { uint16_t fmt, len, lang; } sub_hdr;
-    static_assert(sizeof sub_hdr == 6, "!sizeof");
-
-    for (uint16_t i = 0; i < encd_n; ++i) {
-        for (uint16_t j = 0; j < tab_n; ++j) {
-            if (be16toh(cmap->cmapes[j].platform) != encds[i].plat ||
-                be16toh(cmap->cmapes[j].encoding) != encds[i].encd)
-                continue;
-
-            sub_off = off + be32toh(cmap->cmapes[j].off);
-            if (fseek(file, sub_off, SEEK_SET) != 0 ||
-                fread(&sub_hdr, sizeof sub_hdr, 1, file) < 1) {
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-
-            if (be16toh(sub_hdr.fmt) == encds[i].fmt) {
-                encd_i = j;
-                i = UINT16_MAX-1;
-                break;
-            }
-        }
-    }
-
-    if (encd_i == UINT16_MAX) {
-        yf_seterr(YF_ERR_UNSUP, __func__);
-        return -1;
-    }
-
-    switch (be16toh(sub_hdr.fmt)) {
-    case 0:
-        /* TODO */
-        assert(0);
-        return -1;
-
-    case 4: {
-        /* sparse format */
-        struct { uint16_t seg_cnt_x2, search_rng, entry_sel, rng_shf; } sub_4;
-        static_assert(sizeof sub_4 == 8, "!sizeof");
-
-        if (fread(&sub_4, sizeof sub_4, 1, file) < 1) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-        const uint16_t seg_cnt = be16toh(sub_4.seg_cnt_x2) >> 1;
-        const size_t len = be16toh(sub_hdr.len) - (sizeof sub_hdr+sizeof sub_4);
-        uint16_t *var = malloc(len);
-        if (var == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        if (fread(var, len, 1, file) < 1) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            free(var);
-            return -1;
-        }
-
-        YF_dict glyph_ids = yf_dict_init(NULL, NULL);
-        if (glyph_ids == NULL) {
-            free(var);
-            return -1;
-        }
-        uint16_t end_code, start_code, code, delta, rng_off, id;
-        for (uint16_t i = 0; var[i] != 0xffff; ++i) {
-            end_code = be16toh(var[i]);
-            start_code = code = be16toh(var[seg_cnt+i+1]);
-            delta = be16toh(var[2*seg_cnt+i+1]);
-            rng_off = be16toh(var[3*seg_cnt+i+1]);
-            if (rng_off != 0) {
-                do {
-                    id = var[3*seg_cnt+i+1 + (rng_off>>1) + (code-start_code)];
-                    id = be16toh(id);
-                    if (yf_dict_insert(glyph_ids, (void *)(uintptr_t)code,
-                                       (void *)(uintptr_t)id) != 0) {
-                        /* TODO */
-                    }
-                } while (code++ < end_code);
-            } else {
-                do {
-                    id = delta + code;
-                    if (yf_dict_insert(glyph_ids, (void *)(uintptr_t)code,
-                                       (void *)(uintptr_t)id) != 0) {
-                        /* TODO */
-                    }
-                } while (code++ < end_code);
-            }
-        }
-        free(var);
-        fmap->map = YF_SFNT_MAP_SPARSE;
-        fmap->sparse.glyph_ids = glyph_ids;
-    } break;
-
-    case 6: {
-        /* trimmed format */
-        struct { uint16_t first_code, entry_n; } sub_6;
-        static_assert(sizeof sub_6 == 4, "!sizeof");
-
-        if (fread(&sub_6, sizeof sub_6, 1, file) < 1) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-        const uint16_t first_code = be16toh(sub_6.first_code);
-        const uint16_t entry_n = be16toh(sub_6.entry_n);
-        uint16_t *glyph_ids = malloc(entry_n * sizeof *glyph_ids);
-        if (glyph_ids == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        if (fread(glyph_ids, sizeof *glyph_ids, entry_n, file) < entry_n) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            free(glyph_ids);
-            return -1;
-        }
-        fmap->map = YF_SFNT_MAP_TRIMMED;
-        fmap->trimmed.first_code = first_code;
-        fmap->trimmed.entry_n = entry_n;
-        for (uint16_t i = 0; i < entry_n; ++i)
-            glyph_ids[i] = be16toh(glyph_ids[i]);
-        fmap->trimmed.glyph_ids = glyph_ids;
-    } break;
-
-    default:
-        assert(0);
-        return -1;
-    }
-
-    return 0;
-}
-
-#ifdef YF_SFNT_NEED_NAME
-static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
-                    T_fontstr *fstr)
-{
-    assert(name != NULL);
-    assert(!feof(file));
-    assert(fstr != NULL);
-
-    /* TODO: Select correct platform-encoding-language combination. */
-    const uint16_t plat = htobe16(1);
-    const uint16_t encd = 0;
-    const uint16_t lang = 0;
-
-    const uint16_t name_n = be16toh(name->nameh.count);
-    uint16_t name_i = 0;
-
-    for (; name_i < name_n; ++name_i) {
-        if (name->namees[name_i].platform == plat)
-            break;
-    }
-    for (; name_i < name_n; ++name_i) {
-        if (name->namees[name_i].encoding == encd)
-            break;
-    }
-    for (; name_i < name_n; ++name_i) {
-        if (name->namees[name_i].language == lang)
-            break;
-    }
-
-    if (name_i >= name_n) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-    uint16_t nm, len, off;
-    char **str_p;
-
-    for (; name_i < name_n; ++name_i) {
-        if (name->namees[name_i].platform != plat ||
-            name->namees[name_i].encoding != encd ||
-            name->namees[name_i].language != lang)
-            break;
-
-        nm = be16toh(name->namees[name_i].name);
-        len = be16toh(name->namees[name_i].len);
-        off = be16toh(name->namees[name_i].off);
-
-        switch (nm) {
-        case 0:
-            str_p = &fstr->copyright;
-            break;
-        case 1:
-            str_p = &fstr->family;
-            break;
-        case 2:
-            str_p = &fstr->subfamily;
-            break;
-        case 3:
-            str_p = &fstr->uid;
-            break;
-        case 4:
-            str_p = &fstr->name;
-            break;
-        case 5:
-            str_p = &fstr->version;
-            break;
-        case 7:
-            str_p = &fstr->trademark;
-            break;
-        case 8:
-            str_p = &fstr->manufacturer;
-            break;
-        case 9:
-            str_p = &fstr->designer;
-            break;
-        case 10:
-            str_p = &fstr->description;
-            break;
-        case 13:
-            str_p = &fstr->license;
-            break;
-        case 16:
-            str_p = &fstr->typographic_family;
-            break;
-        case 17:
-            str_p = &fstr->typographic_subfamily;
-            break;
-        case 19:
-            str_p = &fstr->sample_text;
-            break;
-        default:
-            continue;
-        }
-
-        *str_p = malloc(len+1);
-        if (*str_p == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        (*str_p)[len] = '\0';
-        if (fseek(file, str_off+off, SEEK_SET) != 0 ||
-            fread(*str_p, len, 1, file) < 1) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-    }
-
-    return 0;
-}
-#endif /* YF_SFNT_NEED_NAME */
-
-static void deinit_font(void *font)
-{
-    if (font == NULL)
-        return;
-
-    T_font *fnt = font;
-
-#ifdef YF_SFNT_NEED_NAME
-    free(fnt->str.copyright);
-    free(fnt->str.family);
-    free(fnt->str.subfamily);
-    free(fnt->str.uid);
-    free(fnt->str.name);
-    free(fnt->str.version);
-    free(fnt->str.trademark);
-    free(fnt->str.manufacturer);
-    free(fnt->str.designer);
-    free(fnt->str.description);
-    free(fnt->str.license);
-    free(fnt->str.typographic_family);
-    free(fnt->str.typographic_subfamily);
-    free(fnt->str.sample_text);
-#endif /* YF_SFNT_NEED_NAME */
-
-    switch (fnt->map.map) {
-    case YF_SFNT_MAP_SPARSE:
-        yf_dict_deinit(fnt->map.sparse.glyph_ids);
-        break;
-    case YF_SFNT_MAP_TRIMMED:
-        free(fnt->map.trimmed.glyph_ids);
-        break;
-    }
-
-    free(fnt->met.glyphs);
-
-    free(fnt->ttf.loca);
-    free(fnt->ttf.glyf);
-
-    free(font);
-}
-
-static void scale_metrics(void *font, uint16_t pt, uint16_t dpi,
-                          int16_t *x_min, int16_t *y_min,
-                          int16_t *x_max, int16_t *y_max)
-{
-    assert(font != NULL);
-
-    T_font *fnt = font;
-    const float scale = (float)(pt*dpi) / (float)(fnt->met.upem*72);
-
-    if (x_min != NULL)
-        *x_min = roundf(fnt->met.x_min*scale);
-    if (y_min != NULL)
-        *y_min = roundf(fnt->met.y_min*scale);
-    if (x_max != NULL)
-        *x_max = roundf(fnt->met.x_max*scale);
-    if (y_max != NULL)
-        *y_max = roundf(fnt->met.y_max*scale);
 }
 
 /*
@@ -1592,114 +1664,7 @@ typedef struct {
     uint16_t comp_n;
 } T_outline;
 
-/* Fetches glyph data to produce an outline. */
-static int fetch_glyph(T_font *font, wchar_t code, T_outline *outln);
-
 /* Fetches a simple glyph. */
-static int fetch_simple(T_font *font, uint16_t id, T_component *comp);
-
-/* Fetches a compound glyph. */
-static int fetch_compnd(T_font *font, uint16_t id, T_component *comps,
-                        uint16_t *comp_i);
-
-/* Deinitializes an outline. */
-static void deinit_outline(T_outline *outln);
-
-/* Scales an outline. */
-static int scale_outline(T_outline *outln);
-
-/* Grid-fits a scaled outline. */
-static int grid_fit(T_outline *outln);
-
-/* Rasterizes an outline to produce a glyph. */
-static int rasterize(T_outline *outln, YF_glyph *glyph);
-
-static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
-                     YF_glyph *glyph)
-{
-    assert(font != NULL);
-    assert(pt != 0 && dpi != 0);
-    assert(glyph != NULL);
-
-    int r = 0;
-    T_outline outln = {0};
-    outln.scale = (float)(pt*dpi) / (float)(((T_font *)font)->met.upem*72);
-
-    if (fetch_glyph(font, code, &outln) != 0 ||
-        scale_outline(&outln) != 0 ||
-        grid_fit(&outln) != 0 ||
-        rasterize(&outln, glyph) != 0)
-        r = -1;
-
-    deinit_outline(&outln);
-    return r;
-}
-
-static int fetch_glyph(T_font *font, wchar_t code, T_outline *outln)
-{
-    assert(font != NULL);
-    assert(font->ttf.loca != NULL);
-    assert(font->ttf.glyf != NULL);
-    assert(outln != NULL);
-
-    uint16_t id;
-    if (font->map.map == YF_SFNT_MAP_SPARSE) {
-        YF_dict ids = font->map.sparse.glyph_ids;
-        id = (uintptr_t)yf_dict_search(ids, (void *)(uintptr_t)code);
-        if (id == 0)
-            return -1;
-    } else {
-        const uint16_t first = font->map.trimmed.first_code;
-        const uint16_t n = font->map.trimmed.entry_n;
-        const uint16_t *ids = font->map.trimmed.glyph_ids;
-        if (code < first || code >= first+n) {
-            yf_seterr(YF_ERR_NOTFND, __func__);
-            return -1;
-        }
-        id = ids[code-first];
-    }
-
-    const uint32_t off = font->ttf.loca[id];
-    assert((off % _Alignof(T_glyfd)) == 0);
-    const T_glyfd *gd = (T_glyfd *)(font->ttf.glyf+off);
-
-    outln->x_min = (int16_t)be16toh(gd->x_min);
-    outln->y_min = (int16_t)be16toh(gd->y_min);
-    outln->x_max = (int16_t)be16toh(gd->x_max);
-    outln->y_max = (int16_t)be16toh(gd->y_max);
-
-    const uint32_t len = font->ttf.loca[id+1] - off;
-    if (len == 0) {
-        /* glyph has no outline */
-        outln->comp_n = 0;
-        outln->comps = NULL;
-    } else if (YF_SFNT_ISCOMPND(font, id)) {
-        /* allocate max. components and let callee update the count */
-        outln->comp_n = 0;
-        outln->comps = calloc(font->comp_elem_max, sizeof *outln->comps);
-        if (outln->comps == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        if (fetch_compnd(font, id, outln->comps, &outln->comp_n) != 0)
-            return -1;
-    } else {
-        /* one component suffices */
-        outln->comp_n = 1;
-        outln->comps = calloc(outln->comp_n, sizeof *outln->comps);
-        if (outln->comps == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        if (fetch_simple(font, id, outln->comps) != 0)
-            return -1;
-    }
-
-    outln->adv_wdt = font->met.glyphs[id].adv_wdt;
-    outln->lsb = font->met.glyphs[id].lsb;
-    return 0;
-}
-
 static int fetch_simple(T_font *font, uint16_t id, T_component *comp)
 {
     assert(font != NULL);
@@ -1716,15 +1681,18 @@ static int fetch_simple(T_font *font, uint16_t id, T_component *comp)
 
     comp->end_n = contr_n;
     comp->ends = malloc(comp->end_n * sizeof *comp->ends);
+
     if (comp->ends == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
-    for (uint16_t i = 0; i < comp->end_n; ++i)
+
+    for (uint16_t i = 0; i < comp->end_n; i++)
         comp->ends[i] = be16toh(((uint16_t *)gd->data)[i]);
 
     comp->pt_n = comp->ends[contr_n-1] + 1;
     comp->pts = malloc(comp->pt_n * sizeof *comp->pts);
+
     if (comp->pts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -1743,6 +1711,7 @@ static int fetch_simple(T_font *font, uint16_t id, T_component *comp)
         flags = gd->data[off++];
         repeat_n = (flags & 8) ? gd->data[off++] : 0;
         flag_n -= repeat_n + 1;
+
         if (flags & 2)
             /* x is byte */
             y_off += repeat_n + 1;
@@ -1750,6 +1719,7 @@ static int fetch_simple(T_font *font, uint16_t id, T_component *comp)
             /* x is word */
             y_off += (repeat_n + 1) << 1;
         /* x is same value otherwise */
+
     } while (flag_n >= 0);
 
     uint32_t x_off = off;
@@ -1804,7 +1774,8 @@ static int fetch_simple(T_font *font, uint16_t id, T_component *comp)
             comp->pts[pt_i].on_curve = on_curve;
             comp->pts[pt_i].x = x;
             comp->pts[pt_i].y = y;
-            ++pt_i;
+            pt_i++;
+
         } while (repeat_n-- > 0);
 
     } while (flag_n >= 0);
@@ -1812,6 +1783,7 @@ static int fetch_simple(T_font *font, uint16_t id, T_component *comp)
     return 0;
 }
 
+/* Fetches a compound glyph. */
 static int fetch_compnd(T_font *font, uint16_t id, T_component *comps,
                         uint16_t *comp_i)
 {
@@ -1860,8 +1832,8 @@ static int fetch_compnd(T_font *font, uint16_t id, T_component *comps,
 
         if (flags & 2) {
             /* arguments are x,y values */
-            for (uint16_t i = idx; i < *comp_i; ++i) {
-                for (uint16_t j = 0; j < comps[i].pt_n; ++j) {
+            for (uint16_t i = idx; i < *comp_i; i++) {
+                for (uint16_t j = 0; j < comps[i].pt_n; j++) {
                     comps[i].pts[j].x += arg[0];
                     comps[i].pts[j].y += arg[1];
                 }
@@ -1895,24 +1867,106 @@ static int fetch_compnd(T_font *font, uint16_t id, T_component *comps,
             v[1] = v[2] = 0;
         }
 
-        ++idx;
+        idx++;
+
     } while (flags & 32);
 
     return 0;
 }
 
+/* Fetches glyph data to produce an outline. */
+static int fetch_glyph(T_font *font, wchar_t code, T_outline *outln)
+{
+    assert(font != NULL);
+    assert(font->ttf.loca != NULL);
+    assert(font->ttf.glyf != NULL);
+    assert(outln != NULL);
+
+    uint16_t id;
+
+    if (font->map.map == YF_SFNT_MAP_SPARSE) {
+        YF_dict ids = font->map.sparse.glyph_ids;
+        id = (uintptr_t)yf_dict_search(ids, (void *)(uintptr_t)code);
+
+        if (id == 0)
+            return -1;
+
+    } else {
+        const uint16_t first = font->map.trimmed.first_code;
+        const uint16_t n = font->map.trimmed.entry_n;
+        const uint16_t *ids = font->map.trimmed.glyph_ids;
+
+        if (code < first || code >= first+n) {
+            yf_seterr(YF_ERR_NOTFND, __func__);
+            return -1;
+        }
+
+        id = ids[code-first];
+    }
+
+    const uint32_t off = font->ttf.loca[id];
+    assert((off % _Alignof(T_glyfd)) == 0);
+    const T_glyfd *gd = (T_glyfd *)(font->ttf.glyf+off);
+
+    outln->x_min = (int16_t)be16toh(gd->x_min);
+    outln->y_min = (int16_t)be16toh(gd->y_min);
+    outln->x_max = (int16_t)be16toh(gd->x_max);
+    outln->y_max = (int16_t)be16toh(gd->y_max);
+
+    const uint32_t len = font->ttf.loca[id+1] - off;
+
+    if (len == 0) {
+        /* glyph has no outline */
+        outln->comp_n = 0;
+        outln->comps = NULL;
+
+    } else if (YF_SFNT_ISCOMPND(font, id)) {
+        /* allocate max. components and let callee update the count */
+        outln->comp_n = 0;
+        outln->comps = calloc(font->comp_elem_max, sizeof *outln->comps);
+
+        if (outln->comps == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        if (fetch_compnd(font, id, outln->comps, &outln->comp_n) != 0)
+            return -1;
+
+    } else {
+        /* one component suffices */
+        outln->comp_n = 1;
+        outln->comps = calloc(outln->comp_n, sizeof *outln->comps);
+
+        if (outln->comps == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        if (fetch_simple(font, id, outln->comps) != 0)
+            return -1;
+    }
+
+    outln->adv_wdt = font->met.glyphs[id].adv_wdt;
+    outln->lsb = font->met.glyphs[id].lsb;
+
+    return 0;
+}
+
+/* Deinitializes an outline. */
 static void deinit_outline(T_outline *outln)
 {
     if (outln == NULL)
         return;
 
     if (outln->comps != NULL) {
-        for (uint16_t i = 0; i < outln->comp_n; ++i) {
+        for (uint16_t i = 0; i < outln->comp_n; i++) {
             free(outln->comps[i].ends);
             free(outln->comps[i].pts);
         }
         free(outln->comps);
     }
+
     /* XXX: 'outln' ptr not freed. */
 }
 
@@ -1937,6 +1991,7 @@ static void deinit_outline(T_outline *outln)
      ((x)&(~((1<<YF_SFNT_Q)-1)))-(((x)&(1<<(YF_SFNT_Q-1)))<<1) : \
      ((x)&(~((1<<YF_SFNT_Q)-1)))+(((x)&(1<<(YF_SFNT_Q-1)))<<1))
 
+/* Scales an outline. */
 static int scale_outline(T_outline *outln)
 {
     assert(outln != NULL);
@@ -1944,21 +1999,23 @@ static int scale_outline(T_outline *outln)
     const float fac = outln->scale;
 
     /* create scaled points for each contour of each component */
-    for (uint16_t i = 0; i < outln->comp_n; ++i) {
+    for (uint16_t i = 0; i < outln->comp_n; i++) {
         T_component comp;
         comp.ends = outln->comps[i].ends;
         comp.end_n = outln->comps[i].end_n;
         comp.pt_n = outln->comps[i].pt_n << 1;
         comp.pts = malloc(comp.pt_n * sizeof *comp.pts);
+
         if (comp.pts == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
+
         uint16_t pt_i = 0;
         uint16_t beg = 0;
         uint16_t cur = 0;
 
-        for (uint16_t j = 0; j < comp.end_n; ++j) {
+        for (uint16_t j = 0; j < comp.end_n; j++) {
             uint16_t end = comp.ends[j];
             do {
                 if (outln->comps[i].pts[cur].on_curve) {
@@ -1967,6 +2024,7 @@ static int scale_outline(T_outline *outln)
                         YF_SFNT_FLTTOFIX(outln->comps[i].pts[cur].x*fac);
                     comp.pts[pt_i].y =
                         YF_SFNT_FLTTOFIX(outln->comps[i].pts[cur].y*fac);
+
                     if (++pt_i == comp.pt_n) {
                         comp.pt_n = YF_MIN(comp.pt_n<<1, 0xffff);
                         void *tmp = realloc(comp.pts,
@@ -1977,6 +2035,7 @@ static int scale_outline(T_outline *outln)
                         }
                         comp.pts = tmp;
                     }
+
                     continue;
                 }
 
@@ -2012,6 +2071,7 @@ static int scale_outline(T_outline *outln)
                     curve[0].y =
                         YF_SFNT_FLTTOFIX((curve[0].y+curve[1].y)*fac*0.5f);
                 }
+
                 if (curve[2].on) {
                     curve[2].x = YF_SFNT_FLTTOFIX(curve[2].x*fac);
                     curve[2].y = YF_SFNT_FLTTOFIX(curve[2].y*fac);
@@ -2021,12 +2081,14 @@ static int scale_outline(T_outline *outln)
                     curve[2].y =
                         YF_SFNT_FLTTOFIX((curve[1].y+curve[2].y)*fac*0.5f);
                 }
+
                 curve[1].x = YF_SFNT_FLTTOFIX(curve[1].x*fac);
                 curve[1].y = YF_SFNT_FLTTOFIX(curve[1].y*fac);
 
                 /* TODO: Dynamic range instead. */
                 const int32_t ts = (1<<YF_SFNT_Q)>>2;
                 int32_t t = 0;
+
                 while ((t += ts) < (1<<YF_SFNT_Q)) {
                     const int32_t diff = (1<<YF_SFNT_Q)-t;
                     const int32_t dbl = YF_SFNT_FIXMUL(t, 2<<YF_SFNT_Q);
@@ -2070,12 +2132,14 @@ static int scale_outline(T_outline *outln)
         }
 
         free(outln->comps[i].pts);
+
         if (comp.pt_n > pt_i) {
             comp.pt_n = pt_i;
             void *tmp = realloc(comp.pts, comp.pt_n * sizeof *comp.pts);
             if (tmp != NULL)
                 comp.pts = tmp;
         }
+
         outln->comps[i].pts = comp.pts;
         outln->comps[i].pt_n = comp.pt_n;
     }
@@ -2084,9 +2148,11 @@ static int scale_outline(T_outline *outln)
     outln->y_min = YF_SFNT_FLTTOFIX(outln->y_min*fac);
     outln->x_max = YF_SFNT_FLTTOFIX(outln->x_max*fac);
     outln->y_max = YF_SFNT_FLTTOFIX(outln->y_max*fac);
+
     return 0;
 }
 
+/* Grid-fits a scaled outline. */
 static int grid_fit(T_outline *outln)
 {
     assert(outln != NULL);
@@ -2098,14 +2164,15 @@ static int grid_fit(T_outline *outln)
     outln->x_max = YF_SFNT_FIXROUND(outln->x_max);
     outln->y_max = YF_SFNT_FIXROUND(outln->y_max);
 
-    for (uint16_t i = 0; i < outln->comp_n; ++i) {
-        for (uint16_t j = 0; j < outln->comps[i].pt_n; ++j) {
+    for (uint16_t i = 0; i < outln->comp_n; i++) {
+        for (uint16_t j = 0; j < outln->comps[i].pt_n; j++) {
             const int32_t x = outln->comps[i].pts[j].x;
             outln->comps[i].pts[j].x = YF_SFNT_FIXROUND(x);
             const int32_t y = outln->comps[i].pts[j].y;
             outln->comps[i].pts[j].y = YF_SFNT_FIXROUND(y);
         }
     }
+
     return 0;
 }
 
@@ -2127,6 +2194,7 @@ typedef struct {
     T_point p2;
 } T_segment;
 
+/* Rasterizes an outline to produce a glyph. */
 static int rasterize(T_outline *outln, YF_glyph *glyph)
 {
     assert(outln != NULL);
@@ -2162,7 +2230,7 @@ static int rasterize(T_outline *outln, YF_glyph *glyph)
     (seg).p2 = (T_point){x2, y2}; } while (0)
 
     uint32_t seg_max = 0;
-    for (uint16_t i = 0; i < outln->comp_n; ++i)
+    for (uint16_t i = 0; i < outln->comp_n; i++)
         seg_max += outln->comps[i].ends[outln->comps[i].end_n-1] + 1;
 
     T_segment *segs = malloc(seg_max * sizeof *segs);
@@ -2173,18 +2241,22 @@ static int rasterize(T_outline *outln, YF_glyph *glyph)
 
     /* create segments for each contour of each component */
     uint32_t seg_i = 0;
-    for (uint16_t i = 0; i < outln->comp_n; ++i) {
+
+    for (uint16_t i = 0; i < outln->comp_n; i++) {
         uint16_t curr, end, begn = 0;
-        for (uint16_t j = 0; j < outln->comps[i].end_n; ++j) {
+
+        for (uint16_t j = 0; j < outln->comps[i].end_n; j++) {
             curr = begn;
             end = outln->comps[i].ends[j];
+
             while (curr++ < end) {
                 YF_NEWSEG(segs[seg_i], outln->comps[i], curr-1, curr);
-                ++seg_i;
+                seg_i++;
             }
+
             /* close the contour */
             YF_NEWSEG(segs[seg_i], outln->comps[i], end, begn);
-            ++seg_i;
+            seg_i++;
             begn = end+1;
         }
     }
@@ -2231,20 +2303,24 @@ static int rasterize(T_outline *outln, YF_glyph *glyph)
     const uint32_t w = outln->x_max - outln->x_min;
     const uint32_t h = outln->y_max - outln->y_min;
     uint8_t *bitmap = malloc(YF_SFNT_FIXTOINT(w)*YF_SFNT_FIXTOINT(h));
+
     if (bitmap == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         free(segs);
         return -1;
     }
+
     const uint32_t half = 1<<(YF_SFNT_Q-1);
     const uint32_t one = half<<1;
     uint32_t idx = 0;
+
     for (uint32_t y = half; y < h; y += one) {
         for (uint32_t x = half; x < w; x += one) {
             T_point p1 = {x+outln->x_min, y+outln->y_min};
             T_point p2 = {one+outln->x_max, p1.y};
             int wind = YF_SFNT_WIND_NONE;
-            for (uint32_t i = 0; i < seg_i; ++i) {
+
+            for (uint32_t i = 0; i < seg_i; i++) {
                 if (YF_ONSEG(segs[i], p1)) {
                     wind = YF_SFNT_WIND_ON;
                     break;
@@ -2254,6 +2330,7 @@ static int rasterize(T_outline *outln, YF_glyph *glyph)
                 if (isect)
                     wind += segs[i].wind;
             }
+
             bitmap[idx++] = wind != YF_SFNT_WIND_NONE ? 255 : 0;
         }
     }
@@ -2268,4 +2345,25 @@ static int rasterize(T_outline *outln, YF_glyph *glyph)
 
     free(segs);
     return 0;
+}
+
+static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
+                     YF_glyph *glyph)
+{
+    assert(font != NULL);
+    assert(pt != 0 && dpi != 0);
+    assert(glyph != NULL);
+
+    int r = 0;
+    T_outline outln = {0};
+    outln.scale = (float)(pt*dpi) / (float)(((T_font *)font)->met.upem*72);
+
+    if (fetch_glyph(font, code, &outln) != 0 ||
+        scale_outline(&outln) != 0 ||
+        grid_fit(&outln) != 0 ||
+        rasterize(&outln, glyph) != 0)
+        r = -1;
+
+    deinit_outline(&outln);
+    return r;
 }
