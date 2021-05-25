@@ -10,7 +10,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "yf/com/yf-hashset.h"
+#include "yf/com/yf-dict.h"
 #include "yf/com/yf-error.h"
 
 #include "data-obj.h"
@@ -24,20 +24,34 @@
 # error "Invalid platform"
 #endif
 
-/* Type holding key & value for use in the vertex map. */
+/* Type defining key/value pair for the vertex map. */
 typedef struct {
     unsigned key[3];
-    unsigned value;
+    unsigned val;
 } T_kv;
 
 /* Hashes a 'T_kv'. */
-static size_t hash_kv(const void *x);
+static size_t hash_kv(const void *x)
+{
+    const T_kv *kv = x;
+    return yf_hashv(kv->key, sizeof kv->key, NULL);
+}
 
 /* Compares a 'T_kv' to another. */
-static int cmp_kv(const void *a, const void *b);
+static int cmp_kv(const void *a, const void *b)
+{
+    const T_kv *kv1 = a;
+    const T_kv *kv2 = b;
+
+    return memcmp(kv1->key, kv2->key, sizeof kv1->key);
+}
 
 /* Deallocates a 'T_kv'. */
-static int dealloc_kv(void *val, void *arg);
+static int dealloc_kv(YF_UNUSED void *key, void *val, YF_UNUSED void *arg)
+{
+    free(val);
+    return 0;
+}
 
 int yf_loadobj(const char *pathname, YF_meshdt *data)
 {
@@ -80,14 +94,16 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
 #define YF_FACEFMT_PN  3
 #define YF_FACEFMT_P   4
 
-    YF_hashset map = yf_hashset_init(hash_kv, cmp_kv);
+    YF_dict map = yf_dict_init(hash_kv, cmp_kv);
+
     if (map == NULL)
         return -1;
 
     FILE *file = fopen(pathname, "r");
+
     if (file == NULL) {
         yf_seterr(YF_ERR_NOFILE, __func__);
-        yf_hashset_deinit(map);
+        yf_dict_deinit(map);
         return -1;
     }
 
@@ -101,63 +117,77 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
             if (pos_n == pos_cap) {
                 pos_cap = pos_n == 0 ? YF_INITCAP : pos_cap << 1;
                 YF_vec3 *tmp = realloc(poss, pos_cap * sizeof *poss);
+
                 if (tmp == NULL) {
                     yf_seterr(YF_ERR_NOMEM, __func__);
                     goto dealloc;
                 }
+
                 poss = tmp;
             }
+
             memcpy(poss+pos_n, v, sizeof v);
-            ++pos_n;
+            pos_n++;
 
         } else if (sscanf(line, fmt_vt, vt, vt+1) == 2) {
             /* tex. coord. */
             if (tex_n == tex_cap) {
                 tex_cap = tex_n == 0 ? YF_INITCAP : tex_cap << 1;
                 YF_vec2 *tmp = realloc(texs, tex_cap * sizeof *texs);
+
                 if (tmp == NULL) {
                     yf_seterr(YF_ERR_NOMEM, __func__);
                     goto dealloc;
                 }
+
                 texs = tmp;
             }
+
             memcpy(texs+tex_n, vt, sizeof vt);
-            ++tex_n;
+            tex_n++;
 
         } else if (sscanf(line, fmt_vn, vn, vn+1, vn+2) == 3) {
             /* normal */
             if (norm_n == norm_cap) {
                 norm_cap = norm_n == 0 ? YF_INITCAP : norm_cap << 1;
                 YF_vec3 *tmp = realloc(norms, norm_cap * sizeof *norms);
+
                 if (tmp == NULL) {
                     yf_seterr(YF_ERR_NOMEM, __func__);
                     goto dealloc;
                 }
+
                 norms = tmp;
             }
+
             memcpy(norms+norm_n, vn, sizeof vn);
-            ++norm_n;
+            norm_n++;
 
         } else {
             /* face or ignored */
             int n;
             int fmt;
-            n = sscanf(line, fmt_f_ptn, f, f+1, f+2, f+3, f+4, f+5, f+6, f+7,
-                       f+8, f+9, f+10, f+11);
+            n = sscanf(line, fmt_f_ptn,
+                       f, f+1, f+2, f+3, f+4, f+5, f+6, f+7, f+8, f+9,
+                       f+10, f+11);
+
             if (n == 9 || n == 12) {
                 fmt = YF_FACEFMT_PTN;
             } else {
-                n = sscanf(line, fmt_f_pt, f, f+1, f+2, f+3, f+4, f+5, f+6,
-                           f+7);
+                n = sscanf(line, fmt_f_pt,
+                           f, f+1, f+2, f+3, f+4, f+5, f+6, f+7);
+
                 if (n == 6 || n == 8) {
                     fmt = YF_FACEFMT_PT;
                 } else {
-                    n = sscanf(line, fmt_f_pn, f, f+1, f+2, f+3, f+4, f+5, f+6,
-                               f+7);
+                    n = sscanf(line, fmt_f_pn,
+                               f, f+1, f+2, f+3, f+4, f+5, f+6, f+7);
+
                     if (n == 6 || n == 8) {
                         fmt = YF_FACEFMT_PN;
                     } else {
                         n = sscanf(line, fmt_f_p, f, f+1, f+2, f+3);
+
                         if (n == 3 || n == 4)
                             fmt = YF_FACEFMT_P;
                         else
@@ -171,26 +201,30 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
             if (idx_n + 6 > idx_cap) {
                 idx_cap = idx_n == 0 ? YF_INITCAP : idx_cap << 1;
                 unsigned *tmp = realloc(inds, idx_cap * sizeof *inds);
+
                 if (tmp == NULL) {
                     yf_seterr(YF_ERR_NOMEM, __func__);
                     goto dealloc;
                 }
+
                 inds = tmp;
             }
 
-            T_kv kv = {0};
-            T_kv *stored_val;
+            T_kv key = {0};
+            T_kv *kv;
             unsigned face[4];
 
             switch (fmt) {
             case YF_FACEFMT_PTN:
                 /* pos/texc/norm triangle or quad */
-                for (int i = 0; i < n/3; ++i) {
-                    kv.key[0] = f[3*i] - 1;
-                    kv.key[1] = f[3*i+1] - 1;
-                    kv.key[2] = f[3*i+2] - 1;
-                    if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
-                        face[i] = stored_val->value;
+                for (int i = 0; i < n/3; i++) {
+                    key.key[0] = f[3*i] - 1;
+                    key.key[1] = f[3*i+1] - 1;
+                    key.key[2] = f[3*i+2] - 1;
+
+                    if ((kv = yf_dict_search(map, &key)) != NULL) {
+                        face[i] = kv->val;
+
                     } else {
                         if (vtx_n == vtx_cap) {
                             vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap << 1;
@@ -200,39 +234,53 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
                                 yf_seterr(YF_ERR_NOMEM, __func__);
                                 goto dealloc;
                             }
+
                             verts = tmp;
                         }
-                        yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
-                        yf_vec2_copy(verts[vtx_n].tc, texs[kv.key[1]]);
-                        yf_vec3_copy(verts[vtx_n].norm, norms[kv.key[2]]);
-                        T_kv *new_val = malloc(sizeof kv);
-                        if (new_val == NULL) {
+
+                        yf_vec3_copy(verts[vtx_n].pos, poss[key.key[0]]);
+                        yf_vec2_copy(verts[vtx_n].tc, texs[key.key[1]]);
+                        yf_vec3_copy(verts[vtx_n].norm, norms[key.key[2]]);
+                        kv = malloc(sizeof *kv);
+
+                        if (kv == NULL) {
                             yf_seterr(YF_ERR_NOMEM, __func__);
                             goto dealloc;
                         }
-                        *new_val = kv;
-                        new_val->value = vtx_n++;
-                        yf_hashset_insert(map, new_val);
-                        face[i] = new_val->value;
+
+                        *kv = key;
+                        kv->val = vtx_n++;
+
+                        if (yf_dict_insert(map, kv, kv) != 0) {
+                            free(kv);
+                            goto dealloc;
+                        }
+
+                        face[i] = kv->val;
                     }
                 }
+
                 inds[idx_n++] = face[0];
                 inds[idx_n++] = face[1];
                 inds[idx_n++] = face[2];
+
                 if (n == 12) {
                     inds[idx_n++] = face[0];
                     inds[idx_n++] = face[2];
                     inds[idx_n++] = face[3];
                 }
+
                 break;
 
             case YF_FACEFMT_PT:
                 /* pos/texc triangle or quad */
-                for (int i = 0; i < (n>>1); ++i) {
-                    kv.key[0] = f[2*i] - 1;
-                    kv.key[1] = f[2*i+1] - 1;
-                    if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
-                        face[i] = stored_val->value;
+                for (int i = 0; i < (n>>1); i++) {
+                    key.key[0] = f[2*i] - 1;
+                    key.key[1] = f[2*i+1] - 1;
+
+                    if ((kv = yf_dict_search(map, &key)) != NULL) {
+                        face[i] = kv->val;
+
                     } else {
                         if (vtx_n == vtx_cap) {
                             vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap << 1;
@@ -242,39 +290,53 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
                                 yf_seterr(YF_ERR_NOMEM, __func__);
                                 goto dealloc;
                             }
+
                             verts = tmp;
                         }
-                        yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
-                        yf_vec2_copy(verts[vtx_n].tc, texs[kv.key[1]]);
+
+                        yf_vec3_copy(verts[vtx_n].pos, poss[key.key[0]]);
+                        yf_vec2_copy(verts[vtx_n].tc, texs[key.key[1]]);
                         yf_vec3_set(verts[vtx_n].norm, 0.0);
-                        T_kv *new_val = malloc(sizeof kv);
-                        if (new_val == NULL) {
+                        kv = malloc(sizeof *kv);
+
+                        if (kv == NULL) {
                             yf_seterr(YF_ERR_NOMEM, __func__);
                             goto dealloc;
                         }
-                        *new_val = kv;
-                        new_val->value = vtx_n++;
-                        yf_hashset_insert(map, new_val);
-                        face[i] = new_val->value;
+
+                        *kv = key;
+                        kv->val = vtx_n++;
+
+                        if (yf_dict_insert(map, kv, kv) != 0) {
+                            free(kv);
+                            goto dealloc;
+                        }
+
+                        face[i] = kv->val;
                     }
                 }
+
                 inds[idx_n++] = face[0];
                 inds[idx_n++] = face[1];
                 inds[idx_n++] = face[2];
+
                 if (n == 8) {
                     inds[idx_n++] = face[0];
                     inds[idx_n++] = face[2];
                     inds[idx_n++] = face[3];
                 }
+
                 break;
 
             case YF_FACEFMT_PN:
                 /* pos/norm triangle or quad */
-                for (int i = 0; i < (n>>1); ++i) {
-                    kv.key[0] = f[2*i] - 1;
-                    kv.key[2] = f[2*i+1] - 1;
-                    if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
-                        face[i] = stored_val->value;
+                for (int i = 0; i < (n>>1); i++) {
+                    key.key[0] = f[2*i] - 1;
+                    key.key[2] = f[2*i+1] - 1;
+
+                    if ((kv = yf_dict_search(map, &key)) != NULL) {
+                        face[i] = kv->val;
+
                     } else {
                         if (vtx_n == vtx_cap) {
                             vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap << 1;
@@ -284,38 +346,52 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
                                 yf_seterr(YF_ERR_NOMEM, __func__);
                                 goto dealloc;
                             }
+
                             verts = tmp;
                         }
-                        yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
+
+                        yf_vec3_copy(verts[vtx_n].pos, poss[key.key[0]]);
                         yf_vec2_set(verts[vtx_n].tc, 0.0);
-                        yf_vec3_copy(verts[vtx_n].norm, norms[kv.key[2]]);
-                        T_kv *new_val = malloc(sizeof kv);
-                        if (new_val == NULL) {
+                        yf_vec3_copy(verts[vtx_n].norm, norms[key.key[2]]);
+                        kv = malloc(sizeof *kv);
+
+                        if (kv == NULL) {
                             yf_seterr(YF_ERR_NOMEM, __func__);
                             goto dealloc;
                         }
-                        *new_val = kv;
-                        new_val->value = vtx_n++;
-                        yf_hashset_insert(map, new_val);
-                        face[i] = new_val->value;
+
+                        *kv = key;
+                        kv->val = vtx_n++;
+
+                        if (yf_dict_insert(map, kv, kv) != 0) {
+                            free(kv);
+                            goto dealloc;
+                        }
+
+                        face[i] = kv->val;
                     }
                 }
+
                 inds[idx_n++] = face[0];
                 inds[idx_n++] = face[1];
                 inds[idx_n++] = face[2];
+
                 if (n == 8) {
                     inds[idx_n++] = face[0];
                     inds[idx_n++] = face[2];
                     inds[idx_n++] = face[3];
                 }
+
                 break;
 
             case YF_FACEFMT_P:
                 /* position only triangle or quad */
-                for (int i = 0; i < n; ++i) {
-                    kv.key[0] = f[i] - 1;
-                    if ((stored_val = yf_hashset_search(map, &kv)) != NULL) {
-                        face[i] = stored_val->value;
+                for (int i = 0; i < n; i++) {
+                    key.key[0] = f[i] - 1;
+
+                    if ((kv = yf_dict_search(map, &key)) != NULL) {
+                        face[i] = kv->val;
+
                     } else {
                         if (vtx_n == vtx_cap) {
                             vtx_cap = vtx_n == 0 ? YF_INITCAP : vtx_cap << 1;
@@ -325,30 +401,42 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
                                 yf_seterr(YF_ERR_NOMEM, __func__);
                                 goto dealloc;
                             }
+
                             verts = tmp;
                         }
-                        yf_vec3_copy(verts[vtx_n].pos, poss[kv.key[0]]);
+
+                        yf_vec3_copy(verts[vtx_n].pos, poss[key.key[0]]);
                         yf_vec2_set(verts[vtx_n].tc, 0.0);
                         yf_vec3_set(verts[vtx_n].norm, 0.0);
-                        T_kv *new_val = malloc(sizeof kv);
-                        if (new_val == NULL) {
+                        kv = malloc(sizeof *kv);
+
+                        if (kv == NULL) {
                             yf_seterr(YF_ERR_NOMEM, __func__);
                             goto dealloc;
                         }
-                        *new_val = kv;
-                        new_val->value = vtx_n++;
-                        yf_hashset_insert(map, new_val);
-                        face[i] = new_val->value;
+
+                        *kv = key;
+                        kv->val = vtx_n++;
+
+                        if (yf_dict_insert(map, kv, kv) != 0) {
+                            free(kv);
+                            goto dealloc;
+                        }
+
+                        face[i] = kv->val;
                     }
                 }
+
                 inds[idx_n++] = face[0];
                 inds[idx_n++] = face[1];
                 inds[idx_n++] = face[2];
+
                 if (n == 4) {
                     inds[idx_n++] = face[0];
                     inds[idx_n++] = face[2];
                     inds[idx_n++] = face[3];
                 }
+
                 break;
             }
         }
@@ -360,6 +448,7 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
         if (tmp != NULL)
             verts = tmp;
     }
+
     data->v.vtype = YF_VTYPE_MDL;
     data->v.data = verts;
     data->v.n = vtx_n;
@@ -372,53 +461,41 @@ int yf_loadobj(const char *pathname, YF_meshdt *data)
             if (tmp != NULL)
                 inds = tmp;
         }
+
         data->i.data = inds;
         data->i.stride = sizeof *inds;
+
     } else {
         unsigned short *new_inds = malloc(idx_n * sizeof(unsigned short));
         if (new_inds != NULL) {
-            for (unsigned i = 0; i < idx_n; ++i)
+            for (unsigned i = 0; i < idx_n; i++)
                 new_inds[i] = inds[i];
+
             free(inds);
             data->i.data = new_inds;
             data->i.stride = sizeof *new_inds;
+
         } else {
             data->i.data = inds;
             data->i.stride = sizeof *inds;
         }
     }
+
     data->i.n = idx_n;
     inds = NULL;
 
     r = 0;
+
 dealloc:
     free(poss);
     free(texs);
     free(norms);
     free(verts);
     free(inds);
-    yf_hashset_each(map, dealloc_kv, NULL);
-    yf_hashset_deinit(map);
+    yf_dict_each(map, dealloc_kv, NULL);
+    yf_dict_deinit(map);
     fclose(file);
     free(line);
+
     return r;
-}
-
-static size_t hash_kv(const void *x)
-{
-    const unsigned *k = x;
-    return k[0] ^ k[1] ^ k[2] ^ 4271934599;
-}
-
-static int cmp_kv(const void *a, const void *b)
-{
-    const unsigned *k1 = a;
-    const unsigned *k2 = b;
-    return !(k1[0] == k2[0] && k1[1] == k2[1] && k1[2] == k2[2]);
-}
-
-static int dealloc_kv(void *val, YF_UNUSED void *arg)
-{
-    free(val);
-    return 0;
 }
