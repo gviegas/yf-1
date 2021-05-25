@@ -9,7 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "yf/com/yf-hashset.h"
+#include "yf/com/yf-dict.h"
 #include "yf/com/yf-error.h"
 #include "yf/core/yf-image.h"
 
@@ -18,7 +18,9 @@
 #include "data-png.h"
 #include "data-bmp.h"
 
-#undef YF_LAYCAP
+/* TODO: MT */
+
+/* XXX */
 #define YF_LAYCAP 64
 
 /* Type defining an image object and associated layer state. */
@@ -30,11 +32,17 @@ typedef struct {
     unsigned lay_i;
 } T_imge;
 
-/* Type holding key & value for use in the image hashset. */
+/* Type defining a key for the dictionary of 'T_imge' values. */
 /* TODO: Add levels and samples as key. */
 typedef struct {
-    struct { int pixfmt; YF_dim2 dim; } key;
-    T_imge value;
+    int pixfmt;
+    YF_dim2 dim;
+} T_key;
+
+/* Type defining key/value pair for the dictionary of 'T_imge' values. */
+typedef struct {
+    T_key key;
+    T_imge val;
 } T_kv;
 
 struct YF_texture_o {
@@ -45,17 +53,151 @@ struct YF_texture_o {
 /* Global context. */
 static YF_context l_ctx = NULL;
 
-/* Hashset containing all created images. */
-static YF_hashset l_imges = NULL;
+/* Dictionary containing all created images. */
+static YF_dict l_imges = NULL;
 
 /* Copies texture data to image and updates texture object. */
-static int copy_data(YF_texture tex, const YF_texdt *data);
+static int copy_data(YF_texture tex, const YF_texdt *data)
+{
+    const T_key key = {data->pixfmt, data->dim};
+    T_kv *kv = yf_dict_search(l_imges, &key);
 
-/* Hashes a 'T_kv'. */
-static size_t hash_kv(const void *x);
+    YF_dim3 dim;
+    unsigned layers;
+    T_imge *val;
 
-/* Compares a 'T_kv' to another. */
-static int cmp_kv(const void *a, const void *b);
+    if (kv == NULL) {
+        /* new image */
+        if ((kv = malloc(sizeof *kv)) == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        val = &kv->val;
+
+        dim = (YF_dim3){data->dim.width, data->dim.height, 1};
+        val->img = yf_image_init(l_ctx, data->pixfmt, dim, YF_LAYCAP, 1, 1);
+
+        if (val->img == NULL) {
+            free(kv);
+            return -1;
+        }
+
+        val->lay_used = calloc(YF_LAYCAP, sizeof *val->lay_used);
+
+        if (val->lay_used == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            yf_image_deinit(val->img);
+            free(kv);
+            return -1;
+        }
+
+        val->lay_n = 0;
+        val->lay_i = 0;
+        kv->key = key;
+
+        if (yf_dict_insert(l_imges, &kv->key, kv) != 0) {
+            yf_image_deinit(val->img);
+            free(val->lay_used);
+            free(kv);
+            return -1;
+        }
+
+        layers = YF_LAYCAP;
+
+    } else {
+        /* check layer cap. */
+        val = &kv->val;
+
+        int pixfmt;
+        unsigned levels, samples;
+        yf_image_getval(val->img, &pixfmt, &dim, &layers, &levels, &samples);
+
+        if (val->lay_n == layers) {
+            const unsigned new_lay_cap = layers << 1;
+            YF_image new_img = yf_image_init(l_ctx, pixfmt, dim, new_lay_cap,
+                                             levels, samples);
+
+            if (new_img == NULL)
+                return -1;
+
+            YF_cmdbuf cb;
+
+            if ((cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_GRAPH)) == NULL &&
+                (cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_COMP)) == NULL) {
+                yf_image_deinit(new_img);
+                return -1;
+            }
+
+            const YF_off3 off = {0};
+            yf_cmdbuf_copyimg(cb, new_img, off, 0, 0, val->img, off, 0, 0,
+                              dim, layers);
+
+            if (yf_cmdbuf_end(cb) != 0 || yf_cmdbuf_exec(l_ctx) != 0) {
+                yf_image_deinit(new_img);
+                return -1;
+            }
+
+            char *new_lay_used = realloc(val->lay_used, new_lay_cap);
+
+            if (new_lay_used == NULL) {
+                yf_image_deinit(new_img);
+                return -1;
+            }
+
+            /* XXX: Will crash if old image is in use. */
+            yf_image_deinit(val->img);
+            val->img = new_img;
+
+            memset(new_lay_used+layers, 0, layers);
+            val->lay_used = new_lay_used;
+            val->lay_i = layers;
+
+            layers = new_lay_cap;
+        }
+    }
+
+    unsigned layer = val->lay_i;
+    for (; val->lay_used[layer]; layer = (layer+1) % layers)
+        ;
+
+    const YF_off3 off = {0};
+    if (yf_image_copy(val->img, off, dim, layer, 0, data->data) != 0) {
+        if (val->lay_n == 0) {
+            yf_dict_remove(l_imges, &key);
+            yf_image_deinit(val->img);
+            free(val->lay_used);
+            free(kv);
+        }
+        return -1;
+    }
+
+    val->lay_used[layer] = 1;
+    val->lay_n++;
+    val->lay_i = (layer+1) % layers;
+    tex->imge = val;
+    tex->layer = layer;
+
+    return 0;
+}
+
+/* Hashes a 'T_key'. */
+static size_t hash_key(const void *x)
+{
+    static_assert(sizeof(T_key) == 3*sizeof(int), "!sizeof");
+    return yf_hashv(x, sizeof(T_key), NULL);
+}
+
+/* Compares a 'T_key' to another. */
+static int cmp_key(const void *a, const void *b)
+{
+    const T_key *k1 = a;
+    const T_key *k2 = b;
+
+    return k1->pixfmt != k2->pixfmt ||
+           k1->dim.width != k2->dim.width ||
+           k1->dim.height != k2->dim.height;
+}
 
 YF_texture yf_texture_init(int filetype, const char *pathname)
 {
@@ -81,12 +223,14 @@ YF_texture yf_texture_init(int filetype, const char *pathname)
 
     YF_texture tex = yf_texture_initdt(&data);
     free(data.data);
+
     return tex;
 }
 
 YF_dim2 yf_texture_getdim(YF_texture tex)
 {
     assert(tex != NULL);
+
     YF_dim3 dim;
     yf_image_getval(tex->imge->img, NULL, &dim, NULL, NULL, NULL);
     return (YF_dim2){dim.width, dim.height};
@@ -101,19 +245,21 @@ void yf_texture_deinit(YF_texture tex)
     int pixfmt;
     yf_image_getval(tex->imge->img, &pixfmt, &dim, NULL, NULL, NULL);
 
-    const T_kv key = {{pixfmt, {dim.width, dim.height}}, {0}};
-    T_kv *val = yf_hashset_search(l_imges, &key);
-    assert(val != NULL);
+    const T_key key = {pixfmt, {dim.width, dim.height}};
+    T_kv *kv = yf_dict_search(l_imges, &key);
 
-    if (val->value.lay_n > 1) {
-        val->value.lay_used[tex->layer] = 0;
-        val->value.lay_n--;
+    assert(kv != NULL);
+
+    if (kv->val.lay_n > 1) {
+        kv->val.lay_used[tex->layer] = 0;
+        kv->val.lay_n--;
     } else {
-        yf_hashset_remove(l_imges, val);
-        yf_image_deinit(val->value.img);
-        free(val->value.lay_used);
-        free(val);
+        yf_dict_remove(l_imges, &key);
+        yf_image_deinit(kv->val.img);
+        free(kv->val.lay_used);
+        free(kv);
     }
+
     free(tex);
 }
 
@@ -123,18 +269,22 @@ YF_texture yf_texture_initdt(const YF_texdt *data)
 
     if (l_ctx == NULL && (l_ctx = yf_getctx()) == NULL)
         return NULL;
-    if (l_imges == NULL && (l_imges = yf_hashset_init(hash_kv, cmp_kv)) == NULL)
+
+    if (l_imges == NULL && (l_imges = yf_dict_init(hash_key, cmp_key)) == NULL)
         return NULL;
 
     YF_texture tex = calloc(1, sizeof(struct YF_texture_o));
+
     if (tex == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
     }
+
     if (copy_data(tex, data) != 0) {
         yf_texture_deinit(tex);
-        tex = NULL;
+        return NULL;
     }
+
     return tex;
 }
 
@@ -159,115 +309,4 @@ int yf_texture_copyres(YF_texture tex, YF_dtable dtb, unsigned alloc_i,
     YF_slice elem = {element, 1};
     return yf_dtable_copyimg(dtb, alloc_i, binding, elem,
                              &tex->imge->img, &tex->layer);
-}
-
-static int copy_data(YF_texture tex, const YF_texdt *data)
-{
-    const T_kv key = {{data->pixfmt, data->dim}, {0}};
-    T_kv *val = yf_hashset_search(l_imges, &key);
-
-    if (val == NULL) {
-        if ((val = malloc(sizeof *val)) == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        YF_dim3 dim = {data->dim.width, data->dim.height, 1};
-        val->value.img = yf_image_init(l_ctx, data->pixfmt, dim, YF_LAYCAP,
-                                       1, 1);
-        if (val->value.img == NULL) {
-            free(val);
-            return -1;
-        }
-        val->value.lay_used = calloc(YF_LAYCAP, sizeof *val->value.lay_used);
-        if (val->value.lay_used == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            yf_image_deinit(val->value.img);
-            free(val);
-            return -1;
-        }
-        val->value.lay_n = 0;
-        val->value.lay_i = 0;
-        val->key.pixfmt = data->pixfmt;
-        val->key.dim = data->dim;
-        if (yf_hashset_insert(l_imges, val) != 0) {
-            yf_image_deinit(val->value.img);
-            free(val->value.lay_used);
-            free(val);
-            return -1;
-        }
-    }
-
-    int pixfmt;
-    YF_dim3 dim;
-    unsigned layers, levels, samples;
-    yf_image_getval(val->value.img, &pixfmt, &dim, &layers, &levels, &samples);
-
-    if (val->value.lay_n == layers) {
-        unsigned new_lay_cap = layers << 1;
-        YF_image new_img = yf_image_init(l_ctx, pixfmt, dim, new_lay_cap,
-                                         levels, samples);
-        if (new_img == NULL)
-            return -1;
-        YF_cmdbuf cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_GRAPH);
-        if (cb == NULL && (cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_COMP)) == NULL) {
-            yf_image_deinit(new_img);
-            return -1;
-        }
-        const YF_off3 off = {0};
-        yf_cmdbuf_copyimg(cb, new_img, off, 0, 0, val->value.img, off, 0, 0,
-                          dim, layers);
-        if (yf_cmdbuf_end(cb) != 0 || yf_cmdbuf_exec(l_ctx) != 0) {
-            yf_image_deinit(new_img);
-            return -1;
-        }
-        char *new_lay_used = realloc(val->value.lay_used, new_lay_cap);
-        if (new_lay_used == NULL) {
-            yf_image_deinit(new_img);
-            return -1;
-        }
-        memset(new_lay_used+layers, 0, layers);
-        /* XXX: Will crash if old image is in use. */
-        yf_image_deinit(val->value.img);
-        val->value.img = new_img;
-        val->value.lay_used = new_lay_used;
-        val->value.lay_i = layers;
-        layers = new_lay_cap;
-    }
-
-    unsigned layer = val->value.lay_i;
-    for (; val->value.lay_used[layer]; layer = (layer+1) % layers)
-        ;
-
-    const YF_off3 off = {0};
-    if (yf_image_copy(val->value.img, off, dim, layer, 0, data->data) != 0) {
-        if (val->value.lay_n == 0) {
-            yf_hashset_remove(l_imges, val);
-            yf_image_deinit(val->value.img);
-            free(val->value.lay_used);
-            free(val);
-        }
-        return -1;
-    }
-
-    val->value.lay_used[layer] = 1;
-    val->value.lay_n++;
-    val->value.lay_i = (layer+1) % layers;
-    tex->imge = &val->value;
-    tex->layer = layer;
-    return 0;
-}
-
-static size_t hash_kv(const void *x)
-{
-    const T_kv *kv = x;
-    return kv->key.pixfmt ^ kv->key.dim.width ^ kv->key.dim.height ^ 3258114451;
-}
-
-static int cmp_kv(const void *a, const void *b)
-{
-    const T_kv *kv1 = a;
-    const T_kv *kv2 = b;
-    return !(kv1->key.pixfmt == kv2->key.pixfmt &&
-             kv1->key.dim.width == kv2->key.dim.width &&
-             kv1->key.dim.height == kv2->key.dim.height);
 }
