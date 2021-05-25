@@ -20,7 +20,7 @@
 #endif
 
 #include "yf/com/yf-util.h"
-#include "yf/com/yf-hashset.h"
+#include "yf/com/yf-dict.h"
 #include "yf/com/yf-error.h"
 
 #include "data-sfnt.h"
@@ -404,7 +404,7 @@ typedef struct {
     int map;
     union {
         struct {
-            YF_hashset glyph_ids;
+            YF_dict glyph_ids;
         } sparse;
         struct {
             uint16_t first_code;
@@ -476,12 +476,6 @@ static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
 static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
                     T_fontstr *fstr);
 #endif
-
-/* Hashes glyphs of a 'T_fontmap' sparse format. */
-static size_t hash_fmap(const void *x);
-
-/* Compares glyphs of a 'T_fontmap' sparse format. */
-static int cmp_fmap(const void *a, const void *b);
 
 /* Deinitializes font data. */
 static void deinit_font(void *font);
@@ -1319,7 +1313,7 @@ static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
             return -1;
         }
 
-        YF_hashset glyph_ids = yf_hashset_init(hash_fmap, cmp_fmap);
+        YF_dict glyph_ids = yf_dict_init(NULL, NULL);
         if (glyph_ids == NULL) {
             free(var);
             return -1;
@@ -1334,16 +1328,18 @@ static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
                 do {
                     id = var[3*seg_cnt+i+1 + (rng_off>>1) + (code-start_code)];
                     id = be16toh(id);
-                    yf_hashset_insert(glyph_ids,
-                                      (const void *)
-                                      ((uintptr_t)code | (id << 16)));
+                    if (yf_dict_insert(glyph_ids, (void *)(uintptr_t)code,
+                                       (void *)(uintptr_t)id) != 0) {
+                        /* TODO */
+                    }
                 } while (code++ < end_code);
             } else {
                 do {
                     id = delta + code;
-                    yf_hashset_insert(glyph_ids,
-                                      (const void *)
-                                      ((uintptr_t)code | (id << 16)));
+                    if (yf_dict_insert(glyph_ids, (void *)(uintptr_t)code,
+                                       (void *)(uintptr_t)id) != 0) {
+                        /* TODO */
+                    }
                 } while (code++ < end_code);
             }
         }
@@ -1500,16 +1496,6 @@ static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
 }
 #endif /* YF_SFNT_NEED_NAME */
 
-static size_t hash_fmap(const void *x)
-{
-    return ((uintptr_t)x & 0xffff) ^ 0xa993;
-}
-
-static int cmp_fmap(const void *a, const void *b)
-{
-    return ((uintptr_t)a & 0xffff) - ((uintptr_t)b & 0xffff);
-}
-
 static void deinit_font(void *font)
 {
     if (font == NULL)
@@ -1536,7 +1522,7 @@ static void deinit_font(void *font)
 
     switch (fnt->map.map) {
     case YF_SFNT_MAP_SPARSE:
-        yf_hashset_deinit(fnt->map.sparse.glyph_ids);
+        yf_dict_deinit(fnt->map.sparse.glyph_ids);
         break;
     case YF_SFNT_MAP_TRIMMED:
         free(fnt->map.trimmed.glyph_ids);
@@ -1658,14 +1644,10 @@ static int fetch_glyph(T_font *font, wchar_t code, T_outline *outln)
 
     uint16_t id;
     if (font->map.map == YF_SFNT_MAP_SPARSE) {
-        YF_hashset hset = font->map.sparse.glyph_ids;
-        const void *key = (const void *)(uintptr_t)code;
-        if (!yf_hashset_contains(hset, key)) {
-            yf_seterr(YF_ERR_NOTFND, __func__);
+        YF_dict ids = font->map.sparse.glyph_ids;
+        id = (uintptr_t)yf_dict_search(ids, (void *)(uintptr_t)code);
+        if (id == 0)
             return -1;
-        }
-        /* the glyph ID is encoded in the 3rd and 4th bytes of the value ptr */
-        id = (uintptr_t)yf_hashset_search(font->map.sparse.glyph_ids, key)>>16;
     } else {
         const uint16_t first = font->map.trimmed.first_code;
         const uint16_t n = font->map.trimmed.entry_n;
