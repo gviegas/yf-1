@@ -83,6 +83,16 @@ void *yf_dict_replace(YF_dict dict, const void *key, const void *val);
 void *yf_dict_search(YF_dict dict, const void *key);
 
 /**
+ * Searches for a key in a dictionary.
+ *
+ * @param dict: The dictionary.
+ * @param key: The key location, whose value will be set to the stored key.
+ * @return: If 'dict' does not contain '*key', returns 'NULL' and sets the
+ *  global error to 'YF_ERR_NOTFND'. Otherwise, returns the stored value.
+ */
+void *yf_dict_lookup(YF_dict dict, void **key);
+
+/**
  * Checks whether or not a dictionary contains a given key.
  *
  * @param dict: The dictionary.
