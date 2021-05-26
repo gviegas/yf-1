@@ -17,7 +17,6 @@
 #include "yf-dict.h"
 #include "yf-error.h"
 #include "yf-hashfn.h"
-#include "yf-hashset.h"
 #include "yf-iter.h"
 #include "yf-list.h"
 #include "yf-pubsub.h"
