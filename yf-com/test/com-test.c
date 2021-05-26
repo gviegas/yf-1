@@ -562,6 +562,41 @@ static int test_dict(void)
 
     free(strs);
 
+    puts("\nclear()");
+    yf_dict_clear(dict);
+    if (yf_dict_getlen(dict) != 0)
+        return -1;
+
+    char *str2 = "string";
+    if (yf_dict_insert(dict, str2, (void *)1) != 0 ||
+        yf_dict_getlen(dict) != 1 || !yf_dict_contains(dict, str2) ||
+        !yf_dict_contains(dict, "string") || yf_dict_contains(dict, "STRING"))
+        return -1;
+
+    char *str3 = malloc(16);
+    assert(str3 != NULL);
+    strcpy(str3, str2);
+    if (yf_dict_insert(dict, str2, (void *)1) == 0 ||
+        yf_dict_insert(dict, str3, (void *)2) == 0 ||
+        !yf_dict_contains(dict, str3))
+        return -1;
+
+    puts("\nlookup()");
+    void *dst = str3;
+    size_t ival = (size_t)yf_dict_lookup(dict, &dst);
+    if (ival != 1 || dst == str3 || dst != str2 || yf_dict_getlen(dict) != 1 ||
+        !yf_dict_contains(dict, dst))
+        return -1;
+
+    puts("\ndelete()");
+    dst = str3;
+    ival = (size_t)yf_dict_delete(dict, &dst);
+    if (ival != 1 || dst == str3 || dst != str2 || yf_dict_getlen(dict) != 0 ||
+        yf_dict_contains(dict, dst) || yf_dict_contains(dict, str3))
+        return -1;
+
+    free(str3);
+
     yf_dict_deinit(dict);
     puts("\ndeinit()");
 
