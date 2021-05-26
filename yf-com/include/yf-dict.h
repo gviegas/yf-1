@@ -52,6 +52,16 @@ int yf_dict_insert(YF_dict dict, const void *key, const void *val);
 void *yf_dict_remove(YF_dict dict, const void *key);
 
 /**
+ * Removes a key/value pair from a dictionary.
+ *
+ * @param dict: The dictionary.
+ * @param key: The key location, whose value will be set to the stored key.
+ * @return: If 'dict' does not contain '*key', returns 'NULL' and sets the
+ *  global error to 'YF_ERR_NOTFND'. Otherwise, returns the removed value.
+ */
+void *yf_dict_delete(YF_dict dict, void **key);
+
+/**
  * Replaces the value stored under a given key of a dictionary.
  *
  * @param dict: The dictionary.

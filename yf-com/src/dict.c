@@ -147,7 +147,7 @@ static int rehash(YF_dict dict)
 
 cancel:
 
-    for (size_t i = 0; i < 1ULL<<dict->w; ++i) {
+    for (size_t i = 0; i < 1ULL<<dict->w; i++) {
         if (ctrl[i] >= dict->buckets[i].cur_n)
             continue;
 
@@ -217,7 +217,7 @@ cancel:
     free(ctrl);
 
     if (new_w < dict->w) {
-        for (size_t i = 1ULL<<new_w; i < 1ULL<<dict->w; ++i)
+        for (size_t i = 1ULL<<new_w; i < 1ULL<<dict->w; i++)
             free(dict->buckets[i].pairs);
 
         void *tmp = realloc(dict->buckets, sizeof(T_bucket) * (1ULL<<new_w));
@@ -280,7 +280,7 @@ int yf_dict_insert(YF_dict dict, const void *key, const void *val)
         bucket->max_n = new_n;
     }
 
-    for (size_t i = 0; i < bucket->cur_n; ++i) {
+    for (size_t i = 0; i < bucket->cur_n; i++) {
         if (dict->cmp(bucket->pairs[i].key, key) == 0) {
             yf_seterr(YF_ERR_EXIST, __func__);
             return -1;
@@ -305,7 +305,7 @@ void *yf_dict_remove(YF_dict dict, const void *key)
     T_bucket *bucket = dict->buckets+k;
     size_t i = 0;
 
-    for (; i < bucket->cur_n; ++i) {
+    for (; i < bucket->cur_n; i++) {
         if (dict->cmp(bucket->pairs[i].key, key) == 0)
             break;
     }
@@ -329,6 +329,42 @@ void *yf_dict_remove(YF_dict dict, const void *key)
     return (void *)val;
 }
 
+void *yf_dict_delete(YF_dict dict, void **key)
+{
+    assert(dict != NULL);
+    assert(key != NULL);
+
+    size_t k, x = dict->hash(*key);
+    YF_HASH(k, dict->a, x, dict->b, dict->w);
+
+    T_bucket *bucket = dict->buckets+k;
+    size_t i = 0;
+
+    for (; i < bucket->cur_n; i++) {
+        if (dict->cmp(bucket->pairs[i].key, *key) == 0)
+            break;
+    }
+
+    if (i == bucket->cur_n) {
+        yf_seterr(YF_ERR_NOTFND, __func__);
+        return NULL;
+    }
+
+    *key = (void *)bucket->pairs[i].key;
+    const void *val = bucket->pairs[i].val;
+
+    if (i+1 < bucket->cur_n)
+        memmove(bucket->pairs+i, bucket->pairs+i+1,
+                sizeof(T_pair) * (bucket->cur_n - i - 1));
+
+    bucket->cur_n--;
+    dict->count--;
+
+    rehash(dict);
+
+    return (void *)val;
+}
+
 void *yf_dict_replace(YF_dict dict, const void *key, const void *val)
 {
     assert(dict != NULL);
@@ -338,7 +374,7 @@ void *yf_dict_replace(YF_dict dict, const void *key, const void *val)
 
     T_bucket *bucket = dict->buckets+k;
 
-    for (size_t i = 0; i < bucket->cur_n; ++i) {
+    for (size_t i = 0; i < bucket->cur_n; i++) {
         if (dict->cmp(bucket->pairs[i].key, key) != 0)
             continue;
 
@@ -360,7 +396,7 @@ void *yf_dict_search(YF_dict dict, const void *key)
     size_t k, x = dict->hash(key);
     YF_HASH(k, dict->a, x, dict->b, dict->w);
 
-    for (size_t i = 0; i < dict->buckets[k].cur_n; ++i) {
+    for (size_t i = 0; i < dict->buckets[k].cur_n; i++) {
         const T_pair *pair = &dict->buckets[k].pairs[i];
 
         if (dict->cmp(pair->key, key) == 0)
@@ -382,7 +418,7 @@ int yf_dict_contains(YF_dict dict, const void *key)
     if (dict->buckets[k].cur_n == 0)
         return 0;
 
-    for (size_t i = 0; i < dict->buckets[k].cur_n; ++i) {
+    for (size_t i = 0; i < dict->buckets[k].cur_n; i++) {
         if (dict->cmp(dict->buckets[k].pairs[i].key, key) == 0)
             return 1;
     }
@@ -397,7 +433,7 @@ void *yf_dict_next(YF_dict dict, YF_iter *it, void **key)
     T_pair *pair = NULL;
 
     if (it == NULL) {
-        for (size_t i = 0; i < 1ULL<<dict->w; ++i) {
+        for (size_t i = 0; i < 1ULL<<dict->w; i++) {
             if (dict->buckets[i].cur_n == 0)
                 continue;
 
@@ -406,7 +442,7 @@ void *yf_dict_next(YF_dict dict, YF_iter *it, void **key)
         }
 
     } else if (YF_IT_ISNIL(*it)) {
-        for (size_t i = 0; i < 1ULL<<dict->w; ++i) {
+        for (size_t i = 0; i < 1ULL<<dict->w; i++) {
             if (dict->buckets[i].cur_n == 0)
                 continue;
 
@@ -427,7 +463,7 @@ void *yf_dict_next(YF_dict dict, YF_iter *it, void **key)
         } else {
             *it = YF_NILIT;
 
-            for (size_t i = bucket_i+1; i < 1ULL<<dict->w; ++i) {
+            for (size_t i = bucket_i+1; i < 1ULL<<dict->w; i++) {
                 if (dict->buckets[i].cur_n == 0)
                     continue;
 
@@ -458,10 +494,10 @@ void yf_dict_each(YF_dict dict, int (*callb)(void *key, void *val, void *arg),
     assert(dict != NULL);
     assert(callb != NULL);
 
-    for (size_t i = 0; i < 1ULL<<dict->w; ++i) {
+    for (size_t i = 0; i < 1ULL<<dict->w; i++) {
         T_bucket *bucket = dict->buckets+i;
 
-        for (size_t j = 0; j < bucket->cur_n; ++j) {
+        for (size_t j = 0; j < bucket->cur_n; j++) {
             T_pair *pair = bucket->pairs+j;
 
             if (callb((void *)pair->key, (void *)pair->val, arg) != 0)
@@ -483,7 +519,7 @@ void yf_dict_clear(YF_dict dict)
     if (dict->count == 0)
         return;
 
-    for (size_t i = 1ULL<<YF_WMINBITS; i < 1ULL<<dict->w; ++i) {
+    for (size_t i = 1ULL<<YF_WMINBITS; i < 1ULL<<dict->w; i++) {
         if (dict->buckets[i].max_n != 0) {
             free(dict->buckets[i].pairs);
             dict->count -= dict->buckets[i].cur_n;
@@ -513,7 +549,7 @@ void yf_dict_deinit(YF_dict dict)
     if (dict == NULL)
         return;
 
-    for (size_t i = 0; i < 1ULL<<dict->w; ++i)
+    for (size_t i = 0; i < 1ULL<<dict->w; i++)
         free(dict->buckets[i].pairs);
 
     free(dict->buckets);
@@ -531,10 +567,10 @@ void yf_print_dict(YF_dict dict)
     printf("\ndict:\n w: %lu\n count: %lu\n lcg_state: %llu\n a: %lu\n b: %lu",
            dict->w, dict->count, dict->lcg_state, dict->a, dict->b);
 
-    for (size_t i = 0; i < 1ULL<<dict->w; ++i) {
+    for (size_t i = 0; i < 1ULL<<dict->w; i++) {
         printf("\n buckets[%lu]:\n  max_n: %lu\n  cur_n: %lu", i,
                dict->buckets[i].max_n, dict->buckets[i].cur_n);
-        for (size_t j = 0; j < dict->buckets[i].cur_n; ++j)
+        for (size_t j = 0; j < dict->buckets[i].cur_n; j++)
             printf("\n  pairs[%lu]: %p/%p", j, dict->buckets[i].pairs[j].key,
                    dict->buckets[i].pairs[j].val);
     }
