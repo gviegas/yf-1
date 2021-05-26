@@ -31,38 +31,6 @@
 
 #define YF_LIBXCB "libxcb.so"
 
-/* Window implementation functions. */
-static void *init_win(unsigned, unsigned, const char *, unsigned, YF_window);
-static int open_win(void *);
-static int close_win(void *);
-static int resize_win(void *, unsigned, unsigned);
-static int toggle_win(void *);
-static int settitle_win(void *, const char *);
-static void getsize_win(void *, unsigned *, unsigned *);
-static void deinit_win(void *);
-
-const YF_win_imp yf_g_winxcb = {
-    .init = init_win,
-    .open = open_win,
-    .close = close_win,
-    .resize = resize_win,
-    .toggle = toggle_win,
-    .settitle = settitle_win,
-    .getsize = getsize_win,
-    .deinit = deinit_win
-};
-
-/* Event implementation functions. */
-static int poll_evt(unsigned);
-static void changed_evt(int);
-
-const YF_evt_imp yf_g_evtxcb = {.poll = poll_evt, .changed = changed_evt};
-
-/* Global variables setting. */
-static int set_vars(void);
-
-YF_varsxcb yf_g_varsxcb = {0};
-
 /* Shared object handle. */
 static void *l_handle = NULL;
 
@@ -241,95 +209,9 @@ static YF_list l_wins = NULL;
         if ((data) == NULL || (data)->win_id == (id)) break; \
     }} while (0)
 
-xcb_connection_t *yf_getconnxcb(void)
-{
-    return yf_g_varsxcb.conn;
-}
+YF_varsxcb yf_g_varsxcb = {0};
 
-xcb_visualid_t yf_getvisualxcb(void)
-{
-    return yf_g_varsxcb.visual;
-}
-
-xcb_window_t yf_getwindowxcb(YF_window win)
-{
-    assert(win != NULL);
-
-    /* XXX: Consider querying the 'YF_window' for the 'T_win' data instead. */
-    YF_iter it = YF_NILIT;
-    T_win *data;
-    do
-        data = yf_list_next(l_wins, &it);
-    while (data->wrapper != win);
-
-    return data->win_id;
-}
-
-int yf_loadxcb(void)
-{
-    if (l_handle != NULL)
-        return 0;
-
-    l_handle = dlopen(YF_LIBXCB, RTLD_LAZY);
-    if (l_handle == NULL) {
-        yf_seterr(YF_ERR_OTHER, __func__);
-        return -1;
-    }
-
-    char *err;
-    for (size_t i = 0; i < (sizeof l_names / sizeof l_names[0]); ++i) {
-        dlerror();
-        l_addrs[i] = dlsym(l_handle, l_names[i]);
-        err = dlerror();
-        if (err != NULL) {
-            yf_unldxcb();
-            yf_seterr(YF_ERR_OTHER, err);
-            return -1;
-        }
-    }
-
-    if (set_vars() != 0) {
-        yf_unldxcb();
-        return -1;
-    }
-
-    if ((l_wins = yf_list_init(NULL)) == NULL) {
-        yf_unldxcb();
-        return -1;
-    }
-
-    return 0;
-}
-
-void yf_unldxcb(void)
-{
-    if (l_wins != NULL) {
-        T_win *win;
-        YF_iter it = YF_NILIT;
-
-        for (;;) {
-            win = yf_list_next(l_wins, &it);
-            if (YF_IT_ISNIL(it))
-                break;
-            deinit_win(win);
-        }
-
-        yf_list_deinit(l_wins);
-        l_wins = NULL;
-    }
-
-    if (yf_g_varsxcb.conn != NULL) {
-        YF_XCB_DISCONNECT(yf_g_varsxcb.conn);
-        memset(&yf_g_varsxcb, 0, sizeof yf_g_varsxcb);
-    }
-
-    if (l_handle != NULL) {
-        dlclose(l_handle);
-        l_handle = NULL;
-        memset(l_addrs, 0, sizeof l_addrs);
-    }
-}
-
+/* Sets global variables. */
 static int set_vars(void)
 {
     assert(l_handle != NULL);
@@ -376,7 +258,7 @@ static int set_vars(void)
     xcb_intern_atom_reply_t *atom_reply = NULL;
     xcb_generic_error_t *err = NULL;
 
-    for (size_t i = 0; i < (sizeof atoms / sizeof atoms[0]); ++i) {
+    for (size_t i = 0; i < (sizeof atoms / sizeof atoms[0]); i++) {
         YF_XCB_INTERN_ATOM(atom_cookie, yf_g_varsxcb.conn, 0,
                            strlen(atom_names[i]), atom_names[i]);
         YF_XCB_INTERN_ATOM_REPLY(atom_reply, yf_g_varsxcb.conn, atom_cookie,
@@ -414,6 +296,154 @@ static int set_vars(void)
     return 0;
 }
 
+/* Implementation for 'win_imp.deinit'. */
+static void deinit_win(void *win)
+{
+    if (l_handle != NULL && yf_g_varsxcb.conn != NULL) {
+        YF_UNUSED xcb_void_cookie_t unused;
+        YF_XCB_DESTROY_WINDOW(unused, yf_g_varsxcb.conn,
+                              ((T_win *)win)->win_id);
+    }
+
+    yf_list_remove(l_wins, win);
+    free(win);
+}
+
+/* Implementation for 'win_imp.getsize'. */
+static void getsize_win(void *win, unsigned *width, unsigned *height)
+{
+    assert(l_handle != NULL);
+    assert(yf_g_varsxcb.conn != NULL);
+    assert(win != NULL);
+    assert(width != NULL && height != NULL);
+
+    *width = ((T_win *)win)->width;
+    *height = ((T_win *)win)->height;
+}
+
+/* Implementation for 'win_imp.settitle'. */
+static int settitle_win(void *win, const char *title)
+{
+    assert(l_handle != NULL);
+    assert(yf_g_varsxcb.conn != NULL);
+    assert(win != NULL);
+
+    xcb_window_t win_id = ((T_win *)win)->win_id;
+    xcb_void_cookie_t cookie;
+    xcb_generic_error_t *err = NULL;
+    size_t len = title == NULL ? 0 : strnlen(title, YF_STR_MAXLEN-1);
+
+    YF_XCB_CHANGE_PROPERTY_CHECKED(cookie, yf_g_varsxcb.conn,
+                                   XCB_PROP_MODE_REPLACE, win_id,
+                                   yf_g_varsxcb.atom.title,
+                                   yf_g_varsxcb.atom.utf8, 8, len, title);
+    YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+    if (err != NULL) {
+        yf_seterr(YF_ERR_OTHER, __func__);
+        free(err);
+        return -1;
+    }
+
+    return 0;
+}
+
+/* Implementation for 'win_imp.toggle'. */
+static int toggle_win(void *win)
+{
+    assert(l_handle != NULL);
+    assert(yf_g_varsxcb.conn != NULL);
+    assert(win != NULL);
+
+    /* TODO */
+
+    return -1;
+}
+
+/* Implementation for 'win_imp.resize'. */
+static int resize_win(void *win, unsigned width, unsigned height)
+{
+    assert(l_handle != NULL);
+    assert(yf_g_varsxcb.conn != NULL);
+    assert(win != NULL);
+
+    if (width == 0 || height == 0) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    xcb_window_t win_id = ((T_win *)win)->win_id;
+    xcb_void_cookie_t cookie;
+    xcb_generic_error_t *err = NULL;
+    uint32_t val_mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
+    uint32_t val_list[] = {width, height};
+
+    YF_XCB_CONFIGURE_WINDOW_CHECKED(cookie, yf_g_varsxcb.conn, win_id, val_mask,
+                                    val_list);
+    YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+    if (err != NULL) {
+        yf_seterr(YF_ERR_OTHER, __func__);
+        free(err);
+        return -1;
+    }
+
+    ((T_win *)win)->width = width;
+    ((T_win *)win)->height = height;
+    return 0;
+}
+
+/* Implementation for 'win_imp.close'. */
+static int close_win(void *win)
+{
+    assert(l_handle != NULL);
+    assert(yf_g_varsxcb.conn != NULL);
+    assert(win != NULL);
+
+    if (!((T_win *)win)->open)
+        return 0;
+
+    xcb_window_t win_id = ((T_win *)win)->win_id;
+    xcb_void_cookie_t cookie;
+    xcb_generic_error_t *err = NULL;
+
+    YF_XCB_UNMAP_WINDOW_CHECKED(cookie, yf_g_varsxcb.conn, win_id);
+    YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+    if (err != NULL) {
+        yf_seterr(YF_ERR_OTHER, __func__);
+        free(err);
+        return -1;
+    }
+
+    ((T_win *)win)->open = 0;
+    return 0;
+}
+
+/* Implementation for 'win_imp.open'. */
+static int open_win(void *win)
+{
+    assert(l_handle != NULL);
+    assert(yf_g_varsxcb.conn != NULL);
+    assert(win != NULL);
+
+    if (((T_win *)win)->open)
+        return 0;
+
+    xcb_window_t win_id = ((T_win *)win)->win_id;
+    xcb_void_cookie_t cookie;
+    xcb_generic_error_t *err = NULL;
+
+    YF_XCB_MAP_WINDOW_CHECKED(cookie, yf_g_varsxcb.conn, win_id);
+    YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
+    if (err != NULL) {
+        yf_seterr(YF_ERR_OTHER, __func__);
+        free(err);
+        return -1;
+    }
+
+    ((T_win *)win)->open = 1;
+    return 0;
+}
+
+/* Implementation for 'win_imp.init'. */
 static void *init_win(unsigned width, unsigned height, const char *title,
                       unsigned creat_mask, YF_window wrapper)
 {
@@ -548,146 +578,18 @@ static void *init_win(unsigned width, unsigned height, const char *title,
     return win;
 }
 
-static int open_win(void *win)
-{
-    assert(l_handle != NULL);
-    assert(yf_g_varsxcb.conn != NULL);
-    assert(win != NULL);
+const YF_win_imp yf_g_winxcb = {
+    .init = init_win,
+    .open = open_win,
+    .close = close_win,
+    .resize = resize_win,
+    .toggle = toggle_win,
+    .settitle = settitle_win,
+    .getsize = getsize_win,
+    .deinit = deinit_win
+};
 
-    if (((T_win *)win)->open)
-        return 0;
-
-    xcb_window_t win_id = ((T_win *)win)->win_id;
-    xcb_void_cookie_t cookie;
-    xcb_generic_error_t *err = NULL;
-
-    YF_XCB_MAP_WINDOW_CHECKED(cookie, yf_g_varsxcb.conn, win_id);
-    YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
-    if (err != NULL) {
-        yf_seterr(YF_ERR_OTHER, __func__);
-        free(err);
-        return -1;
-    }
-
-    ((T_win *)win)->open = 1;
-    return 0;
-}
-
-static int close_win(void *win)
-{
-    assert(l_handle != NULL);
-    assert(yf_g_varsxcb.conn != NULL);
-    assert(win != NULL);
-
-    if (!((T_win *)win)->open)
-        return 0;
-
-    xcb_window_t win_id = ((T_win *)win)->win_id;
-    xcb_void_cookie_t cookie;
-    xcb_generic_error_t *err = NULL;
-
-    YF_XCB_UNMAP_WINDOW_CHECKED(cookie, yf_g_varsxcb.conn, win_id);
-    YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
-    if (err != NULL) {
-        yf_seterr(YF_ERR_OTHER, __func__);
-        free(err);
-        return -1;
-    }
-
-    ((T_win *)win)->open = 0;
-    return 0;
-}
-
-static int resize_win(void *win, unsigned width, unsigned height)
-{
-    assert(l_handle != NULL);
-    assert(yf_g_varsxcb.conn != NULL);
-    assert(win != NULL);
-
-    if (width == 0 || height == 0) {
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return -1;
-    }
-
-    xcb_window_t win_id = ((T_win *)win)->win_id;
-    xcb_void_cookie_t cookie;
-    xcb_generic_error_t *err = NULL;
-    uint32_t val_mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
-    uint32_t val_list[] = {width, height};
-
-    YF_XCB_CONFIGURE_WINDOW_CHECKED(cookie, yf_g_varsxcb.conn, win_id, val_mask,
-                                    val_list);
-    YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
-    if (err != NULL) {
-        yf_seterr(YF_ERR_OTHER, __func__);
-        free(err);
-        return -1;
-    }
-
-    ((T_win *)win)->width = width;
-    ((T_win *)win)->height = height;
-    return 0;
-}
-
-static int toggle_win(void *win)
-{
-    assert(l_handle != NULL);
-    assert(yf_g_varsxcb.conn != NULL);
-    assert(win != NULL);
-
-    /* TODO */
-
-    return -1;
-}
-
-static int settitle_win(void *win, const char *title)
-{
-    assert(l_handle != NULL);
-    assert(yf_g_varsxcb.conn != NULL);
-    assert(win != NULL);
-
-    xcb_window_t win_id = ((T_win *)win)->win_id;
-    xcb_void_cookie_t cookie;
-    xcb_generic_error_t *err = NULL;
-    size_t len = title == NULL ? 0 : strnlen(title, YF_STR_MAXLEN-1);
-
-    YF_XCB_CHANGE_PROPERTY_CHECKED(cookie, yf_g_varsxcb.conn,
-                                   XCB_PROP_MODE_REPLACE, win_id,
-                                   yf_g_varsxcb.atom.title,
-                                   yf_g_varsxcb.atom.utf8, 8, len, title);
-    YF_XCB_REQUEST_CHECK(err, yf_g_varsxcb.conn, cookie);
-    if (err != NULL) {
-        yf_seterr(YF_ERR_OTHER, __func__);
-        free(err);
-        return -1;
-    }
-
-    return 0;
-}
-
-static void getsize_win(void *win, unsigned *width, unsigned *height)
-{
-    assert(l_handle != NULL);
-    assert(yf_g_varsxcb.conn != NULL);
-    assert(win != NULL);
-    assert(width != NULL && height != NULL);
-
-    *width = ((T_win *)win)->width;
-    *height = ((T_win *)win)->height;
-}
-
-static void deinit_win(void *win)
-{
-    if (l_handle != NULL && yf_g_varsxcb.conn != NULL) {
-        YF_UNUSED xcb_void_cookie_t unused;
-        YF_XCB_DESTROY_WINDOW(unused, yf_g_varsxcb.conn,
-                              ((T_win *)win)->win_id);
-    }
-
-    yf_list_remove(l_wins, win);
-    free(win);
-}
-
+/* Implementation for 'evt_imp.poll'. */
 static int poll_evt(unsigned evt_mask)
 {
     assert(l_handle != NULL);
@@ -930,7 +832,99 @@ static int poll_evt(unsigned evt_mask)
     return 0;
 }
 
+/* Implementation for 'evt_imp.changed'. */
 static void changed_evt(YF_UNUSED int evt)
 {
     /* TODO */
+}
+
+const YF_evt_imp yf_g_evtxcb = {.poll = poll_evt, .changed = changed_evt};
+
+int yf_loadxcb(void)
+{
+    if (l_handle != NULL)
+        return 0;
+
+    l_handle = dlopen(YF_LIBXCB, RTLD_LAZY);
+    if (l_handle == NULL) {
+        yf_seterr(YF_ERR_OTHER, __func__);
+        return -1;
+    }
+
+    char *err;
+    for (size_t i = 0; i < (sizeof l_names / sizeof l_names[0]); i++) {
+        dlerror();
+        l_addrs[i] = dlsym(l_handle, l_names[i]);
+        err = dlerror();
+        if (err != NULL) {
+            yf_unldxcb();
+            yf_seterr(YF_ERR_OTHER, err);
+            return -1;
+        }
+    }
+
+    if (set_vars() != 0) {
+        yf_unldxcb();
+        return -1;
+    }
+
+    if ((l_wins = yf_list_init(NULL)) == NULL) {
+        yf_unldxcb();
+        return -1;
+    }
+
+    return 0;
+}
+
+void yf_unldxcb(void)
+{
+    if (l_wins != NULL) {
+        T_win *win;
+        YF_iter it = YF_NILIT;
+
+        for (;;) {
+            win = yf_list_next(l_wins, &it);
+            if (YF_IT_ISNIL(it))
+                break;
+            deinit_win(win);
+        }
+
+        yf_list_deinit(l_wins);
+        l_wins = NULL;
+    }
+
+    if (yf_g_varsxcb.conn != NULL) {
+        YF_XCB_DISCONNECT(yf_g_varsxcb.conn);
+        memset(&yf_g_varsxcb, 0, sizeof yf_g_varsxcb);
+    }
+
+    if (l_handle != NULL) {
+        dlclose(l_handle);
+        l_handle = NULL;
+        memset(l_addrs, 0, sizeof l_addrs);
+    }
+}
+
+xcb_connection_t *yf_getconnxcb(void)
+{
+    return yf_g_varsxcb.conn;
+}
+
+xcb_visualid_t yf_getvisualxcb(void)
+{
+    return yf_g_varsxcb.visual;
+}
+
+xcb_window_t yf_getwindowxcb(YF_window win)
+{
+    assert(win != NULL);
+
+    /* XXX: Consider querying the 'YF_window' for the 'T_win' data instead. */
+    YF_iter it = YF_NILIT;
+    T_win *data;
+    do
+        data = yf_list_next(l_wins, &it);
+    while (data->wrapper != win);
+
+    return data->win_id;
 }
