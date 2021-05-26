@@ -10,7 +10,7 @@
 
 #include "yf/com/yf-util.h"
 #include "yf/com/yf-list.h"
-#include "yf/com/yf-hashset.h"
+#include "yf/com/yf-dict.h"
 #include "yf/com/yf-error.h"
 #include "yf/core/yf-cmdbuf.h"
 
@@ -71,8 +71,8 @@ typedef struct {
     unsigned buf_off;
     YF_list res_obtd;
     YF_cmdbuf cb;
-    YF_hashset mdls;
-    YF_hashset mdls_inst;
+    YF_dict mdls;
+    YF_dict mdls_inst;
     YF_list terrs;
     YF_list parts;
     YF_list quads;
@@ -85,7 +85,7 @@ typedef struct {
     unsigned inst_alloc;
 } T_reso;
 
-/* Type representing key & value for use in the model sets. */
+/* Type defining key/value pair for the model dictionaries. */
 typedef struct {
     struct {
         YF_mesh mesh;
@@ -142,10 +142,36 @@ static void clear_obj(void);
 /* Deinitializes shared variables and releases resources. */
 static void deinit_vars(void);
 
-/* Functions used by the model sets. */
-static size_t hash_mdl(const void *x);
-static int cmp_mdl(const void *a, const void *b);
-static int dealloc_mdl(void *val, void *arg);
+/* Hashes a 'T_kv_mdl'. */
+static size_t hash_mdl(const void *x)
+{
+    const T_kv_mdl *kv = x;
+    return yf_hashv(&kv->key, sizeof kv->key, NULL);
+
+    static_assert(sizeof kv->key == 2*sizeof(void *), "!sizeof");
+}
+
+/* Compares a 'T_kv_mdl' to another. */
+static int cmp_mdl(const void *a, const void *b)
+{
+    const T_kv_mdl *kv1 = a;
+    const T_kv_mdl *kv2 = b;
+
+    return kv1->key.mesh != kv2->key.mesh || kv1->key.tex != kv2->key.tex;
+}
+
+/* Deallocates a 'T_kv_mdl'. */
+static int dealloc_mdl(YF_UNUSED void *key, void *val, YF_UNUSED void *arg)
+{
+    T_kv_mdl *kv = val;
+
+    if (kv->mdl_n > 1)
+        free(kv->mdls);
+
+    free(val);
+
+    return 0;
+}
 
 YF_scene yf_scene_init(void)
 {
@@ -222,9 +248,9 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
         return -1;
     }
     unsigned pend = YF_PEND_NONE;
-    if (yf_hashset_getlen(l_vars.mdls) != 0)
+    if (yf_dict_getlen(l_vars.mdls) != 0)
         pend |= YF_PEND_MDL;
-    if (yf_hashset_getlen(l_vars.mdls_inst) != 0)
+    if (yf_dict_getlen(l_vars.mdls_inst) != 0)
         pend |= YF_PEND_MDLI;
     if (yf_list_getlen(l_vars.terrs) != 0)
         pend |= YF_PEND_TERR;
@@ -266,7 +292,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
                 clear_obj();
                 return -1;
             }
-            if (yf_hashset_getlen(l_vars.mdls) == 0)
+            if (yf_dict_getlen(l_vars.mdls) == 0)
                 pend &= ~YF_PEND_MDL;
         }
 
@@ -278,7 +304,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
                 clear_obj();
                 return -1;
             }
-            if (yf_hashset_getlen(l_vars.mdls_inst) == 0)
+            if (yf_dict_getlen(l_vars.mdls_inst) == 0)
                 pend &= ~YF_PEND_MDLI;
         }
 
@@ -459,8 +485,8 @@ static int init_vars(void)
 
     if ((l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz)) == NULL ||
         (l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
-        (l_vars.mdls = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
-        (l_vars.mdls_inst = yf_hashset_init(hash_mdl, cmp_mdl)) == NULL ||
+        (l_vars.mdls = yf_dict_init(hash_mdl, cmp_mdl)) == NULL ||
+        (l_vars.mdls_inst = yf_dict_init(hash_mdl, cmp_mdl)) == NULL ||
         (l_vars.terrs = yf_list_init(NULL)) == NULL ||
         (l_vars.parts = yf_list_init(NULL)) == NULL ||
         (l_vars.quads = yf_list_init(NULL)) == NULL ||
@@ -484,7 +510,7 @@ static int traverse_scn(YF_node node, void *arg)
             {NULL}, 0, 0
         };
         T_kv_mdl *val = NULL;
-        if ((val = yf_hashset_search(l_vars.mdls, &key)) != NULL) {
+        if ((val = yf_dict_search(l_vars.mdls, &key)) != NULL) {
             /* model with shared resources, move to instanced drawing set */
             YF_model *mdls = malloc(YF_INSTCAP * sizeof mdl);
             if (mdls == NULL) {
@@ -492,8 +518,8 @@ static int traverse_scn(YF_node node, void *arg)
                 *(int *)arg = -1;
                 return -1;
             }
-            yf_hashset_remove(l_vars.mdls, val);
-            if (yf_hashset_insert(l_vars.mdls_inst, val) != 0) {
+            yf_dict_remove(l_vars.mdls, &key);
+            if (yf_dict_insert(l_vars.mdls_inst, val, val) != 0) {
                 free(mdls);
                 *(int *)arg = -1;
                 return -1;
@@ -503,7 +529,7 @@ static int traverse_scn(YF_node node, void *arg)
             val->mdls = mdls;
             val->mdl_n = 2;
             val->mdl_cap = YF_INSTCAP;
-        } else if ((val = yf_hashset_search(l_vars.mdls_inst, &key)) != NULL) {
+        } else if ((val = yf_dict_search(l_vars.mdls_inst, &key)) != NULL) {
             /* another model for instanced drawing */
             if (val->mdl_n == val->mdl_cap) {
                 YF_model *mdls = realloc(val->mdls,
@@ -514,7 +540,7 @@ static int traverse_scn(YF_node node, void *arg)
                     return -1;
                 }
                 val->mdls = mdls;
-                val->mdl_cap *= 2;
+                val->mdl_cap <<= 1;
             }
             val->mdls[val->mdl_n++] = mdl;
         } else {
@@ -525,7 +551,7 @@ static int traverse_scn(YF_node node, void *arg)
                 return -1;
             }
             *val = key;
-            if (yf_hashset_insert(l_vars.mdls, val) != 0) {
+            if (yf_dict_insert(l_vars.mdls, val, val) != 0) {
                 *(int *)arg = -1;
                 return -1;
             }
@@ -594,7 +620,7 @@ static int render_mdl(YF_scene scn)
     T_kv_mdl *val = NULL;
 
     while (1) {
-        val = yf_hashset_next(l_vars.mdls, &it);
+        val = yf_dict_next(l_vars.mdls, &it, NULL);
         if (YF_IT_ISNIL(it))
             break;
 
@@ -638,7 +664,7 @@ static int render_mdl(YF_scene scn)
             /* TODO: Handle models lacking mesh. */
             assert(0);
 
-        yf_hashset_remove(l_vars.mdls, val);
+        yf_dict_remove(l_vars.mdls, val);
         it = YF_NILIT;
     }
 
@@ -667,7 +693,7 @@ static int render_mdl_inst(YF_scene scn)
         return -1;
 
     while (1) {
-        val = yf_hashset_next(l_vars.mdls_inst, &it);
+        val = yf_dict_next(l_vars.mdls_inst, &it, NULL);
         if (YF_IT_ISNIL(it))
             break;
 
@@ -739,7 +765,7 @@ static int render_mdl_inst(YF_scene scn)
                 assert(0);
 
             if (rem == 0) {
-                /* cannot invalidate the set iterator */
+                /* cannot invalidate the dictionary iterator */
                 if (yf_list_insert(done, val) == 0)
                     break;
                 yf_list_deinit(done);
@@ -750,7 +776,7 @@ static int render_mdl_inst(YF_scene scn)
     }
 
     while ((val = yf_list_removeat(done, NULL)) != NULL)
-        yf_hashset_remove(l_vars.mdls_inst, val);
+        yf_dict_remove(l_vars.mdls_inst, val);
     yf_list_deinit(done);
 
     return 0;
@@ -1204,13 +1230,13 @@ static void yield_res(void)
 
 static void clear_obj(void)
 {
-    if (yf_hashset_getlen(l_vars.mdls) != 0) {
-        yf_hashset_each(l_vars.mdls, dealloc_mdl, NULL);
-        yf_hashset_clear(l_vars.mdls);
+    if (yf_dict_getlen(l_vars.mdls) != 0) {
+        yf_dict_each(l_vars.mdls, dealloc_mdl, NULL);
+        yf_dict_clear(l_vars.mdls);
     }
-    if (yf_hashset_getlen(l_vars.mdls_inst) != 0) {
-        yf_hashset_each(l_vars.mdls_inst, dealloc_mdl, NULL);
-        yf_hashset_clear(l_vars.mdls_inst);
+    if (yf_dict_getlen(l_vars.mdls_inst) != 0) {
+        yf_dict_each(l_vars.mdls_inst, dealloc_mdl, NULL);
+        yf_dict_clear(l_vars.mdls_inst);
     }
     yf_list_clear(l_vars.terrs);
     yf_list_clear(l_vars.parts);
@@ -1228,12 +1254,12 @@ static void deinit_vars(void)
     yf_list_deinit(l_vars.res_obtd);
 
     if (l_vars.mdls != NULL) {
-        yf_hashset_each(l_vars.mdls, dealloc_mdl, NULL);
-        yf_hashset_deinit(l_vars.mdls);
+        yf_dict_each(l_vars.mdls, dealloc_mdl, NULL);
+        yf_dict_deinit(l_vars.mdls);
     }
     if (l_vars.mdls_inst != NULL) {
-        yf_hashset_each(l_vars.mdls_inst, dealloc_mdl, NULL);
-        yf_hashset_deinit(l_vars.mdls_inst);
+        yf_dict_each(l_vars.mdls_inst, dealloc_mdl, NULL);
+        yf_dict_deinit(l_vars.mdls_inst);
     }
     yf_list_deinit(l_vars.terrs);
     yf_list_deinit(l_vars.parts);
@@ -1241,26 +1267,4 @@ static void deinit_vars(void)
     yf_list_deinit(l_vars.labls);
 
     memset(&l_vars, 0, sizeof l_vars);
-}
-
-static size_t hash_mdl(const void *x)
-{
-    const T_kv_mdl *kv = x;
-    return (size_t)kv->key.mesh ^ (size_t)kv->key.tex ^ 0x516536655d2b;
-}
-
-static int cmp_mdl(const void *a, const void *b)
-{
-    const T_kv_mdl *kv1 = a;
-    const T_kv_mdl *kv2 = b;
-    return !(kv1->key.mesh == kv2->key.mesh && kv1->key.tex == kv2->key.tex);
-}
-
-static int dealloc_mdl(void *val, YF_UNUSED void *arg)
-{
-    T_kv_mdl *kv = val;
-    if (kv->mdl_n > 1)
-        free(kv->mdls);
-    free(val);
-    return 0;
 }
