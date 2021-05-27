@@ -17,15 +17,65 @@
 
 /* Selects a suitable memory heap. */
 static int select_memory(YF_context ctx, unsigned requirement,
-                         VkFlags properties);
+                         VkFlags properties)
+{
+    int mem_type = -1;
+    for (unsigned i = 0; i < ctx->mem_prop.memoryTypeCount; i++) {
+        if (requirement & (1 << i)) {
+            VkFlags prop_flags = ctx->mem_prop.memoryTypes[i].propertyFlags;
+            if ((prop_flags & properties) == properties) {
+                mem_type = i;
+                break;
+            }
+        }
+    }
+    return mem_type;
+}
 
 /* Allocates device memory. */
 static VkDeviceMemory alloc_memory(YF_context ctx,
                                    const VkMemoryRequirements *requirements,
-                                   int host_visible);
+                                   int host_visible)
+{
+    VkFlags prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    int mem_type = -1;
+
+    if (host_visible)
+        prop |=
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+    mem_type = select_memory(ctx, requirements->memoryTypeBits, prop);
+    if (mem_type == -1) {
+        prop &= ~VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+        mem_type = select_memory(ctx, requirements->memoryTypeBits, prop);
+        if (mem_type == -1) {
+            yf_seterr(YF_ERR_DEVGEN, __func__);
+            return NULL;
+        }
+    }
+
+    VkMemoryAllocateInfo info = {
+        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
+        .pNext = NULL,
+        .allocationSize = requirements->size,
+        .memoryTypeIndex = mem_type
+    };
+
+    VkDeviceMemory mem;
+    VkResult res = vkAllocateMemory(ctx->device, &info, NULL, &mem);
+    if (res != VK_SUCCESS) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return NULL;
+    }
+    return mem;
+}
 
 /* Deallocates device memory. */
-static void free_memory(YF_context ctx, VkDeviceMemory memory);
+static void free_memory(YF_context ctx, VkDeviceMemory memory)
+{
+    vkFreeMemory(ctx->device, memory, NULL);
+}
 
 int yf_buffer_alloc(YF_buffer buf)
 {
@@ -92,63 +142,4 @@ void yf_image_free(YF_image img)
         free_memory(img->ctx, img->memory);
         img->memory = NULL;
     }
-}
-
-static int select_memory(YF_context ctx, unsigned requirement,
-                         VkFlags properties)
-{
-    int mem_type = -1;
-    for (unsigned i = 0; i < ctx->mem_prop.memoryTypeCount; ++i) {
-        if (requirement & (1 << i)) {
-            VkFlags prop_flags = ctx->mem_prop.memoryTypes[i].propertyFlags;
-            if ((prop_flags & properties) == properties) {
-                mem_type = i;
-                break;
-            }
-        }
-    }
-    return mem_type;
-}
-
-static VkDeviceMemory alloc_memory(YF_context ctx,
-                                   const VkMemoryRequirements *requirements,
-                                   int host_visible)
-{
-    VkFlags prop = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    int mem_type = -1;
-
-    if (host_visible)
-        prop |=
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-
-    mem_type = select_memory(ctx, requirements->memoryTypeBits, prop);
-    if (mem_type == -1) {
-        prop &= ~VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        mem_type = select_memory(ctx, requirements->memoryTypeBits, prop);
-        if (mem_type == -1) {
-            yf_seterr(YF_ERR_DEVGEN, __func__);
-            return NULL;
-        }
-    }
-
-    VkMemoryAllocateInfo info = {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-        .pNext = NULL,
-        .allocationSize = requirements->size,
-        .memoryTypeIndex = mem_type
-    };
-
-    VkDeviceMemory mem;
-    VkResult res = vkAllocateMemory(ctx->device, &info, NULL, &mem);
-    if (res != VK_SUCCESS) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return NULL;
-    }
-    return mem;
-}
-
-static void free_memory(YF_context ctx, VkDeviceMemory memory)
-{
-    vkFreeMemory(ctx->device, memory, NULL);
 }
