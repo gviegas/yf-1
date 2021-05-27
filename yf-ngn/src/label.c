@@ -40,17 +40,108 @@ struct YF_label_o {
 #define YF_PEND_CLR  0x02 /* 'verts[].clr' set but 'mesh' not up to date */
 #define YF_PEND_RZ   0x04 /* font prop. changed, 'rz' not up to date */
     unsigned pend_mask;
-    /* TODO: Other label properties. */
 };
 
 /* Initializes a label's mesh rectangle. */
-static int init_rect(YF_label labl);
+static int init_rect(YF_label labl)
+{
+    assert(labl != NULL);
+
+    static const YF_vlabl verts[4] = {
+        {
+            .pos = {-1.0, -1.0, 0.5},
+            .tc = {0.0, 1.0,},
+            .clr = {1.0, 1.0, 1.0, 1.0}
+        },
+        {
+            .pos = {-1.0, 1.0, 0.5},
+            .tc = {0.0, 0.0},
+            .clr = {1.0, 1.0, 1.0, 1.0}
+        },
+        {
+            .pos = {1.0, 1.0, 0.5},
+            .tc = {1.0, 0.0},
+            .clr = {1.0, 1.0, 1.0, 1.0}
+        },
+        {
+            .pos = {1.0, -1.0, 0.5},
+            .tc = {1.0, 1.0},
+            .clr = {1.0, 1.0, 1.0, 1.0}
+        }
+    };
+    static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
+
+    const YF_meshdt data = {
+        .v = {YF_VTYPE_LABL, (void *)verts, 4},
+        .i = {(void *)inds, sizeof inds[0], 6}
+    };
+
+    labl->mesh = yf_mesh_initdt(&data);
+    memcpy(labl->verts, verts, sizeof verts);
+    return labl->mesh == NULL ? -1 : 0;
+}
 
 /* Updates a label's mesh rectangle. */
-static void update_rect(YF_label labl);
+static void update_rect(YF_label labl)
+{
+    assert(labl != NULL);
+    assert(labl->pend_mask != YF_PEND_NONE);
+
+    if (labl->pend_mask & YF_PEND_TC) {
+        const YF_fontrz *rz = &labl->rz;
+        YF_float s0, t0, s1, t1;
+
+        if (rz->tex == NULL || rz->dim.width == 0 || rz->dim.height == 0) {
+            s0 = t0 = 0.0;
+            s1 = t1 = 1.0;
+        } else {
+            const YF_dim2 dim = yf_texture_getdim(rz->tex);
+            const YF_float wdt = dim.width;
+            const YF_float hgt = dim.height;
+            s0 = rz->off.x / wdt;
+            t0 = rz->off.y / hgt;
+            s1 = rz->dim.width / wdt + s0;
+            t1 = rz->dim.height / hgt + t0;
+        }
+
+        labl->verts[0].tc[0] = s0;
+        labl->verts[0].tc[1] = t1;
+
+        labl->verts[1].tc[0] = s0;
+        labl->verts[1].tc[1] = t0;
+
+        labl->verts[2].tc[0] = s1;
+        labl->verts[2].tc[1] = t0;
+
+        labl->verts[3].tc[0] = s1;
+        labl->verts[3].tc[1] = t1;
+    }
+
+    const YF_slice range = {0, 4};
+#ifdef YF_DEVEL
+    if (yf_mesh_setvtx(labl->mesh, range, labl->verts) != 0) assert(0);
+#else
+    yf_mesh_setvtx(labl->mesh, range, labl->verts);
+#endif
+}
 
 /* Copies label glyphs to texture. */
-static int copy_glyphs(YF_label labl);
+static int copy_glyphs(YF_label labl)
+{
+    assert(labl != NULL);
+    assert(labl->font != NULL);
+    assert(labl->pend_mask & YF_PEND_RZ);
+
+    const wchar_t *str;
+    if (labl->str == NULL)
+        str = L"(nil)";
+    else if (wcslen(labl->str) == 0)
+        str = L"(empty)";
+    else
+        str = labl->str;
+
+    return yf_font_rasterize(labl->font, str, labl->pt, YF_DPI, &labl->rz);
+}
 
 YF_label yf_label_init(void)
 {
@@ -285,102 +376,4 @@ void yf_label_deinit(YF_label labl)
         free(labl->str);
         free(labl);
     }
-}
-
-static int init_rect(YF_label labl)
-{
-    assert(labl != NULL);
-
-    static const YF_vlabl verts[4] = {
-        {
-            .pos = {-1.0, -1.0, 0.5},
-            .tc = {0.0, 1.0,},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        },
-        {
-            .pos = {-1.0, 1.0, 0.5},
-            .tc = {0.0, 0.0},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        },
-        {
-            .pos = {1.0, 1.0, 0.5},
-            .tc = {1.0, 0.0},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        },
-        {
-            .pos = {1.0, -1.0, 0.5},
-            .tc = {1.0, 1.0},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        }
-    };
-    static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
-
-    const YF_meshdt data = {
-        .v = {YF_VTYPE_LABL, (void *)verts, 4},
-        .i = {(void *)inds, sizeof inds[0], 6}
-    };
-
-    labl->mesh = yf_mesh_initdt(&data);
-    memcpy(labl->verts, verts, sizeof verts);
-    return labl->mesh == NULL ? -1 : 0;
-}
-
-static void update_rect(YF_label labl)
-{
-    assert(labl != NULL);
-    assert(labl->pend_mask != YF_PEND_NONE);
-
-    if (labl->pend_mask & YF_PEND_TC) {
-        const YF_fontrz *rz = &labl->rz;
-        YF_float s0, t0, s1, t1;
-
-        if (rz->tex == NULL || rz->dim.width == 0 || rz->dim.height == 0) {
-            s0 = t0 = 0.0;
-            s1 = t1 = 1.0;
-        } else {
-            const YF_dim2 dim = yf_texture_getdim(rz->tex);
-            const YF_float wdt = dim.width;
-            const YF_float hgt = dim.height;
-            s0 = rz->off.x / wdt;
-            t0 = rz->off.y / hgt;
-            s1 = rz->dim.width / wdt + s0;
-            t1 = rz->dim.height / hgt + t0;
-        }
-
-        labl->verts[0].tc[0] = s0;
-        labl->verts[0].tc[1] = t1;
-
-        labl->verts[1].tc[0] = s0;
-        labl->verts[1].tc[1] = t0;
-
-        labl->verts[2].tc[0] = s1;
-        labl->verts[2].tc[1] = t0;
-
-        labl->verts[3].tc[0] = s1;
-        labl->verts[3].tc[1] = t1;
-    }
-
-    const YF_slice range = {0, 4};
-#ifdef YF_DEVEL
-    if (yf_mesh_setvtx(labl->mesh, range, labl->verts) != 0) assert(0);
-#else
-    yf_mesh_setvtx(labl->mesh, range, labl->verts);
-#endif
-}
-
-static int copy_glyphs(YF_label labl)
-{
-    assert(labl != NULL);
-    assert(labl->font != NULL);
-    assert(labl->pend_mask & YF_PEND_RZ);
-
-    const wchar_t *str;
-    if (labl->str == NULL)
-        str = L"(nil)";
-    else if (wcslen(labl->str) == 0)
-        str = L"(empty)";
-    else
-        str = labl->str;
-
-    return yf_font_rasterize(labl->font, str, labl->pt, YF_DPI, &labl->rz);
 }
