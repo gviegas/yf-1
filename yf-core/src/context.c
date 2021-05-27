@@ -47,109 +47,170 @@
    which are loaded as globals, refer to a specific instance handle. */
 static atomic_flag l_flag = ATOMIC_FLAG_INIT;
 
-/* Initializes instance handle and instance-related properties. */
-static int init_instance(YF_context ctx);
-
-/* Initializes device handle and device-related properties. */
-static int init_device(YF_context ctx);
-
-/* Initializes pipeline cache. */
-static int init_cache(YF_context ctx);
-
 /* Sets layers. */
 #if defined(YF_DEVEL) && !defined(YF_NO_VALIDATION)
-static int set_layers(YF_context ctx);
+static int set_layers(YF_context ctx)
+{
+    const char *opt_lays[4];
+    size_t opt_n = 0;
+#if defined(__linux__)
+    opt_lays[opt_n++] = "VK_LAYER_MESA_overlay";
+    opt_lays[opt_n++] = "VK_LAYER_MESA_device_select";
 #endif
+    /* TODO: Other platforms. */
+
+    if (opt_n == 0)
+        return 0;
+
+    VkResult res;
+    unsigned prop_n;
+
+    res = vkEnumerateInstanceLayerProperties(&prop_n, NULL);
+    if (res != VK_SUCCESS) {
+        yf_seterr(YF_ERR_DEVGEN, __func__);
+        return -1;
+    }
+    if (prop_n == 0)
+        return 0;
+
+    VkLayerProperties *props = malloc(sizeof(VkLayerProperties) * prop_n);
+    if (props == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+    res = vkEnumerateInstanceLayerProperties(&prop_n, props);
+    if (res != VK_SUCCESS) {
+        yf_seterr(YF_ERR_DEVGEN, __func__);
+        free(props);
+        return -1;
+    }
+
+    ctx->layers = calloc(opt_n, sizeof(char *));
+    if (ctx->layers == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(props);
+        return -1;
+    }
+    ctx->layer_n = 0;
+
+    /* optional layers */
+    for (size_t i = 0; i < opt_n; i++) {
+        for (size_t j = 0; j < prop_n; j++) {
+            if (strcmp(opt_lays[i], props[j].layerName) == 0) {
+                ctx->layers[ctx->layer_n] = malloc(strlen(opt_lays[i])+1);
+                if (ctx->layers[ctx->layer_n] == NULL) {
+                    yf_seterr(YF_ERR_NOMEM, __func__);
+                    free(props);
+                    return -1;
+                }
+                strcpy(ctx->layers[ctx->layer_n], opt_lays[i]);
+                ctx->layer_n++;
+                break;
+            }
+        }
+    }
+
+    if (ctx->layer_n == 0) {
+        free(ctx->layers);
+        ctx->layers = NULL;
+    } else if (ctx->layer_n < opt_n) {
+        void *tmp = realloc(ctx->layers, ctx->layer_n * sizeof(char *));
+        if (tmp != NULL)
+            ctx->layers = tmp;
+    }
+
+    free(props);
+    return 0;
+}
+#endif /* defined(YF_DEVEL) && !defined(YF_NO_VALIDATION) */
 
 /* Sets instance extensions. */
-static int set_inst_exts(YF_context ctx);
-
-/* Sets device extensions. */
-static int set_dev_exts(YF_context ctx);
-
-/* Sets features. */
-static int set_features(YF_context ctx);
-
-YF_context yf_context_init(void)
+static int set_inst_exts(YF_context ctx)
 {
-    if (atomic_flag_test_and_set(&l_flag)) {
-        yf_seterr(YF_ERR_EXIST, __func__);
-        return NULL;
+    const char *req_exts[] = {
+        VK_KHR_SURFACE_EXTENSION_NAME,
+#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
+        VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_WIN32_KHR)
+        VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_XCB_KHR)
+        VK_KHR_XCB_SURFACE_EXTENSION_NAME,
+#endif
+#if defined(VK_USE_PLATFORM_METAL_EXT)
+        VK_EXT_METAL_SURFACE_EXTENSION_NAME,
+#endif
+    };
+    const size_t req_n = sizeof req_exts / sizeof req_exts[0];
+
+    /* TODO: Optional extensions. */
+    const size_t opt_n = 0;
+
+    VkResult res;
+    unsigned prop_n;
+
+    res = vkEnumerateInstanceExtensionProperties(NULL, &prop_n, NULL);
+    if (res != VK_SUCCESS) {
+        yf_seterr(YF_ERR_DEVGEN, __func__);
+        return -1;
+    }
+    if (prop_n < req_n) {
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
     }
 
-    if (yf_loadvk() != 0) {
-        atomic_flag_clear(&l_flag);
-        return NULL;
-    }
-
-    YF_context ctx = calloc(1, sizeof(YF_context_o));
-    if (ctx == NULL) {
+    VkExtensionProperties *props =
+        malloc(sizeof(VkExtensionProperties) * prop_n);
+    if (props == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        yf_unldvk();
-        atomic_flag_clear(&l_flag);
-        return NULL;
+        return -1;
+    }
+    res = vkEnumerateInstanceExtensionProperties(NULL, &prop_n, props);
+    if (res != VK_SUCCESS) {
+        yf_seterr(YF_ERR_DEVGEN, __func__);
+        free(props);
+        return -1;
     }
 
-    if (init_instance(ctx) != 0) {
-        yf_context_deinit(ctx);
-        return NULL;
+    ctx->inst_exts = calloc(req_n + opt_n, sizeof(char *));
+    if (ctx->inst_exts == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(props);
+        return -1;
     }
-    if (init_device(ctx) != 0) {
-        yf_context_deinit(ctx);
-        return NULL;
-    }
-    if (init_cache(ctx) != 0) {
-        yf_context_deinit(ctx);
-        return NULL;
+    ctx->inst_ext_n = 0;
+
+    /* required extensions */
+    for (size_t i = 0; i < req_n; i++) {
+        for (size_t j = 0; j < prop_n; j++) {
+            if (strcmp(req_exts[i], props[j].extensionName) == 0) {
+                ctx->inst_exts[i] = malloc(strlen(req_exts[i])+1);
+                if (ctx->inst_exts[i] == NULL) {
+                    yf_seterr(YF_ERR_NOMEM, __func__);
+                    free(props);
+                    return -1;
+                }
+                strcpy(ctx->inst_exts[i], req_exts[i]);
+                ctx->inst_ext_n++;
+                break;
+            }
+        }
+        if (ctx->inst_ext_n == i) {
+            /* not found */
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            free(props);
+            return -1;
+        }
     }
 
-    if (yf_cmdpool_create(ctx, YF_CMDPCAP) != 0) {
-        yf_context_deinit(ctx);
-        return NULL;
-    }
-    if (yf_cmdexec_create(ctx, YF_CMDECAP) != 0) {
-        yf_context_deinit(ctx);
-        return NULL;
-    }
+    /* TODO: Check optional extensions & realloc if any not found. */
 
-    return ctx;
+    free(props);
+    return 0;
 }
 
-void yf_context_deinit(YF_context ctx)
-{
-    if (ctx == NULL)
-        return;
-
-    vkDeviceWaitIdle(ctx->device);
-
-    if (ctx->stg.deinit_callb != NULL)
-        ctx->stg.deinit_callb(ctx);
-    if (ctx->lim.deinit_callb != NULL)
-        ctx->lim.deinit_callb(ctx);
-    if (ctx->cmde.deinit_callb != NULL)
-        ctx->cmde.deinit_callb(ctx);
-    if (ctx->cmdp.deinit_callb != NULL)
-        ctx->cmdp.deinit_callb(ctx);
-
-    for (unsigned i = 0; i < ctx->layer_n; ++i)
-        free(ctx->layers[i]);
-    free(ctx->layers);
-    for (unsigned i = 0; i < ctx->inst_ext_n; ++i)
-        free(ctx->inst_exts[i]);
-    free(ctx->inst_exts);
-    for (unsigned i = 0; i < ctx->dev_ext_n; ++i)
-        free(ctx->dev_exts[i]);
-    free(ctx->dev_exts);
-
-    vkDestroyDevice(ctx->device, NULL);
-    vkDestroyInstance(ctx->instance, NULL);
-    free(ctx);
-
-    yf_unldvk();
-
-    atomic_flag_clear(&l_flag);
-}
-
+/* Initializes instance handle and instance-related properties. */
 static int init_instance(YF_context ctx)
 {
     assert(ctx->instance == NULL);
@@ -185,10 +246,11 @@ static int init_instance(YF_context ctx)
         .flags = 0,
         .pApplicationInfo = &app_info,
         .enabledLayerCount = ctx->layer_n,
-        .ppEnabledLayerNames = (const char * const *)ctx->layers,
+        .ppEnabledLayerNames = (const char *const *)ctx->layers,
         .enabledExtensionCount = ctx->inst_ext_n,
-        .ppEnabledExtensionNames = (const char * const *)ctx->inst_exts
+        .ppEnabledExtensionNames = (const char *const *)ctx->inst_exts
     };
+
     VkResult res = vkCreateInstance(&inst_info, NULL, &ctx->instance);
     if (res != VK_SUCCESS) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
@@ -201,6 +263,136 @@ static int init_instance(YF_context ctx)
     return 0;
 }
 
+/* Sets device extensions. */
+static int set_dev_exts(YF_context ctx)
+{
+    const char *req_exts[] = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
+    const size_t req_n = sizeof req_exts / sizeof req_exts[0];
+
+    /* TODO: Optional extensions. */
+    const size_t opt_n = 0;
+
+    VkResult res;
+    unsigned prop_n;
+
+    res = vkEnumerateDeviceExtensionProperties(ctx->phy_dev, NULL, &prop_n,
+                                               NULL);
+    if (res != VK_SUCCESS) {
+        yf_seterr(YF_ERR_DEVGEN, __func__);
+        return -1;
+    }
+    if (prop_n < req_n) {
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+    }
+
+    VkExtensionProperties *props =
+        malloc(sizeof(VkExtensionProperties) * prop_n);
+    if (props == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+    res = vkEnumerateDeviceExtensionProperties(ctx->phy_dev, NULL, &prop_n,
+                                               props);
+    if (res != VK_SUCCESS) {
+        yf_seterr(YF_ERR_DEVGEN, __func__);
+        free(props);
+        return -1;
+    }
+
+    ctx->dev_exts = calloc(req_n + opt_n, sizeof(char *));
+    if (ctx->dev_exts == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(props);
+        return -1;
+    }
+    ctx->dev_ext_n = 0;
+
+    /* required extensions */
+    for (size_t i = 0; i < req_n; i++) {
+        for (size_t j = 0; j < prop_n; j++) {
+            if (strcmp(req_exts[i], props[j].extensionName) == 0) {
+                ctx->dev_exts[i] = malloc(strlen(req_exts[i])+1);
+                if (ctx->dev_exts[i] == NULL) {
+                    yf_seterr(YF_ERR_NOMEM, __func__);
+                    free(props);
+                    return -1;
+                }
+                strcpy(ctx->dev_exts[i], req_exts[i]);
+                ctx->dev_ext_n++;
+                break;
+            }
+        }
+        if (ctx->dev_ext_n == i) {
+            /* not found */
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            free(props);
+            return -1;
+        }
+    }
+
+    /* TODO: Check optional extensions & realloc if any not found. */
+
+    free(props);
+    return 0;
+}
+
+/* Sets features. */
+static int set_features(YF_context ctx)
+{
+    VkPhysicalDeviceFeatures feat;
+    vkGetPhysicalDeviceFeatures(ctx->phy_dev, &feat);
+
+    /* TODO: Code should be updated to check these settings and ensure that
+       only available features are being used. */
+
+    ctx->features.fullDrawIndexUint32 = feat.fullDrawIndexUint32;
+    ctx->features.imageCubeArray = feat.imageCubeArray;
+    ctx->features.independentBlend = feat.independentBlend;
+    ctx->features.geometryShader = feat.geometryShader;
+    ctx->features.tessellationShader = feat.tessellationShader;
+    ctx->features.sampleRateShading = feat.sampleRateShading;
+    ctx->features.dualSrcBlend = feat.dualSrcBlend;
+    ctx->features.depthClamp = feat.depthClamp;
+    ctx->features.depthBiasClamp = feat.depthBiasClamp;
+    ctx->features.fillModeNonSolid = feat.fillModeNonSolid;
+    ctx->features.wideLines = feat.wideLines;
+    ctx->features.largePoints = feat.largePoints;
+    ctx->features.alphaToOne = feat.alphaToOne;
+    ctx->features.multiViewport = feat.multiViewport;
+    ctx->features.samplerAnisotropy = feat.samplerAnisotropy;
+    ctx->features.fragmentStoresAndAtomics = feat.fragmentStoresAndAtomics;
+    ctx->features.shaderImageGatherExtended = feat.shaderImageGatherExtended;
+    ctx->features.shaderUniformBufferArrayDynamicIndexing =
+        feat.shaderUniformBufferArrayDynamicIndexing;
+    ctx->features.shaderSampledImageArrayDynamicIndexing =
+        feat.shaderSampledImageArrayDynamicIndexing;
+    ctx->features.shaderStorageBufferArrayDynamicIndexing =
+        feat.shaderStorageBufferArrayDynamicIndexing;
+    ctx->features.shaderStorageImageArrayDynamicIndexing =
+        feat.shaderStorageImageArrayDynamicIndexing;
+    ctx->features.shaderClipDistance = feat.shaderClipDistance;
+    ctx->features.shaderCullDistance = feat.shaderCullDistance;
+
+    /* required features */
+    /* TODO: Refine. */
+    if (ctx->features.geometryShader == VK_FALSE ||
+        ctx->features.tessellationShader == VK_FALSE ||
+        ctx->features.fillModeNonSolid == VK_FALSE ||
+        ctx->features.wideLines == VK_FALSE ||
+        ctx->features.largePoints == VK_FALSE) {
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+    }
+
+    /* TODO: Query newer features. */
+
+    return 0;
+}
+
+/* Initializes device handle and device-related properties. */
 static int init_device(YF_context ctx)
 {
     assert(ctx->instance != NULL);
@@ -228,7 +420,7 @@ static int init_device(YF_context ctx)
 
     /* TODO: Consider sorting devices. */
     VkPhysicalDeviceProperties prop;
-    for (size_t i = 0; i < phy_n; ++i) {
+    for (size_t i = 0; i < phy_n; i++) {
         vkGetPhysicalDeviceProperties(phy_devs[i], &prop);
         ctx->phy_dev = phy_devs[i];
 
@@ -246,7 +438,7 @@ static int init_device(YF_context ctx)
         ctx->queue_mask = 0;
         const unsigned graph_comp = YF_QUEUE_GRAPH | YF_QUEUE_COMP;
 
-        for (unsigned i = 0; i < qf_n; ++i) {
+        for (unsigned i = 0; i < qf_n; i++) {
             /* there must be a queue that supports both graphics and compute,
                otherwise graphics operations are not supported at all */
             if (ctx->queue_mask != graph_comp) {
@@ -312,6 +504,7 @@ static int init_device(YF_context ctx)
         .ppEnabledExtensionNames = (const char * const *)ctx->dev_exts,
         .pEnabledFeatures = &ctx->features
     };
+
     res = vkCreateDevice(ctx->phy_dev, &dev_info, NULL, &ctx->device);
     if (res != VK_SUCCESS) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
@@ -329,6 +522,7 @@ static int init_device(YF_context ctx)
     return 0;
 }
 
+/* Initializes pipeline cache. */
 static int init_cache(YF_context ctx)
 {
     VkPipelineCacheCreateInfo info = {
@@ -338,8 +532,9 @@ static int init_cache(YF_context ctx)
         .initialDataSize = 0,
         .pInitialData = NULL
     };
-    VkResult res;
-    res = vkCreatePipelineCache(ctx->device, &info, NULL, &ctx->pl_cache);
+
+    VkResult res = vkCreatePipelineCache(ctx->device, &info, NULL,
+                                         &ctx->pl_cache);
     if (res != VK_SUCCESS) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
         return -1;
@@ -347,290 +542,82 @@ static int init_cache(YF_context ctx)
     return 0;
 }
 
-#if defined(YF_DEVEL) && !defined(YF_NO_VALIDATION)
-static int set_layers(YF_context ctx)
+YF_context yf_context_init(void)
 {
-    const char *opt_lays[4];
-    size_t opt_n = 0;
-#if defined(__linux__)
-    opt_lays[opt_n++] = "VK_LAYER_MESA_overlay";
-    opt_lays[opt_n++] = "VK_LAYER_MESA_device_select";
-#endif
-    /* TODO: Other platforms. */
-
-    if (opt_n == 0)
-        return 0;
-
-    VkResult res;
-    unsigned prop_n;
-
-    res = vkEnumerateInstanceLayerProperties(&prop_n, NULL);
-    if (res != VK_SUCCESS) {
-        yf_seterr(YF_ERR_DEVGEN, __func__);
-        return -1;
+    if (atomic_flag_test_and_set(&l_flag)) {
+        yf_seterr(YF_ERR_EXIST, __func__);
+        return NULL;
     }
-    if (prop_n == 0)
-        return 0;
 
-    VkLayerProperties *props = malloc(sizeof(VkLayerProperties) * prop_n);
-    if (props == NULL) {
+    if (yf_loadvk() != 0) {
+        atomic_flag_clear(&l_flag);
+        return NULL;
+    }
+
+    YF_context ctx = calloc(1, sizeof(YF_context_o));
+    if (ctx == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-    res = vkEnumerateInstanceLayerProperties(&prop_n, props);
-    if (res != VK_SUCCESS) {
-        yf_seterr(YF_ERR_DEVGEN, __func__);
-        free(props);
-        return -1;
+        yf_unldvk();
+        atomic_flag_clear(&l_flag);
+        return NULL;
     }
 
-    ctx->layers = calloc(opt_n, sizeof(char *));
-    if (ctx->layers == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        free(props);
-        return -1;
+    if (init_instance(ctx) != 0) {
+        yf_context_deinit(ctx);
+        return NULL;
     }
-    ctx->layer_n = 0;
-
-    /* optional layers */
-    for (size_t i = 0; i < opt_n; ++i) {
-        for (size_t j = 0; j < prop_n; ++j) {
-            if (strcmp(opt_lays[i], props[j].layerName) == 0) {
-                ctx->layers[ctx->layer_n] = malloc(strlen(opt_lays[i])+1);
-                if (ctx->layers[ctx->layer_n] == NULL) {
-                    yf_seterr(YF_ERR_NOMEM, __func__);
-                    free(props);
-                    return -1;
-                }
-                strcpy(ctx->layers[ctx->layer_n], opt_lays[i]);
-                ++ctx->layer_n;
-                break;
-            }
-        }
+    if (init_device(ctx) != 0) {
+        yf_context_deinit(ctx);
+        return NULL;
+    }
+    if (init_cache(ctx) != 0) {
+        yf_context_deinit(ctx);
+        return NULL;
     }
 
-    if (ctx->layer_n == 0) {
-        free(ctx->layers);
-        ctx->layers = NULL;
-    } else if (ctx->layer_n < opt_n) {
-        void *tmp = realloc(ctx->layers, ctx->layer_n * sizeof(char *));
-        if (tmp != NULL)
-            ctx->layers = tmp;
+    if (yf_cmdpool_create(ctx, YF_CMDPCAP) != 0) {
+        yf_context_deinit(ctx);
+        return NULL;
+    }
+    if (yf_cmdexec_create(ctx, YF_CMDECAP) != 0) {
+        yf_context_deinit(ctx);
+        return NULL;
     }
 
-    free(props);
-    return 0;
-}
-#endif /* defined(YF_DEVEL) && !defined(YF_NO_VALIDATION) */
-
-static int set_inst_exts(YF_context ctx)
-{
-    const char *req_exts[] = {
-        VK_KHR_SURFACE_EXTENSION_NAME,
-#if defined(VK_USE_PLATFORM_WAYLAND_KHR)
-        VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME,
-#endif
-#if defined(VK_USE_PLATFORM_WIN32_KHR)
-        VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
-#endif
-#if defined(VK_USE_PLATFORM_XCB_KHR)
-        VK_KHR_XCB_SURFACE_EXTENSION_NAME,
-#endif
-#if defined(VK_USE_PLATFORM_METAL_EXT)
-        VK_EXT_METAL_SURFACE_EXTENSION_NAME,
-#endif
-    };
-    const size_t req_n = sizeof req_exts / sizeof req_exts[0];
-
-    /* TODO: Optional extensions. */
-    const size_t opt_n = 0;
-
-    VkResult res;
-    unsigned prop_n;
-
-    res = vkEnumerateInstanceExtensionProperties(NULL, &prop_n, NULL);
-    if (res != VK_SUCCESS) {
-        yf_seterr(YF_ERR_DEVGEN, __func__);
-        return -1;
-    }
-    if (prop_n < req_n) {
-        yf_seterr(YF_ERR_UNSUP, __func__);
-        return -1;
-    }
-
-    VkExtensionProperties *props =
-        malloc(sizeof(VkExtensionProperties) * prop_n);
-    if (props == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-    res = vkEnumerateInstanceExtensionProperties(NULL, &prop_n, props);
-    if (res != VK_SUCCESS) {
-        yf_seterr(YF_ERR_DEVGEN, __func__);
-        free(props);
-        return -1;
-    }
-
-    ctx->inst_exts = calloc(req_n + opt_n, sizeof(char *));
-    if (ctx->inst_exts == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        free(props);
-        return -1;
-    }
-    ctx->inst_ext_n = 0;
-
-    /* required extensions */
-    for (size_t i = 0; i < req_n; ++i) {
-        for (size_t j = 0; j < prop_n; ++j) {
-            if (strcmp(req_exts[i], props[j].extensionName) == 0) {
-                ctx->inst_exts[i] = malloc(strlen(req_exts[i])+1);
-                if (ctx->inst_exts[i] == NULL) {
-                    yf_seterr(YF_ERR_NOMEM, __func__);
-                    free(props);
-                    return -1;
-                }
-                strcpy(ctx->inst_exts[i], req_exts[i]);
-                ++ctx->inst_ext_n;
-                break;
-            }
-        }
-        if (ctx->inst_ext_n == i) {
-            /* not found */
-            yf_seterr(YF_ERR_UNSUP, __func__);
-            free(props);
-            return -1;
-        }
-    }
-
-    /* TODO: Check optional extensions & realloc if any not found. */
-
-    free(props);
-    return 0;
+    return ctx;
 }
 
-static int set_dev_exts(YF_context ctx)
+void yf_context_deinit(YF_context ctx)
 {
-    const char *req_exts[] = {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
-    };
-    const size_t req_n = sizeof req_exts / sizeof req_exts[0];
+    if (ctx == NULL)
+        return;
 
-    /* TODO: Optional extensions. */
-    const size_t opt_n = 0;
+    vkDeviceWaitIdle(ctx->device);
 
-    VkResult res;
-    unsigned prop_n;
+    if (ctx->stg.deinit_callb != NULL)
+        ctx->stg.deinit_callb(ctx);
+    if (ctx->lim.deinit_callb != NULL)
+        ctx->lim.deinit_callb(ctx);
+    if (ctx->cmde.deinit_callb != NULL)
+        ctx->cmde.deinit_callb(ctx);
+    if (ctx->cmdp.deinit_callb != NULL)
+        ctx->cmdp.deinit_callb(ctx);
 
-    res = vkEnumerateDeviceExtensionProperties(ctx->phy_dev, NULL, &prop_n,
-                                               NULL);
-    if (res != VK_SUCCESS) {
-        yf_seterr(YF_ERR_DEVGEN, __func__);
-        return -1;
-    }
-    if (prop_n < req_n) {
-        yf_seterr(YF_ERR_UNSUP, __func__);
-        return -1;
-    }
+    for (unsigned i = 0; i < ctx->layer_n; i++)
+        free(ctx->layers[i]);
+    free(ctx->layers);
+    for (unsigned i = 0; i < ctx->inst_ext_n; i++)
+        free(ctx->inst_exts[i]);
+    free(ctx->inst_exts);
+    for (unsigned i = 0; i < ctx->dev_ext_n; i++)
+        free(ctx->dev_exts[i]);
+    free(ctx->dev_exts);
 
-    VkExtensionProperties *props =
-        malloc(sizeof(VkExtensionProperties) * prop_n);
-    if (props == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-    res = vkEnumerateDeviceExtensionProperties(ctx->phy_dev, NULL, &prop_n,
-                                               props);
-    if (res != VK_SUCCESS) {
-        yf_seterr(YF_ERR_DEVGEN, __func__);
-        free(props);
-        return -1;
-    }
+    vkDestroyDevice(ctx->device, NULL);
+    vkDestroyInstance(ctx->instance, NULL);
+    free(ctx);
 
-    ctx->dev_exts = calloc(req_n + opt_n, sizeof(char *));
-    if (ctx->dev_exts == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        free(props);
-        return -1;
-    }
-    ctx->dev_ext_n = 0;
+    yf_unldvk();
 
-    /* required extensions */
-    for (size_t i = 0; i < req_n; ++i) {
-        for (size_t j = 0; j < prop_n; ++j) {
-            if (strcmp(req_exts[i], props[j].extensionName) == 0) {
-                ctx->dev_exts[i] = malloc(strlen(req_exts[i])+1);
-                if (ctx->dev_exts[i] == NULL) {
-                    yf_seterr(YF_ERR_NOMEM, __func__);
-                    free(props);
-                    return -1;
-                }
-                strcpy(ctx->dev_exts[i], req_exts[i]);
-                ++ctx->dev_ext_n;
-                break;
-            }
-        }
-        if (ctx->dev_ext_n == i) {
-            /* not found */
-            yf_seterr(YF_ERR_UNSUP, __func__);
-            free(props);
-            return -1;
-        }
-    }
-
-    /* TODO: Check optional extensions & realloc if any not found. */
-
-    free(props);
-    return 0;
-}
-
-static int set_features(YF_context ctx)
-{
-    VkPhysicalDeviceFeatures feat;
-    vkGetPhysicalDeviceFeatures(ctx->phy_dev, &feat);
-
-    /* TODO: Code should be updated to check these settings and ensure that
-       only available features are being used. */
-
-    ctx->features.fullDrawIndexUint32 = feat.fullDrawIndexUint32;
-    ctx->features.imageCubeArray = feat.imageCubeArray;
-    ctx->features.independentBlend = feat.independentBlend;
-    ctx->features.geometryShader = feat.geometryShader;
-    ctx->features.tessellationShader = feat.tessellationShader;
-    ctx->features.sampleRateShading = feat.sampleRateShading;
-    ctx->features.dualSrcBlend = feat.dualSrcBlend;
-    ctx->features.depthClamp = feat.depthClamp;
-    ctx->features.depthBiasClamp = feat.depthBiasClamp;
-    ctx->features.fillModeNonSolid = feat.fillModeNonSolid;
-    ctx->features.wideLines = feat.wideLines;
-    ctx->features.largePoints = feat.largePoints;
-    ctx->features.alphaToOne = feat.alphaToOne;
-    ctx->features.multiViewport = feat.multiViewport;
-    ctx->features.samplerAnisotropy = feat.samplerAnisotropy;
-    ctx->features.fragmentStoresAndAtomics = feat.fragmentStoresAndAtomics;
-    ctx->features.shaderImageGatherExtended = feat.shaderImageGatherExtended;
-    ctx->features.shaderUniformBufferArrayDynamicIndexing =
-        feat.shaderUniformBufferArrayDynamicIndexing;
-    ctx->features.shaderSampledImageArrayDynamicIndexing =
-        feat.shaderSampledImageArrayDynamicIndexing;
-    ctx->features.shaderStorageBufferArrayDynamicIndexing =
-        feat.shaderStorageBufferArrayDynamicIndexing;
-    ctx->features.shaderStorageImageArrayDynamicIndexing =
-        feat.shaderStorageImageArrayDynamicIndexing;
-    ctx->features.shaderClipDistance = feat.shaderClipDistance;
-    ctx->features.shaderCullDistance = feat.shaderCullDistance;
-
-    /* required features */
-    /* TODO: Refine. */
-    if (ctx->features.geometryShader == VK_FALSE ||
-        ctx->features.tessellationShader == VK_FALSE ||
-        ctx->features.fillModeNonSolid == VK_FALSE ||
-        ctx->features.wideLines == VK_FALSE ||
-        ctx->features.largePoints == VK_FALSE) {
-        yf_seterr(YF_ERR_UNSUP, __func__);
-        return -1;
-    }
-
-    /* TODO: Query newer features. */
-
-    return 0;
+    atomic_flag_clear(&l_flag);
 }
