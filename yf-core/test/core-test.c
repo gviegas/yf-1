@@ -64,12 +64,12 @@ static int test(int argc, char *argv[])
         int (*const tests[])(void) = {test_capab, test_draw};
         test_n = sizeof tests / sizeof tests[0];
         results = 0;
-        for (size_t i = 0; i < test_n; ++i)
+        for (size_t i = 0; i < test_n; i++)
             results += tests[i]() == 0;
     } else {
         printf("! Error: no test named '%s'\n", argv[0]);
         printf("\nTry one of the following:\n");
-        for (size_t i = 0; i < (sizeof l_ids / sizeof l_ids[0]); ++i)
+        for (size_t i = 0; i < (sizeof l_ids / sizeof l_ids[0]); i++)
             printf("* %s\n", l_ids[i]);
         printf("\n! No tests executed\n");
         return -1;

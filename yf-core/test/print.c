@@ -25,13 +25,13 @@ void yf_print_ctx(YF_context ctx)
            VK_VERSION_MINOR(ctx->inst_version));
 
     printf("\nlayers: #%u", ctx->layer_n);
-    for (unsigned i = 0; i < ctx->layer_n; ++i)
+    for (unsigned i = 0; i < ctx->layer_n; i++)
         printf("\n\t%s", ctx->layers[i]);
     printf("\ninstance extensions: #%u", ctx->inst_ext_n);
-    for (unsigned i = 0; i < ctx->inst_ext_n; ++i)
+    for (unsigned i = 0; i < ctx->inst_ext_n; i++)
         printf("\n\t%s", ctx->inst_exts[i]);
     printf("\ndevice extensions: #%u", ctx->dev_ext_n);
-    for (unsigned i = 0; i < ctx->dev_ext_n; ++i)
+    for (unsigned i = 0; i < ctx->dev_ext_n; i++)
         printf("\n\t%s", ctx->dev_exts[i]);
 
     printf("\n\n");

@@ -25,7 +25,7 @@ static void print_extensions(void)
         VkResult res = vkEnumerateInstanceExtensionProperties(NULL, &ext_n,
                                                               exts);
         assert(res == VK_SUCCESS || res == VK_INCOMPLETE);
-        for (size_t i = 0; i < ext_n; ++i)
+        for (size_t i = 0; i < ext_n; i++)
             printf("%s\n", exts[i].extensionName);
         if (res == VK_SUCCESS)
             break;
@@ -40,7 +40,7 @@ static void print_extensions(void)
         VkResult res = vkEnumerateDeviceExtensionProperties(l_ctx->phy_dev,
                                                             NULL, &ext_n, exts);
         assert(res == VK_SUCCESS || res == VK_INCOMPLETE);
-        for (size_t i = 0; i < ext_n; ++i)
+        for (size_t i = 0; i < ext_n; i++)
             printf("%s\n", exts[i].extensionName);
         if (res == VK_SUCCESS)
             break;
@@ -52,10 +52,9 @@ static void print_extensions(void)
     for (;;) {
         VkLayerProperties lays[100];
         unsigned lay_n = sizeof lays / sizeof lays[0];
-        VkResult res;
-        res = vkEnumerateInstanceLayerProperties(&lay_n, lays);
+        VkResult res = vkEnumerateInstanceLayerProperties(&lay_n, lays);
         assert(res == VK_SUCCESS || res == VK_INCOMPLETE);
-        for (size_t i = 0; i < lay_n; ++i) {
+        for (size_t i = 0; i < lay_n; i++) {
             printf("%s\n* %s\n", lays[i].layerName, lays[i].description);
             for (;;) {
                 VkExtensionProperties exts[100];
@@ -64,7 +63,7 @@ static void print_extensions(void)
                     vkEnumerateInstanceExtensionProperties(lays[i].layerName,
                                                            &ext_n, exts);
                 assert(res == VK_SUCCESS || res == VK_INCOMPLETE);
-                for (size_t i = 0; i < ext_n; ++i)
+                for (size_t i = 0; i < ext_n; i++)
                     printf("\t%s\n", exts[i].extensionName);
                 if (res == VK_SUCCESS)
                     break;

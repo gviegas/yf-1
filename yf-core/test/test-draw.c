@@ -143,7 +143,7 @@ static void init(void)
     YF_target *tgts = malloc(pres_img_n * sizeof(YF_target));
     assert(clr_atts != NULL && tgts != NULL);
 
-    for (size_t i = 0; i < pres_img_n; ++i) {
+    for (size_t i = 0; i < pres_img_n; i++) {
         clr_atts[i] = (YF_attach){pres_imgs[i], 0};
         tgts[i] = yf_pass_maketarget(pass, tgt_dim, 1, clr_atts+i, 1, NULL,
                                      &dep_att);
