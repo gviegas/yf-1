@@ -2243,21 +2243,21 @@ static int rasterize(T_outline *outln, YF_glyph *glyph)
     uint32_t seg_i = 0;
 
     for (uint16_t i = 0; i < outln->comp_n; i++) {
-        uint16_t curr, end, begn = 0;
+        uint16_t cur, end, beg = 0;
 
         for (uint16_t j = 0; j < outln->comps[i].end_n; j++) {
-            curr = begn;
+            cur = beg;
             end = outln->comps[i].ends[j];
 
-            while (curr++ < end) {
-                YF_NEWSEG(segs[seg_i], outln->comps[i], curr-1, curr);
+            while (cur++ < end) {
+                YF_NEWSEG(segs[seg_i], outln->comps[i], cur-1, cur);
                 seg_i++;
             }
 
             /* close the contour */
-            YF_NEWSEG(segs[seg_i], outln->comps[i], end, begn);
+            YF_NEWSEG(segs[seg_i], outln->comps[i], end, beg);
             seg_i++;
-            begn = end+1;
+            beg = end+1;
         }
     }
 
