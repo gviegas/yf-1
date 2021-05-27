@@ -29,14 +29,15 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size)
     }
 
     YF_buffer buf = calloc(1, sizeof(YF_buffer_o));
+
     if (buf == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
     }
+
     buf->ctx = ctx;
     buf->size = size;
 
-    VkResult res;
     VkFlags usage =
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
         VK_BUFFER_USAGE_TRANSFER_DST_BIT |
@@ -58,7 +59,9 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size)
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = NULL
     };
-    res = vkCreateBuffer(ctx->device, &info, NULL, &buf->buffer);
+
+    VkResult res = vkCreateBuffer(ctx->device, &info, NULL, &buf->buffer);
+
     if (res != VK_SUCCESS) {
         yf_buffer_deinit(buf);
         yf_seterr(YF_ERR_DEVGEN, __func__);
@@ -71,6 +74,7 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size)
     }
 
     yf_setpub(buf, YF_PUBSUB_DEINIT);
+
     return buf;
 }
 
@@ -84,7 +88,9 @@ int yf_buffer_copy(YF_buffer buf, size_t offset, const void *data, size_t size)
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }
+
     memcpy((char *)buf->data+offset, data, size);
+
     return 0;
 }
 
@@ -101,6 +107,7 @@ void yf_buffer_deinit(YF_buffer buf)
 
     yf_publish(buf, YF_PUBSUB_DEINIT);
     yf_setpub(buf, YF_PUBSUB_NONE);
+
     yf_buffer_free(buf);
     vkDestroyBuffer(buf->ctx->device, buf->buffer, NULL);
     free(buf);
