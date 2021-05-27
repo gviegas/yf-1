@@ -25,11 +25,9 @@ const YF_limits *yf_getlimits(YF_context ctx)
         return (const YF_limits *)ctx->lim.priv;
 
     YF_limits *lim = malloc(sizeof(YF_limits));
-    if (lim == NULL) {
-        /* TODO: This function should never fail - consider aborting instead. */
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return NULL;
-    }
+    if (lim == NULL)
+        /* XXX */
+        abort();
 
     const VkPhysicalDeviceLimits *dl = &ctx->dev_prop.limits;
     const VkFlags req_mem =
@@ -39,12 +37,13 @@ const YF_limits *yf_getlimits(YF_context ctx)
 
     lim->memory.obj_max = dl->maxMemoryAllocationCount;
 
-    for (unsigned i = 0; i < ctx->mem_prop.memoryTypeCount; ++i) {
+    for (unsigned i = 0; i < ctx->mem_prop.memoryTypeCount; i++) {
         if ((ctx->mem_prop.memoryTypes[i].propertyFlags & opt_mem) == opt_mem) {
             unsigned j = ctx->mem_prop.memoryTypes[i].heapIndex;
             lim->buffer.sz_max = ctx->mem_prop.memoryHeaps[j].size;
             break;
         }
+
         if ((ctx->mem_prop.memoryTypes[i].propertyFlags & req_mem) == req_mem) {
             if (lim->buffer.sz_max != 0) {
                 unsigned j = ctx->mem_prop.memoryTypes[i].heapIndex;
