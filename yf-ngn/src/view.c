@@ -129,7 +129,7 @@ YF_view yf_view_init(YF_window win)
         return NULL;
     }
 
-    for (size_t i = 0; i < pres_img_n; ++i) {
+    for (size_t i = 0; i < pres_img_n; i++) {
         clr_atts[i] = (YF_attach){pres_imgs[i], 0};
         view->tgts[i] = yf_pass_maketarget(view->pass, dim2, 1, clr_atts+i, 1,
                                            NULL, &dep_att);
@@ -183,6 +183,7 @@ int yf_view_render(YF_view view)
             /* TODO: Recreate window. */
         default:
             assert(0);
+            abort();
         }
     }
 
@@ -207,8 +208,10 @@ int yf_view_start(YF_view view, unsigned fps,
     do {
         if (update != NULL)
             update(dt);
+
         if ((r = yf_view_render(view)) != 0)
             break;
+
         dt = yf_gettime() - tm;
         if (dt < rate) {
             yf_sleep(rate - dt);
@@ -231,7 +234,7 @@ void yf_view_deinit(YF_view view)
     if (view == NULL)
         return;
 
-    for (unsigned i = 0; i < view->tgt_n; ++i)
+    for (unsigned i = 0; i < view->tgt_n; i++)
         yf_pass_unmktarget(view->pass, view->tgts[i]);
     free(view->tgts);
 
