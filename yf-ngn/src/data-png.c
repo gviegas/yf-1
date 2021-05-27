@@ -41,11 +41,13 @@ typedef struct {
     uint32_t type;
     uint8_t var[];
 } T_chunk;
+
 #define YF_PNG_VARSZ 4096
 static_assert(sizeof(T_chunk) == 8, "!sizeof");
 
 /* Image header. */
 #define YF_PNG_IHDR YF_PNG_MAKETYPE('I', 'H', 'D', 'R')
+
 typedef struct {
     uint32_t width;
     uint32_t height;
@@ -55,6 +57,7 @@ typedef struct {
     uint8_t filter;
     uint8_t interlace;
 } T_ihdr;
+
 #define YF_PNG_IHDRSZ 13
 static_assert(offsetof(T_ihdr, interlace) == YF_PNG_IHDRSZ-1, "!offsetof");
 
@@ -77,12 +80,13 @@ static int l_crcspin = 1;
 
 #define YF_PNG_INITCRC() do { \
     if (atomic_flag_test_and_set(&l_crcflag)) { \
-        while (l_crcspin) { } \
+        while (l_crcspin) \
+            ; \
     } else { \
-        for (uint32_t i = 0; i < 256; ++i) { \
+        for (uint32_t i = 0; i < 256; i++) { \
             uint32_t crc = i, j = 8; \
             while (j--) \
-            crc = (crc & 1) ? (0xedb88320 ^ (crc >> 1)) : (crc >> 1); \
+                crc = (crc & 1) ? (0xedb88320 ^ (crc >> 1)) : (crc >> 1); \
             l_crctab[i] = crc; \
         } \
         l_crcspin = 0; \
@@ -90,8 +94,8 @@ static int l_crcspin = 1;
 
 #define YF_PNG_CALCCRC(crc, data, len) do { \
     crc = ~0U; \
-    for (size_t i = 0; i < (len); ++i) \
-    crc = l_crctab[((crc) ^ (data)[i]) & 0xff] ^ ((crc) >> 8); \
+    for (size_t i = 0; i < (len); i++) \
+        crc = l_crctab[((crc) ^ (data)[i]) & 0xff] ^ ((crc) >> 8); \
     crc ^= ~0U; } while (0)
 
 /* Processed PNG chunks. */
@@ -103,14 +107,6 @@ typedef struct {
     size_t idat_sz;
 } T_png;
 
-/* Loads texture data from processed chunks. */
-static int load_texdt(const T_png *png, YF_texdt *data);
-
-/* Decompresses a datastream.
-   The caller must ensure that 'buf' is large enough to store the entirety of
-   decompressed data. */
-static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz);
-
 /* Code tree. */
 typedef struct {
     int32_t leaf;
@@ -120,16 +116,666 @@ typedef struct {
     };
 } T_tree;
 
-/* Generates Huffman codes from a sequence of code lengths and returns its
-   tree representation. */
-static T_tree *gen_codes(const uint8_t *lengths, size_t length_n,
-                         uint32_t *codes);
-
-#ifdef YF_DEVEL
+#if defined(YF_DEVEL) && defined(YF_PRINT)
 static void print_codes(const uint8_t *lengths, size_t length_n,
                         const uint32_t *codes, const T_tree *tree,
                         size_t tree_n, size_t tree_max);
 #endif
+
+/* Generates Huffman codes from a sequence of code lengths and returns its
+   tree representation. */
+static T_tree *gen_codes(const uint8_t *lengths, size_t length_n,
+                         uint32_t *codes)
+{
+    assert(lengths != NULL);
+    assert(length_n > 0);
+    assert(codes != NULL);
+
+    /* max. bit length */
+    size_t len_max = 0;
+    for (size_t i = 0; i < length_n; i++)
+        len_max = YF_MAX(len_max, lengths[i]);
+
+    if (len_max == 0) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return NULL;
+    }
+
+    /* bit length count */
+    uint8_t len_count[len_max+1];
+    memset(len_count, 0, len_max+1);
+    for (size_t i = 0; i < length_n; i++)
+        len_count[lengths[i]]++;
+
+    /* initial codes */
+    uint32_t code = 0;
+    uint32_t next_code[len_max+1];
+    memset(next_code, 0, (len_max+1)*sizeof next_code[0]);
+    for (size_t bits = 1; bits <= len_max; bits++) {
+        code = (code+len_count[bits-1]) << 1;
+        next_code[bits] = code;
+    }
+
+    /* code gen. */
+    memset(codes, 0, length_n*sizeof *codes);
+    for (size_t i = 0; i < length_n; i++) {
+        uint8_t len = lengths[i];
+        if (len != 0)
+            codes[i] = next_code[len]++;
+    }
+
+    /* tree creation */
+    size_t tree_n = 1;
+    /* XXX: This may overestimate considerably. */
+    for (size_t i = 1; i <= len_max; i++)
+        tree_n += len_count[i]*i;
+    T_tree *tree = calloc(tree_n, sizeof *tree);
+    if (tree == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return NULL;
+    }
+
+    size_t idx = 0;
+    for (size_t i = 0; i < length_n; i++) {
+        if (lengths[i] == 0)
+            continue;
+        size_t cur = 0;
+        for (int j = lengths[i]-1; j >= 0; j--) {
+            uint8_t bit = codes[i]>>j&1;
+            if (tree[cur].next[bit] == 0)
+                tree[cur].next[bit] = ++idx;
+            cur = tree[cur].next[bit];
+        }
+        tree[idx].leaf = 1;
+        tree[idx].value = i;
+    }
+
+    if ((idx+1) < tree_n) {
+        void *tmp = realloc(tree, (idx+1)*sizeof *tree);
+        if (tmp != NULL)
+            tree = tmp;
+    }
+
+#if defined(YF_DEVEL) && defined(YF_PRINT)
+    print_codes(lengths, length_n, codes, tree, idx+1, tree_n);
+#endif
+
+    return tree;
+}
+
+/* Decompresses a datastream.
+   The caller must ensure that 'buf' is large enough to store the entirety of
+   decompressed data. */
+static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
+{
+    assert(strm != NULL);
+    assert(buf != NULL);
+
+    struct {
+        uint8_t cm:4, cinfo:4;
+        uint8_t fcheck:5, fdict:1, flevel:2;
+    } zhdr;
+    static_assert(sizeof zhdr == 2, "!sizeof");
+
+    memcpy(&zhdr, strm, 2);
+    if (zhdr.cm != 8 || zhdr.cinfo > 7 || zhdr.fdict != 0 ||
+        ((strm[0]<<8)+strm[1]) % 31 != 0) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+#define YF_NEXTBIT(x, pos) do { \
+    const uint32_t b = (strm[off] & (1<<bit_off)) != 0; \
+    x |= b << (pos); \
+    if (++bit_off == 8) { \
+        bit_off = 0; \
+        off++; \
+    } } while (0);
+
+    size_t off = 2, bit_off = 0, buf_off = 0;
+    uint8_t bfinal, btype;
+
+    do {
+        bfinal = 0;
+        YF_NEXTBIT(bfinal, 0);
+
+        btype = 0;
+        YF_NEXTBIT(btype, 0);
+        YF_NEXTBIT(btype, 1);
+
+        if (btype == 0) {
+            /* uncompressed */
+            uint16_t len, nlen;
+            if (bit_off != 0) {
+                bit_off = 0;
+                off++;
+            }
+
+            memcpy(&len, strm+off, sizeof len);
+            off += sizeof len;
+            memcpy(&nlen, strm+off, sizeof nlen);
+            off += sizeof nlen;
+            if (len & nlen) {
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+
+            len = le16toh(len);
+            if (len+buf_off > buf_sz) {
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+
+            memcpy(buf+buf_off, strm+off, len);
+            off += len;
+            buf_off += len;
+
+        } else {
+            /* compressed */
+            struct { uint32_t codes[288]; T_tree *tree; } literal = {0};
+            struct { uint32_t codes[32]; T_tree *tree; } distance = {0};
+
+            if (btype == 1) {
+                /* fixed H. codes */
+                uint8_t lengths[288+32];
+                memset(lengths, 8, 144);
+                memset(lengths+144, 9, 112);
+                memset(lengths+256, 7, 24);
+                memset(lengths+280, 8, 8);
+                memset(lengths+288, 5, 32);
+
+                literal.tree = gen_codes(lengths, 288, literal.codes);
+                distance.tree = gen_codes(lengths+288, 32, distance.codes);
+                if (literal.tree == NULL || distance.tree == NULL) {
+                    free(literal.tree);
+                    free(distance.tree);
+                    return -1;
+                }
+
+            } else if (btype == 2) {
+                /* dynamic H. codes */
+                uint8_t lengths[19+288+32] = {0};
+
+                struct { uint16_t hlit:5, hdist:5, hclen:4; } bhdr = {0};
+                for (size_t i = 0; i < 5; i++)
+                    YF_NEXTBIT(bhdr.hlit, i);
+                for (size_t i = 0; i < 5; i++)
+                    YF_NEXTBIT(bhdr.hdist, i);
+                for (size_t i = 0; i < 4; i++)
+                    YF_NEXTBIT(bhdr.hclen, i);
+
+                const uint8_t clen_map[] = {
+                    16, 17, 18, 0, 8, 7, 9, 6, 10, 5,
+                    11, 4, 12, 3, 13, 2, 14, 1, 15
+                };
+                for (size_t i = 0; i < bhdr.hclen+4U; i++) {
+                    uint8_t len = 0;
+                    YF_NEXTBIT(len, 0);
+                    YF_NEXTBIT(len, 1);
+                    YF_NEXTBIT(len, 2);
+                    lengths[clen_map[i]] = len;
+                }
+
+                struct { uint32_t codes[19]; T_tree *tree; } clength;
+                clength.tree = gen_codes(lengths, 19, clength.codes);
+                if (clength.tree == NULL)
+                    return -1;
+
+                /* literal and distance lengths decoding */
+                struct { int32_t len_n; uint32_t len_off; } ranges[2] = {
+                    {bhdr.hlit+257, 19},
+                    {bhdr.hdist+1, 19+288}
+                };
+
+                for (size_t i = 0; i < 2; i++) {
+                    do {
+                        uint16_t idx = 0;
+                        do {
+                            uint8_t bit = 0;
+                            YF_NEXTBIT(bit, 0);
+                            idx = clength.tree[idx].next[bit];
+                        } while (!clength.tree[idx].leaf);
+                        uint32_t val = clength.tree[idx].value;
+
+                        if (val < 16) {
+                            /* code length */
+                            lengths[ranges[i].len_off++] = val;
+                            ranges[i].len_n--;
+
+                        } else if (val == 16) {
+                            /* copy prev. */
+                            uint8_t rep = 0;
+                            YF_NEXTBIT(rep, 0);
+                            YF_NEXTBIT(rep, 1);
+                            rep += 3;
+                            memset(lengths+ranges[i].len_off,
+                                   lengths[ranges[i].len_off-1],
+                                   rep*sizeof *lengths);
+                            ranges[i].len_off += rep;
+                            ranges[i].len_n -= rep;
+
+                        } else if (val == 17) {
+                            /* repeat (3-bit) */
+                            uint8_t rep = 0;
+                            YF_NEXTBIT(rep, 0);
+                            YF_NEXTBIT(rep, 1);
+                            YF_NEXTBIT(rep, 2);
+                            rep += 3;
+                            memset(lengths+ranges[i].len_off, 0,
+                                   rep*sizeof *lengths);
+                            ranges[i].len_off += rep;
+                            ranges[i].len_n -= rep;
+
+                        } else if (val == 18) {
+                            /* repeat (7-bit) */
+                            uint8_t rep = 0;
+                            for (size_t i = 0; i < 7; i++)
+                                YF_NEXTBIT(rep, i);
+                            rep += 11;
+                            memset(lengths+ranges[i].len_off, 0,
+                                   rep*sizeof *lengths);
+                            ranges[i].len_off += rep;
+                            ranges[i].len_n -= rep;
+
+                        } else {
+                            assert(0);
+                        }
+                    } while (ranges[i].len_n > 0);
+                }
+
+                free(clength.tree);
+
+                literal.tree = gen_codes(lengths+19, bhdr.hlit+257,
+                                         literal.codes);
+                distance.tree = gen_codes(lengths+19+288, bhdr.hdist+1,
+                                          distance.codes);
+                if (literal.tree == NULL || distance.tree == NULL) {
+                    free(literal.tree);
+                    free(distance.tree);
+                    return -1;
+                }
+
+            } else {
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+
+            /* data decoding */
+            while (1) {
+                uint16_t idx = 0;
+                do {
+                    uint8_t bit = 0;
+                    YF_NEXTBIT(bit, 0);
+                    idx = literal.tree[idx].next[bit];
+                } while (!literal.tree[idx].leaf);
+                uint32_t val = literal.tree[idx].value;
+
+                if (val < 256) {
+                    /* literal */
+                    buf[buf_off++] = val;
+
+                } else if (val > 256) {
+                    /* <length, distance> pair */
+                    uint16_t len;
+                    if (val <= 264) {
+                        len = 10-(264-val);
+                    } else if (val <= 284) {
+                        const size_t v = val+4-265;
+                        const size_t bn = v>>2;
+                        const size_t rem = v&3;
+                        uint8_t ex = 0;
+                        for (size_t i = 0; i < bn; i++)
+                            YF_NEXTBIT(ex, i);
+                        len = (1<<(bn+2))+(rem<<bn)+ex+3;
+                        assert(len < 258);
+                    } else {
+                        len = 258;
+                    }
+
+                    idx = 0;
+                    do {
+                        uint8_t bit = 0;
+                        YF_NEXTBIT(bit, 0);
+                        idx = distance.tree[idx].next[bit];
+                    } while (!distance.tree[idx].leaf);
+                    val = distance.tree[idx].value;
+
+                    uint16_t dist;
+                    if (val <= 3) {
+                        dist = val+1;
+                    } else {
+                        const size_t bn = (val>>1)-1;
+                        uint16_t ex = 0;
+                        for (size_t i = 0; i < bn; i++)
+                            YF_NEXTBIT(ex, i);
+                        dist = val&1 ? (3<<bn)+ex+1 : (2<<bn)+ex+1;
+                    }
+
+                    for (size_t i = 0; i < len; i++) {
+                        buf[buf_off] = buf[buf_off-dist];
+                        buf_off++;
+                    }
+
+                } else {
+                    /* end of block */
+                    break;
+                }
+            }
+
+            free(literal.tree);
+            free(distance.tree);
+        }
+    } while (!bfinal);
+
+#undef YF_NEXTBIT
+    return 0;
+}
+
+/* Loads texture data from processed chunks. */
+static int load_texdt(const T_png *png, YF_texdt *data)
+{
+    assert(png != NULL);
+    assert(data != NULL);
+
+    /* image format */
+    const uint32_t width = png->ihdr->width;
+    const uint32_t height = png->ihdr->height;
+    const uint8_t bit_depth = png->ihdr->bit_depth;
+    int pixfmt;
+    uint8_t channels;
+
+    /* TODO: Check color profile. */
+    /* TODO: Check format support. */
+    /* TODO: Choose sRGB formats whenever possible. */
+    switch (png->ihdr->color_type) {
+    case 0:
+        /* greyscale */
+        switch (png->ihdr->bit_depth) {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+            pixfmt = YF_PIXFMT_R8UNORM;
+            break;
+        case 16:
+            pixfmt = YF_PIXFMT_R16UNORM;
+            break;
+        }
+        channels = 1;
+        break;
+
+    case 2:
+        /* rgb */
+        switch (png->ihdr->bit_depth) {
+        case 8:
+            pixfmt = YF_PIXFMT_RGB8UNORM;
+            break;
+        case 16:
+            pixfmt = YF_PIXFMT_RGB16UNORM;
+            break;
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+        channels = 3;
+        break;
+
+    case 3:
+        /* palette indices */
+        if (png->plte == NULL) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+        switch (png->ihdr->bit_depth) {
+        case 1:
+        case 2:
+        case 4:
+        case 8:
+            pixfmt = YF_PIXFMT_RGB8UNORM;
+            break;
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+        channels = 3;
+        break;
+
+    case 4:
+        /* greyscale w/ alpha */
+        switch (png->ihdr->bit_depth) {
+        case 8:
+            pixfmt = YF_PIXFMT_RG8UNORM;
+            break;
+        case 16:
+            pixfmt = YF_PIXFMT_RG16UNORM;
+            break;
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+        channels = 2;
+        break;
+
+    case 6:
+        /* rgba */
+        switch (png->ihdr->bit_depth) {
+        case 8:
+            pixfmt = YF_PIXFMT_RGBA8UNORM;
+            break;
+        case 16:
+            pixfmt = YF_PIXFMT_RGBA16UNORM;
+            break;
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+        channels = 4;
+        break;
+    }
+
+    /* decompression */
+    const size_t scln_sz = png->ihdr->color_type & 1 ?
+        1+width : 1+((width*channels*bit_depth+7)>>3);
+    const size_t buf_sz = scln_sz*height;
+
+    uint8_t *buf = malloc(buf_sz);
+    if (buf == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    if (inflate(png->idat, buf, buf_sz) != 0) {
+        free(buf);
+        return -1;
+    }
+
+    /* filter reversion */
+    const uint8_t bypp = YF_MAX(1, (channels*bit_depth)>>3);
+
+    switch (buf[0]) {
+    case 0:
+    case 2:
+        /* none/up */
+        break;
+    case 1:
+    case 4:
+        /* sub/paeth */
+        for (size_t i = 1+bypp; i < scln_sz; i++)
+            buf[i] += buf[i-bypp];
+        break;
+    case 3:
+        /* avg */
+        for (size_t i = 1+bypp; i < scln_sz; i++)
+            buf[i] += buf[i-bypp]>>1;
+        break;
+    default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        free(buf);
+        return -1;
+    }
+
+    for (size_t i = 1; i < height; i++) {
+        switch (buf[i*scln_sz]) {
+        case 0:
+            /* none */
+            break;
+        case 1:
+            /* sub */
+            for (size_t j = 1+bypp; j < scln_sz; j++) {
+                const size_t k = i*scln_sz+j;
+                buf[k] += buf[k-bypp];
+            }
+            break;
+        case 2:
+            /* up */
+            for (size_t j = 1; j < scln_sz; j++) {
+                const size_t k = i*scln_sz+j;
+                buf[k] += buf[k-scln_sz];
+            }
+            break;
+        case 3:
+            /* avg */
+            for (size_t j = 1; j <= bypp; j++) {
+                const size_t k = i*scln_sz+j;
+                buf[k] += buf[k-scln_sz]>>1;
+            }
+            for (size_t j = 1+bypp; j < scln_sz; j++) {
+                const size_t k = i*scln_sz+j;
+                const uint16_t a = buf[k-bypp];
+                const uint16_t b = buf[k-scln_sz];
+                buf[k] += (a+b)>>1;
+            }
+            break;
+        case 4:
+            /* paeth */
+            for (size_t j = 1; j <= bypp; j++) {
+                const size_t k = i*scln_sz+j;
+                buf[k] += buf[k-scln_sz];
+            }
+            for (size_t j = 1+bypp; j < scln_sz; j++) {
+                const size_t k = i*scln_sz+j;
+                const int16_t a = buf[k-bypp];
+                const int16_t b = buf[k-scln_sz];
+                const int16_t c = buf[k-scln_sz-bypp];
+                const int16_t p = a+b-c;
+                const uint16_t pa = abs(p-a);
+                const uint16_t pb = abs(p-b);
+                const uint16_t pc = abs(p-c);
+                buf[k] += pa<=pb && pa<=pc ? a : (pb<=pc ? b : c);
+            }
+            break;
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            free(buf);
+            return -1;
+        }
+    }
+
+    /* texture data */
+    if (png->ihdr->color_type & 1) {
+        if (bit_depth == 8) {
+            /* palette indices 8 bit depth */
+            const size_t new_sz = (buf_sz-height)*3;
+            void *tmp = realloc(buf, new_sz);
+            if (tmp == NULL) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                free(buf);
+                return -1;
+            }
+            buf = tmp;
+            size_t rgb_off = 0;
+            size_t idx_off = new_sz-buf_sz;
+            memmove(buf+idx_off, buf, buf_sz);
+            for (size_t i = 0; i < height; i++) {
+                idx_off++;
+                for (size_t j = 0; j < scln_sz-1; j++) {
+                    const uint8_t idx = buf[idx_off++];
+                    memcpy(buf+rgb_off, png->plte+idx, 3);
+                    rgb_off += 3;
+                }
+            }
+        } else {
+            /* palette indices 1/2/4 bit depth */
+            const size_t new_sz = width*height*3;
+            void *tmp = realloc(buf, new_sz);
+            if (tmp == NULL) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                free(buf);
+                return -1;
+            }
+            buf = tmp;
+            size_t rgb_off = 0;
+            size_t idx_off = new_sz-buf_sz;
+            size_t bit_off = 0;
+            memmove(buf+idx_off, buf, buf_sz);
+            for (size_t i = 0; i < height; i++) {
+                idx_off++;
+                for (size_t j = 0; j < width; j++) {
+                    const uint8_t idx = buf[idx_off] >> (8-bit_depth-bit_off) &
+                        ((1<<bit_depth)-1);
+                    memcpy(buf+rgb_off, png->plte+idx, 3);
+                    rgb_off += 3;
+                    const div_t d = div(bit_off+bit_depth, 8);
+                    idx_off += d.quot;
+                    bit_off = d.rem;
+                }
+                if (bit_off != 0) {
+                    bit_off = 0;
+                    idx_off++;
+                }
+            }
+        }
+
+    } else if (bit_depth >= 8) {
+        /* rgb[a]/greyscale[a] 8/16 bit depth */
+        for (size_t i = 0; i < height; i++) {
+            const size_t j = i*scln_sz-i;
+            memmove(buf+j, buf+j+i+1, scln_sz-1);
+        }
+        void *tmp = realloc(buf, buf_sz-height);
+        if (tmp != NULL)
+            buf = tmp;
+        if (bit_depth == 16) {
+            for (size_t i = 0; i < buf_sz-height; i += 2) {
+                const uint16_t val = be16toh((buf[i+1]<<8)|buf[i]);
+                memcpy(buf+i, &val, sizeof val);
+            }
+        }
+
+    } else {
+        /* greyscale 1/2/4 bit depth */
+        uint8_t *tmp = malloc(width*height);
+        if (tmp == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            free(buf);
+            return -1;
+        }
+        size_t off = 0, bit_off = 0;
+        for (size_t i = 0; i < height; i++) {
+            off++;
+            for (size_t j = 0; j < width; j++) {
+                tmp[i*width+j] = buf[off] >> (8-bit_depth-bit_off) &
+                    ((1<<bit_depth)-1);
+                const div_t d = div(bit_off+bit_depth, 8);
+                off += d.quot;
+                bit_off = d.rem;
+            }
+            if (bit_off != 0) {
+                bit_off = 0;
+                off++;
+            }
+        }
+        free(buf);
+        buf = tmp;
+    }
+
+    data->data = buf;
+    data->pixfmt = pixfmt;
+    data->dim.width = width;
+    data->dim.height = height;
+
+    return 0;
+}
 
 int yf_loadpng(const char *pathname, YF_texdt *data)
 {
@@ -387,660 +1033,11 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
     return r;
 }
 
-static int load_texdt(const T_png *png, YF_texdt *data)
-{
-    assert(png != NULL);
-    assert(data != NULL);
-
-    /* image format */
-    const uint32_t width = png->ihdr->width;
-    const uint32_t height = png->ihdr->height;
-    const uint8_t bit_depth = png->ihdr->bit_depth;
-    int pixfmt;
-    uint8_t channels;
-
-    /* TODO: Check color profile. */
-    /* TODO: Check format support. */
-    /* TODO: Choose sRGB formats whenever possible. */
-    switch (png->ihdr->color_type) {
-    case 0:
-        /* greyscale */
-        switch (png->ihdr->bit_depth) {
-        case 1:
-        case 2:
-        case 4:
-        case 8:
-            pixfmt = YF_PIXFMT_R8UNORM;
-            break;
-        case 16:
-            pixfmt = YF_PIXFMT_R16UNORM;
-            break;
-        }
-        channels = 1;
-        break;
-
-    case 2:
-        /* rgb */
-        switch (png->ihdr->bit_depth) {
-        case 8:
-            pixfmt = YF_PIXFMT_RGB8UNORM;
-            break;
-        case 16:
-            pixfmt = YF_PIXFMT_RGB16UNORM;
-            break;
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-        channels = 3;
-        break;
-
-    case 3:
-        /* palette indices */
-        if (png->plte == NULL) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-        switch (png->ihdr->bit_depth) {
-        case 1:
-        case 2:
-        case 4:
-        case 8:
-            pixfmt = YF_PIXFMT_RGB8UNORM;
-            break;
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-        channels = 3;
-        break;
-
-    case 4:
-        /* greyscale w/ alpha */
-        switch (png->ihdr->bit_depth) {
-        case 8:
-            pixfmt = YF_PIXFMT_RG8UNORM;
-            break;
-        case 16:
-            pixfmt = YF_PIXFMT_RG16UNORM;
-            break;
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-        channels = 2;
-        break;
-
-    case 6:
-        /* rgba */
-        switch (png->ihdr->bit_depth) {
-        case 8:
-            pixfmt = YF_PIXFMT_RGBA8UNORM;
-            break;
-        case 16:
-            pixfmt = YF_PIXFMT_RGBA16UNORM;
-            break;
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-        channels = 4;
-        break;
-    }
-
-    /* decompression */
-    const size_t scln_sz = png->ihdr->color_type & 1 ?
-        1+width : 1+((width*channels*bit_depth+7)>>3);
-    const size_t buf_sz = scln_sz*height;
-
-    uint8_t *buf = malloc(buf_sz);
-    if (buf == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-
-    if (inflate(png->idat, buf, buf_sz) != 0) {
-        free(buf);
-        return -1;
-    }
-
-    /* filter reversion */
-    const uint8_t bypp = YF_MAX(1, (channels*bit_depth)>>3);
-
-    switch (buf[0]) {
-    case 0:
-    case 2:
-        /* none/up */
-        break;
-    case 1:
-    case 4:
-        /* sub/paeth */
-        for (size_t i = 1+bypp; i < scln_sz; ++i)
-            buf[i] += buf[i-bypp];
-        break;
-    case 3:
-        /* avg */
-        for (size_t i = 1+bypp; i < scln_sz; ++i)
-            buf[i] += buf[i-bypp]>>1;
-        break;
-    default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        free(buf);
-        return -1;
-    }
-
-    for (size_t i = 1; i < height; ++i) {
-        switch (buf[i*scln_sz]) {
-        case 0:
-            /* none */
-            break;
-        case 1:
-            /* sub */
-            for (size_t j = 1+bypp; j < scln_sz; ++j) {
-                const size_t k = i*scln_sz+j;
-                buf[k] += buf[k-bypp];
-            }
-            break;
-        case 2:
-            /* up */
-            for (size_t j = 1; j < scln_sz; ++j) {
-                const size_t k = i*scln_sz+j;
-                buf[k] += buf[k-scln_sz];
-            }
-            break;
-        case 3:
-            /* avg */
-            for (size_t j = 1; j <= bypp; ++j) {
-                const size_t k = i*scln_sz+j;
-                buf[k] += buf[k-scln_sz]>>1;
-            }
-            for (size_t j = 1+bypp; j < scln_sz; ++j) {
-                const size_t k = i*scln_sz+j;
-                const uint16_t a = buf[k-bypp];
-                const uint16_t b = buf[k-scln_sz];
-                buf[k] += (a+b)>>1;
-            }
-            break;
-        case 4:
-            /* paeth */
-            for (size_t j = 1; j <= bypp; ++j) {
-                const size_t k = i*scln_sz+j;
-                buf[k] += buf[k-scln_sz];
-            }
-            for (size_t j = 1+bypp; j < scln_sz; ++j) {
-                const size_t k = i*scln_sz+j;
-                const int16_t a = buf[k-bypp];
-                const int16_t b = buf[k-scln_sz];
-                const int16_t c = buf[k-scln_sz-bypp];
-                const int16_t p = a+b-c;
-                const uint16_t pa = abs(p-a);
-                const uint16_t pb = abs(p-b);
-                const uint16_t pc = abs(p-c);
-                buf[k] += pa<=pb && pa<=pc ? a : (pb<=pc ? b : c);
-            }
-            break;
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            free(buf);
-            return -1;
-        }
-    }
-
-    /* texture data */
-    if (png->ihdr->color_type & 1) {
-        if (bit_depth == 8) {
-            /* palette indices 8 bit depth */
-            const size_t new_sz = (buf_sz-height)*3;
-            void *tmp = realloc(buf, new_sz);
-            if (tmp == NULL) {
-                yf_seterr(YF_ERR_NOMEM, __func__);
-                free(buf);
-                return -1;
-            }
-            buf = tmp;
-            size_t rgb_off = 0;
-            size_t idx_off = new_sz-buf_sz;
-            memmove(buf+idx_off, buf, buf_sz);
-            for (size_t i = 0; i < height; ++i) {
-                ++idx_off;
-                for (size_t j = 0; j < scln_sz-1; ++j) {
-                    const uint8_t idx = buf[idx_off++];
-                    memcpy(buf+rgb_off, png->plte+idx, 3);
-                    rgb_off += 3;
-                }
-            }
-        } else {
-            /* palette indices 1/2/4 bit depth */
-            const size_t new_sz = width*height*3;
-            void *tmp = realloc(buf, new_sz);
-            if (tmp == NULL) {
-                yf_seterr(YF_ERR_NOMEM, __func__);
-                free(buf);
-                return -1;
-            }
-            buf = tmp;
-            size_t rgb_off = 0;
-            size_t idx_off = new_sz-buf_sz;
-            size_t bit_off = 0;
-            memmove(buf+idx_off, buf, buf_sz);
-            for (size_t i = 0; i < height; ++i) {
-                ++idx_off;
-                for (size_t j = 0; j < width; ++j) {
-                    const uint8_t idx = buf[idx_off] >> (8-bit_depth-bit_off) &
-                        ((1<<bit_depth)-1);
-                    memcpy(buf+rgb_off, png->plte+idx, 3);
-                    rgb_off += 3;
-                    const div_t d = div(bit_off+bit_depth, 8);
-                    idx_off += d.quot;
-                    bit_off = d.rem;
-                }
-                if (bit_off != 0) {
-                    bit_off = 0;
-                    ++idx_off;
-                }
-            }
-        }
-
-    } else if (bit_depth >= 8) {
-        /* rgb[a]/greyscale[a] 8/16 bit depth */
-        for (size_t i = 0; i < height; ++i) {
-            const size_t j = i*scln_sz-i;
-            memmove(buf+j, buf+j+i+1, scln_sz-1);
-        }
-        void *tmp = realloc(buf, buf_sz-height);
-        if (tmp != NULL)
-            buf = tmp;
-        if (bit_depth == 16) {
-            for (size_t i = 0; i < buf_sz-height; i += 2) {
-                const uint16_t val = be16toh((buf[i+1]<<8)|buf[i]);
-                memcpy(buf+i, &val, sizeof val);
-            }
-        }
-
-    } else {
-        /* greyscale 1/2/4 bit depth */
-        uint8_t *tmp = malloc(width*height);
-        if (tmp == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            free(buf);
-            return -1;
-        }
-        size_t off = 0, bit_off = 0;
-        for (size_t i = 0; i < height; ++i) {
-            ++off;
-            for (size_t j = 0; j < width; ++j) {
-                tmp[i*width+j] = buf[off] >> (8-bit_depth-bit_off) &
-                    ((1<<bit_depth)-1);
-                const div_t d = div(bit_off+bit_depth, 8);
-                off += d.quot;
-                bit_off = d.rem;
-            }
-            if (bit_off != 0) {
-                bit_off = 0;
-                ++off;
-            }
-        }
-        free(buf);
-        buf = tmp;
-    }
-
-    data->data = buf;
-    data->pixfmt = pixfmt;
-    data->dim.width = width;
-    data->dim.height = height;
-
-    return 0;
-}
-
-static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
-{
-    assert(strm != NULL);
-    assert(buf != NULL);
-
-    struct {
-        uint8_t cm:4, cinfo:4;
-        uint8_t fcheck:5, fdict:1, flevel:2;
-    } zhdr;
-    static_assert(sizeof zhdr == 2, "!sizeof");
-
-    memcpy(&zhdr, strm, 2);
-    if (zhdr.cm != 8 || zhdr.cinfo > 7 || zhdr.fdict != 0 ||
-        ((strm[0]<<8)+strm[1]) % 31 != 0) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-#define YF_NEXTBIT(x, pos) do { \
-    const uint32_t b = (strm[off] & (1<<bit_off)) != 0; \
-    x |= b << (pos); \
-    if (++bit_off == 8) { \
-        bit_off = 0; \
-        ++off; \
-    } } while (0);
-
-    size_t off = 2, bit_off = 0, buf_off = 0;
-    uint8_t bfinal, btype;
-
-    do {
-        bfinal = 0;
-        YF_NEXTBIT(bfinal, 0);
-
-        btype = 0;
-        YF_NEXTBIT(btype, 0);
-        YF_NEXTBIT(btype, 1);
-
-        /* uncompressed */
-        if (btype == 0) {
-            uint16_t len, nlen;
-            if (bit_off != 0) {
-                bit_off = 0;
-                ++off;
-            }
-
-            memcpy(&len, strm+off, sizeof len);
-            off += sizeof len;
-            memcpy(&nlen, strm+off, sizeof nlen);
-            off += sizeof nlen;
-            if (len & nlen) {
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-
-            len = le16toh(len);
-            if (len+buf_off > buf_sz) {
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-
-            memcpy(buf+buf_off, strm+off, len);
-            off += len;
-            buf_off += len;
-
-            /* compressed */
-        } else {
-            struct { uint32_t codes[288]; T_tree *tree; } literal = {0};
-            struct { uint32_t codes[32]; T_tree *tree; } distance = {0};
-
-            if (btype == 1) {
-                /* fixed H. codes */
-                uint8_t lengths[288+32];
-                memset(lengths, 8, 144);
-                memset(lengths+144, 9, 112);
-                memset(lengths+256, 7, 24);
-                memset(lengths+280, 8, 8);
-                memset(lengths+288, 5, 32);
-
-                literal.tree = gen_codes(lengths, 288, literal.codes);
-                distance.tree = gen_codes(lengths+288, 32, distance.codes);
-                if (literal.tree == NULL || distance.tree == NULL) {
-                    free(literal.tree);
-                    free(distance.tree);
-                    return -1;
-                }
-
-            } else if (btype == 2) {
-                /* dynamic H. codes */
-                uint8_t lengths[19+288+32] = {0};
-
-                struct { uint16_t hlit:5, hdist:5, hclen:4; } bhdr = {0};
-                for (size_t i = 0; i < 5; ++i)
-                    YF_NEXTBIT(bhdr.hlit, i);
-                for (size_t i = 0; i < 5; ++i)
-                    YF_NEXTBIT(bhdr.hdist, i);
-                for (size_t i = 0; i < 4; ++i)
-                    YF_NEXTBIT(bhdr.hclen, i);
-
-                const uint8_t clen_map[] = {
-                    16, 17, 18, 0, 8, 7, 9, 6, 10, 5,
-                    11, 4, 12, 3, 13, 2, 14, 1, 15
-                };
-                for (size_t i = 0; i < bhdr.hclen+4U; ++i) {
-                    uint8_t len = 0;
-                    YF_NEXTBIT(len, 0);
-                    YF_NEXTBIT(len, 1);
-                    YF_NEXTBIT(len, 2);
-                    lengths[clen_map[i]] = len;
-                }
-
-                struct { uint32_t codes[19]; T_tree *tree; } clength;
-                clength.tree = gen_codes(lengths, 19, clength.codes);
-                if (clength.tree == NULL)
-                    return -1;
-
-                /* literal and distance lengths decoding */
-                struct { int32_t len_n; uint32_t len_off; } ranges[2] = {
-                    {bhdr.hlit+257, 19},
-                    {bhdr.hdist+1, 19+288}
-                };
-
-                for (size_t i = 0; i < 2; ++i) {
-                    do {
-                        uint16_t idx = 0;
-                        do {
-                            uint8_t bit = 0;
-                            YF_NEXTBIT(bit, 0);
-                            idx = clength.tree[idx].next[bit];
-                        } while (!clength.tree[idx].leaf);
-                        uint32_t val = clength.tree[idx].value;
-
-                        if (val < 16) {
-                            /* code length */
-                            lengths[ranges[i].len_off++] = val;
-                            --ranges[i].len_n;
-
-                        } else if (val == 16) {
-                            /* copy prev. */
-                            uint8_t rep = 0;
-                            YF_NEXTBIT(rep, 0);
-                            YF_NEXTBIT(rep, 1);
-                            rep += 3;
-                            memset(lengths+ranges[i].len_off,
-                                   lengths[ranges[i].len_off-1],
-                                   rep*sizeof *lengths);
-                            ranges[i].len_off += rep;
-                            ranges[i].len_n -= rep;
-
-                        } else if (val == 17) {
-                            /* repeat (3-bit) */
-                            uint8_t rep = 0;
-                            YF_NEXTBIT(rep, 0);
-                            YF_NEXTBIT(rep, 1);
-                            YF_NEXTBIT(rep, 2);
-                            rep += 3;
-                            memset(lengths+ranges[i].len_off, 0,
-                                   rep*sizeof *lengths);
-                            ranges[i].len_off += rep;
-                            ranges[i].len_n -= rep;
-
-                        } else if (val == 18) {
-                            /* repeat (7-bit) */
-                            uint8_t rep = 0;
-                            for (size_t i = 0; i < 7; ++i)
-                                YF_NEXTBIT(rep, i);
-                            rep += 11;
-                            memset(lengths+ranges[i].len_off, 0,
-                                   rep*sizeof *lengths);
-                            ranges[i].len_off += rep;
-                            ranges[i].len_n -= rep;
-
-                        } else {
-                            assert(0);
-                        }
-                    } while (ranges[i].len_n > 0);
-                }
-
-                free(clength.tree);
-
-                literal.tree = gen_codes(lengths+19, bhdr.hlit+257,
-                                         literal.codes);
-                distance.tree = gen_codes(lengths+19+288, bhdr.hdist+1,
-                                          distance.codes);
-                if (literal.tree == NULL || distance.tree == NULL) {
-                    free(literal.tree);
-                    free(distance.tree);
-                    return -1;
-                }
-
-            } else {
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-
-            /* data decoding */
-            while (1) {
-                uint16_t idx = 0;
-                do {
-                    uint8_t bit = 0;
-                    YF_NEXTBIT(bit, 0);
-                    idx = literal.tree[idx].next[bit];
-                } while (!literal.tree[idx].leaf);
-                uint32_t val = literal.tree[idx].value;
-
-                if (val < 256) {
-                    /* literal */
-                    buf[buf_off++] = val;
-
-                } else if (val > 256) {
-                    /* <length, distance> pair */
-                    uint16_t len;
-                    if (val <= 264) {
-                        len = 10-(264-val);
-                    } else if (val <= 284) {
-                        const size_t v = val+4-265;
-                        const size_t bn = v>>2;
-                        const size_t rem = v&3;
-                        uint8_t ex = 0;
-                        for (size_t i = 0; i < bn; ++i)
-                            YF_NEXTBIT(ex, i);
-                        len = (1<<(bn+2))+(rem<<bn)+ex+3;
-                        assert(len < 258);
-                    } else {
-                        len = 258;
-                    }
-
-                    idx = 0;
-                    do {
-                        uint8_t bit = 0;
-                        YF_NEXTBIT(bit, 0);
-                        idx = distance.tree[idx].next[bit];
-                    } while (!distance.tree[idx].leaf);
-                    val = distance.tree[idx].value;
-
-                    uint16_t dist;
-                    if (val <= 3) {
-                        dist = val+1;
-                    } else {
-                        const size_t bn = (val>>1)-1;
-                        uint16_t ex = 0;
-                        for (size_t i = 0; i < bn; ++i)
-                            YF_NEXTBIT(ex, i);
-                        dist = val&1 ? (3<<bn)+ex+1 : (2<<bn)+ex+1;
-                    }
-
-                    for (size_t i = 0; i < len; ++i) {
-                        buf[buf_off] = buf[buf_off-dist];
-                        ++buf_off;
-                    }
-
-                } else {
-                    /* end of block */
-                    break;
-                }
-            }
-
-            free(literal.tree);
-            free(distance.tree);
-        }
-    } while (!bfinal);
-
-#undef YF_NEXTBIT
-                            return 0;
-}
-
-static T_tree * gen_codes(const uint8_t *lengths, size_t length_n,
-                          uint32_t *codes)
-{
-    assert(lengths != NULL);
-    assert(length_n > 0);
-    assert(codes != NULL);
-
-    /* max. bit length */
-    size_t len_max = 0;
-    for (size_t i = 0; i < length_n; ++i)
-        len_max = YF_MAX(len_max, lengths[i]);
-
-    if (len_max == 0) {
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return NULL;
-    }
-
-    /* bit length count */
-    uint8_t len_count[len_max+1];
-    memset(len_count, 0, len_max+1);
-    for (size_t i = 0; i < length_n; ++i)
-        len_count[lengths[i]]++;
-
-    /* initial codes */
-    uint32_t code = 0;
-    uint32_t next_code[len_max+1];
-    memset(next_code, 0, (len_max+1)*sizeof next_code[0]);
-    for (size_t bits = 1; bits <= len_max; ++bits) {
-        code = (code+len_count[bits-1]) << 1;
-        next_code[bits] = code;
-    }
-
-    /* code gen. */
-    memset(codes, 0, length_n*sizeof *codes);
-    for (size_t i = 0; i < length_n; i++) {
-        uint8_t len = lengths[i];
-        if (len != 0)
-            codes[i] = next_code[len]++;
-    }
-
-    /* tree creation */
-    size_t tree_n = 1;
-    /* XXX: This may overestimate considerably. */
-    for (size_t i = 1; i <= len_max; ++i)
-        tree_n += len_count[i]*i;
-    T_tree *tree = calloc(tree_n, sizeof *tree);
-    if (tree == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return NULL;
-    }
-
-    size_t idx = 0;
-    for (size_t i = 0; i < length_n; ++i) {
-        if (lengths[i] == 0)
-            continue;
-        size_t cur = 0;
-        for (int j = lengths[i]-1; j >= 0; --j) {
-            uint8_t bit = codes[i]>>j&1;
-            if (tree[cur].next[bit] == 0)
-                tree[cur].next[bit] = ++idx;
-            cur = tree[cur].next[bit];
-        }
-        tree[idx].leaf = 1;
-        tree[idx].value = i;
-    }
-
-    if ((idx+1) < tree_n) {
-        void *tmp = realloc(tree, (idx+1)*sizeof *tree);
-        if (tmp != NULL)
-            tree = tmp;
-    }
-
-#ifdef YF_DEVEL
-    print_codes(lengths, length_n, codes, tree, idx+1, tree_n);
-#endif
-
-    return tree;
-}
-
 /*
  * DEVEL
  */
 
-#ifdef YF_DEVEL
+#if defined(YF_DEVEL) && defined(YF_PRINT)
 static void print_codes(const uint8_t *lengths, size_t length_n,
                         const uint32_t *codes, const T_tree *tree,
                         size_t tree_n, size_t tree_max)
@@ -1049,16 +1046,16 @@ static void print_codes(const uint8_t *lengths, size_t length_n,
 
     puts("[codes]");
     printf(" n: %lu\n", length_n);
-    for (size_t i = 0; i < length_n; ++i) {
+    for (size_t i = 0; i < length_n; i++) {
         printf(" #%lu  b", i);
-        for (int8_t j = lengths[i]-1; j >= 0; --j)
+        for (int8_t j = lengths[i]-1; j >= 0; j--)
             printf("%d", codes[i]>>j&1);
         puts("");
     }
 
     puts("[code tree]");
     printf(" n/max: %lu/%lu\n", tree_n, tree_max);
-    for (size_t i = 0; i < tree_n; ++i) {
+    for (size_t i = 0; i < tree_n; i++) {
         if (tree[i].leaf)
             printf(" #%lu  value: %u\n", i, tree[i].value);
         else
