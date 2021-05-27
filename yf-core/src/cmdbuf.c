@@ -19,7 +19,31 @@
 #define YF_CMDCAP 128
 
 /* Grows the command list. */
-static int grow_cmds(YF_cmdbuf cmdb);
+static int grow_cmds(YF_cmdbuf cmdb)
+{
+    assert(cmdb != NULL);
+
+    if (cmdb->cmd_cap == UINT_MAX) {
+        yf_seterr(YF_ERR_LIMIT, __func__);
+        return -1;
+    }
+
+    unsigned cap = cmdb->cmd_cap << 1;
+    cap = YF_MAX(cap, cmdb->cmd_cap + 1);
+
+    void *tmp = realloc(cmdb->cmds, cap * sizeof *cmdb->cmds);
+    if (tmp == NULL) {
+        cap = cmdb->cmd_cap + 1;
+        if ((tmp = realloc(cmdb->cmds, cap * sizeof *cmdb->cmds)) == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+    }
+    cmdb->cmds = tmp;
+    cmdb->cmd_cap = cap;
+
+    return 0;
+}
 
 YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf)
 {
@@ -489,29 +513,4 @@ void yf_cmdbuf_sync(YF_cmdbuf cmdb)
         return;
     }
     cmdb->cmds[i].cmd = YF_CMD_SYNC;
-}
-
-static int grow_cmds(YF_cmdbuf cmdb)
-{
-    assert(cmdb != NULL);
-
-    if (cmdb->cmd_cap == UINT_MAX) {
-        yf_seterr(YF_ERR_LIMIT, __func__);
-        return -1;
-    }
-
-    unsigned cap = cmdb->cmd_cap << 1;
-    cap = YF_MAX(cap, cmdb->cmd_cap + 1);
-
-    void *tmp = realloc(cmdb->cmds, cap * sizeof *cmdb->cmds);
-    if (tmp == NULL) {
-        cap = cmdb->cmd_cap + 1;
-        if ((tmp = realloc(cmdb->cmds, cap * sizeof *cmdb->cmds)) == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-    }
-    cmdb->cmds = tmp;
-    cmdb->cmd_cap = cap;
-    return 0;
 }
