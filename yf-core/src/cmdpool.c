@@ -48,10 +48,77 @@ typedef struct {
 } T_callb;
 
 /* Initializes the pool entries. */
-static int init_entries(YF_context ctx, T_cmdp *cmdp);
+static int init_entries(YF_context ctx, T_cmdp *cmdp)
+{
+    assert(ctx != NULL);
+    assert(cmdp != NULL);
+
+    cmdp->entries = calloc(cmdp->cap, sizeof(T_entry));
+    if (cmdp->entries == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    VkCommandPoolCreateInfo pool_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+        .pNext = NULL,
+        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+        .queueFamilyIndex = ctx->queue_i
+    };
+    VkCommandBufferAllocateInfo alloc_info = {
+        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+        .pNext = NULL,
+        .commandPool = NULL,
+        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+        .commandBufferCount = 1
+    };
+    VkResult res;
+
+    for (unsigned i = 0; i < cmdp->cap; i++) {
+        /* TODO: Consider using only one pool instead. */
+        res = vkCreateCommandPool(ctx->device, &pool_info, NULL,
+                                  &cmdp->entries[i].pool);
+        if (res != VK_SUCCESS) {
+            yf_seterr(YF_ERR_DEVGEN, __func__);
+            return -1;
+        }
+        alloc_info.commandPool = cmdp->entries[i].pool;
+
+        res = vkAllocateCommandBuffers(ctx->device, &alloc_info,
+                                       &cmdp->entries[i].buffer);
+        if (res != VK_SUCCESS) {
+            yf_seterr(YF_ERR_DEVGEN, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
 
 /* Destroys the 'T_priv' data stored in a given context. */
-static void destroy_priv(YF_context ctx);
+static void destroy_priv(YF_context ctx)
+{
+    assert(ctx != NULL);
+
+    if (ctx->cmdp.priv == NULL)
+        return;
+
+    T_priv *priv = ctx->cmdp.priv;
+    YF_iter it = YF_NILIT;
+    do
+        free(yf_list_next(priv->callbs, &it));
+    while (!YF_IT_ISNIL(it));
+    yf_list_deinit(priv->callbs);
+
+    if (priv->cmdp.entries != NULL) {
+        for (unsigned i = 0; i < priv->cmdp.cap; i++)
+            vkDestroyCommandPool(ctx->device, priv->cmdp.entries[i].pool, NULL);
+        free(priv->cmdp.entries);
+    }
+
+    free(priv);
+    ctx->cmdp.priv = NULL;
+}
 
 int yf_cmdpool_create(YF_context ctx, unsigned capacity)
 {
@@ -100,13 +167,13 @@ int yf_cmdpool_obtain(YF_context ctx, YF_cmdres *cmdr)
     }
 
     T_entry *e = NULL;
-    for (unsigned i = 0; i < cmdp->cap; ++i) {
+    for (unsigned i = 0; i < cmdp->cap; i++) {
         e = &cmdp->entries[cmdp->last_i];
         if (!e->in_use) {
             cmdr->res_id = cmdp->last_i;
             cmdr->pool_res = e->buffer;
             e->in_use = 1;
-            ++cmdp->cur_n;
+            cmdp->cur_n++;
             break;
         }
         cmdp->last_i = (cmdp->last_i + 1) % cmdp->cap;
@@ -133,7 +200,7 @@ void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr)
 
     priv->cmdp.entries[cmdr->res_id].in_use = 0;
     priv->cmdp.last_i = cmdr->res_id;
-    --priv->cmdp.cur_n;
+    priv->cmdp.cur_n--;
 
     if (priv->prio.res_id == cmdr->res_id) {
         priv->prio.pool_res = NULL;
@@ -237,75 +304,4 @@ void yf_cmdpool_notifyprio(YF_context ctx, int result)
         free(callb);
     }
     yf_list_clear(priv->callbs);
-}
-
-static int init_entries(YF_context ctx, T_cmdp *cmdp)
-{
-    assert(ctx != NULL);
-    assert(cmdp != NULL);
-
-    cmdp->entries = calloc(cmdp->cap, sizeof(T_entry));
-    if (cmdp->entries == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-
-    VkCommandPoolCreateInfo pool_info = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
-        .pNext = NULL,
-        .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
-        .queueFamilyIndex = ctx->queue_i
-    };
-    VkCommandBufferAllocateInfo alloc_info = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
-        .pNext = NULL,
-        .commandPool = NULL,
-        .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
-        .commandBufferCount = 1
-    };
-    VkResult res;
-
-    for (unsigned i = 0; i < cmdp->cap; ++i) {
-        /* TODO: Consider using only one pool instead. */
-        res = vkCreateCommandPool(ctx->device, &pool_info, NULL,
-                                  &cmdp->entries[i].pool);
-        if (res != VK_SUCCESS) {
-            yf_seterr(YF_ERR_DEVGEN, __func__);
-            return -1;
-        }
-        alloc_info.commandPool = cmdp->entries[i].pool;
-
-        res = vkAllocateCommandBuffers(ctx->device, &alloc_info,
-                                       &cmdp->entries[i].buffer);
-        if (res != VK_SUCCESS) {
-            yf_seterr(YF_ERR_DEVGEN, __func__);
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
-static void destroy_priv(YF_context ctx)
-{
-    assert(ctx != NULL);
-
-    if (ctx->cmdp.priv == NULL)
-        return;
-
-    T_priv *priv = ctx->cmdp.priv;
-    YF_iter it = YF_NILIT;
-    do
-        free(yf_list_next(priv->callbs, &it));
-    while (!YF_IT_ISNIL(it));
-    yf_list_deinit(priv->callbs);
-
-    if (priv->cmdp.entries != NULL) {
-        for (unsigned i = 0; i < priv->cmdp.cap; ++i)
-            vkDestroyCommandPool(ctx->device, priv->cmdp.entries[i].pool, NULL);
-        free(priv->cmdp.entries);
-    }
-
-    free(priv);
-    ctx->cmdp.priv = NULL;
 }
