@@ -41,13 +41,32 @@ struct YF_camera_o {
 static const YF_vec3 l_wld_u = {0.0, 1.0, 0.0};
 
 /* Updates the camera's view matrix. */
-static void update_view(YF_camera cam);
+static void update_view(YF_camera cam)
+{
+    YF_vec3 center;
+    yf_vec3_add(center, cam->pos, cam->dir);
+    yf_mat4_lookat(cam->view, cam->pos, center, l_wld_u);
+
+    cam->pend_mask &= ~YF_PEND_V;
+    cam->pend_mask |= YF_PEND_VP;
+}
 
 /* Updates the camera's projection matrix. */
-static void update_proj(YF_camera cam);
+static void update_proj(YF_camera cam)
+{
+    cam->zoom = YF_CLAMP(cam->zoom, YF_FOV_MIN, YF_FOV_MAX);
+    yf_mat4_persp(cam->proj, cam->zoom, cam->aspect, 0.01, 100.0);
+
+    cam->pend_mask &= ~YF_PEND_P;
+    cam->pend_mask |= YF_PEND_VP;
+}
 
 /* Update the camera's view-projection matrix. */
-static void update_vp(YF_camera cam);
+static void update_vp(YF_camera cam)
+{
+    yf_mat4_mul(cam->view_proj, cam->proj, cam->view);
+    cam->pend_mask &= ~YF_PEND_VP;
+}
 
 YF_camera yf_camera_init(const YF_vec3 origin, const YF_vec3 target,
                          YF_float aspect)
@@ -265,6 +284,7 @@ const YF_mat4 *yf_camera_getview(YF_camera cam)
 
     if (cam->pend_mask & YF_PEND_V)
         update_view(cam);
+
     return (const YF_mat4 *)&cam->view;
 }
 
@@ -274,6 +294,7 @@ const YF_mat4 *yf_camera_getproj(YF_camera cam)
 
     if (cam->pend_mask & YF_PEND_P)
         update_proj(cam);
+
     return (const YF_mat4 *)&cam->proj;
 }
 
@@ -290,29 +311,4 @@ void yf_camera_deinit(YF_camera cam)
 {
     if (cam != NULL)
         free(cam);
-}
-
-static void update_view(YF_camera cam)
-{
-    YF_vec3 center;
-    yf_vec3_add(center, cam->pos, cam->dir);
-    yf_mat4_lookat(cam->view, cam->pos, center, l_wld_u);
-
-    cam->pend_mask &= ~YF_PEND_V;
-    cam->pend_mask |= YF_PEND_VP;
-}
-
-static void update_proj(YF_camera cam)
-{
-    cam->zoom = YF_CLAMP(cam->zoom, YF_FOV_MIN, YF_FOV_MAX);
-    yf_mat4_persp(cam->proj, cam->zoom, cam->aspect, 0.01, 100.0);
-
-    cam->pend_mask &= ~YF_PEND_P;
-    cam->pend_mask |= YF_PEND_VP;
-}
-
-static void update_vp(YF_camera cam)
-{
-    yf_mat4_mul(cam->view_proj, cam->proj, cam->view);
-    cam->pend_mask &= ~YF_PEND_VP;
 }
