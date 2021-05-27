@@ -34,6 +34,7 @@ typedef struct {
     uint16_t reserved2;
     uint32_t data_off;
 } T_bmpfh;
+
 #define YF_BMPFH_SZ  14
 static_assert(offsetof(T_bmpfh, data_off) == YF_BMPFH_SZ-4+2, "!offsetof");
 
@@ -51,6 +52,7 @@ typedef struct {
     uint32_t ci_n;
     uint32_t ci_important;
 } T_bmpih;
+
 #define YF_BMPIH_SZ  40
 static_assert(offsetof(T_bmpih, ci_important) == YF_BMPIH_SZ-4, "!offsetof");
 
@@ -77,6 +79,7 @@ typedef struct {
     uint32_t gamma_g;
     uint32_t gamma_b;
 } T_bmpv4h;
+
 #define YF_BMPV4H_SZ 108
 static_assert(offsetof(T_bmpv4h, gamma_b) == YF_BMPV4H_SZ-4, "!offsetof");
 
@@ -107,6 +110,7 @@ typedef struct {
     uint32_t prof_sz;
     uint32_t reserved;
 } T_bmpv5h;
+
 #define YF_BMPV5H_SZ 124
 static_assert(offsetof(T_bmpv5h, reserved) == YF_BMPV5H_SZ-4, "!offsetof");
 
@@ -118,12 +122,12 @@ static_assert(offsetof(T_bmpv5h, reserved) == YF_BMPV5H_SZ-4, "!offsetof");
 /* Counts the number of unset low bits in a mask. */
 #define YF_SETLSHF(res, mask, bpp) do { \
     res = 0; \
-    while (res != bpp && (mask & (1 << res)) == 0) ++res; } while (0)
+    while (res != bpp && (mask & (1 << res)) == 0) res++; } while (0)
 
 /* Counts the number of bits set in a mask. */
 #define YF_SETBITN(res, mask, bpp, lshf) do { \
     res = bpp; \
-    while (res > lshf && (mask & (1 << (res-1))) == 0) --res; \
+    while (res > lshf && (mask & (1 << (res-1))) == 0) res--; \
     res -= lshf; } while (0)
 
 int yf_loadbmp(const char *pathname, YF_texdt *data)
@@ -348,7 +352,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
                 free(scln);
                 return -1;
             }
-            for (int32_t j = 0; j < w; ++j) {
+            for (int32_t j = 0; j < w; j++) {
                 size_t dt_i = channels*w*i + channels*j;
                 size_t ci_i = scln[j];
                 memcpy(dt+dt_i, ci+ci_i, channels);
@@ -362,7 +366,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
             mask_rgba[1] = 0x03e0;
             mask_rgba[2] = 0x001f;
         }
-        for (size_t i = 0; i < channels; ++i) {
+        for (size_t i = 0; i < channels; i++) {
             YF_SETLSHF(lshf_rgba[i], mask_rgba[i], bpp);
             YF_SETBITN(bitn_rgba[i], mask_rgba[i], bpp, lshf_rgba[i]);
         }
@@ -389,9 +393,9 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
                 free(scln);
                 return -1;
             }
-            for (int32_t j = 0; j < w; ++j) {
+            for (int32_t j = 0; j < w; j++) {
                 uint16_t pix16 = le16toh(((uint16_t *)scln)[j]);
-                for (size_t k = 0; k < channels; ++k) {
+                for (size_t k = 0; k < channels; k++) {
                     size_t dt_i = channels*w*i + channels*j + k;
                     uint32_t comp = (pix16 & mask_rgba[k]) >> lshf_rgba[k];
                     uint32_t scale = 1 << diff_rgba[k];
@@ -429,7 +433,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
                 free(scln);
                 return -1;
             }
-            for (int32_t j = 0; j < w; ++j) {
+            for (int32_t j = 0; j < w; j++) {
                 size_t dt_i = channels*w*i + channels*j;
                 dt[dt_i++] = scln[3*j+k[0]];
                 dt[dt_i++] = scln[3*j+k[1]];
@@ -444,7 +448,7 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
             mask_rgba[1] = 0x0000ff00;
             mask_rgba[2] = 0x000000ff;
         }
-        for (size_t i = 0; i < channels; ++i)
+        for (size_t i = 0; i < channels; i++)
             YF_SETLSHF(lshf_rgba[i], mask_rgba[i], bpp);
         /* no padding needed */
         size_t scln_sz = w << 2;
@@ -462,9 +466,9 @@ int yf_loadbmp(const char *pathname, YF_texdt *data)
                 free(scln);
                 return -1;
             }
-            for (int32_t j = 0; j < w; ++j) {
+            for (int32_t j = 0; j < w; j++) {
                 uint32_t pix32 = le32toh(((uint32_t *)scln)[j]);
-                for (size_t k = 0; k < channels; ++k) {
+                for (size_t k = 0; k < channels; k++) {
                     size_t dt_i = channels*w*i + channels*j + k;
                     dt[dt_i] = (pix32 & mask_rgba[k]) >> lshf_rgba[k];
                 }
