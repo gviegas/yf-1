@@ -50,7 +50,33 @@ struct YF_particle_o {
 };
 
 /* Initializes vertices, states and mesh object. */
-static int init_points(YF_particle part);
+static int init_points(YF_particle part)
+{
+    assert(part != NULL);
+
+    part->pts = malloc(sizeof(YF_vpart) * part->count);
+    part->sts = malloc(sizeof(T_pstate) * part->count);
+    if (part->pts == NULL || part->sts == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    const YF_vpart pt = {.pos = {0.0, 0.0, 0.5}, .clr = {1.0, 1.0, 1.0, 1.0}};
+    const T_pstate st = {YF_PSTATE_UNSET, 0.0, 0.0, 0.0, 0.0, 0.0, {0}};
+    for (unsigned i = 0; i < part->count; i++) {
+        memcpy(part->pts+i, &pt, sizeof pt);
+        memcpy(part->sts+i, &st, sizeof st);
+    }
+
+    const YF_meshdt dt = {
+        .v = {YF_VTYPE_PART, part->pts, part->count},
+        .i = {NULL, 0, 0}
+    };
+    if ((part->mesh = yf_mesh_initdt(&dt)) == NULL)
+        return -1;
+
+    return 0;
+}
 
 YF_particle yf_particle_init(unsigned count)
 {
@@ -101,6 +127,7 @@ YF_particle yf_particle_init(unsigned count)
         yf_particle_deinit(part);
         return NULL;
     }
+
     return part;
 }
 
@@ -143,7 +170,7 @@ void yf_particle_simulate(YF_particle part, double tm)
     YF_vpart *pt;
     T_pstate *st;
 
-    for (unsigned i = 0; i < part->count; ++i) {
+    for (unsigned i = 0; i < part->count; i++) {
         pt = part->pts+i;
         st = part->sts+i;
 
@@ -244,32 +271,4 @@ void yf_particle_deinit(YF_particle part)
         free(part->sts);
         free(part);
     }
-}
-
-static int init_points(YF_particle part)
-{
-    assert(part != NULL);
-
-    part->pts = malloc(sizeof(YF_vpart) * part->count);
-    part->sts = malloc(sizeof(T_pstate) * part->count);
-    if (part->pts == NULL || part->sts == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-
-    const YF_vpart pt = {.pos = {0.0, 0.0, 0.5}, .clr = {1.0, 1.0, 1.0, 1.0}};
-    const T_pstate st = {YF_PSTATE_UNSET, 0.0, 0.0, 0.0, 0.0, 0.0, {0}};
-    for (unsigned i = 0; i < part->count; ++i) {
-        memcpy(part->pts+i, &pt, sizeof pt);
-        memcpy(part->sts+i, &st, sizeof st);
-    }
-
-    const YF_meshdt dt = {
-        .v = {YF_VTYPE_PART, part->pts, part->count},
-        .i = {NULL, 0, 0}
-    };
-    if ((part->mesh = yf_mesh_initdt(&dt)) == NULL)
-        return -1;
-
-    return 0;
 }
