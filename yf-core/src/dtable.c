@@ -44,7 +44,7 @@ static void inval_iview(void *img, int pubsub, void *dtb)
     while ((kv = yf_dict_next(iviews, &it, NULL)) != NULL) {
         const unsigned n = ((YF_dtable)dtb)->entries[kv->key.entry_i].elements;
 
-        for (unsigned i = 0; i < n; ++i) {
+        for (unsigned i = 0; i < n; i++) {
             if (kv->imgs[i] == img)
                 kv->imgs[i] = NULL;
         }
@@ -66,8 +66,8 @@ static int cmp_kv(const void *a, const void *b)
     const T_kv *kv1 = a;
     const T_kv *kv2 = b;
 
-    return (kv1->key.alloc_i != kv2->key.alloc_i) ||
-           (kv1->key.entry_i != kv2->key.entry_i);
+    return kv1->key.alloc_i != kv2->key.alloc_i ||
+           kv1->key.entry_i != kv2->key.entry_i;
 }
 
 /* Initializes the descriptor set layout. */
@@ -97,7 +97,7 @@ static int init_layout(YF_dtable dtb)
     unsigned spl_n = dtb->entry_n;
     unsigned spl_i = 0;
 
-    for (unsigned i = 0; i < dtb->entry_n; ++i) {
+    for (unsigned i = 0; i < dtb->entry_n; i++) {
         bindings[i].binding = dtb->entries[i].binding;
         bindings[i].descriptorCount = dtb->entries[i].elements;
         bindings[i].stageFlags = VK_SHADER_STAGE_ALL;
@@ -155,7 +155,7 @@ static int init_layout(YF_dtable dtb)
             samplers = tmp;
         }
 
-        for (unsigned j = spl_i; j < spl_i + dtb->entries[i].elements; ++j) {
+        for (unsigned j = spl_i; j < spl_i + dtb->entries[i].elements; j++) {
             samplers[j] = yf_sampler_make(dtb->ctx, dtb->entries[i].info);
 
             if (samplers[j] == VK_NULL_HANDLE) {
@@ -323,7 +323,7 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
         return -1;
     }
 
-    for (unsigned i = 0; i < n; ++i)
+    for (unsigned i = 0; i < n; i++)
         layouts[i] = dtb->layout;
 
     VkDescriptorSetAllocateInfo alloc_info = {
@@ -352,12 +352,12 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
         return -1;
     }
 
-    for (unsigned i = 0; i < dtb->entry_n; ++i) {
+    for (unsigned i = 0; i < dtb->entry_n; i++) {
         switch (dtb->entries[i].dtype) {
         case YF_DTYPE_IMAGE:
         case YF_DTYPE_SAMPLED:
         case YF_DTYPE_ISAMPLER:
-            for (unsigned j = 0; j < n; ++j) {
+            for (unsigned j = 0; j < n; j++) {
                 T_kv *kv = calloc(1, sizeof(T_kv));
 
                 if (kv == NULL) {
@@ -402,7 +402,7 @@ void yf_dtable_dealloc(YF_dtable dtb)
     T_kv *kv;
 
     while ((kv = yf_dict_next(dtb->iviews, &it, NULL)) != NULL) {
-        for (unsigned i = 0; i < dtb->entries[kv->key.entry_i].elements; ++i) {
+        for (unsigned i = 0; i < dtb->entries[kv->key.entry_i].elements; i++) {
             if (kv->imgs[i] != NULL) {
                 yf_subscribe(kv->imgs[i], dtb, YF_PUBSUB_NONE, NULL, NULL);
                 yf_image_ungetiview(kv->imgs[i], kv->iviews+i);
@@ -441,7 +441,7 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
 
     YF_dentry *entry = NULL;
 
-    for (unsigned i = 0; i < dtb->entry_n; ++i) {
+    for (unsigned i = 0; i < dtb->entry_n; i++) {
         if (dtb->entries[i].binding == binding) {
             entry = dtb->entries+i;
             break;
@@ -466,7 +466,7 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         return -1;
     }
 
-    for (unsigned i = 0; i < elements.n; ++i) {
+    for (unsigned i = 0; i < elements.n; i++) {
         /* TODO: Check if region is within bounds. */
         buf_infos[i].buffer = bufs[i]->buffer;
         buf_infos[i].offset = offsets[i];
@@ -522,7 +522,7 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
     YF_dentry *entry = NULL;
     unsigned entry_i = 0;
 
-    for (; entry_i < dtb->entry_n; ++entry_i) {
+    for (; entry_i < dtb->entry_n; entry_i++) {
         if (dtb->entries[entry_i].binding == binding) {
             entry = dtb->entries+entry_i;
             break;
@@ -555,7 +555,7 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
 
     assert(kv != NULL);
 
-    for (unsigned i = 0; i < elements.n; ++i) {
+    for (unsigned i = 0; i < elements.n; i++) {
         /* TODO: Check if region is within bounds. */
         lay.i = layers[i];
 
