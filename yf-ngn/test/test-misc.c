@@ -229,7 +229,7 @@ int yf_test_misc(void)
     yf_node_insert(yf_scene_getnode(l_vars.scn), yf_model_getnode(l_vars.mdl));
 
     const size_t labl_n = sizeof l_vars.labls / sizeof l_vars.labls[0];
-    for (size_t i = 0; i < labl_n; ++i) {
+    for (size_t i = 0; i < labl_n; i++) {
         l_vars.labls[i] = yf_label_init();
         assert(l_vars.labls[i] != NULL);
 
@@ -284,7 +284,7 @@ int yf_test_misc(void)
     yf_node_deinit(l_vars.labl_node);
 
     yf_model_deinit(l_vars.mdl);
-    for (size_t i = 0; i < labl_n; ++i)
+    for (size_t i = 0; i < labl_n; i++)
         yf_label_deinit(l_vars.labls[i]);
 
     yf_collection_deinit(l_vars.coll);

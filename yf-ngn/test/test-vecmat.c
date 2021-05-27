@@ -13,14 +13,14 @@
 
 #define YF_PVEC(v, n) do { \
     printf("<"#v"> "); \
-    for (int i = 0; i < n; ++i) \
+    for (int i = 0; i < n; i++) \
         printf("%.4f ", v[i]); \
     puts("\n"); } while (0)
 
 #define YF_PMAT(m, n) do { \
     puts("<"#m">"); \
-    for (int i = 0; i < n; ++i) { \
-        for (int j = 0; j < n; ++j) \
+    for (int i = 0; i < n; i++) { \
+        for (int j = 0; j < n; j++) \
             printf("%.4f ", m[j*n+i]); \
         puts(""); \
     } \

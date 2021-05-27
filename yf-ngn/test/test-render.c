@@ -154,7 +154,7 @@ int yf_test_render(void)
 
     YF_node scn1_nd = yf_scene_getnode(l_vars.scn1);
     YF_float tf = YF_MDLN / -2.0;
-    for (size_t i = 0; i < YF_MDLN; ++i) {
+    for (size_t i = 0; i < YF_MDLN; i++) {
         l_vars.mdls[i] = yf_model_init();
         assert(l_vars.mdls[i] != NULL);
 
@@ -175,7 +175,7 @@ int yf_test_render(void)
     yf_view_setscene(l_vars.view, l_vars.scn1);
     yf_view_start(l_vars.view, YF_FPS, update);
 
-    for (size_t i = 0; i < YF_MDLN; ++i)
+    for (size_t i = 0; i < YF_MDLN; i++)
         yf_model_deinit(l_vars.mdls[i]);
     yf_texture_deinit(l_vars.tex1);
     yf_texture_deinit(l_vars.tex2);

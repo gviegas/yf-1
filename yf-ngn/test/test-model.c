@@ -192,7 +192,7 @@ static void update(double elapsed_time)
     YF_mat4 rot;
     YF_vec3 axis = {0.7071, -0.7071, 0.0};
     yf_mat4_rot(rot, ang, axis);
-    for (unsigned i = 0; i < YF_MDLN; ++i)
+    for (unsigned i = 0; i < YF_MDLN; i++)
         yf_mat4_mul(*yf_node_getxform(yf_model_getnode(l_vars.mdl[i])),
                     l_xforms[i], rot);
 
@@ -240,7 +240,7 @@ int yf_test_model(void)
     assert(l_vars.view != NULL);
 
     /* Create scene */
-    for (unsigned i = 0; i < YF_SCNN; ++i) {
+    for (unsigned i = 0; i < YF_SCNN; i++) {
         l_vars.scn[i] = yf_scene_init();
         assert(l_vars.scn[0] != NULL);
         yf_scene_setcolor(l_vars.scn[i], YF_COLOR_LIGHTGREY);
@@ -262,7 +262,7 @@ int yf_test_model(void)
         assert(l_vars.tex[1] != NULL);
 
         /* Create model, assign resources and insert into a scene */
-        for (unsigned i = 0; i < YF_MDLN; ++i) {
+        for (unsigned i = 0; i < YF_MDLN; i++) {
             l_vars.mdl[i] = yf_model_init();
             assert(l_vars.mdl[i] != NULL);
 
@@ -276,7 +276,7 @@ int yf_test_model(void)
         l_vars.uniq_res_n = YF_MDLN;
 
         /* Create mesh */
-        for (unsigned i = 0; i < YF_MDLN; ++i) {
+        for (unsigned i = 0; i < YF_MDLN; i++) {
             if (i&1)
                 l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_GLTF,
                                               "tmp/model1.gltf");
@@ -287,7 +287,7 @@ int yf_test_model(void)
         }
 
         /* Create texture */
-        for (unsigned i = 0; i < YF_MDLN; ++i) {
+        for (unsigned i = 0; i < YF_MDLN; i++) {
             if (i&1)
                 l_vars.tex[i] = yf_texture_init(YF_FILETYPE_PNG,
                                                 "tmp/model1.png");
@@ -298,7 +298,7 @@ int yf_test_model(void)
         }
 
         /* Create model, assign resources and insert into a scene */
-        for (unsigned i = 0; i < YF_MDLN; ++i) {
+        for (unsigned i = 0; i < YF_MDLN; i++) {
             l_vars.mdl[i] = yf_model_init();
             assert(l_vars.mdl[i] != NULL);
 
@@ -319,11 +319,11 @@ int yf_test_model(void)
 
     /* Deinitialize. */
     yf_view_deinit(l_vars.view);
-    for (size_t i = 0; i < YF_SCNN; ++i)
+    for (size_t i = 0; i < YF_SCNN; i++)
         yf_scene_deinit(l_vars.scn[i]);
-    for (size_t i = 0; i < YF_MDLN; ++i)
+    for (size_t i = 0; i < YF_MDLN; i++)
         yf_model_deinit(l_vars.mdl[i]);
-    for (size_t i = 0; i < l_vars.uniq_res_n; ++i) {
+    for (size_t i = 0; i < l_vars.uniq_res_n; i++) {
         yf_mesh_deinit(l_vars.mesh[i]);
         yf_texture_deinit(l_vars.tex[i]);
     }
