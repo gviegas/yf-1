@@ -51,10 +51,10 @@ static int cmp_priv(const void *a, const void *b)
     const T_priv *pv1 = a;
     const T_priv *pv2 = b;
 
-    return (pv1->key.layers.i != pv2->key.layers.i) ||
-           (pv1->key.layers.n != pv2->key.layers.n) ||
-           (pv1->key.levels.i != pv2->key.levels.i) ||
-           (pv1->key.levels.n != pv2->key.levels.n);
+    return pv1->key.layers.i != pv2->key.layers.i ||
+           pv1->key.layers.n != pv2->key.layers.n ||
+           pv1->key.levels.i != pv2->key.levels.i ||
+           pv1->key.levels.n != pv2->key.levels.n;
 }
 
 YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,

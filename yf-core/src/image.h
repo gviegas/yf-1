@@ -50,12 +50,12 @@ YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
                        VkImageLayout layout);
 
 /* Gets an image view.
-   Every call to this function must be matched by a call to 'ungetiview'. */
+   Every call to this function must be matched by a call to 'ungetiview()'. */
 int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
                       YF_iview *iview);
 
 /* Ungets an image view.
-   This function must be called when the iview is not needed anymore. */
+   This function must be called when a 'YF_iview' is not needed anymore. */
 void yf_image_ungetiview(YF_image img, YF_iview *iview);
 
 /* Encodes a general layout transition in the given command buffer.
