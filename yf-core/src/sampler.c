@@ -13,7 +13,7 @@
 #include "sampler.h"
 #include "context.h"
 
-VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *samp)
+VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *spl)
 {
     assert(ctx != NULL);
 
@@ -32,13 +32,13 @@ VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *samp)
     info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
     info.unnormalizedCoordinates = VK_FALSE;
 
-    if (samp != NULL) {
-        YF_WRAPMODE_FROM(samp->wrapmode.u, info.addressModeU);
-        YF_WRAPMODE_FROM(samp->wrapmode.v, info.addressModeV);
-        YF_WRAPMODE_FROM(samp->wrapmode.w, info.addressModeW);
-        YF_FILTER_FROM(samp->filter.mag, info.magFilter);
-        YF_FILTER_FROM(samp->filter.min, info.minFilter);
-        YF_FILTER_MIP_FROM(samp->filter.mipmap, info.mipmapMode);
+    if (spl != NULL) {
+        YF_WRAPMODE_FROM(spl->wrapmode.u, info.addressModeU);
+        YF_WRAPMODE_FROM(spl->wrapmode.v, info.addressModeV);
+        YF_WRAPMODE_FROM(spl->wrapmode.w, info.addressModeW);
+        YF_FILTER_FROM(spl->filter.mag, info.magFilter);
+        YF_FILTER_FROM(spl->filter.min, info.minFilter);
+        YF_FILTER_MIP_FROM(spl->filter.mipmap, info.mipmapMode);
 
         assert(info.addressModeU != INT_MAX);
         assert(info.addressModeV != INT_MAX);

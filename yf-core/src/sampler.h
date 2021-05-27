@@ -14,7 +14,7 @@
 
 /* Makes a new sampler from a given 'YF_sampler'.
    The caller is responsible for the object's destruction. */
-VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *samp);
+VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *spl);
 
 /* Converts from a 'YF_WRAPMODE' value. */
 #define YF_WRAPMODE_FROM(wm, to) do { \
