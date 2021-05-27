@@ -95,7 +95,7 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
     }
 
     unsigned dsc_i = 0;
-    for (unsigned i = 0; i < pass->color_n; ++i) {
+    for (unsigned i = 0; i < pass->color_n; i++) {
         dscs[dsc_i].flags = 0;
         YF_PIXFMT_FROM(colors[i].pixfmt, dscs[dsc_i].format);
         YF_SAMPLES_FROM(colors[i].samples, dscs[dsc_i].samples);
@@ -109,7 +109,7 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
         color_refs[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         ++dsc_i;
     }
-    for (unsigned i = 0; i < pass->resolve_n; ++i) {
+    for (unsigned i = 0; i < pass->resolve_n; i++) {
         dscs[dsc_i].flags = 0;
         YF_PIXFMT_FROM(resolves[i].pixfmt, dscs[dsc_i].format);
         YF_SAMPLES_FROM(resolves[i].samples, dscs[dsc_i].samples);
@@ -137,7 +137,7 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
         depth_ref->attachment = dsc_i;
         depth_ref->layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     }
-    for (unsigned i = 0; i < dsc_n; ++i) {
+    for (unsigned i = 0; i < dsc_n; i++) {
         if (dscs[i].format == VK_FORMAT_UNDEFINED ||
             dscs[i].samples == INT_MAX ||
             dscs[i].loadOp == INT_MAX ||
@@ -178,6 +178,7 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
         .dependencyCount = 0,
         .pDependencies = NULL
     };
+
     VkResult res = vkCreateRenderPass(ctx->device, &info, NULL,
                                       &pass->ren_pass);
     if (res != VK_SUCCESS) {
@@ -217,7 +218,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
     }
 
     if (pass->tgt_n == pass->tgt_cap) {
-        unsigned cap = pass->tgt_cap * 2;
+        unsigned cap = pass->tgt_cap << 1;
         YF_target *tmp = realloc(pass->tgts, cap * sizeof *pass->tgts);
         if (tmp == NULL) {
             cap = pass->tgt_cap + 1;
@@ -233,7 +234,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
         pass->tgt_i = pass->tgt_n;
     }
 
-    for (unsigned i = 0, j = 0; i < pass->tgt_cap; ++i) {
+    for (unsigned i = 0, j = 0; i < pass->tgt_cap; i++) {
         j = (pass->tgt_i + i) % pass->tgt_cap;
         if (pass->tgts[j] == NULL) {
             pass->tgt_i = j;
@@ -253,6 +254,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
     tgt->iviews = calloc(tgt->iview_n, sizeof *tgt->iviews);
     tgt->imgs = malloc(tgt->iview_n * sizeof *tgt->imgs);
     tgt->lays_base = malloc(tgt->iview_n * sizeof *tgt->lays_base);
+
     if (tgt->iviews == NULL || tgt->imgs == NULL || tgt->lays_base == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         free(tgt->iviews);
@@ -276,11 +278,11 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
         return NULL;
     }
 
-    for (unsigned i = 0; i < color_n; ++i) {
+    for (unsigned i = 0; i < color_n; i++) {
         lay.i = colors[i].layer_base;
         r = yf_image_getiview(colors[i].img, lay, lvl, tgt->iviews+iview_i);
         if (r != 0) {
-            for (unsigned i = 0; i < iview_i; ++i)
+            for (unsigned i = 0; i < iview_i; i++)
                 yf_image_ungetiview(tgt->imgs[i], tgt->iviews+i);
             free(tgt->iviews);
             free(tgt->imgs);
@@ -292,13 +294,13 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
         tgt->imgs[iview_i] = colors[i].img;
         tgt->lays_base[iview_i] = lay.i;
         info_views[iview_i] = tgt->iviews[iview_i].view;
-        ++iview_i;
+        iview_i++;
     }
-    for (unsigned i = 0; i < resolve_n; ++i) {
+    for (unsigned i = 0; i < resolve_n; i++) {
         lay.i = resolves[i].layer_base;
         r = yf_image_getiview(resolves[i].img, lay, lvl, tgt->iviews+iview_i);
         if (r != 0) {
-            for (unsigned i = 0; i < iview_i; ++i)
+            for (unsigned i = 0; i < iview_i; i++)
                 yf_image_ungetiview(tgt->imgs[i], tgt->iviews+i);
             free(tgt->iviews);
             free(tgt->imgs);
@@ -310,14 +312,14 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
         tgt->imgs[iview_i] = resolves[i].img;
         tgt->lays_base[iview_i] = lay.i;
         info_views[iview_i] = tgt->iviews[iview_i].view;
-        ++iview_i;
+        iview_i++;
     }
     if (depth_stencil != NULL) {
         lay.i = depth_stencil->layer_base;
         r = yf_image_getiview(depth_stencil->img, lay, lvl,
                               tgt->iviews+iview_i);
         if (r != 0) {
-            for (unsigned i = 0; i < iview_i; ++i)
+            for (unsigned i = 0; i < iview_i; i++)
                 yf_image_ungetiview(tgt->imgs[i], tgt->iviews+i);
             free(tgt->iviews);
             free(tgt->imgs);
@@ -342,12 +344,13 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
         .height = dim.height,
         .layers = layers
     };
+
     VkResult res = vkCreateFramebuffer(pass->ctx->device, &info, NULL,
                                        &tgt->framebuf);
     free(info_views);
     if (res != VK_SUCCESS) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
-        for (unsigned i = 0; i < tgt->iview_n; ++i)
+        for (unsigned i = 0; i < tgt->iview_n; i++)
             yf_image_ungetiview(tgt->imgs[i], tgt->iviews+i);
         free(tgt->iviews);
         free(tgt->imgs);
@@ -357,7 +360,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
     }
 
     pass->tgts[pass->tgt_i] = tgt;
-    ++pass->tgt_n;
+    pass->tgt_n++;
     pass->tgt_i = (pass->tgt_i + 1) % pass->tgt_cap;
     return tgt;
 }
@@ -376,7 +379,7 @@ int yf_pass_unmktarget(YF_pass pass, YF_target tgt)
     }
 
     unsigned index = pass->tgt_cap;
-    for (unsigned i = 0; i < pass->tgt_cap; ++i) {
+    for (unsigned i = 0; i < pass->tgt_cap; i++) {
         if (pass->tgts[i] == tgt) {
             index = i;
             break;
@@ -385,7 +388,7 @@ int yf_pass_unmktarget(YF_pass pass, YF_target tgt)
     assert(index < pass->tgt_cap);
 
     vkDestroyFramebuffer(pass->ctx->device, tgt->framebuf, NULL);
-    for (unsigned i = 0; i < tgt->iview_n; ++i)
+    for (unsigned i = 0; i < tgt->iview_n; i++)
         yf_image_ungetiview(tgt->imgs[i], tgt->iviews+i);
     free(tgt->iviews);
     free(tgt->imgs);
@@ -393,7 +396,7 @@ int yf_pass_unmktarget(YF_pass pass, YF_target tgt)
     free(tgt);
 
     pass->tgts[index] = NULL;
-    --pass->tgt_n;
+    pass->tgt_n--;
     pass->tgt_i = index;
     return 0;
 }
@@ -402,7 +405,7 @@ void yf_pass_deinit(YF_pass pass)
 {
     if (pass != NULL) {
         vkDestroyRenderPass(pass->ctx->device, pass->ren_pass, NULL);
-        for (unsigned i = 0; i < pass->tgt_cap; ++i)
+        for (unsigned i = 0; i < pass->tgt_cap; i++)
             yf_pass_unmktarget(pass, pass->tgts[i]);
         free(pass->tgts);
         free(pass);
