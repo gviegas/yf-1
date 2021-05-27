@@ -57,6 +57,7 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
         .pushConstantRangeCount = 0,
         .pPushConstantRanges = NULL
     };
+
     VkDescriptorSetLayout *ds_lays = NULL;
     if (conf->dtb_n > 0) {
         ds_lays = malloc(conf->dtb_n * sizeof *ds_lays);
@@ -65,10 +66,11 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
             yf_cstate_deinit(cst);
             return NULL;
         }
-        for (unsigned i = 0; i < conf->dtb_n; ++i)
+        for (unsigned i = 0; i < conf->dtb_n; i++)
             ds_lays[i] = conf->dtbs[i]->layout;
         lay_info.pSetLayouts = ds_lays;
     }
+
     res = vkCreatePipelineLayout(ctx->device, &lay_info, NULL, &cst->layout);
     free(ds_lays);
     if (res != VK_SUCCESS) {
@@ -100,6 +102,7 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
         yf_cstate_deinit(cst);
         return NULL;
     }
+
     res = vkCreateComputePipelines(ctx->device, ctx->pl_cache, 1, &pl_info,
                                    NULL, &cst->pipeline);
     if (res != VK_SUCCESS) {
@@ -125,6 +128,7 @@ YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index)
         yf_seterr(YF_ERR_INVARG, __func__);
         return NULL;
     }
+
     return cst->dtbs[index];
 }
 
