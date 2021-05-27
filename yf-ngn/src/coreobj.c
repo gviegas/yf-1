@@ -27,10 +27,28 @@ extern YF_pass yf_g_pass;
 void yf_unsetscn(void);
 
 /* Handles deinitialization before exiting. */
-static void handle_exit(void);
+static void handle_exit(void)
+{
+    yf_unsetscn();
+    yf_pass_deinit(yf_g_pass);
+    yf_context_deinit(l_ctx);
+}
 
 /* Exits with failure. */
-static _Noreturn void exit_fatal(const char *info);
+static _Noreturn void exit_fatal(const char *info)
+{
+#ifndef YF_DEVEL
+    yf_printerr();
+#endif
+
+    fprintf(stderr, "\n[YF] Fatal:\n! Failed to initialize core object");
+    if (info != NULL)
+        fprintf(stderr, "\n! %s\n\n", info);
+    else
+        fprintf(stderr, "\n\n");
+
+    exit(EXIT_FAILURE);
+}
 
 YF_context yf_getctx(void)
 {
@@ -59,26 +77,4 @@ YF_pass yf_getpass(void)
     }
 
     return yf_g_pass;
-}
-
-static void handle_exit(void)
-{
-    yf_unsetscn();
-    yf_pass_deinit(yf_g_pass);
-    yf_context_deinit(l_ctx);
-}
-
-static _Noreturn void exit_fatal(const char *info)
-{
-#ifndef YF_DEVEL
-    yf_printerr();
-#endif
-
-    fprintf(stderr, "\n[YF] Fatal:\n! Failed to initialize core object");
-    if (info != NULL)
-        fprintf(stderr, "\n! %s\n\n", info);
-    else
-        fprintf(stderr, "\n\n");
-
-    exit(EXIT_FAILURE);
 }
