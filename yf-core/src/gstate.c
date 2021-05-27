@@ -87,6 +87,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         .pushConstantRangeCount = 0,
         .pPushConstantRanges = NULL
     };
+
     VkDescriptorSetLayout *ds_lays = NULL;
     if (conf->dtb_n > 0) {
         ds_lays = malloc(conf->dtb_n * sizeof *ds_lays);
@@ -95,10 +96,11 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
             yf_gstate_deinit(gst);
             return NULL;
         }
-        for (unsigned i = 0; i < conf->dtb_n; ++i)
+        for (unsigned i = 0; i < conf->dtb_n; i++)
             ds_lays[i] = conf->dtbs[i]->layout;
         lay_info.pSetLayouts = ds_lays;
     }
+
     res = vkCreatePipelineLayout(ctx->device, &lay_info, NULL, &gst->layout);
     free(ds_lays);
     if (res != VK_SUCCESS) {
@@ -115,8 +117,9 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         yf_gstate_deinit(gst);
         return NULL;
     }
+
     unsigned stg_mask = 0;
-    for (unsigned i = 0; i < conf->stg_n; ++i) {
+    for (unsigned i = 0; i < conf->stg_n; i++) {
         VkShaderModule module = yf_getmod(ctx, conf->stgs[i].mod);
         if (module == VK_NULL_HANDLE ||
             !YF_STAGE_ONE(conf->stgs[i].stage) ||
@@ -136,6 +139,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         ss[i].pSpecializationInfo = NULL;
         stg_mask |= conf->stgs[i].stage;
     }
+
     if (YF_STAGE_INVGRAPH(stg_mask)) {
         yf_seterr(YF_ERR_INVARG, __func__);
         yf_gstate_deinit(gst);
@@ -153,39 +157,48 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         .vertexAttributeDescriptionCount = 0,
         .pVertexAttributeDescriptions = NULL
     };
+
+    VkVertexInputBindingDescription *binds = NULL;
+    VkVertexInputAttributeDescription *attrs = NULL;
     if (conf->vin_n > 0) {
         assert(conf->vins != NULL);
+
         unsigned attr_n = 0;
-        for (unsigned i = 0; i < conf->vin_n; ++i)
+        for (unsigned i = 0; i < conf->vin_n; i++)
             attr_n += conf->vins[i].attr_n;
+
         if (attr_n > 0) {
-            VkVertexInputBindingDescription *binds = NULL;
-            VkVertexInputAttributeDescription *attrs = NULL;
             binds = malloc(conf->vin_n * sizeof *binds);
             attrs = malloc(attr_n * sizeof *attrs);
             if (binds == NULL || attrs == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
-                free(binds);
                 free(attrs);
+                free(binds);
                 free(ss);
                 return NULL;
             }
+
             const YF_vattr *vattr = NULL;
             unsigned k = 0;
-            for (unsigned i = 0; i < conf->vin_n; ++i) {
+            for (unsigned i = 0; i < conf->vin_n; i++) {
                 binds[i].binding = i;
                 binds[i].stride = conf->vins[i].stride;
                 YF_VRATE_FROM(conf->vins[i].vrate, binds[i].inputRate);
+
                 assert(binds[i].inputRate != INT_MAX);
-                for (unsigned j = 0; j < conf->vins[i].attr_n; ++j, ++k) {
+
+                for (unsigned j = 0; j < conf->vins[i].attr_n; j++, k++) {
                     vattr = conf->vins[i].attrs+j;
                     attrs[k].location = vattr->location;
                     attrs[k].binding = i;
                     YF_TYPEFMT_FROM(vattr->typefmt, attrs[k].format);
+
                     assert(attrs[k].format != VK_FORMAT_UNDEFINED);
+
                     attrs[k].offset = vattr->offset;
                 }
             }
+
             vi.vertexBindingDescriptionCount = conf->vin_n;
             vi.pVertexBindingDescriptions = binds;
             vi.vertexAttributeDescriptionCount = attr_n;
@@ -282,9 +295,12 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         if (cb_atts == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             yf_gstate_deinit(gst);
+            free(attrs);
+            free(binds);
             free(ss);
             return NULL;
         }
+
         cb_atts[0].blendEnable = VK_TRUE;
         cb_atts[0].srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
         cb_atts[0].dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
@@ -297,9 +313,11 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
             VK_COLOR_COMPONENT_G_BIT |
             VK_COLOR_COMPONENT_B_BIT |
             VK_COLOR_COMPONENT_A_BIT;
-        for (unsigned i = 1; i < conf->pass->color_n; ++i)
+
+        for (unsigned i = 1; i < conf->pass->color_n; i++)
             memcpy(&cb_atts[i], &cb_atts[0], sizeof cb_atts[0]);
     }
+
     VkPipelineColorBlendStateCreateInfo cb = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
         .pNext = NULL,
@@ -345,6 +363,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         .basePipelineHandle = NULL,
         .basePipelineIndex = -1
     };
+
     res = vkCreateGraphicsPipelines(ctx->device, ctx->pl_cache, 1, &pl_info,
                                     NULL, &gst->pipeline);
     if (res != VK_SUCCESS) {
@@ -353,8 +372,10 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         gst = NULL;
     }
 
-    free(ss);
     free(cb_atts);
+    free(attrs);
+    free(binds);
+    free(ss);
     return gst;
 }
 
@@ -368,10 +389,11 @@ const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage)
 {
     assert(gst != NULL);
 
-    for (unsigned i = 0; i < gst->stg_n; ++i) {
+    for (unsigned i = 0; i < gst->stg_n; i++) {
         if (gst->stgs[i].stage == stage)
             return gst->stgs+i;
     }
+
     return NULL;
 }
 
@@ -383,6 +405,7 @@ YF_dtable yf_gstate_getdtb(YF_gstate gst, unsigned index)
         yf_seterr(YF_ERR_INVARG, __func__);
         return NULL;
     }
+
     return gst->dtbs[index];
 }
 
