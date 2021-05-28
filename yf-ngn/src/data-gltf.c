@@ -496,6 +496,22 @@ typedef struct {
     size_t n;
 } T_nodes;
 
+/* Type defining the 'glTF.cameras.perspective' property. */
+typedef struct {
+    T_num yfov;
+    T_num aspect_ratio;
+    T_num znear;
+    T_num zfar;
+} T_perspective;
+
+/* Type defining the 'glTF.cameras.orthographic' property. */
+typedef struct {
+    T_num xmag;
+    T_num ymag;
+    T_num znear;
+    T_num zfar;
+} T_orthographic;
+
 /* Type defining the 'glTF.cameras' property. */
 typedef struct {
     struct {
@@ -503,18 +519,8 @@ typedef struct {
 #define YF_GLTF_CAMERA_ORTHO 1
         int type;
         union {
-            struct {
-                T_num yfov;
-                T_num aspect_ratio;
-                T_num znear;
-                T_num zfar;
-            } persp;
-            struct {
-                T_num xmag;
-                T_num ymag;
-                T_num znear;
-                T_num zfar;
-            } ortho;
+            T_perspective persp;
+            T_orthographic ortho;
         };
         T_str name;
     } *v;
@@ -1016,6 +1022,102 @@ static int parse_nodes(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.camera.perspective' property. */
+static int parse_perspective(FILE *file, T_token *token,
+                             T_perspective *perspective)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(perspective != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp(token->data, "perspective") == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("yfov", token->data) == 0) {
+                if (parse_num(file, token, &perspective->yfov) != 0)
+                    return -1;
+            } else if (strcmp("aspectRatio", token->data) == 0) {
+                if (parse_num(file, token, &perspective->aspect_ratio) != 0)
+                    return -1;
+            } else if (strcmp("znear", token->data) == 0) {
+                if (parse_num(file, token, &perspective->znear) != 0)
+                    return -1;
+            } else if (strcmp("zfar", token->data) == 0) {
+                if (parse_num(file, token, &perspective->zfar) != 0)
+                    return -1;
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* Parses the 'glTF.camera.orthographic' property. */
+static int parse_orthographic(FILE *file, T_token *token,
+                              T_orthographic *orthographic)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(orthographic != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp(token->data, "orthographic") == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("xmag", token->data) == 0) {
+                if (parse_num(file, token, &orthographic->xmag) != 0)
+                    return -1;
+            } else if (strcmp("ymag", token->data) == 0) {
+                if (parse_num(file, token, &orthographic->ymag) != 0)
+                    return -1;
+            } else if (strcmp("znear", token->data) == 0) {
+                if (parse_num(file, token, &orthographic->znear) != 0)
+                    return -1;
+            } else if (strcmp("zfar", token->data) == 0) {
+                if (parse_num(file, token, &orthographic->zfar) != 0)
+                    return -1;
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the 'glTF.cameras' property. */
 static int parse_cameras(FILE *file, T_token *token,
                          size_t index, void *cameras_p)
@@ -1044,78 +1146,13 @@ static int parse_cameras(FILE *file, T_token *token,
                     return -1;
                 }
             } else if (strcmp("perspective", token->data) == 0) {
-                next_token(file, token); /* ':' */
-                next_token(file, token); /* '{' */
-                do {
-                    switch (next_token(file, token)) {
-                    case YF_TOKEN_STR:
-                        if (strcmp("yfov", token->data) == 0) {
-                            if (parse_num(file, token,
-                                          &cameras->v[index].persp.yfov) != 0)
-                                return -1;
-                        } else if (strcmp("aspectRatio", token->data) == 0) {
-                            if (parse_num(file, token,
-                                          &cameras->v[index]
-                                          .persp.aspect_ratio) != 0)
-                                return -1;
-                        } else if (strcmp("znear", token->data) == 0) {
-                            if (parse_num(file, token,
-                                          &cameras->v[index].persp.znear) != 0)
-                                return -1;
-                        } else if (strcmp("zfar", token->data) == 0) {
-                            if (parse_num(file, token,
-                                          &cameras->v[index].persp.zfar) != 0)
-                                return -1;
-                        } else {
-                            if (consume_prop(file, token) != 0)
-                                return -1;
-                        }
-                        break;
-
-                    case YF_TOKEN_OP:
-                        break;
-
-                    default:
-                        yf_seterr(YF_ERR_INVFILE, __func__);
-                        return -1;
-                    }
-                } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+                if (parse_perspective(file, token,
+                                      &cameras->v[index].persp) != 0)
+                    return -1;
             } else if (strcmp("orthographic", token->data) == 0) {
-                next_token(file, token); /* ':' */
-                next_token(file, token); /* '{' */
-                do {
-                    switch (next_token(file, token)) {
-                    case YF_TOKEN_STR:
-                        if (strcmp("xmag", token->data) == 0) {
-                            if (parse_num(file, token,
-                                          &cameras->v[index].ortho.xmag) != 0)
-                                return -1;
-                        } else if (strcmp("ymag", token->data) == 0) {
-                            if (parse_num(file, token,
-                                          &cameras->v[index].ortho.ymag) != 0)
-                                return -1;
-                        } else if (strcmp("znear", token->data) == 0) {
-                            if (parse_num(file, token,
-                                          &cameras->v[index].ortho.znear) != 0)
-                                return -1;
-                        } else if (strcmp("zfar", token->data) == 0) {
-                            if (parse_num(file, token,
-                                          &cameras->v[index].ortho.zfar) != 0)
-                                return -1;
-                        } else {
-                            if (consume_prop(file, token) != 0)
-                                return -1;
-                        }
-                        break;
-
-                    case YF_TOKEN_OP:
-                        break;
-
-                    default:
-                        yf_seterr(YF_ERR_INVFILE, __func__);
-                        return -1;
-                    }
-                } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+                if (parse_orthographic(file, token,
+                                       &cameras->v[index].ortho) != 0)
+                    return -1;
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &cameras->v[index].name) != 0)
                     return -1;
