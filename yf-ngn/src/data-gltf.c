@@ -624,18 +624,21 @@ typedef struct {
     size_t n;
 } T_materials;
 
-/* Type defining the 'glTF.animations.channels' property. */
+/* Type defining the 'glTF.animations.channels.target' property. */
 typedef struct {
-    struct {
-        T_int sampler;
-        struct {
-            T_int node;
+    T_int node;
 #define YF_GLTF_PATH_XLATE  0
 #define YF_GLTF_PATH_ROTATE 1
 #define YF_GLTF_PATH_SCALE  2
 #define YF_GLTF_PATH_WEIGHT 3
-            int path;
-        } target;
+    int path;
+} T_ctarget;
+
+/* Type defining the 'glTF.animations.channels' property. */
+typedef struct {
+    struct {
+        T_int sampler;
+        T_ctarget target;
     } *v;
     size_t n;
 } T_channels;
@@ -1667,6 +1670,59 @@ static int parse_materials(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.animations.channels.target' property. */
+static int parse_ctarget(FILE *file, T_token *token, T_ctarget *ctarget)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(ctarget != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp(token->data, "target") == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("node", token->data) == 0) {
+                if (parse_int(file, token, &ctarget->node) != 0)
+                    return -1;
+            } else if (strcmp("path", token->data) == 0) {
+                next_token(file, token); /* ':' */
+                next_token(file, token);
+                if (strcmp("translation", token->data) == 0) {
+                    ctarget->path = YF_GLTF_PATH_XLATE;
+                } else if (strcmp("rotation", token->data) == 0) {
+                    ctarget->path = YF_GLTF_PATH_ROTATE;
+                } else if (strcmp("scale", token->data) == 0) {
+                    ctarget->path = YF_GLTF_PATH_SCALE;
+                } else if (strcmp("weights", token->data) == 0) {
+                    ctarget->path = YF_GLTF_PATH_WEIGHT;
+                } else {
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    return -1;
+                }
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the 'glTF.animations.channels' property. */
 static int parse_channels(FILE *file, T_token *token,
                           size_t index, void *channels_p)
@@ -1687,48 +1743,8 @@ static int parse_channels(FILE *file, T_token *token,
                 if (parse_int(file, token, &channels->v[index].sampler) != 0)
                     return -1;
             } else if (strcmp("target", token->data) == 0) {
-                next_token(file, token); /* ':' */
-                next_token(file, token); /* '{' */
-                do {
-                    switch (next_token(file, token)) {
-                    case YF_TOKEN_STR:
-                        if (strcmp("node", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &channels->v[index].target.node) != 0)
-                                return -1;
-                        } else if (strcmp("path", token->data) == 0) {
-                            next_token(file, token); /* ':' */
-                            next_token(file, token);
-                            if (strcmp("translation", token->data) == 0) {
-                                channels->v[index].target.path =
-                                    YF_GLTF_PATH_XLATE;
-                            } else if (strcmp("rotation", token->data) == 0) {
-                                channels->v[index].target.path =
-                                    YF_GLTF_PATH_ROTATE;
-                            } else if (strcmp("scale", token->data) == 0) {
-                                channels->v[index].target.path =
-                                    YF_GLTF_PATH_SCALE;
-                            } else if (strcmp("weights", token->data) == 0) {
-                                channels->v[index].target.path =
-                                    YF_GLTF_PATH_WEIGHT;
-                            } else {
-                                yf_seterr(YF_ERR_INVFILE, __func__);
-                                return -1;
-                            }
-                        } else {
-                            if (consume_prop(file, token) != 0)
-                                return -1;
-                        }
-                        break;
-
-                    case YF_TOKEN_OP:
-                        break;
-
-                    default:
-                        yf_seterr(YF_ERR_INVFILE, __func__);
-                        return -1;
-                    }
-                } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+                if (parse_ctarget(file, token, &channels->v[index].target) != 0)
+                    return -1;
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
