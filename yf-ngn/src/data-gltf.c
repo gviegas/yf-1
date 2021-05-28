@@ -596,16 +596,19 @@ typedef struct {
     T_num strength;
 } T_textureinfo;
 
+/* Type defining the 'glTF.materials.pbrMetallicRoughness' property. */
+typedef struct {
+    T_num base_clr_fac[4];
+    T_textureinfo base_clr_tex;
+    T_num metallic_fac;
+    T_num roughness_fac;
+    T_textureinfo metal_rough_tex;
+} T_pbrmetalrough;
+
 /* Type defining the 'glTF.materials' property. */
 typedef struct {
     struct {
-        struct {
-            T_num base_clr_fac[4];
-            T_textureinfo base_clr_tex;
-            T_num metallic_fac;
-            T_num roughness_fac;
-            T_textureinfo metal_rough_tex;
-        } pbrmr;
+        T_pbrmetalrough pbrmr;
         T_textureinfo normal_tex;
         T_textureinfo occlusion_tex;
         T_num emissive_fac[3];
@@ -1504,6 +1507,66 @@ static int parse_textureinfo(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.materials.pbrMetallicRoughness' property. */
+static int parse_pbrmetalrough(FILE *file, T_token *token,
+                               T_pbrmetalrough *pbrmetalrough)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp(token->data, "pbrMetallicRoughness") == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("baseColorFactor", token->data) == 0) {
+                next_token(file, token); /* ':' */
+                next_token(file, token); /* '[' */
+                for (size_t i = 0; i < 4; i++) {
+                    if (parse_num(file, token,
+                                  pbrmetalrough->base_clr_fac+i) != 0)
+                        return -1;
+                }
+                next_token(file, token); /* ']' */
+            } else if (strcmp("baseColorTexture", token->data) == 0) {
+                if (parse_textureinfo(file, token,
+                                      &pbrmetalrough->base_clr_tex) != 0)
+                    return -1;
+            } else if (strcmp("metallicFactor", token->data) == 0) {
+                if (parse_num(file, token,
+                              &pbrmetalrough->metallic_fac) != 0)
+                    return -1;
+            } else if (strcmp("roughnessFactor", token->data) == 0) {
+                if (parse_num(file, token,
+                              &pbrmetalrough->roughness_fac) != 0)
+                    return -1;
+            } else if (strcmp("metallicRoughnessTexture", token->data) == 0) {
+                if (parse_textureinfo(file, token,
+                                      &pbrmetalrough->metal_rough_tex) != 0)
+                    return -1;
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the 'glTF.materials' property. */
 static int parse_materials(FILE *file, T_token *token,
                            size_t index, void *materials_p)
@@ -1536,60 +1599,9 @@ static int parse_materials(FILE *file, T_token *token,
         switch (next_token(file, token)) {
         case YF_TOKEN_STR:
             if (strcmp("pbrMetallicRoughness", token->data) == 0) {
-                next_token(file, token); /* ':' */
-                next_token(file, token); /* '{' */
-                do {
-                    switch (next_token(file, token)) {
-                    case YF_TOKEN_STR:
-                        if (strcmp("baseColorFactor", token->data) == 0) {
-                            next_token(file, token); /* ':' */
-                            next_token(file, token); /* '[' */
-                            for (size_t i = 0; i < 4; i++) {
-                                if (parse_num(file, token,
-                                              materials->v[index]
-                                              .pbrmr.base_clr_fac+i) != 0)
-                                    return -1;
-                            }
-                            next_token(file, token); /* ']' */
-                        } else if (strcmp("baseColorTexture",
-                                          token->data) == 0) {
-                            if (parse_textureinfo(file, token,
-                                                  &materials->v[index]
-                                                  .pbrmr.base_clr_tex) != 0)
-                                return -1;
-                            next_token(file, token); /* ',' or '}' */
-                        } else if (strcmp("metallicFactor", token->data) == 0) {
-                            if (parse_num(file, token,
-                                          &materials->v[index]
-                                          .pbrmr.metallic_fac) != 0)
-                                return -1;
-                        } else if (strcmp("roughnessFactor",
-                                          token->data) == 0) {
-                            if (parse_num(file, token,
-                                          &materials->v[index]
-                                          .pbrmr.roughness_fac) != 0)
-                                return -1;
-                        } else if (strcmp("metallicRoughnessTexture",
-                                          token->data) == 0) {
-                            if (parse_textureinfo(file, token,
-                                                  &materials->v[index]
-                                                  .pbrmr.metal_rough_tex) != 0)
-                                return -1;
-                            next_token(file, token); /* ',' or '}' */
-                        } else {
-                            if (consume_prop(file, token) != 0)
-                                return -1;
-                        }
-                        break;
-
-                    case YF_TOKEN_OP:
-                        break;
-
-                    default:
-                        yf_seterr(YF_ERR_INVFILE, __func__);
-                        return -1;
-                    }
-                } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+                if (parse_pbrmetalrough(file, token,
+                                        &materials->v[index].pbrmr) != 0)
+                    return -1;
             } else if (strcmp("normalTexture", token->data) == 0) {
                 if (parse_textureinfo(file, token,
                                       &materials->v[index].normal_tex) != 0)
