@@ -121,7 +121,6 @@ static int rehash(YF_dict dict)
 
         new_w = dict->w + 1;
         void *tmp = realloc(dict->buckets, sizeof(T_bucket) * (1ULL<<new_w));
-
         if (tmp == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
@@ -137,7 +136,6 @@ static int rehash(YF_dict dict)
 
     const size_t ctrl_w = new_w > dict->w ? new_w : dict->w;
     size_t *ctrl = calloc(1ULL << ctrl_w, sizeof(size_t));
-
     if (ctrl == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -221,7 +219,6 @@ cancel:
             free(dict->buckets[i].pairs);
 
         void *tmp = realloc(dict->buckets, sizeof(T_bucket) * (1ULL<<new_w));
-
         if (tmp != NULL)
             dict->buckets = tmp;
     }
@@ -234,7 +231,6 @@ cancel:
 YF_dict yf_dict_init(YF_hashfn hash, YF_cmpfn cmp)
 {
     YF_dict dict = malloc(sizeof(struct YF_dict_o));
-
     if (dict == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -244,8 +240,8 @@ YF_dict yf_dict_init(YF_hashfn hash, YF_cmpfn cmp)
     dict->cmp = cmp != NULL ? cmp : yf_cmp;
     dict->w = YF_WMINBITS;
     dict->count = 0;
-    dict->buckets = calloc(1 << dict->w, sizeof *dict->buckets);
 
+    dict->buckets = calloc(1 << dict->w, sizeof *dict->buckets);
     if (dict->buckets == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         free(dict);
@@ -270,7 +266,6 @@ int yf_dict_insert(YF_dict dict, const void *key, const void *val)
     if (bucket->cur_n == bucket->max_n) {
         const size_t new_n = bucket->max_n == 0 ? 1 : bucket->max_n << 1;
         void *tmp = realloc(bucket->pairs, sizeof(T_pair) * new_n);
-
         if (tmp == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;

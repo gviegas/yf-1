@@ -27,7 +27,6 @@ struct YF_list_o {
 YF_list yf_list_init(YF_cmpfn cmp)
 {
     YF_list list = malloc(sizeof(struct YF_list_o));
-
     if (list == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -45,7 +44,6 @@ int yf_list_insert(YF_list list, const void *val)
     assert(list != NULL);
 
     T_entry *e = malloc(sizeof(T_entry));
-
     if (e == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -81,7 +79,6 @@ int yf_list_insertat(YF_list list, YF_iter *it, const void *val)
 
     } else {
         T_entry *e = malloc(sizeof(T_entry));
-
         if (e == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
