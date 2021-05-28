@@ -213,7 +213,6 @@ YF_dtable yf_dtable_init(YF_context ctx, const YF_dentry *entries,
     assert(entry_n > 0);
 
     YF_dtable dtb = calloc(1, sizeof(YF_dtable_o));
-
     if (dtb == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;

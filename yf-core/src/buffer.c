@@ -29,7 +29,6 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size)
     }
 
     YF_buffer buf = calloc(1, sizeof(YF_buffer_o));
-
     if (buf == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -61,7 +60,6 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size)
     };
 
     VkResult res = vkCreateBuffer(ctx->device, &info, NULL, &buf->buffer);
-
     if (res != VK_SUCCESS) {
         yf_buffer_deinit(buf);
         yf_seterr(YF_ERR_DEVGEN, __func__);

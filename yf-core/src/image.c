@@ -72,7 +72,6 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     }
 
     YF_image img = calloc(1, sizeof(YF_image_o));
-
     if (img == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -86,14 +85,12 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     img->levels = levels;
 
     img->iviews = yf_dict_init(hash_priv, cmp_priv);
-
     if (img->iviews == NULL) {
         free(img);
         return NULL;
     }
 
     YF_PIXFMT_FROM(pixfmt, img->format);
-
     if (img->format == VK_FORMAT_UNDEFINED) {
         yf_seterr(YF_ERR_INVARG, __func__);
         yf_image_deinit(img);
@@ -101,7 +98,6 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     }
 
     YF_SAMPLES_FROM(samples, img->samples);
-
     if (img->samples == INT_MAX) {
         yf_seterr(YF_ERR_INVARG, __func__);
         yf_image_deinit(img);
@@ -109,6 +105,7 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     }
 
     YF_PIXFMT_ASPECT(pixfmt, img->aspect);
+
     VkFlags flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
     if (dim.depth > 1) {
@@ -225,7 +222,6 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     };
 
     VkResult res = vkCreateImage(ctx->device, &info, NULL, &img->image);
-
     if (res != VK_SUCCESS) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
         yf_image_deinit(img);

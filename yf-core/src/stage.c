@@ -63,24 +63,21 @@ int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod)
     }
 
     FILE *file = fopen(pathname, "r");
-
     if (file == NULL) {
         yf_seterr(YF_ERR_NOFILE, __func__);
         return -1;
     }
 
     long n = 0;
-
     if (fseek(file, 0, SEEK_END) != 0 || (n = ftell(file)) <= 0 ||
         n % YF_MODWRD != 0) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         fclose(file);
         return -1;
     }
-
     rewind(file);
-    unsigned char *buf = malloc(n);
 
+    unsigned char *buf = malloc(n);
     if (buf == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         fclose(file);
