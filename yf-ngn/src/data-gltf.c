@@ -666,21 +666,27 @@ typedef struct {
     size_t n;
 } T_animations;
 
-/* Type defining the 'glTF.accessors.sparse' property. */
+/* Type defining the 'glTF.accessors.sparse.indices' property. */
 typedef struct {
-    T_int count;
-    struct {
-        T_int buffer_view;
-        T_int byte_off;
+    T_int buffer_view;
+    T_int byte_off;
 #define YF_GLTF_COMP_UBYTE  5121
 #define YF_GLTF_COMP_USHORT 5123
 #define YF_GLTF_COMP_UINT   5125
-        T_int comp_type;
-    } indices;
-    struct {
-        T_int buffer_view;
-        T_int byte_off;
-    } values;
+    T_int comp_type;
+} T_sindices;
+
+/* Type defining the 'glTF.accessors.sparse.values' property. */
+typedef struct {
+    T_int buffer_view;
+    T_int byte_off;
+} T_svalues;
+
+/* Type defining the 'glTF.accessors.sparse' property. */
+typedef struct {
+    T_int count;
+    T_sindices indices;
+    T_svalues values;
 } T_sparse;
 
 /* Type defining the 'glTF.accessors' property. */
@@ -1875,6 +1881,91 @@ static int parse_animations(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.accessors.sparse.indices' property. */
+static int parse_sindices(FILE *file, T_token *token, T_sindices *sindices)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(sindices != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp(token->data, "indices") == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("bufferView", token->data) == 0) {
+                if (parse_int(file, token, &sindices->buffer_view) != 0)
+                    return -1;
+            } else if (strcmp("byteOffset", token->data) == 0) {
+                if (parse_int(file, token, &sindices->byte_off) != 0)
+                    return -1;
+            } else if (strcmp("componentType", token->data) == 0) {
+                if (parse_int(file, token, &sindices->comp_type) != 0)
+                    return -1;
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* Parses the 'glTF.accessors.sparse.values' property. */
+static int parse_svalues(FILE *file, T_token *token, T_svalues *svalues)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(svalues != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp(token->data, "values") == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("bufferView", token->data) == 0) {
+                if (parse_int(file, token, &svalues->buffer_view) != 0)
+                    return -1;
+            } else if (strcmp("byteOffset", token->data) == 0) {
+                if (parse_int(file, token, &svalues->byte_off) != 0)
+                    return -1;
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the 'glTF.accessors.sparse' property. */
 static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
 {
@@ -1889,65 +1980,11 @@ static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
                 if (parse_int(file, token, &sparse->count) != 0)
                     return -1;
             } else if (strcmp("indices", token->data) == 0) {
-                next_token(file, token); /* ':' */
-                next_token(file, token); /* '{' */
-                do {
-                    switch (next_token(file, token)) {
-                    case YF_TOKEN_STR:
-                        if (strcmp("bufferView", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &sparse->indices.buffer_view) != 0)
-                                return -1;
-                        } else if (strcmp("byteOffset", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &sparse->indices.byte_off) != 0)
-                                return -1;
-                        } else if (strcmp("componentType", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &sparse->indices.comp_type) != 0)
-                                return -1;
-                        } else {
-                            if (consume_prop(file, token) != 0)
-                                return -1;
-                        }
-                        break;
-
-                    case YF_TOKEN_OP:
-                        break;
-
-                    default:
-                        yf_seterr(YF_ERR_INVFILE, __func__);
-                        return -1;
-                    }
-                } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+                if (parse_sindices(file, token, &sparse->indices) != 0)
+                    return -1;
             } else if (strcmp("values", token->data) == 0) {
-                next_token(file, token); /* ':' */
-                next_token(file, token); /* '{' */
-                do {
-                    switch (next_token(file, token)) {
-                    case YF_TOKEN_STR:
-                        if (strcmp("bufferView", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &sparse->values.buffer_view) != 0)
-                                return -1;
-                        } else if (strcmp("byteOffset", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &sparse->values.byte_off) != 0)
-                                return -1;
-                        } else {
-                            if (consume_prop(file, token) != 0)
-                                return -1;
-                        }
-                        break;
-
-                    case YF_TOKEN_OP:
-                        break;
-
-                    default:
-                        yf_seterr(YF_ERR_INVFILE, __func__);
-                        return -1;
-                    }
-                } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+                if (parse_svalues(file, token, &sparse->values) != 0)
+                    return -1;
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
