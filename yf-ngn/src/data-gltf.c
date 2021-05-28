@@ -19,6 +19,10 @@
 #include "data-gltf.h"
 #include "vertex.h"
 
+/*
+ * Token
+ */
+
 #define YF_TOKEN_STR  0
 #define YF_TOKEN_NUM  1
 #define YF_TOKEN_BOOL 2
@@ -38,7 +42,146 @@ typedef struct {
 /* Gets the next token from a file stream.
    This function returns 'token->token'. Upon failure, the value returned
    is equal to 'YF_TOKEN_ERR' - the global error variable is not set. */
-static int next_token(FILE *file, T_token *token);
+static int next_token(FILE *file, T_token *token)
+{
+    static_assert(YF_TOKENMAX > 1);
+
+    int c;
+    do c = getc(file); while (isspace(c));
+
+    token->data[0] = c;
+    size_t i = 0;
+
+    switch (c) {
+    case '"':
+        /* XXX: Delim. quotation marks not stored. */
+        do {
+            c = getc(file);
+            token->data[i] = c;
+            if (c == '"') {
+                token->token = YF_TOKEN_STR;
+                break;
+            }
+            if (c == EOF) {
+                token->token = YF_TOKEN_ERR;
+                break;
+            }
+            if (c == '\\') {
+                c = getc(file);
+                if (c == '"') {
+                    token->data[i] = '"';
+                } else if (c == '\\') {
+                    token->data[i] = '\\';
+                } else {
+                    /* TODO: Other escape sequences. */
+                    token->token = YF_TOKEN_ERR;
+                    break;
+                }
+            }
+        } while (++i < YF_TOKENMAX-1);
+        break;
+
+    case '-':
+    case '+':
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9':
+        while (++i < YF_TOKENMAX-1) {
+            c = getc(file);
+            if (isxdigit(c) || c == '.' || c == '-' || c == '+') {
+                token->data[i] = c;
+                continue;
+            }
+            if (c != EOF)
+                ungetc(c, file);
+            break;
+        }
+        token->token = YF_TOKEN_NUM;
+        break;
+
+    case 't':
+        while (++i < YF_TOKENMAX-1) {
+            c = getc(file);
+            if (islower(c))
+                token->data[i] = c;
+            else
+                break;
+        }
+        if (c != EOF)
+            ungetc(c, file);
+        token->data[i] = '\0';
+        if (strcmp("true", token->data) == 0)
+            token->token = YF_TOKEN_BOOL;
+        else
+            token->token = YF_TOKEN_ERR;
+        break;
+
+    case 'f':
+        while (++i < YF_TOKENMAX-1) {
+            c = getc(file);
+            if (islower(c))
+                token->data[i] = c;
+            else
+                break;
+        }
+        if (c != EOF)
+            ungetc(c, file);
+        token->data[i] = '\0';
+        if (strcmp("false", token->data) == 0)
+            token->token = YF_TOKEN_BOOL;
+        else
+            token->token = YF_TOKEN_ERR;
+        break;
+
+    case 'n':
+        while (++i < YF_TOKENMAX-1) {
+            c = getc(file);
+            if (islower(c))
+                token->data[i] = c;
+            else
+                break;
+        }
+        if (c != EOF)
+            ungetc(c, file);
+        token->data[i] = '\0';
+        if (strcmp("null", token->data) == 0)
+            token->token = YF_TOKEN_NULL;
+        else
+            token->token = YF_TOKEN_ERR;
+        break;
+
+    case ':':
+    case ',':
+    case '[':
+    case ']':
+    case '{':
+    case '}':
+        token->token = YF_TOKEN_OP;
+        i++;
+        break;
+
+    case EOF:
+        token->token = YF_TOKEN_END;
+        break;
+
+    default:
+        token->token = YF_TOKEN_ERR;
+    }
+
+    token->data[i] = '\0';
+    return token->token;
+}
+
+/*
+ * Type parsing
+ */
 
 /* Type defining a string. */
 typedef char *T_str;
@@ -55,6 +198,260 @@ typedef long long T_int;
 typedef int T_bool;
 #define YF_TRUE  1
 #define YF_FALSE 0
+
+/* Parses an array of unknown size. */
+static int parse_array(FILE *file, T_token *token,
+                       void **array, size_t *n, size_t elem_sz,
+                       int (*fn)(FILE *, T_token *, size_t, void *), void *arg)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(n != NULL && *n == 0);
+    assert(elem_sz > 0);
+    assert(fn != NULL);
+
+    next_token(file, token); /* ':' */
+    size_t i = 0;
+
+    do {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_OP:
+            if (token->data[0] != ']') {
+                if (i == *n) {
+                    const size_t new_n = i == 0 ? 1 : i<<1;
+                    void *tmp = realloc(*array, new_n*elem_sz);
+                    if (tmp == NULL) {
+                        yf_seterr(YF_ERR_NOMEM, __func__);
+                        return -1;
+                    }
+                    *array = tmp;
+                    *n = new_n;
+                    memset((char *)*array+i*elem_sz, 0, (new_n-i)*elem_sz);
+                }
+                if (fn(file, token, i++, arg) != 0)
+                    return -1;
+            }
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    } while (token->token != YF_TOKEN_OP || token->data[0] != ']');
+
+    if (i < *n) {
+        *n = i;
+        void *tmp = realloc(*array, i*elem_sz);
+        if (tmp != NULL)
+            *array = tmp;
+    }
+    return 0;
+}
+
+/* Parses a string. */
+static int parse_str(FILE *file, T_token *token, T_str *str)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(str != NULL);
+
+    switch (token->token) {
+    case YF_TOKEN_OP:
+        break;
+    default:
+        next_token(file, token);
+    }
+    if (next_token(file, token) != YF_TOKEN_STR) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    *str = malloc(1+strlen(token->data));
+    if (*str == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+    strcpy(*str, token->data);
+    return 0;
+}
+
+/* Parses a floating-point number. */
+static int parse_num(FILE *file, T_token *token, T_num *num)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(num != NULL);
+
+    switch (token->token) {
+    case YF_TOKEN_OP:
+        break;
+    default:
+        next_token(file, token);
+    }
+    if (next_token(file, token) != YF_TOKEN_NUM) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    errno = 0;
+    char *end;
+#ifdef YF_USE_FLOAT64
+    *num = strtod(token->data, &end);
+#else
+    *num = strtof(token->data, &end);
+#endif
+    if (errno != 0 || *end != '\0') {
+        yf_seterr(YF_ERR_OTHER, __func__);
+        return -1;
+    }
+    return 0;
+}
+
+/* Parses an element of an array of floating-point numbers. */
+static int parse_num_array(FILE *file, T_token *token,
+                           size_t index, void *num_pp)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(num_pp != NULL);
+
+    T_num *num_p = *(T_num **)num_pp;
+    assert(num_p != NULL);
+
+    return parse_num(file, token, num_p+index);
+}
+
+/* Parses an integer number. */
+static int parse_int(FILE *file, T_token *token, T_int *intr)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(intr != NULL);
+
+    switch (token->token) {
+    case YF_TOKEN_OP:
+        break;
+    default:
+        next_token(file, token);
+    }
+    if (next_token(file, token) != YF_TOKEN_NUM) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    errno = 0;
+    char *end;
+    *intr = strtoll(token->data, &end, 0);
+    if (errno != 0 || *end != '\0') {
+        yf_seterr(YF_ERR_OTHER, __func__);
+        return -1;
+    }
+    return 0;
+}
+
+/* Parses an element of an array of integer numbers. */
+static int parse_int_array(FILE *file, T_token *token,
+                           size_t index, void *int_pp)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(int_pp != NULL);
+
+    T_int *int_p = *(T_int **)int_pp;
+    assert(int_p != NULL);
+
+    return parse_int(file, token, int_p+index);
+}
+
+/* Parses a boolean value. */
+static int parse_bool(FILE *file, T_token *token, T_bool *booln)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(booln != NULL);
+
+    switch (token->token) {
+    case YF_TOKEN_OP:
+        break;
+    default:
+        next_token(file, token);
+    }
+    if (next_token(file, token) != YF_TOKEN_BOOL) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    if (strcmp("true", token->data) == 0)
+        *booln = YF_TRUE;
+    else
+        *booln = YF_FALSE;
+    return 0;
+}
+
+/*
+ * Property parsing
+ */
+
+/* Consumes the current property.
+   This allows unknown/unimplemented properties to be ignored. */
+static int consume_prop(FILE *file, T_token *token)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(token->token == YF_TOKEN_STR);
+
+    next_token(file, token); /* ':' */
+
+    if (token->token != YF_TOKEN_OP || token->data[0] != ':') {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    switch (next_token(file, token)) {
+    case YF_TOKEN_STR:
+    case YF_TOKEN_NUM:
+    case YF_TOKEN_BOOL:
+    case YF_TOKEN_NULL:
+        break;
+
+    case YF_TOKEN_OP: {
+        char cl, op = token->data[0];
+        switch (op) {
+        case '[':
+            cl = ']';
+            break;
+        case '{':
+            cl = '}';
+            break;
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+        int n = 1;
+        do {
+            switch (next_token(file, token)) {
+            case YF_TOKEN_OP:
+                if (token->data[0] == op)
+                    n++;
+                else if (token->data[0] == cl)
+                    n--;
+                break;
+
+            case YF_TOKEN_END:
+            case YF_TOKEN_ERR:
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                return -1;
+            }
+        } while (n > 0);
+    } break;
+
+    default:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    return 0;
+}
 
 /* Type defining the 'glTF.asset' property. */
 typedef struct {
@@ -398,704 +795,7 @@ typedef struct {
     T_samplers samplers;
 } T_gltf;
 
-/* Consumes the current property.
-   This allows unknown/unimplemented properties to be ignored. */
-static int consume_prop(FILE *file, T_token *token);
-
-/* Parses an array of unknown size. */
-static int parse_array(FILE *file, T_token *token,
-                       void **array, size_t *n, size_t elem_sz,
-                       int (*fn)(FILE *, T_token *, size_t, void *), void *arg);
-
-/* Parses a string. */
-static int parse_str(FILE *file, T_token *token, T_str *str);
-
-/* Parses a floating-point number. */
-static int parse_num(FILE *file, T_token *token, T_num *num);
-
-/* Parses an element of an array of floating-point numbers. */
-static int parse_num_array(FILE *file, T_token *token,
-                           size_t index, void *num_pp);
-
-/* Parses an integer number. */
-static int parse_int(FILE *file, T_token *token, T_int *intr);
-
-/* Parses an element of an array of integer numbers. */
-static int parse_int_array(FILE *file, T_token *token,
-                           size_t index, void *int_pp);
-
-/* Parses a boolean value. */
-static int parse_bool(FILE *file, T_token *token, T_bool *booln);
-
-/* Parses the root glTF object. */
-static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf);
-
 /* Parses the 'glTF.asset' property. */
-static int parse_asset(FILE *file, T_token *token, T_asset *asset);
-
-/* Parses the 'glTF.scene' property. */
-static int parse_scene(FILE *file, T_token *token, T_int *scene);
-
-/* Parses the 'glTF.scenes' property. */
-static int parse_scenes(FILE *file, T_token *token,
-                        size_t index, void *scenes_p);
-
-/* Parses the 'glTF.nodes' property. */
-static int parse_nodes(FILE *file, T_token *token,
-                       size_t index, void *nodes_p);
-
-/* Parses the 'glTF.cameras' property. */
-static int parse_cameras(FILE *file, T_token *token,
-                         size_t index, void *cameras_p);
-
-/* Parses the 'glTF.meshes.primitives.targets' property. */
-static int parse_targets(FILE *file, T_token *token,
-                         size_t index, void *targets_p);
-
-/* Parses the 'glTF.meshes.primitives' property. */
-static int parse_primitives(FILE *file, T_token *token,
-                            size_t index, void *primitives_p);
-
-/* Parses the 'glTF.meshes' property. */
-static int parse_meshes(FILE *file, T_token *token,
-                        size_t index, void *meshes_p);
-
-/* Parses the 'glTF.skins' property. */
-static int parse_skins(FILE *file, T_token *token,
-                       size_t index, void *skins_p);
-
-/* Parses the 'glTF.*.textureInfo property. */
-static int parse_textureinfo(FILE *file, T_token *token,
-                             T_textureinfo *textureinfo);
-
-/* Parses the 'glTF.materials' property. */
-static int parse_materials(FILE *file, T_token *token,
-                           size_t index, void *materials_p);
-
-/* Parses the 'glTF.animations.channels' property. */
-static int parse_channels(FILE *file, T_token *token,
-                          size_t index, void *channels_p);
-
-/* Parses the 'glTF.animations.samplers' property. */
-static int parse_asamplers(FILE *file, T_token *token,
-                           size_t index, void *asamplers_p);
-
-/* Parses the 'glTF.animations' property. */
-static int parse_animations(FILE *file, T_token *token,
-                            size_t index, void *animations_p);
-
-/* Parses the 'glTF.accessors.sparse' property. */
-static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse);
-
-/* Parses the 'glTF.accessors' property. */
-static int parse_accessors(FILE *file, T_token *token,
-                           size_t index, void *accessors_p);
-
-/* Parses the 'glTF.bufferViews' property. */
-static int parse_bufferviews(FILE *file, T_token *token,
-                             size_t index, void *bufferviews_p);
-
-/* Parses the 'glTF.buffers' property. */
-static int parse_buffers(FILE *file, T_token *token,
-                         size_t index, void *buffers_p);
-
-/* Parses the 'glTF.textures' property. */
-static int parse_textures(FILE *file, T_token *token,
-                          size_t index, void *textures_p);
-
-/* Parses the 'glTF.images' property. */
-static int parse_images(FILE *file, T_token *token,
-                        size_t index, void *images_p);
-
-/* Parses the 'glTF.samplers' property. */
-static int parse_samplers(FILE *file, T_token *token,
-                          size_t index, void *samplers_p);
-
-/* Loads a single mesh from glTF contents. */
-static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data);
-
-/* Deinitializes glTF contents. */
-static void deinit_gltf(T_gltf *gltf);
-
-#ifdef YF_DEVEL
-static void print_gltf(const T_gltf *gltf);
-#endif
-
-#define YF_PATHOF(pathname, path) do { \
-    const char *last = strrchr(pathname, '/'); \
-    if (last != NULL) { \
-        const size_t len = 1 + last - (pathname); \
-        path = malloc(1+len); \
-        if ((path) != NULL) { \
-            memcpy(path, pathname, len); \
-            (path)[len] = '\0'; \
-        } \
-    } else { \
-        path = ""; \
-    } } while (0)
-
-#define YF_PATHCAT(path, name, pathname) do { \
-    const size_t path_len = strlen(path); \
-    const size_t name_len = strlen(name); \
-    pathname = malloc(1+path_len+name_len); \
-    if ((pathname) != NULL) { \
-        memcpy(pathname, path, path_len); \
-        memcpy((pathname)+path_len, name, name_len); \
-        (pathname)[path_len+name_len] = '\0'; \
-    } } while (0)
-
-int yf_loadgltf(const char *pathname, YF_meshdt *data)
-{
-    assert(data != NULL);
-
-    if (pathname == NULL) {
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return -1;
-    }
-
-    char *path = NULL;
-    YF_PATHOF(pathname, path);
-    if (path == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-
-    FILE *file = fopen(pathname, "r");
-    if (file == NULL) {
-        yf_seterr(YF_ERR_NOFILE, __func__);
-        return -1;
-    }
-
-    T_token token = {0};
-    next_token(file, &token);
-    /* TODO: .glb */
-    if (token.token != YF_TOKEN_OP && token.data[0] != '{') {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        fclose(file);
-        return -1;
-    }
-
-    T_gltf gltf = {0};
-    if (parse_gltf(file, &token, &gltf) != 0) {
-        deinit_gltf(&gltf);
-        fclose(file);
-        return -1;
-    }
-
-#ifdef YF_DEVEL
-    print_gltf(&gltf);
-#endif
-
-    if (load_meshdt(&gltf, path, data) != 0) {
-        deinit_gltf(&gltf);
-        fclose(file);
-        return -1;
-    }
-
-    deinit_gltf(&gltf);
-    fclose(file);
-    free(path);
-    return 0;
-}
-
-static int next_token(FILE *file, T_token *token)
-{
-    static_assert(YF_TOKENMAX > 1);
-
-    int c;
-    do c = getc(file); while (isspace(c));
-
-    token->data[0] = c;
-    size_t i = 0;
-
-    switch (c) {
-    case '"':
-        /* XXX: Delim. quotation marks not stored. */
-        do {
-            c = getc(file);
-            token->data[i] = c;
-            if (c == '"') {
-                token->token = YF_TOKEN_STR;
-                break;
-            }
-            if (c == EOF) {
-                token->token = YF_TOKEN_ERR;
-                break;
-            }
-            if (c == '\\') {
-                c = getc(file);
-                if (c == '"') {
-                    token->data[i] = '"';
-                } else if (c == '\\') {
-                    token->data[i] = '\\';
-                } else {
-                    /* TODO: Other escape sequences. */
-                    token->token = YF_TOKEN_ERR;
-                    break;
-                }
-            }
-        } while (++i < YF_TOKENMAX-1);
-        break;
-
-    case '-':
-    case '+':
-    case '0':
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-        while (++i < YF_TOKENMAX-1) {
-            c = getc(file);
-            if (isxdigit(c) || c == '.' || c == '-' || c == '+') {
-                token->data[i] = c;
-                continue;
-            }
-            if (c != EOF)
-                ungetc(c, file);
-            break;
-        }
-        token->token = YF_TOKEN_NUM;
-        break;
-
-    case 't':
-        while (++i < YF_TOKENMAX-1) {
-            c = getc(file);
-            if (islower(c))
-                token->data[i] = c;
-            else
-                break;
-        }
-        if (c != EOF)
-            ungetc(c, file);
-        token->data[i] = '\0';
-        if (strcmp("true", token->data) == 0)
-            token->token = YF_TOKEN_BOOL;
-        else
-            token->token = YF_TOKEN_ERR;
-        break;
-
-    case 'f':
-        while (++i < YF_TOKENMAX-1) {
-            c = getc(file);
-            if (islower(c))
-                token->data[i] = c;
-            else
-                break;
-        }
-        if (c != EOF)
-            ungetc(c, file);
-        token->data[i] = '\0';
-        if (strcmp("false", token->data) == 0)
-            token->token = YF_TOKEN_BOOL;
-        else
-            token->token = YF_TOKEN_ERR;
-        break;
-
-    case 'n':
-        while (++i < YF_TOKENMAX-1) {
-            c = getc(file);
-            if (islower(c))
-                token->data[i] = c;
-            else
-                break;
-        }
-        if (c != EOF)
-            ungetc(c, file);
-        token->data[i] = '\0';
-        if (strcmp("null", token->data) == 0)
-            token->token = YF_TOKEN_NULL;
-        else
-            token->token = YF_TOKEN_ERR;
-        break;
-
-    case ':':
-    case ',':
-    case '[':
-    case ']':
-    case '{':
-    case '}':
-        token->token = YF_TOKEN_OP;
-        ++i;
-        break;
-
-    case EOF:
-        token->token = YF_TOKEN_END;
-        break;
-
-    default:
-        token->token = YF_TOKEN_ERR;
-    }
-
-    token->data[i] = '\0';
-    return token->token;
-}
-
-static int consume_prop(FILE *file, T_token *token)
-{
-    assert(!feof(file));
-    assert(token != NULL);
-    assert(token->token == YF_TOKEN_STR);
-
-    next_token(file, token); /* ':' */
-
-    if (token->token != YF_TOKEN_OP || token->data[0] != ':') {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-    switch (next_token(file, token)) {
-    case YF_TOKEN_STR:
-    case YF_TOKEN_NUM:
-    case YF_TOKEN_BOOL:
-    case YF_TOKEN_NULL:
-        break;
-
-    case YF_TOKEN_OP: {
-        char cl, op = token->data[0];
-        switch (op) {
-        case '[':
-            cl = ']';
-            break;
-        case '{':
-            cl = '}';
-            break;
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-        int n = 1;
-        do {
-            switch (next_token(file, token)) {
-            case YF_TOKEN_OP:
-                if (token->data[0] == op)
-                    ++n;
-                else if (token->data[0] == cl)
-                    --n;
-                break;
-
-            case YF_TOKEN_END:
-            case YF_TOKEN_ERR:
-                yf_seterr(YF_ERR_INVFILE, __func__);
-                return -1;
-            }
-        } while (n > 0);
-    } break;
-
-    default:
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-    return 0;
-}
-
-static int parse_array(FILE *file, T_token *token,
-                       void **array, size_t *n, size_t elem_sz,
-                       int (*fn)(FILE *, T_token *, size_t, void *), void *arg)
-{
-    assert(!feof(file));
-    assert(token != NULL);
-    assert(n != NULL && *n == 0);
-    assert(elem_sz > 0);
-    assert(fn != NULL);
-
-    next_token(file, token); /* ':' */
-    size_t i = 0;
-
-    do {
-        switch (next_token(file, token)) {
-        case YF_TOKEN_OP:
-            if (token->data[0] != ']') {
-                if (i == *n) {
-                    const size_t new_n = i == 0 ? 1 : i<<1;
-                    void *tmp = realloc(*array, new_n*elem_sz);
-                    if (tmp == NULL) {
-                        yf_seterr(YF_ERR_NOMEM, __func__);
-                        return -1;
-                    }
-                    *array = tmp;
-                    *n = new_n;
-                    memset((char *)*array+i*elem_sz, 0, (new_n-i)*elem_sz);
-                }
-                if (fn(file, token, i++, arg) != 0)
-                    return -1;
-            }
-            break;
-
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-    } while (token->token != YF_TOKEN_OP || token->data[0] != ']');
-
-    if (i < *n) {
-        *n = i;
-        void *tmp = realloc(*array, i*elem_sz);
-        if (tmp != NULL)
-            *array = tmp;
-    }
-    return 0;
-}
-
-static int parse_str(FILE *file, T_token *token, T_str *str)
-{
-    assert(!feof(file));
-    assert(token != NULL);
-    assert(str != NULL);
-
-    switch (token->token) {
-    case YF_TOKEN_OP:
-        break;
-    default:
-        next_token(file, token);
-    }
-    if (next_token(file, token) != YF_TOKEN_STR) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-    *str = malloc(1+strlen(token->data));
-    if (*str == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-    strcpy(*str, token->data);
-    return 0;
-}
-
-static int parse_num(FILE *file, T_token *token, T_num *num)
-{
-    assert(!feof(file));
-    assert(token != NULL);
-    assert(num != NULL);
-
-    switch (token->token) {
-    case YF_TOKEN_OP:
-        break;
-    default:
-        next_token(file, token);
-    }
-    if (next_token(file, token) != YF_TOKEN_NUM) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-    errno = 0;
-    char *end;
-#ifdef YF_USE_FLOAT64
-    *num = strtod(token->data, &end);
-#else
-    *num = strtof(token->data, &end);
-#endif
-    if (errno != 0 || *end != '\0') {
-        yf_seterr(YF_ERR_OTHER, __func__);
-        return -1;
-    }
-    return 0;
-}
-
-static int parse_num_array(FILE *file, T_token *token,
-                           size_t index, void *num_pp)
-{
-    assert(!feof(file));
-    assert(token != NULL);
-    assert(num_pp != NULL);
-
-    T_num *num_p = *(T_num **)num_pp;
-    assert(num_p != NULL);
-
-    return parse_num(file, token, num_p+index);
-}
-
-static int parse_int(FILE *file, T_token *token, T_int *intr)
-{
-    assert(!feof(file));
-    assert(token != NULL);
-    assert(intr != NULL);
-
-    switch (token->token) {
-    case YF_TOKEN_OP:
-        break;
-    default:
-        next_token(file, token);
-    }
-    if (next_token(file, token) != YF_TOKEN_NUM) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-    errno = 0;
-    char *end;
-    *intr = strtoll(token->data, &end, 0);
-    if (errno != 0 || *end != '\0') {
-        yf_seterr(YF_ERR_OTHER, __func__);
-        return -1;
-    }
-    return 0;
-}
-
-static int parse_int_array(FILE *file, T_token *token,
-                           size_t index, void *int_pp)
-{
-    assert(!feof(file));
-    assert(token != NULL);
-    assert(int_pp != NULL);
-
-    T_int *int_p = *(T_int **)int_pp;
-    assert(int_p != NULL);
-
-    return parse_int(file, token, int_p+index);
-}
-
-static int parse_bool(FILE *file, T_token *token, T_bool *booln)
-{
-    assert(!feof(file));
-    assert(token != NULL);
-    assert(booln != NULL);
-
-    switch (token->token) {
-    case YF_TOKEN_OP:
-        break;
-    default:
-        next_token(file, token);
-    }
-    if (next_token(file, token) != YF_TOKEN_BOOL) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
-
-    if (strcmp("true", token->data) == 0)
-        *booln = YF_TRUE;
-    else
-        *booln = YF_FALSE;
-    return 0;
-}
-
-static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
-{
-    assert(!feof(file));
-    assert(token != NULL);
-    assert(gltf != NULL);
-    assert(token->token == YF_TOKEN_OP);
-    assert(token->data[0] == '{');
-
-    gltf->scene = YF_INT_MIN;
-
-    while (1) {
-        switch (next_token(file, token)) {
-        case YF_TOKEN_STR:
-            if (strcmp("asset", token->data) == 0) {
-                if (parse_asset(file, token, &gltf->asset) != 0)
-                    return -1;
-
-            } else if (strcmp("scene", token->data) == 0) {
-                if (parse_scene(file, token, &gltf->scene) != 0)
-                    return -1;
-
-            } else if (strcmp("scenes", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->scenes.v,
-                                &gltf->scenes.n, sizeof *gltf->scenes.v,
-                                parse_scenes, &gltf->scenes) != 0)
-                    return -1;
-
-            } else if (strcmp("nodes", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->nodes.v,
-                                &gltf->nodes.n, sizeof *gltf->nodes.v,
-                                parse_nodes, &gltf->nodes) != 0)
-                    return -1;
-
-            } else if (strcmp("cameras", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->cameras.v,
-                                &gltf->cameras.n, sizeof *gltf->cameras.v,
-                                parse_cameras, &gltf->cameras) != 0)
-                    return -1;
-
-            } else if (strcmp("meshes", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->meshes.v,
-                                &gltf->meshes.n, sizeof *gltf->meshes.v,
-                                parse_meshes, &gltf->meshes) != 0)
-                    return -1;
-
-            } else if (strcmp("skins", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->skins.v,
-                                &gltf->skins.n, sizeof *gltf->skins.v,
-                                parse_skins, &gltf->skins) != 0)
-                    return -1;
-
-            } else if (strcmp("materials", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->materials.v,
-                                &gltf->materials.n, sizeof *gltf->materials.v,
-                                parse_materials, &gltf->materials) != 0)
-                    return -1;
-
-            } else if (strcmp("animations", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->animations.v,
-                                &gltf->animations.n, sizeof *gltf->animations.v,
-                                parse_animations, &gltf->animations) != 0)
-                    return -1;
-
-            } else if (strcmp("accessors", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->accessors.v,
-                                &gltf->accessors.n, sizeof *gltf->accessors.v,
-                                parse_accessors, &gltf->accessors) != 0)
-                    return -1;
-
-            } else if (strcmp("bufferViews", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->bufferviews.v,
-                                &gltf->bufferviews.n,
-                                sizeof *gltf->bufferviews.v,
-                                parse_bufferviews, &gltf->bufferviews) != 0)
-                    return -1;
-
-            } else if (strcmp("buffers", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->buffers.v,
-                                &gltf->buffers.n, sizeof *gltf->buffers.v,
-                                parse_buffers, &gltf->buffers) != 0)
-                    return -1;
-
-            } else if (strcmp("textures", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->textures.v,
-                                &gltf->textures.n, sizeof *gltf->textures.v,
-                                parse_textures, &gltf->textures) != 0)
-                    return -1;
-
-            } else if (strcmp("images", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->images.v,
-                                &gltf->images.n, sizeof *gltf->images.v,
-                                parse_images, &gltf->images) != 0)
-                    return -1;
-
-            } else if (strcmp("samplers", token->data) == 0) {
-                if (parse_array(file, token, (void **)&gltf->samplers.v,
-                                &gltf->samplers.n, sizeof *gltf->samplers.v,
-                                parse_samplers, &gltf->samplers) != 0)
-                    return -1;
-
-            } else {
-                if (consume_prop(file, token) != 0)
-                    return -1;
-            }
-            break;
-
-        case YF_TOKEN_OP:
-            if (token->data[0] == '}')
-                return 0;
-            break;
-
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
 static int parse_asset(FILE *file, T_token *token, T_asset *asset)
 {
     assert(!feof(file));
@@ -1147,6 +847,7 @@ static int parse_asset(FILE *file, T_token *token, T_asset *asset)
     return 0;
 }
 
+/* Parses the 'glTF.scene' property. */
 static int parse_scene(FILE *file, T_token *token, T_int *scene)
 {
     assert(!feof(file));
@@ -1158,6 +859,7 @@ static int parse_scene(FILE *file, T_token *token, T_int *scene)
     return parse_int(file, token, scene);
 }
 
+/* Parses the 'glTF.scenes' property. */
 static int parse_scenes(FILE *file, T_token *token,
                         size_t index, void *scenes_p)
 {
@@ -1202,6 +904,7 @@ static int parse_scenes(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.nodes' property. */
 static int parse_nodes(FILE *file, T_token *token,
                        size_t index, void *nodes_p)
 {
@@ -1238,7 +941,7 @@ static int parse_nodes(FILE *file, T_token *token,
                 nodes->v[index].xform_mask = YF_GLTF_XFORM_M;
                 next_token(file, token); /* ':' */
                 next_token(file, token); /* '[' */
-                for (size_t i = 0; i < 16; ++i) {
+                for (size_t i = 0; i < 16; i++) {
                     if (parse_num(file, token, nodes->v[index].matrix+i) != 0)
                         return -1;
                 }
@@ -1247,7 +950,7 @@ static int parse_nodes(FILE *file, T_token *token,
                 nodes->v[index].xform_mask |= YF_GLTF_XFORM_T;
                 next_token(file, token); /* ':' */
                 next_token(file, token); /* '[' */
-                for (size_t i = 0; i < 3; ++i) {
+                for (size_t i = 0; i < 3; i++) {
                     if (parse_num(file, token, nodes->v[index].trs.t+i) != 0)
                         return -1;
                 }
@@ -1256,7 +959,7 @@ static int parse_nodes(FILE *file, T_token *token,
                 nodes->v[index].xform_mask |= YF_GLTF_XFORM_R;
                 next_token(file, token); /* ':' */
                 next_token(file, token); /* '[' */
-                for (size_t i = 0; i < 4; ++i) {
+                for (size_t i = 0; i < 4; i++) {
                     if (parse_num(file, token, nodes->v[index].trs.r+i) != 0)
                         return -1;
                 }
@@ -1265,7 +968,7 @@ static int parse_nodes(FILE *file, T_token *token,
                 nodes->v[index].xform_mask |= YF_GLTF_XFORM_S;
                 next_token(file, token); /* ':' */
                 next_token(file, token); /* '[' */
-                for (size_t i = 0; i < 3; ++i) {
+                for (size_t i = 0; i < 3; i++) {
                     if (parse_num(file, token, nodes->v[index].trs.s+i) != 0)
                         return -1;
                 }
@@ -1313,6 +1016,7 @@ static int parse_nodes(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.cameras' property. */
 static int parse_cameras(FILE *file, T_token *token,
                          size_t index, void *cameras_p)
 {
@@ -1435,6 +1139,7 @@ static int parse_cameras(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.meshes.primitives.targets' property. */
 static int parse_targets(FILE *file, T_token *token,
                          size_t index, void *targets_p)
 {
@@ -1483,6 +1188,7 @@ static int parse_targets(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.meshes.primitives' property. */
 static int parse_primitives(FILE *file, T_token *token,
                             size_t index, void *primitives_p)
 {
@@ -1498,7 +1204,7 @@ static int parse_primitives(FILE *file, T_token *token,
     primitives->v[index].indices = YF_INT_MIN;
     primitives->v[index].material = YF_INT_MIN;
     primitives->v[index].mode = YF_GLTF_MODE_TRIS;
-    for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i)
+    for (size_t i = 0; i < YF_GLTF_ATTR_N; i++)
         primitives->v[index].attributes[i] = YF_INT_MIN;
 
     while (1) {
@@ -1601,6 +1307,7 @@ static int parse_primitives(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.meshes' property. */
 static int parse_meshes(FILE *file, T_token *token,
                         size_t index, void *meshes_p)
 {
@@ -1654,6 +1361,7 @@ static int parse_meshes(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.skins' property. */
 static int parse_skins(FILE *file, T_token *token,
                        size_t index, void *skins_p)
 {
@@ -1708,6 +1416,7 @@ static int parse_skins(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.*.textureInfo property. */
 static int parse_textureinfo(FILE *file, T_token *token,
                              T_textureinfo *textureinfo)
 {
@@ -1751,6 +1460,7 @@ static int parse_textureinfo(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.materials' property. */
 static int parse_materials(FILE *file, T_token *token,
                            size_t index, void *materials_p)
 {
@@ -1790,7 +1500,7 @@ static int parse_materials(FILE *file, T_token *token,
                         if (strcmp("baseColorFactor", token->data) == 0) {
                             next_token(file, token); /* ':' */
                             next_token(file, token); /* '[' */
-                            for (size_t i = 0; i < 4; ++i) {
+                            for (size_t i = 0; i < 4; i++) {
                                 if (parse_num(file, token,
                                               materials->v[index]
                                               .pbrmr.base_clr_fac+i) != 0)
@@ -1847,7 +1557,7 @@ static int parse_materials(FILE *file, T_token *token,
             } else if (strcmp("emissiveFactor", token->data) == 0) {
                 next_token(file, token); /* ':' */
                 next_token(file, token); /* '[' */
-                for (size_t i = 0; i < 3; ++i) {
+                for (size_t i = 0; i < 3; i++) {
                     if (parse_num(file, token,
                                   materials->v[index].emissive_fac+i) != 0)
                         return -1;
@@ -1901,6 +1611,7 @@ static int parse_materials(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.animations.channels' property. */
 static int parse_channels(FILE *file, T_token *token,
                           size_t index, void *channels_p)
 {
@@ -1982,6 +1693,7 @@ static int parse_channels(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.animations.samplers' property. */
 static int parse_asamplers(FILE *file, T_token *token,
                            size_t index, void *asamplers_p)
 {
@@ -2036,6 +1748,7 @@ static int parse_asamplers(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.animations' property. */
 static int parse_animations(FILE *file, T_token *token,
                             size_t index, void *animations_p)
 {
@@ -2090,6 +1803,7 @@ static int parse_animations(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.accessors.sparse' property. */
 static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
 {
     assert(!feof(file));
@@ -2182,6 +1896,7 @@ static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
     return 0;
 }
 
+/* Parses the 'glTF.accessors' property. */
 static int parse_accessors(FILE *file, T_token *token,
                            size_t index, void *accessors_p)
 {
@@ -2238,7 +1953,7 @@ static int parse_accessors(FILE *file, T_token *token,
             } else if (strcmp("min", token->data) == 0) {
                 next_token(file, token); /* ':' */
                 next_token(file, token); /* '[' */
-                for (size_t i = 0; i < 16; ++i) {
+                for (size_t i = 0; i < 16; i++) {
                     if (parse_num(file, token,
                                   accessors->v[index].min.m4+i) != 0)
                         return -1;
@@ -2249,7 +1964,7 @@ static int parse_accessors(FILE *file, T_token *token,
             } else if (strcmp("max", token->data) == 0) {
                 next_token(file, token); /* ':' */
                 next_token(file, token); /* '[' */
-                for (size_t i = 0; i < 16; ++i) {
+                for (size_t i = 0; i < 16; i++) {
                     if (parse_num(file, token,
                                   accessors->v[index].max.m4+i) != 0)
                         return -1;
@@ -2287,6 +2002,7 @@ static int parse_accessors(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.bufferViews' property. */
 static int parse_bufferviews(FILE *file, T_token *token,
                              size_t index, void *bufferviews_p)
 {
@@ -2343,6 +2059,7 @@ static int parse_bufferviews(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.buffers' property. */
 static int parse_buffers(FILE *file, T_token *token,
                          size_t index, void *buffers_p)
 {
@@ -2387,6 +2104,7 @@ static int parse_buffers(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.textures' property. */
 static int parse_textures(FILE *file, T_token *token,
                           size_t index, void *textures_p)
 {
@@ -2433,6 +2151,7 @@ static int parse_textures(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.images' property. */
 static int parse_images(FILE *file, T_token *token,
                         size_t index, void *images_p)
 {
@@ -2482,6 +2201,7 @@ static int parse_images(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.samplers' property. */
 static int parse_samplers(FILE *file, T_token *token,
                           size_t index, void *samplers_p)
 {
@@ -2535,6 +2255,155 @@ static int parse_samplers(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the root glTF object. */
+static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(gltf != NULL);
+    assert(token->token == YF_TOKEN_OP);
+    assert(token->data[0] == '{');
+
+    gltf->scene = YF_INT_MIN;
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("asset", token->data) == 0) {
+                if (parse_asset(file, token, &gltf->asset) != 0)
+                    return -1;
+
+            } else if (strcmp("scene", token->data) == 0) {
+                if (parse_scene(file, token, &gltf->scene) != 0)
+                    return -1;
+
+            } else if (strcmp("scenes", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->scenes.v,
+                                &gltf->scenes.n, sizeof *gltf->scenes.v,
+                                parse_scenes, &gltf->scenes) != 0)
+                    return -1;
+
+            } else if (strcmp("nodes", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->nodes.v,
+                                &gltf->nodes.n, sizeof *gltf->nodes.v,
+                                parse_nodes, &gltf->nodes) != 0)
+                    return -1;
+
+            } else if (strcmp("cameras", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->cameras.v,
+                                &gltf->cameras.n, sizeof *gltf->cameras.v,
+                                parse_cameras, &gltf->cameras) != 0)
+                    return -1;
+
+            } else if (strcmp("meshes", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->meshes.v,
+                                &gltf->meshes.n, sizeof *gltf->meshes.v,
+                                parse_meshes, &gltf->meshes) != 0)
+                    return -1;
+
+            } else if (strcmp("skins", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->skins.v,
+                                &gltf->skins.n, sizeof *gltf->skins.v,
+                                parse_skins, &gltf->skins) != 0)
+                    return -1;
+
+            } else if (strcmp("materials", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->materials.v,
+                                &gltf->materials.n, sizeof *gltf->materials.v,
+                                parse_materials, &gltf->materials) != 0)
+                    return -1;
+
+            } else if (strcmp("animations", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->animations.v,
+                                &gltf->animations.n, sizeof *gltf->animations.v,
+                                parse_animations, &gltf->animations) != 0)
+                    return -1;
+
+            } else if (strcmp("accessors", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->accessors.v,
+                                &gltf->accessors.n, sizeof *gltf->accessors.v,
+                                parse_accessors, &gltf->accessors) != 0)
+                    return -1;
+
+            } else if (strcmp("bufferViews", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->bufferviews.v,
+                                &gltf->bufferviews.n,
+                                sizeof *gltf->bufferviews.v,
+                                parse_bufferviews, &gltf->bufferviews) != 0)
+                    return -1;
+
+            } else if (strcmp("buffers", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->buffers.v,
+                                &gltf->buffers.n, sizeof *gltf->buffers.v,
+                                parse_buffers, &gltf->buffers) != 0)
+                    return -1;
+
+            } else if (strcmp("textures", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->textures.v,
+                                &gltf->textures.n, sizeof *gltf->textures.v,
+                                parse_textures, &gltf->textures) != 0)
+                    return -1;
+
+            } else if (strcmp("images", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->images.v,
+                                &gltf->images.n, sizeof *gltf->images.v,
+                                parse_images, &gltf->images) != 0)
+                    return -1;
+
+            } else if (strcmp("samplers", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->samplers.v,
+                                &gltf->samplers.n, sizeof *gltf->samplers.v,
+                                parse_samplers, &gltf->samplers) != 0)
+                    return -1;
+
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/*
+ * Data
+ */
+
+#define YF_PATHOF(pathname, path) do { \
+    const char *last = strrchr(pathname, '/'); \
+    if (last != NULL) { \
+        const size_t len = 1 + last - (pathname); \
+        path = malloc(1+len); \
+        if ((path) != NULL) { \
+            memcpy(path, pathname, len); \
+            (path)[len] = '\0'; \
+        } \
+    } else { \
+        path = ""; \
+    } } while (0)
+
+#define YF_PATHCAT(path, name, pathname) do { \
+    const size_t path_len = strlen(path); \
+    const size_t name_len = strlen(name); \
+    pathname = malloc(1+path_len+name_len); \
+    if ((pathname) != NULL) { \
+        memcpy(pathname, path, path_len); \
+        memcpy((pathname)+path_len, name, name_len); \
+        (pathname)[path_len+name_len] = '\0'; \
+    } } while (0)
+
+/* Loads a single mesh from glTF contents. */
 static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
 {
     assert(gltf != NULL);
@@ -2558,7 +2427,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
         idx.view = gltf->accessors.v[idx.accessor].buffer_view;
         idx.buffer = gltf->bufferviews.v[idx.view].buffer;
     }
-    for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i) {
+    for (size_t i = 0; i < YF_GLTF_ATTR_N; i++) {
         attrs[i].accessor = prim->v[0].attributes[i];
         if (attrs[i].accessor != YF_INT_MIN) {
             attrs[i].view = gltf->accessors.v[attrs[i].accessor].buffer_view;
@@ -2597,7 +2466,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
     size_t comp_n = 0;
 
     /* vertex data */
-    for (size_t i = 0; i < YF_GLTF_ATTR_N; ++i) {
+    for (size_t i = 0; i < YF_GLTF_ATTR_N; i++) {
         if (attrs[i].accessor == YF_INT_MIN)
             continue;
 
@@ -2649,7 +2518,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
             comp_sz = 4;
             comp_n = 3;
             if (byte_strd == 0) {
-                for (size_t j = 0; j < v_n; ++j) {
+                for (size_t j = 0; j < v_n; j++) {
                     if (fread(verts[j].pos, comp_sz, comp_n, file) < comp_n) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
                         free(verts);
@@ -2659,7 +2528,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
                     }
                 }
             } else {
-                for (size_t j = 0; j < v_n; ++j) {
+                for (size_t j = 0; j < v_n; j++) {
                     if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
                         fread(verts[j].pos, comp_sz, comp_n, file) < comp_n) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -2683,7 +2552,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
             comp_sz = 4;
             comp_n = 3;
             if (byte_strd == 0) {
-                for (size_t j = 0; j < v_n; ++j) {
+                for (size_t j = 0; j < v_n; j++) {
                     if (fread(verts[j].norm, comp_sz, comp_n, file) < comp_n) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
                         free(verts);
@@ -2693,7 +2562,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
                     }
                 }
             } else {
-                for (size_t j = 0; j < v_n; ++j) {
+                for (size_t j = 0; j < v_n; j++) {
                     if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
                         fread(verts[j].norm, comp_sz, comp_n, file) < comp_n) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -2718,7 +2587,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
             comp_sz = 4;
             comp_n = 2;
             if (byte_strd == 0) {
-                for (size_t j = 0; j < v_n; ++j) {
+                for (size_t j = 0; j < v_n; j++) {
                     if (fread(verts[j].tc, comp_sz, comp_n, file) < comp_n) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
                         free(verts);
@@ -2728,7 +2597,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
                     }
                 }
             } else {
-                for (size_t j = 0; j < v_n; ++j) {
+                for (size_t j = 0; j < v_n; j++) {
                     if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
                         fread(verts[j].tc, comp_sz, comp_n, file) < comp_n) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -2806,7 +2675,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
                 return -1;
             }
         } else {
-            for (size_t j = 0; j < i_n; ++j) {
+            for (size_t j = 0; j < i_n; j++) {
                 if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
                     fread((char *)inds+comp_sz*j, comp_sz, comp_n,
                           file) < comp_n) {
@@ -2831,6 +2700,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
     return 0;
 }
 
+/* Deinitializes glTF contents. */
 static void deinit_gltf(T_gltf *gltf)
 {
     if (gltf == NULL)
@@ -2841,25 +2711,25 @@ static void deinit_gltf(T_gltf *gltf)
     free(gltf->asset.version);
     free(gltf->asset.min_version);
 
-    for (size_t i = 0; i < gltf->scenes.n; ++i) {
+    for (size_t i = 0; i < gltf->scenes.n; i++) {
         free(gltf->scenes.v[i].nodes);
         free(gltf->scenes.v[i].name);
     }
     free(gltf->scenes.v);
 
-    for (size_t i = 0; i < gltf->nodes.n; ++i) {
+    for (size_t i = 0; i < gltf->nodes.n; i++) {
         free(gltf->nodes.v[i].children);
         free(gltf->nodes.v[i].weights);
         free(gltf->nodes.v[i].name);
     }
     free(gltf->nodes.v);
 
-    for (size_t i = 0; i < gltf->cameras.n; ++i)
+    for (size_t i = 0; i < gltf->cameras.n; i++)
         free(gltf->cameras.v[i].name);
     free(gltf->cameras.v);
 
-    for (size_t i = 0; i < gltf->meshes.n; ++i) {
-        for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; ++j)
+    for (size_t i = 0; i < gltf->meshes.n; i++) {
+        for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; j++)
             free(gltf->meshes.v[i].primitives.v[j].targets.v);
         free(gltf->meshes.v[i].primitives.v);
         free(gltf->meshes.v[i].weights);
@@ -2867,51 +2737,109 @@ static void deinit_gltf(T_gltf *gltf)
     }
     free(gltf->meshes.v);
 
-    for (size_t i = 0; i < gltf->skins.n; ++i) {
+    for (size_t i = 0; i < gltf->skins.n; i++) {
         free(gltf->skins.v[i].joints);
         free(gltf->skins.v[i].name);
     }
     free(gltf->skins.v);
 
-    for (size_t i = 0; i < gltf->materials.n; ++i)
+    for (size_t i = 0; i < gltf->materials.n; i++)
         free(gltf->materials.v[i].name);
     free(gltf->materials.v);
 
-    for (size_t i = 0; i < gltf->animations.n; ++i) {
+    for (size_t i = 0; i < gltf->animations.n; i++) {
         free(gltf->animations.v[i].channels.v);
         free(gltf->animations.v[i].samplers.v);
         free(gltf->animations.v[i].name);
     }
     free(gltf->animations.v);
 
-    for (size_t i = 0; i < gltf->accessors.n; ++i)
+    for (size_t i = 0; i < gltf->accessors.n; i++)
         free(gltf->accessors.v[i].name);
     free(gltf->accessors.v);
 
-    for (size_t i = 0; i < gltf->bufferviews.n; ++i)
+    for (size_t i = 0; i < gltf->bufferviews.n; i++)
         free(gltf->bufferviews.v[i].name);
     free(gltf->bufferviews.v);
 
-    for (size_t i = 0; i < gltf->buffers.n; ++i) {
+    for (size_t i = 0; i < gltf->buffers.n; i++) {
         free(gltf->buffers.v[i].uri);
         free(gltf->buffers.v[i].name);
     }
     free(gltf->buffers.v);
 
-    for (size_t i = 0; i < gltf->textures.n; ++i)
+    for (size_t i = 0; i < gltf->textures.n; i++)
         free(gltf->textures.v[i].name);
     free(gltf->textures.v);
 
-    for (size_t i = 0; i < gltf->images.n; ++i) {
+    for (size_t i = 0; i < gltf->images.n; i++) {
         free(gltf->images.v[i].uri);
         free(gltf->images.v[i].mime_type);
         free(gltf->images.v[i].name);
     }
     free(gltf->images.v);
 
-    for (size_t i = 0; i < gltf->samplers.n; ++i)
+    for (size_t i = 0; i < gltf->samplers.n; i++)
         free(gltf->samplers.v[i].name);
     free(gltf->samplers.v);
+}
+
+#ifdef YF_DEVEL
+static void print_gltf(const T_gltf *gltf);
+#endif
+
+int yf_loadgltf(const char *pathname, YF_meshdt *data)
+{
+    assert(data != NULL);
+
+    if (pathname == NULL) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    char *path = NULL;
+    YF_PATHOF(pathname, path);
+    if (path == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    FILE *file = fopen(pathname, "r");
+    if (file == NULL) {
+        yf_seterr(YF_ERR_NOFILE, __func__);
+        return -1;
+    }
+
+    T_token token = {0};
+    next_token(file, &token);
+    /* TODO: .glb */
+    if (token.token != YF_TOKEN_OP && token.data[0] != '{') {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        fclose(file);
+        return -1;
+    }
+
+    T_gltf gltf = {0};
+    if (parse_gltf(file, &token, &gltf) != 0) {
+        deinit_gltf(&gltf);
+        fclose(file);
+        return -1;
+    }
+
+#ifdef YF_DEVEL
+    print_gltf(&gltf);
+#endif
+
+    if (load_meshdt(&gltf, path, data) != 0) {
+        deinit_gltf(&gltf);
+        fclose(file);
+        return -1;
+    }
+
+    deinit_gltf(&gltf);
+    fclose(file);
+    free(path);
+    return 0;
 }
 
 /*
@@ -2934,20 +2862,20 @@ static void print_gltf(const T_gltf *gltf)
 
     puts("glTF.scenes:");
     printf(" n: %lu\n", gltf->scenes.n);
-    for (size_t i = 0; i < gltf->scenes.n; ++i) {
+    for (size_t i = 0; i < gltf->scenes.n; i++) {
         printf(" scene '%s':\n", gltf->scenes.v[i].name);
         printf("  nodes: [ ");
-        for (size_t j = 0; j < gltf->scenes.v[i].node_n; ++j)
+        for (size_t j = 0; j < gltf->scenes.v[i].node_n; j++)
             printf("%lld ", gltf->scenes.v[i].nodes[j]);
         puts("]");
     }
 
     puts("glTF.nodes:");
     printf(" n: %lu\n", gltf->nodes.n);
-    for (size_t i = 0; i < gltf->nodes.n; ++i) {
+    for (size_t i = 0; i < gltf->nodes.n; i++) {
         printf(" node '%s':\n", gltf->nodes.v[i].name);
         printf("  children: [ ");
-        for (size_t j = 0; j < gltf->nodes.v[i].child_n; ++j)
+        for (size_t j = 0; j < gltf->nodes.v[i].child_n; j++)
             printf("%lld ", gltf->nodes.v[i].children[j]);
         puts("]");
         printf("  camera: %lld\n", gltf->nodes.v[i].camera);
@@ -2956,33 +2884,33 @@ static void print_gltf(const T_gltf *gltf)
             puts("  (no transform)");
         } else if (gltf->nodes.v[i].xform_mask == YF_GLTF_XFORM_NONE) {
             printf("  matrix: [ ");
-            for (size_t j = 0; j < 16; ++j)
+            for (size_t j = 0; j < 16; j++)
                 printf("%.4f ", gltf->nodes.v[i].matrix[j]);
             puts("]");
         } else {
             printf("  translation: [ ");
-            for (size_t j = 0; j < 3; ++j)
+            for (size_t j = 0; j < 3; j++)
                 printf("%.4f ", gltf->nodes.v[i].trs.t[j]);
             puts("]");
             printf("  rotation: [ ");
-            for (size_t j = 0; j < 4; ++j)
+            for (size_t j = 0; j < 4; j++)
                 printf("%.4f ", gltf->nodes.v[i].trs.r[j]);
             puts("]");
             printf("  scale: [ ");
-            for (size_t j = 0; j < 3; ++j)
+            for (size_t j = 0; j < 3; j++)
                 printf("%.4f ", gltf->nodes.v[i].trs.s[j]);
             puts("]");
         }
         printf("  skin: %lld\n", gltf->nodes.v[i].skin);
         printf("  weights: [ ");
-        for (size_t j = 0; j < gltf->nodes.v[i].weight_n; ++j)
+        for (size_t j = 0; j < gltf->nodes.v[i].weight_n; j++)
             printf("%.9f ", gltf->nodes.v[i].weights[j]);
         puts("]");
     }
 
     puts("glTF.cameras:");
     printf(" n: %lu\n", gltf->cameras.n);
-    for (size_t i = 0; i < gltf->cameras.n; ++i) {
+    for (size_t i = 0; i < gltf->cameras.n; i++) {
         printf(" camera '%s':\n", gltf->cameras.v[i].name);
         if (gltf->cameras.v[i].type == YF_GLTF_CAMERA_PERSP) {
             puts("  pespective:");
@@ -3002,10 +2930,10 @@ static void print_gltf(const T_gltf *gltf)
 
     puts("glTF.meshes:");
     printf(" n: %lu\n", gltf->meshes.n);
-    for (size_t i = 0; i < gltf->meshes.n; ++i) {
+    for (size_t i = 0; i < gltf->meshes.n; i++) {
         printf(" mesh '%s':\n", gltf->meshes.v[i].name);
         printf("  n: %lu\n", gltf->meshes.v[i].primitives.n);
-        for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; ++j) {
+        for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; j++) {
             printf("  primitives #%lu:\n", j);
             puts("   attributes:");
             printf("    POSITION: %lld\n",
@@ -3039,7 +2967,7 @@ static void print_gltf(const T_gltf *gltf)
             } else {
                 const size_t target_n =
                     gltf->meshes.v[i].primitives.v[j].targets.n;
-                for (size_t k = 0; k < target_n; ++k) {
+                for (size_t k = 0; k < target_n; k++) {
                     printf("   targets #%lu:\n", k);
                     printf("    POSITION: %lld\n",
                            gltf->meshes.v[i].primitives.v[j]
@@ -3054,27 +2982,27 @@ static void print_gltf(const T_gltf *gltf)
             }
         }
         printf("  weights: [ ");
-        for (size_t j = 0; j < gltf->meshes.v[i].weight_n; ++j)
+        for (size_t j = 0; j < gltf->meshes.v[i].weight_n; j++)
             printf("%.9f ", gltf->meshes.v[i].weights[j]);
         puts("]");
     }
 
     puts("glTF.skins:");
     printf(" n: %lu\n", gltf->skins.n);
-    for (size_t i = 0; i < gltf->skins.n; ++i) {
+    for (size_t i = 0; i < gltf->skins.n; i++) {
         printf(" skin '%s':\n", gltf->skins.v[i].name);
         printf("  inverseBindMatrices: %lld\n",
                gltf->skins.v[i].inv_bind_matrices);
         printf("  skeleton: %lld\n", gltf->skins.v[i].skeleton);
         printf("  joints: [ ");
-        for (size_t j = 0; j < gltf->skins.v[i].joint_n; ++j)
+        for (size_t j = 0; j < gltf->skins.v[i].joint_n; j++)
             printf("%lld ", gltf->skins.v[i].joints[j]);
         puts("]");
     }
 
     puts("glTF.materials:");
     printf(" n: %lu\n", gltf->materials.n);
-    for (size_t i = 0; i < gltf->materials.n; ++i) {
+    for (size_t i = 0; i < gltf->materials.n; i++) {
         printf(" material '%s':\n", gltf->materials.v[i].name);
         puts("  pbrMetallicRoughness:");
         printf("   baseColorFactor: [%.9f, %.9f, %.9f, %.9f]\n",
@@ -3127,11 +3055,11 @@ static void print_gltf(const T_gltf *gltf)
 
     puts("glTF.animations:");
     printf(" n: %lu\n", gltf->animations.n);
-    for (size_t i = 0; i < gltf->animations.n; ++i) {
+    for (size_t i = 0; i < gltf->animations.n; i++) {
         printf(" animation '%s':\n", gltf->animations.v[i].name);
         puts("  channels:");
         printf("  n: %lu\n", gltf->animations.v[i].channels.n);
-        for (size_t j = 0; j < gltf->animations.v[i].channels.n; ++j) {
+        for (size_t j = 0; j < gltf->animations.v[i].channels.n; j++) {
             printf("  channel #%lu:\n", j);
             printf("   sampler: %lld\n",
                    gltf->animations.v[i].channels.v[j].sampler);
@@ -3143,7 +3071,7 @@ static void print_gltf(const T_gltf *gltf)
         }
         puts("  samplers:");
         printf("  n: %lu\n", gltf->animations.v[i].samplers.n);
-        for (size_t j = 0; j < gltf->animations.v[i].samplers.n; ++j) {
+        for (size_t j = 0; j < gltf->animations.v[i].samplers.n; j++) {
             printf("  channel #%lu:\n", j);
             printf("   input: %lld\n",
                    gltf->animations.v[i].samplers.v[j].input);
@@ -3156,7 +3084,7 @@ static void print_gltf(const T_gltf *gltf)
 
     puts("glTF.accessors:");
     printf(" n: %lu\n", gltf->accessors.n);
-    for (size_t i = 0; i < gltf->accessors.n; ++i) {
+    for (size_t i = 0; i < gltf->accessors.n; i++) {
         printf(" accessor '%s':\n", gltf->accessors.v[i].name);
         printf("  bufferView: %lld\n", gltf->accessors.v[i].buffer_view);
         printf("  byteOffset: %lld\n", gltf->accessors.v[i].byte_off);
@@ -3198,10 +3126,10 @@ static void print_gltf(const T_gltf *gltf)
         }
         if (comp_n > 1) {
             printf("  min: [ ");
-            for (size_t j = 0; j < comp_n; ++j)
+            for (size_t j = 0; j < comp_n; j++)
                 printf("%.9f ", gltf->accessors.v[i].min.m4[j]);
             printf("]\n  max: [ ");
-            for (size_t j = 0; j < comp_n; ++j)
+            for (size_t j = 0; j < comp_n; j++)
                 printf("%.9f ", gltf->accessors.v[i].max.m4[j]);
             puts("]");
         } else {
@@ -3227,7 +3155,7 @@ static void print_gltf(const T_gltf *gltf)
 
     puts("glTF.bufferViews:");
     printf(" n: %lu\n", gltf->bufferviews.n);
-    for (size_t i = 0; i < gltf->bufferviews.n; ++i) {
+    for (size_t i = 0; i < gltf->bufferviews.n; i++) {
         printf(" buffer view '%s':\n", gltf->bufferviews.v[i].name);
         printf("  buffer: %lld\n", gltf->bufferviews.v[i].buffer);
         printf("  byteOffset: %lld\n", gltf->bufferviews.v[i].byte_off);
@@ -3238,7 +3166,7 @@ static void print_gltf(const T_gltf *gltf)
 
     puts("glTF.buffers:");
     printf(" n: %lu\n", gltf->buffers.n);
-    for (size_t i = 0; i < gltf->buffers.n; ++i) {
+    for (size_t i = 0; i < gltf->buffers.n; i++) {
         printf(" buffer '%s':\n", gltf->buffers.v[i].name);
         printf("  byteLength: %lld\n", gltf->buffers.v[i].byte_len);
         printf("  uri: %s\n", gltf->buffers.v[i].uri);
@@ -3246,7 +3174,7 @@ static void print_gltf(const T_gltf *gltf)
 
     puts("glTF.textures:");
     printf(" n: %lu\n", gltf->textures.n);
-    for (size_t i = 0; i < gltf->textures.n; ++i) {
+    for (size_t i = 0; i < gltf->textures.n; i++) {
         printf(" texture '%s':\n", gltf->textures.v[i].name);
         printf("  sampler: %lld\n", gltf->textures.v[i].sampler);
         printf("  source: %lld\n", gltf->textures.v[i].source);
@@ -3254,7 +3182,7 @@ static void print_gltf(const T_gltf *gltf)
 
     puts("glTF.images:");
     printf(" n: %lu\n", gltf->images.n);
-    for (size_t i = 0; i < gltf->images.n; ++i) {
+    for (size_t i = 0; i < gltf->images.n; i++) {
         printf(" image '%s':\n", gltf->images.v[i].name);
         printf("  uri: %s\n", gltf->images.v[i].uri);
         printf("  mimeType: %s\n", gltf->images.v[i].mime_type);
@@ -3263,7 +3191,7 @@ static void print_gltf(const T_gltf *gltf)
 
     puts("glTF.samplers:");
     printf(" n: %lu\n", gltf->samplers.n);
-    for (size_t i = 0; i < gltf->samplers.n; ++i) {
+    for (size_t i = 0; i < gltf->samplers.n; i++) {
         printf(" sampler '%s':\n", gltf->samplers.v[i].name);
         printf("  minFilter: %lld\n", gltf->samplers.v[i].min_filter);
         printf("  magFilter: %lld\n", gltf->samplers.v[i].mag_filter);
