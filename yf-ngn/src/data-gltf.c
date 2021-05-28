@@ -592,8 +592,10 @@ typedef struct {
 typedef struct {
     T_int index;
     T_int tex_coord;
-    T_num scale;
-    T_num strength;
+    union {
+        T_num scale;
+        T_num strength;
+    };
 } T_textureinfo;
 
 /* Type defining the 'glTF.materials.pbrMetallicRoughness' property. */
@@ -836,15 +838,19 @@ static int parse_asset(FILE *file, T_token *token, T_asset *asset)
             if (strcmp("copyright", token->data) == 0) {
                 if (parse_str(file, token, &asset->copyright) != 0)
                     return -1;
+
             } else if (strcmp("generator", token->data) == 0) {
                 if (parse_str(file, token, &asset->generator) != 0)
                     return -1;
+
             } else if (strcmp("version", token->data) == 0) {
                 if (parse_str(file, token, &asset->version) != 0)
                     return -1;
+
             } else if (strcmp("minVersion", token->data) == 0) {
                 if (parse_str(file, token, &asset->min_version) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -899,9 +905,11 @@ static int parse_scenes(FILE *file, T_token *token,
                                 sizeof *scenes->v[index].nodes,
                                 parse_int_array, &scenes->v[index].nodes) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &scenes->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -949,12 +957,15 @@ static int parse_nodes(FILE *file, T_token *token,
                                 parse_int_array,
                                 &nodes->v[index].children) != 0)
                     return -1;
+
             } else if (strcmp("camera", token->data) == 0) {
                 if (parse_int(file, token, &nodes->v[index].camera) != 0)
                     return -1;
+
             } else if (strcmp("mesh", token->data) == 0) {
                 if (parse_int(file, token, &nodes->v[index].mesh) != 0)
                     return -1;
+
             } else if (strcmp("matrix", token->data) == 0) {
                 nodes->v[index].xform_mask = YF_GLTF_XFORM_M;
                 next_token(file, token); /* ':' */
@@ -964,6 +975,7 @@ static int parse_nodes(FILE *file, T_token *token,
                         return -1;
                 }
                 next_token(file, token); /* ']' */
+
             } else if (strcmp("translation", token->data) == 0) {
                 nodes->v[index].xform_mask |= YF_GLTF_XFORM_T;
                 next_token(file, token); /* ':' */
@@ -973,6 +985,7 @@ static int parse_nodes(FILE *file, T_token *token,
                         return -1;
                 }
                 next_token(file, token); /* ']' */
+
             } else if (strcmp("rotation", token->data) == 0) {
                 nodes->v[index].xform_mask |= YF_GLTF_XFORM_R;
                 next_token(file, token); /* ':' */
@@ -982,6 +995,7 @@ static int parse_nodes(FILE *file, T_token *token,
                         return -1;
                 }
                 next_token(file, token); /* ']' */
+
             } else if (strcmp("scale", token->data) == 0) {
                 nodes->v[index].xform_mask |= YF_GLTF_XFORM_S;
                 next_token(file, token); /* ':' */
@@ -991,18 +1005,22 @@ static int parse_nodes(FILE *file, T_token *token,
                         return -1;
                 }
                 next_token(file, token); /* ']' */
+
             } else if (strcmp("skin", token->data) == 0) {
                 if (parse_int(file, token, &nodes->v[index].skin) != 0)
                     return -1;
+
             } else if (strcmp("weights", token->data) == 0) {
                 if (parse_array(file, token, (void **)&nodes->v[index].weights,
                                 &nodes->v[index].weight_n,
                                 sizeof *nodes->v[index].weights,
                                 parse_num_array, &nodes->v[index].weights) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &nodes->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1053,15 +1071,19 @@ static int parse_perspective(FILE *file, T_token *token,
             if (strcmp("yfov", token->data) == 0) {
                 if (parse_num(file, token, &perspective->yfov) != 0)
                     return -1;
+
             } else if (strcmp("aspectRatio", token->data) == 0) {
                 if (parse_num(file, token, &perspective->aspect_ratio) != 0)
                     return -1;
+
             } else if (strcmp("znear", token->data) == 0) {
                 if (parse_num(file, token, &perspective->znear) != 0)
                     return -1;
+
             } else if (strcmp("zfar", token->data) == 0) {
                 if (parse_num(file, token, &perspective->zfar) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1101,15 +1123,19 @@ static int parse_orthographic(FILE *file, T_token *token,
             if (strcmp("xmag", token->data) == 0) {
                 if (parse_num(file, token, &orthographic->xmag) != 0)
                     return -1;
+
             } else if (strcmp("ymag", token->data) == 0) {
                 if (parse_num(file, token, &orthographic->ymag) != 0)
                     return -1;
+
             } else if (strcmp("znear", token->data) == 0) {
                 if (parse_num(file, token, &orthographic->znear) != 0)
                     return -1;
+
             } else if (strcmp("zfar", token->data) == 0) {
                 if (parse_num(file, token, &orthographic->zfar) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1157,17 +1183,21 @@ static int parse_cameras(FILE *file, T_token *token,
                     yf_seterr(YF_ERR_INVFILE, __func__);
                     return -1;
                 }
+
             } else if (strcmp("perspective", token->data) == 0) {
                 if (parse_perspective(file, token,
                                       &cameras->v[index].persp) != 0)
                     return -1;
+
             } else if (strcmp("orthographic", token->data) == 0) {
                 if (parse_orthographic(file, token,
                                        &cameras->v[index].ortho) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &cameras->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1200,36 +1230,41 @@ static int parse_attributes(FILE *file, T_token *token, T_int *attributes)
     next_token(file, token); /* ':' */
     next_token(file, token); /* '{' */
 
-    for (size_t i = 0; i < YF_GLTF_ATTR_N; i++)
-        attributes[i] = YF_INT_MIN;
-
     while (1) {
         switch (next_token(file, token)) {
         case YF_TOKEN_STR:
             if (strcmp("POSITION", token->data) == 0) {
                 if (parse_int(file, token, attributes+YF_GLTF_ATTR_POS) != 0)
                     return -1;
+
             } else if (strcmp("NORMAL", token->data) == 0) {
                 if (parse_int(file, token, attributes+YF_GLTF_ATTR_NORM) != 0)
                     return -1;
+
             } else if (strcmp("TANGENT", token->data) == 0) {
                 if (parse_int(file, token, attributes+YF_GLTF_ATTR_TAN) != 0)
                     return -1;
+
             } else if (strcmp("TEXCOORD_0", token->data) == 0) {
                 if (parse_int(file, token, attributes+YF_GLTF_ATTR_TC0) != 0)
                     return -1;
+
             } else if (strcmp("TEXCOORD_1", token->data) == 0) {
                 if (parse_int(file, token, attributes+YF_GLTF_ATTR_TC1) != 0)
                     return -1;
+
             } else if (strcmp("COLOR_0", token->data) == 0) {
                 if (parse_int(file, token, attributes+YF_GLTF_ATTR_CLR0) != 0)
                     return -1;
+
             } else if (strcmp("JOINTS_0", token->data) == 0) {
                 if (parse_int(file, token, attributes+YF_GLTF_ATTR_JNT0) != 0)
                     return -1;
+
             } else if (strcmp("WEIGHTS_0", token->data) == 0) {
                 if (parse_int(file, token, attributes+YF_GLTF_ATTR_WGT0) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1273,12 +1308,15 @@ static int parse_targets(FILE *file, T_token *token,
             if (strcmp("POSITION", token->data) == 0) {
                 if (parse_int(file, token, &targets->v[index].position) != 0)
                     return -1;
+
             } else if (strcmp("NORMAL", token->data) == 0) {
                 if (parse_int(file, token, &targets->v[index].normal) != 0)
                     return -1;
+
             } else if (strcmp("TANGENT", token->data) == 0) {
                 if (parse_int(file, token, &targets->v[index].tangent) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1312,6 +1350,8 @@ static int parse_primitives(FILE *file, T_token *token,
     assert(token->token == YF_TOKEN_OP);
     assert(token->data[0] == '[' || token->data[0] == ',');
 
+    for (size_t i = 0; i < YF_GLTF_ATTR_N; i++)
+        primitives->v[index].attributes[i] = YF_INT_MIN;
     primitives->v[index].indices = YF_INT_MIN;
     primitives->v[index].material = YF_INT_MIN;
     primitives->v[index].mode = YF_GLTF_MODE_TRIS;
@@ -1323,18 +1363,22 @@ static int parse_primitives(FILE *file, T_token *token,
                 if (parse_attributes(file, token,
                                      primitives->v[index].attributes) != 0)
                     return -1;
+
             } else if (strcmp("indices", token->data) == 0) {
                 if (parse_int(file, token,
                               &primitives->v[index].indices) != 0)
                     return -1;
+
             } else if (strcmp("material", token->data) == 0) {
                 if (parse_int(file, token,
                               &primitives->v[index].material) != 0)
                     return -1;
+
             } else if (strcmp("mode", token->data) == 0) {
                 if (parse_int(file, token,
                               &primitives->v[index].mode) != 0)
                     return -1;
+
             } else if (strcmp("targets", token->data) == 0) {
                 if (parse_array(file, token,
                                 (void **)&primitives->v[index].targets.v,
@@ -1343,6 +1387,7 @@ static int parse_primitives(FILE *file, T_token *token,
                                 parse_targets,
                                 &primitives->v[index].targets) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1387,6 +1432,7 @@ static int parse_meshes(FILE *file, T_token *token,
                                 parse_primitives,
                                 &meshes->v[index].primitives) != 0)
                     return -1;
+
             } else if (strcmp("weights", token->data) == 0) {
                 if (parse_array(file, token, (void **)&meshes->v[index].weights,
                                 &meshes->v[index].weight_n,
@@ -1394,9 +1440,11 @@ static int parse_meshes(FILE *file, T_token *token,
                                 parse_num_array,
                                 &meshes->v[index].weights) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &meshes->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1440,18 +1488,22 @@ static int parse_skins(FILE *file, T_token *token,
                 if (parse_int(file, token,
                               &skins->v[index].inv_bind_matrices) != 0)
                     return -1;
+
             } else if (strcmp("skeleton", token->data) == 0) {
                 if (parse_int(file, token, &skins->v[index].skeleton) != 0)
                     return -1;
+
             } else if (strcmp("joints", token->data) == 0) {
                 if (parse_array(file, token, (void **)&skins->v[index].joints,
                                 &skins->v[index].joint_n,
                                 sizeof *skins->v[index].joints,
                                 parse_int_array, &skins->v[index].joints) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &skins->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1487,15 +1539,19 @@ static int parse_textureinfo(FILE *file, T_token *token,
             if (strcmp("index", token->data) == 0) {
                 if (parse_int(file, token, &textureinfo->index) != 0)
                     return -1;
+
             } else if (strcmp("texCoord", token->data) == 0) {
                 if (parse_int(file, token, &textureinfo->tex_coord) != 0)
                     return -1;
+
             } else if (strcmp("scale", token->data) == 0) {
                 if (parse_num(file, token, &textureinfo->scale) != 0)
                     return -1;
+
             } else if (strcmp("strength", token->data) == 0) {
                 if (parse_num(file, token, &textureinfo->strength) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1540,22 +1596,27 @@ static int parse_pbrmetalrough(FILE *file, T_token *token,
                         return -1;
                 }
                 next_token(file, token); /* ']' */
+
             } else if (strcmp("baseColorTexture", token->data) == 0) {
                 if (parse_textureinfo(file, token,
                                       &pbrmetalrough->base_clr_tex) != 0)
                     return -1;
+
             } else if (strcmp("metallicFactor", token->data) == 0) {
                 if (parse_num(file, token,
                               &pbrmetalrough->metallic_fac) != 0)
                     return -1;
+
             } else if (strcmp("roughnessFactor", token->data) == 0) {
                 if (parse_num(file, token,
                               &pbrmetalrough->roughness_fac) != 0)
                     return -1;
+
             } else if (strcmp("metallicRoughnessTexture", token->data) == 0) {
                 if (parse_textureinfo(file, token,
                                       &pbrmetalrough->metal_rough_tex) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1611,14 +1672,17 @@ static int parse_materials(FILE *file, T_token *token,
                 if (parse_pbrmetalrough(file, token,
                                         &materials->v[index].pbrmr) != 0)
                     return -1;
+
             } else if (strcmp("normalTexture", token->data) == 0) {
                 if (parse_textureinfo(file, token,
                                       &materials->v[index].normal_tex) != 0)
                     return -1;
+
             } else if (strcmp("occlusionTexture", token->data) == 0) {
                 if (parse_textureinfo(file, token,
                                       &materials->v[index].occlusion_tex) != 0)
                     return -1;
+
             } else if (strcmp("emissiveFactor", token->data) == 0) {
                 next_token(file, token); /* ':' */
                 next_token(file, token); /* '[' */
@@ -1628,10 +1692,12 @@ static int parse_materials(FILE *file, T_token *token,
                         return -1;
                 }
                 next_token(file, token); /* ']' */
+
             } else if (strcmp("emissiveTexture", token->data) == 0) {
                 if (parse_textureinfo(file, token,
                                       &materials->v[index].emissive_tex) != 0)
                     return -1;
+
             } else if (strcmp("alphaMode", token->data) == 0) {
                 next_token(file, token); /* ':' */
                 next_token(file, token);
@@ -1645,17 +1711,21 @@ static int parse_materials(FILE *file, T_token *token,
                     yf_seterr(YF_ERR_INVFILE, __func__);
                     return -1;
                 }
+
             } else if (strcmp("alphaCutoff", token->data) == 0) {
                 if (parse_num(file, token,
                               &materials->v[index].alpha_cutoff) != 0)
                     return -1;
+
             } else if (strcmp("doubleSided", token->data) == 0) {
                 if (parse_bool(file, token,
                                &materials->v[index].double_sided) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &materials->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1694,6 +1764,7 @@ static int parse_ctarget(FILE *file, T_token *token, T_ctarget *ctarget)
             if (strcmp("node", token->data) == 0) {
                 if (parse_int(file, token, &ctarget->node) != 0)
                     return -1;
+
             } else if (strcmp("path", token->data) == 0) {
                 next_token(file, token); /* ':' */
                 next_token(file, token);
@@ -1709,6 +1780,7 @@ static int parse_ctarget(FILE *file, T_token *token, T_ctarget *ctarget)
                     yf_seterr(YF_ERR_INVFILE, __func__);
                     return -1;
                 }
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1748,9 +1820,11 @@ static int parse_channels(FILE *file, T_token *token,
             if (strcmp("sampler", token->data) == 0) {
                 if (parse_int(file, token, &channels->v[index].sampler) != 0)
                     return -1;
+
             } else if (strcmp("target", token->data) == 0) {
                 if (parse_ctarget(file, token, &channels->v[index].target) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1790,9 +1864,11 @@ static int parse_asamplers(FILE *file, T_token *token,
             if (strcmp("input", token->data) == 0) {
                 if (parse_int(file, token, &asamplers->v[index].input) != 0)
                     return -1;
+
             } else if (strcmp("output", token->data) == 0) {
                 if (parse_int(file, token, &asamplers->v[index].output) != 0)
                     return -1;
+
             } else if (strcmp("interpolation", token->data) == 0) {
                 next_token(file, token); /* ':' */
                 next_token(file, token);
@@ -1806,6 +1882,7 @@ static int parse_asamplers(FILE *file, T_token *token,
                     yf_seterr(YF_ERR_INVFILE, __func__);
                     return -1;
                 }
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1850,6 +1927,7 @@ static int parse_animations(FILE *file, T_token *token,
                                 parse_channels,
                                 &animations->v[index].channels) != 0)
                     return -1;
+
             } else if (strcmp("samplers", token->data) == 0) {
                 if (parse_array(file, token,
                                 (void **)&animations->v[index].samplers.v,
@@ -1858,9 +1936,11 @@ static int parse_animations(FILE *file, T_token *token,
                                 parse_asamplers,
                                 &animations->v[index].samplers) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &animations->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1899,12 +1979,15 @@ static int parse_sindices(FILE *file, T_token *token, T_sindices *sindices)
             if (strcmp("bufferView", token->data) == 0) {
                 if (parse_int(file, token, &sindices->buffer_view) != 0)
                     return -1;
+
             } else if (strcmp("byteOffset", token->data) == 0) {
                 if (parse_int(file, token, &sindices->byte_off) != 0)
                     return -1;
+
             } else if (strcmp("componentType", token->data) == 0) {
                 if (parse_int(file, token, &sindices->comp_type) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1943,9 +2026,11 @@ static int parse_svalues(FILE *file, T_token *token, T_svalues *svalues)
             if (strcmp("bufferView", token->data) == 0) {
                 if (parse_int(file, token, &svalues->buffer_view) != 0)
                     return -1;
+
             } else if (strcmp("byteOffset", token->data) == 0) {
                 if (parse_int(file, token, &svalues->byte_off) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -1979,12 +2064,15 @@ static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
             if (strcmp("count", token->data) == 0) {
                 if (parse_int(file, token, &sparse->count) != 0)
                     return -1;
+
             } else if (strcmp("indices", token->data) == 0) {
                 if (parse_sindices(file, token, &sparse->indices) != 0)
                     return -1;
+
             } else if (strcmp("values", token->data) == 0) {
                 if (parse_svalues(file, token, &sparse->values) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -2029,15 +2117,20 @@ static int parse_accessors(FILE *file, T_token *token,
                 if (parse_int(file, token,
                               &accessors->v[index].buffer_view) != 0)
                     return -1;
+
             } else if (strcmp("byteOffset", token->data) == 0) {
                 if (parse_int(file, token, &accessors->v[index].byte_off) != 0)
                     return -1;
+
             } else if (strcmp("count", token->data) == 0) {
                 if (parse_int(file, token, &accessors->v[index].count) != 0)
                     return -1;
+
             } else if (strcmp("componentType", token->data) == 0) {
-                if (parse_int(file, token, &accessors->v[index].comp_type) != 0)
+                if (parse_int(file, token,
+                              &accessors->v[index].comp_type) != 0)
                     return -1;
+
             } else if (strcmp("type", token->data) == 0) {
                 next_token(file, token); /* ':' */
                 next_token(file, token);
@@ -2059,6 +2152,7 @@ static int parse_accessors(FILE *file, T_token *token,
                     yf_seterr(YF_ERR_INVFILE, __func__);
                     return -1;
                 }
+
             } else if (strcmp("min", token->data) == 0) {
                 next_token(file, token); /* ':' */
                 next_token(file, token); /* '[' */
@@ -2070,6 +2164,7 @@ static int parse_accessors(FILE *file, T_token *token,
                     if (token->token == YF_TOKEN_OP && token->data[0] == ']')
                         break;
                 }
+
             } else if (strcmp("max", token->data) == 0) {
                 next_token(file, token); /* ':' */
                 next_token(file, token); /* '[' */
@@ -2081,16 +2176,21 @@ static int parse_accessors(FILE *file, T_token *token,
                     if (token->token == YF_TOKEN_OP && token->data[0] == ']')
                         break;
                 }
+
             } else if (strcmp("normalized", token->data) == 0) {
                 if (parse_bool(file, token,
                                &accessors->v[index].normalized) != 0)
                     return -1;
+
             } else if (strcmp("sparse", token->data) == 0) {
-                if (parse_sparse(file, token, &accessors->v[index].sparse) != 0)
+                if (parse_sparse(file, token,
+                                 &accessors->v[index].sparse) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &accessors->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -2130,24 +2230,30 @@ static int parse_bufferviews(FILE *file, T_token *token,
             if (strcmp("buffer", token->data) == 0) {
                 if (parse_int(file, token, &bufferviews->v[index].buffer) != 0)
                     return -1;
+
             } else if (strcmp("byteOffset", token->data) == 0) {
                 if (parse_int(file, token,
                               &bufferviews->v[index].byte_off) != 0)
                     return -1;
+
             } else if (strcmp("byteLength", token->data) == 0) {
                 if (parse_int(file, token,
                               &bufferviews->v[index].byte_len) != 0)
                     return -1;
+
             } else if (strcmp("byteStride", token->data) == 0) {
                 if (parse_int(file, token,
                               &bufferviews->v[index].byte_strd) != 0)
                     return -1;
+
             } else if (strcmp("target", token->data) == 0) {
                 if (parse_int(file, token, &bufferviews->v[index].target) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &bufferviews->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -2187,12 +2293,15 @@ static int parse_buffers(FILE *file, T_token *token,
             if (strcmp("byteLength", token->data) == 0) {
                 if (parse_int(file, token, &buffers->v[index].byte_len) != 0)
                     return -1;
+
             } else if (strcmp("uri", token->data) == 0) {
                 if (parse_str(file, token, &buffers->v[index].uri) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &buffers->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -2234,12 +2343,15 @@ static int parse_textures(FILE *file, T_token *token,
             if (strcmp("sampler", token->data) == 0) {
                 if (parse_int(file, token, &textures->v[index].sampler) != 0)
                     return -1;
+
             } else if (strcmp("source", token->data) == 0) {
                 if (parse_int(file, token, &textures->v[index].source) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &textures->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -2281,15 +2393,19 @@ static int parse_images(FILE *file, T_token *token,
             if (strcmp("uri", token->data) == 0) {
                 if (parse_str(file, token, &images->v[index].uri) != 0)
                     return -1;
+
             } else if (strcmp("mimeType", token->data) == 0) {
                 if (parse_str(file, token, &images->v[index].mime_type) != 0)
                     return -1;
+
             } else if (strcmp("bufferView", token->data) == 0) {
                 if (parse_int(file, token, &images->v[index].buffer_view) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &images->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
@@ -2332,18 +2448,23 @@ static int parse_samplers(FILE *file, T_token *token,
             if (strcmp("minFilter", token->data) == 0) {
                 if (parse_int(file, token, &samplers->v[index].min_filter) != 0)
                     return -1;
+
             } else if (strcmp("magFilter", token->data) == 0) {
                 if (parse_int(file, token, &samplers->v[index].mag_filter) != 0)
                     return -1;
+
             } else if (strcmp("wrapS", token->data) == 0) {
                 if (parse_int(file, token, &samplers->v[index].wrap_s) != 0)
                     return -1;
+
             } else if (strcmp("wrapT", token->data) == 0) {
                 if (parse_int(file, token, &samplers->v[index].wrap_t) != 0)
                     return -1;
+
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &samplers->v[index].name) != 0)
                     return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
