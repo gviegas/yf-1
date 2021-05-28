@@ -1176,6 +1176,68 @@ static int parse_cameras(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.meshes.primitives.attributes' property. */
+static int parse_attributes(FILE *file, T_token *token, T_int *attributes)
+{
+    assert(!feof(file));
+    assert(token != NULL);
+    assert(attributes != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp(token->data, "attributes") == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    for (size_t i = 0; i < YF_GLTF_ATTR_N; i++)
+        attributes[i] = YF_INT_MIN;
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("POSITION", token->data) == 0) {
+                if (parse_int(file, token, attributes+YF_GLTF_ATTR_POS) != 0)
+                    return -1;
+            } else if (strcmp("NORMAL", token->data) == 0) {
+                if (parse_int(file, token, attributes+YF_GLTF_ATTR_NORM) != 0)
+                    return -1;
+            } else if (strcmp("TANGENT", token->data) == 0) {
+                if (parse_int(file, token, attributes+YF_GLTF_ATTR_TAN) != 0)
+                    return -1;
+            } else if (strcmp("TEXCOORD_0", token->data) == 0) {
+                if (parse_int(file, token, attributes+YF_GLTF_ATTR_TC0) != 0)
+                    return -1;
+            } else if (strcmp("TEXCOORD_1", token->data) == 0) {
+                if (parse_int(file, token, attributes+YF_GLTF_ATTR_TC1) != 0)
+                    return -1;
+            } else if (strcmp("COLOR_0", token->data) == 0) {
+                if (parse_int(file, token, attributes+YF_GLTF_ATTR_CLR0) != 0)
+                    return -1;
+            } else if (strcmp("JOINTS_0", token->data) == 0) {
+                if (parse_int(file, token, attributes+YF_GLTF_ATTR_JNT0) != 0)
+                    return -1;
+            } else if (strcmp("WEIGHTS_0", token->data) == 0) {
+                if (parse_int(file, token, attributes+YF_GLTF_ATTR_WGT0) != 0)
+                    return -1;
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the 'glTF.meshes.primitives.targets' property. */
 static int parse_targets(FILE *file, T_token *token,
                          size_t index, void *targets_p)
@@ -1241,80 +1303,25 @@ static int parse_primitives(FILE *file, T_token *token,
     primitives->v[index].indices = YF_INT_MIN;
     primitives->v[index].material = YF_INT_MIN;
     primitives->v[index].mode = YF_GLTF_MODE_TRIS;
-    for (size_t i = 0; i < YF_GLTF_ATTR_N; i++)
-        primitives->v[index].attributes[i] = YF_INT_MIN;
 
     while (1) {
         switch (next_token(file, token)) {
         case YF_TOKEN_STR:
             if (strcmp("attributes", token->data) == 0) {
-                next_token(file, token); /* ':' */
-                next_token(file, token); /* '{' */
-                do {
-                    switch (next_token(file, token)) {
-                    case YF_TOKEN_STR:
-                        if (strcmp("POSITION", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &primitives->v[index]
-                                          .attributes[YF_GLTF_ATTR_POS]) != 0)
-                                return -1;
-                        } else if (strcmp("NORMAL", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &primitives->v[index]
-                                          .attributes[YF_GLTF_ATTR_NORM]) != 0)
-                                return -1;
-                        } else if (strcmp("TANGENT", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &primitives->v[index]
-                                          .attributes[YF_GLTF_ATTR_TAN]) != 0)
-                                return -1;
-                        } else if (strcmp("TEXCOORD_0", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &primitives->v[index]
-                                          .attributes[YF_GLTF_ATTR_TC0]) != 0)
-                                return -1;
-                        } else if (strcmp("TEXCOORD_1", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &primitives->v[index]
-                                          .attributes[YF_GLTF_ATTR_TC1]) != 0)
-                                return -1;
-                        } else if (strcmp("COLOR_0", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &primitives->v[index]
-                                          .attributes[YF_GLTF_ATTR_CLR0]) != 0)
-                                return -1;
-                        } else if (strcmp("JOINTS_0", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &primitives->v[index]
-                                          .attributes[YF_GLTF_ATTR_JNT0]) != 0)
-                                return -1;
-                        } else if (strcmp("WEIGHTS_0", token->data) == 0) {
-                            if (parse_int(file, token,
-                                          &primitives->v[index]
-                                          .attributes[YF_GLTF_ATTR_WGT0]) != 0)
-                                return -1;
-                        } else {
-                            if (consume_prop(file, token) != 0)
-                                return -1;
-                        }
-                        break;
-
-                    case YF_TOKEN_OP:
-                        break;
-
-                    default:
-                        yf_seterr(YF_ERR_INVFILE, __func__);
-                        return -1;
-                    }
-                } while (token->token != YF_TOKEN_OP || token->data[0] != '}');
+                if (parse_attributes(file, token,
+                                     primitives->v[index].attributes) != 0)
+                    return -1;
             } else if (strcmp("indices", token->data) == 0) {
-                if (parse_int(file, token, &primitives->v[index].indices) != 0)
+                if (parse_int(file, token,
+                              &primitives->v[index].indices) != 0)
                     return -1;
             } else if (strcmp("material", token->data) == 0) {
-                if (parse_int(file, token, &primitives->v[index].material) != 0)
+                if (parse_int(file, token,
+                              &primitives->v[index].material) != 0)
                     return -1;
             } else if (strcmp("mode", token->data) == 0) {
-                if (parse_int(file, token, &primitives->v[index].mode) != 0)
+                if (parse_int(file, token,
+                              &primitives->v[index].mode) != 0)
                     return -1;
             } else if (strcmp("targets", token->data) == 0) {
                 if (parse_array(file, token,
