@@ -245,6 +245,7 @@ YF_mesh yf_mesh_init(int filetype, const char *pathname)
     YF_mesh mesh = yf_mesh_initdt(&data);
     free(data.v.data);
     free(data.i.data);
+
     return mesh;
 }
 

@@ -46,7 +46,6 @@ static int deinit_res(void *key, void *val, void *arg)
 YF_collection yf_collection_init(const char *pathname)
 {
     YF_collection coll = calloc(1, sizeof(struct YF_collection_o));
-
     if (coll == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -54,7 +53,6 @@ YF_collection yf_collection_init(const char *pathname)
 
     for (size_t i = 0; i < YF_COLLRES_N; i++) {
         coll->res[i] = yf_dict_init(yf_hashstr, yf_cmpstr);
-
         if (coll->res[i] == NULL) {
             yf_collection_deinit(coll);
             return NULL;

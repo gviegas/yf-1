@@ -495,16 +495,13 @@ static int verify_file(FILE *file)
 
     for (uint16_t i = 0; i < tab_n; i++) {
         off = be32toh(dires[i].off);
-
         if (fseek(file, off, SEEK_SET) != 0) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
         }
 
         dw_n = (be32toh(dires[i].len) + 3) >> 2;
-        buf = malloc(dw_n << 2);
-
-        if (buf == NULL) {
+        if ((buf = malloc(dw_n << 2)) == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
@@ -516,7 +513,6 @@ static int verify_file(FILE *file)
         }
 
         chsum = 0;
-
         for (uint32_t j = 0; j < dw_n; j++)
             chsum += be32toh(buf[j]);
 
@@ -591,14 +587,12 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
     /* cvt table (optional) */
     if (cvt_off != 0) {
         sfnt->ttf.cvt = calloc(1, sizeof(T_cvt));
-
         if (sfnt->ttf.cvt == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
 
         sfnt->ttf.cvt->ctrl_vals = malloc(cvt_len);
-
         if (sfnt->ttf.cvt->ctrl_vals == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
@@ -614,14 +608,12 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
     /* fpgm table (optional) */
     if (fpgm_off != 0) {
         sfnt->ttf.fpgm = calloc(1, sizeof(T_fpgm));
-
         if (sfnt->ttf.fpgm == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
 
         sfnt->ttf.fpgm->instrs = malloc(fpgm_len);
-
         if (sfnt->ttf.fpgm->instrs == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
@@ -637,14 +629,12 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
     /* prep table (optional) */
     if (prep_off != 0) {
         sfnt->ttf.prep = calloc(1, sizeof(T_prep));
-
         if (sfnt->ttf.prep == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
 
         sfnt->ttf.prep->program = malloc(prep_len);
-
         if (sfnt->ttf.prep->program == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
@@ -660,7 +650,6 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
     /* gasp table (optional) */
     if (gasp_off != 0 && gasp_len >= YF_SFNT_GASPHSZ) {
         sfnt->ttf.gasp = calloc(1, sizeof(T_gasp));
-
         if (sfnt->ttf.gasp == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
@@ -676,7 +665,6 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
 
         if (rng_n > 0) {
             sfnt->ttf.gasp->gaspes = malloc(rng_n * sizeof(T_gaspe));
-
             if (sfnt->ttf.gasp->gaspes == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 return -1;
@@ -692,14 +680,12 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
 
     /* loca table */
     sfnt->ttf.loca = calloc(1, sizeof(T_loca));
-
     if (sfnt->ttf.loca == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
 
     void *loca_data = malloc(loca_len);
-
     if (loca_data == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -719,14 +705,12 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
 
     /* glyf table */
     sfnt->ttf.glyf = calloc(1, sizeof(T_glyf));
-
     if (sfnt->ttf.glyf == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
 
     sfnt->ttf.glyf->glyphs = malloc(glyf_len);
-
     if (sfnt->ttf.glyf->glyphs == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -922,7 +906,6 @@ static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
         const uint16_t seg_cnt = be16toh(sub_4.seg_cnt_x2) >> 1;
         const size_t len = be16toh(sub_hdr.len) - (sizeof sub_hdr+sizeof sub_4);
         uint16_t *var = malloc(len);
-
         if (var == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
@@ -935,7 +918,6 @@ static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
         }
 
         YF_dict glyph_ids = yf_dict_init(NULL, NULL);
-
         if (glyph_ids == NULL) {
             free(var);
             return -1;
@@ -989,7 +971,6 @@ static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
         const uint16_t first_code = be16toh(sub_6.first_code);
         const uint16_t entry_n = be16toh(sub_6.entry_n);
         uint16_t *glyph_ids = malloc(entry_n * sizeof *glyph_ids);
-
         if (glyph_ids == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
@@ -1114,12 +1095,10 @@ static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
         }
 
         *str_p = malloc(len+1);
-
         if (*str_p == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
-
         (*str_p)[len] = '\0';
 
         if (fseek(file, str_off+off, SEEK_SET) != 0 ||
@@ -1552,7 +1531,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     }
 
     T_font *font = calloc(1, sizeof *font);
-
     if (font == NULL) {
         deinit_tables(&sfnt);
         fclose(file);
@@ -1583,7 +1561,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
         if (sfnt.head->loca_fmt == 0) {
             /* 16-bit offsets: pre-multiply, byte-swap and copy to dw buffer */
             font->ttf.loca = malloc((font->glyph_n + 1) * sizeof(uint32_t));
-
             if (font->ttf.loca == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 deinit_font(font);
@@ -1681,7 +1658,6 @@ static int fetch_simple(T_font *font, uint16_t id, T_component *comp)
 
     comp->end_n = contr_n;
     comp->ends = malloc(comp->end_n * sizeof *comp->ends);
-
     if (comp->ends == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -1692,7 +1668,6 @@ static int fetch_simple(T_font *font, uint16_t id, T_component *comp)
 
     comp->pt_n = comp->ends[contr_n-1] + 1;
     comp->pts = malloc(comp->pt_n * sizeof *comp->pts);
-
     if (comp->pts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -1924,7 +1899,6 @@ static int fetch_glyph(T_font *font, wchar_t code, T_outline *outln)
         /* allocate max. components and let callee update the count */
         outln->comp_n = 0;
         outln->comps = calloc(font->comp_elem_max, sizeof *outln->comps);
-
         if (outln->comps == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
@@ -1937,7 +1911,6 @@ static int fetch_glyph(T_font *font, wchar_t code, T_outline *outln)
         /* one component suffices */
         outln->comp_n = 1;
         outln->comps = calloc(outln->comp_n, sizeof *outln->comps);
-
         if (outln->comps == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
@@ -2005,7 +1978,6 @@ static int scale_outline(T_outline *outln)
         comp.end_n = outln->comps[i].end_n;
         comp.pt_n = outln->comps[i].pt_n << 1;
         comp.pts = malloc(comp.pt_n * sizeof *comp.pts);
-
         if (comp.pts == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
@@ -2303,7 +2275,6 @@ static int rasterize(T_outline *outln, YF_glyph *glyph)
     const uint32_t w = outln->x_max - outln->x_min;
     const uint32_t h = outln->y_max - outln->y_min;
     uint8_t *bitmap = malloc(YF_SFNT_FIXTOINT(w)*YF_SFNT_FIXTOINT(h));
-
     if (bitmap == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         free(segs);

@@ -52,7 +52,6 @@ YF_font yf_font_init(int filetype, const char *pathname)
     }
 
     YF_font font = yf_font_initdt(&data);
-
     if (font == NULL && data.deinit != NULL)
         data.deinit(data.font);
 
@@ -78,7 +77,6 @@ YF_font yf_font_initdt(const YF_fontdt *data)
     assert(data != NULL);
 
     YF_font font = calloc(1, sizeof(struct YF_font_o));
-
     if (font == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;

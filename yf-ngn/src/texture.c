@@ -18,7 +18,7 @@
 #include "data-png.h"
 #include "data-bmp.h"
 
-/* TODO: MT */
+/* TODO: Thread-safe. */
 
 /* XXX */
 #define YF_LAYCAP 64
@@ -269,12 +269,10 @@ YF_texture yf_texture_initdt(const YF_texdt *data)
 
     if (l_ctx == NULL && (l_ctx = yf_getctx()) == NULL)
         return NULL;
-
     if (l_imges == NULL && (l_imges = yf_dict_init(hash_key, cmp_key)) == NULL)
         return NULL;
 
     YF_texture tex = calloc(1, sizeof(struct YF_texture_o));
-
     if (tex == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
