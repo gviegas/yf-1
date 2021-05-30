@@ -59,25 +59,32 @@ static void key_kb(int key, int state, unsigned mod_mask, void *data)
 
     switch (key) {
     case YF_KEY_ESC:
+        puts("\n(quit)");
         l_quit = 1;
         break;
     case YF_KEY_BACKSPACE:
+        puts("\n(close)");
         l_close = 1;
         break;
     case YF_KEY_1:
+        puts("\n(mask: close/resize wd)");
         l_mask = YF_EVT_CLOSEWD | YF_EVT_RESIZEWD;
         break;
     case YF_KEY_2:
+        puts("\n(mask: enter/leve/key kb)");
         l_mask = YF_EVT_ENTERKB | YF_EVT_LEAVEKB | YF_EVT_KEYKB;
         break;
     case YF_KEY_3:
+        puts("\n(mask: enter/leave/motion/button pt)");
         l_mask =
             YF_EVT_ENTERPT | YF_EVT_LEAVEPT | YF_EVT_MOTIONPT | YF_EVT_BUTTONPT;
         break;
     case YF_KEY_9:
+        puts("\n(mask: any)");
         l_mask = YF_EVT_ANY;
         break;
     case YF_KEY_0:
+        puts("\n(mask: none)");
         l_mask = YF_EVT_NONE;
         break;
     }
@@ -131,6 +138,7 @@ static int test_window(void)
 {
     YF_TEST_SUBT;
 
+    puts("\ninit()");
     YF_window wins[] = {
         yf_window_init(400, 240, "#1", 0),
         yf_window_init(240, 400, "#2", 0),
@@ -138,21 +146,26 @@ static int test_window(void)
     };
     const size_t n = sizeof wins / sizeof wins[0];
 
-    for (size_t i = 0; i < n; ++i) {
+    for (size_t i = 0; i < n; i++) {
         if (wins[i] == NULL)
             return -1;
     }
 
     yf_sleep(1.0);
+    puts("\nopen() #3");
     yf_window_open(wins[2]);
     yf_sleep(1.0);
+    puts("\nresize() #1");
     yf_window_resize(wins[0], 640, 360);
     yf_sleep(1.0);
+    puts("\nsettitle() #2");
     yf_window_settitle(wins[1], "WIN2");
     yf_sleep(1.0);
+    puts("\nclose() #2 and #3");
     yf_window_close(wins[1]);
     yf_window_close(wins[2]);
     yf_sleep(1.0);
+    puts("\nsettile(), resize() and open() #3");
     yf_window_settitle(wins[2], "WIN3");
     yf_window_resize(wins[2], 800, 600);
     yf_window_open(wins[2]);
@@ -160,6 +173,7 @@ static int test_window(void)
 
     unsigned w, h;
 
+    puts("\ngetsize()");
     yf_window_getsize(wins[0], &w, &h);
     if (w != 640 || h != 360)
         return -1;
@@ -170,7 +184,8 @@ static int test_window(void)
     if (w != 800 || h != 600)
         return -1;
 
-    for (size_t i = 0; i < n; ++i)
+    puts("\ndeinit()");
+    for (size_t i = 0; i < n; i++)
         yf_window_deinit(wins[i]);
 
     puts("");
@@ -187,10 +202,12 @@ static int test_event(void)
     YF_window win1 = yf_window_init(400, 240, "EVT1", YF_WINCREAT_HIDDEN);
     YF_window win2 = yf_window_init(360, 360, "EVT2", YF_WINCREAT_HIDDEN);
 
+    puts("\ngetevtmask()");
     if (yf_getevtmask() != YF_EVT_NONE)
         return -1;
 
-    for (size_t i = 0; i < (sizeof l_fns / sizeof l_fns[0]); ++i) {
+    puts("\nsetevtfn()");
+    for (size_t i = 0; i < (sizeof l_fns / sizeof l_fns[0]); i++) {
         if (yf_getevtmask() & l_fns[i].evt)
             return -1;
         yf_setevtfn(l_fns[i].evt, l_fns[i].fn,
@@ -199,8 +216,9 @@ static int test_event(void)
             return -1;
     }
 
-    printf("\nwin1 is %p\nwin2 is %p\n\n", (void *)win1, (void *)win2);
+    printf("\nwin1 is %p\nwin2 is %p\n", (void *)win1, (void *)win2);
 
+    puts("\npollevt()\n");
     while (!l_quit) {
         yf_pollevt(l_mask);
         yf_sleep(0.0333);
@@ -242,12 +260,12 @@ static int test(int argc, char *argv[])
         int (*const tests[])(void) = {test_window, test_event};
         test_n = sizeof tests / sizeof tests[0];
         results = 0;
-        for (size_t i = 0; i < test_n; ++i)
+        for (size_t i = 0; i < test_n; i++)
             results += tests[i]() == 0;
     } else {
         printf("! Error: no test named '%s'\n", argv[0]);
         printf("\nTry one of the following:\n");
-        for (size_t i = 0; i < (sizeof l_ids / sizeof l_ids[0]); ++i)
+        for (size_t i = 0; i < (sizeof l_ids / sizeof l_ids[0]); i++)
             printf("* %s\n", l_ids[i]);
         printf("\n! No tests executed\n");
         return -1;
