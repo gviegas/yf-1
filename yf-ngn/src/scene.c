@@ -88,7 +88,7 @@ typedef struct {
 typedef struct {
     struct {
         YF_mesh mesh;
-        YF_texture tex;
+        YF_material matl;
     } key;
     union {
         YF_model mdl;
@@ -111,7 +111,7 @@ static int traverse_scn(YF_node node, void *arg)
     case YF_NODEOBJ_MODEL: {
         YF_model mdl = obj;
         T_kv_mdl key = {
-            {yf_model_getmesh(mdl), yf_model_gettex(mdl)},
+            {yf_model_getmesh(mdl), yf_model_getmatl(mdl)},
             {NULL}, 0, 0
         };
         T_kv_mdl *val = NULL;
@@ -443,7 +443,7 @@ static int render_mdl(YF_scene scn)
     unsigned inst_alloc = 0;
     YF_dtable inst_dtb = NULL;
     T_reso *reso = NULL;
-    YF_texture tex = NULL;
+    YF_material matl = NULL;
     YF_mesh mesh = NULL;
     YF_iter it = YF_NILIT;
     T_kv_mdl *val = NULL;
@@ -478,11 +478,19 @@ static int render_mdl(YF_scene scn)
         if (copy_inst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
             return -1;
 
-        if ((tex = yf_model_gettex(val->mdl)) != NULL)
-            yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
-        else
-            /* TODO: Handle models lacking texture. */
+        /* TODO: 'copy_matl()'. */
+        if ((matl = yf_model_getmatl(val->mdl)) != NULL) {
+            YF_matlprop *prop = yf_material_getprop(matl);
+
+            assert(prop->pbr == YF_PBR_METALROUGH &&
+                   prop->pbrmr.color_tex != NULL);
+
+            yf_texture_copyres(prop->pbrmr.color_tex, inst_dtb, inst_alloc,
+                               YF_RESBIND_TEX, 0);
+        } else {
+            /* TODO: Handle models lacking material. */
             assert(0);
+        }
 
         yf_cmdbuf_setgstate(l_vars.cb, gst);
         yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
@@ -514,7 +522,7 @@ static int render_mdl_inst(YF_scene scn)
     unsigned inst_alloc = 0;
     YF_dtable inst_dtb = NULL;
     T_reso *reso = NULL;
-    YF_texture tex = NULL;
+    YF_material matl = NULL;
     YF_mesh mesh = NULL;
     YF_iter it = YF_NILIT;
     T_kv_mdl *val = NULL;
@@ -578,12 +586,19 @@ static int render_mdl_inst(YF_scene scn)
                 return -1;
             }
 
-            if ((tex = yf_model_gettex(val->mdls[rem])) != NULL)
-                yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX,
-                                   0);
-            else
-                /* TODO: Handle models lacking texture. */
+            /* TODO: 'copy_matl()'. */
+            if ((matl = yf_model_getmatl(val->mdls[rem])) != NULL) {
+                YF_matlprop *prop = yf_material_getprop(matl);
+
+                assert(prop->pbr == YF_PBR_METALROUGH &&
+                       prop->pbrmr.color_tex != NULL);
+
+                yf_texture_copyres(prop->pbrmr.color_tex, inst_dtb, inst_alloc,
+                                   YF_RESBIND_TEX, 0);
+            } else {
+                /* TODO: Handle models lacking material. */
                 assert(0);
+            }
 
             yf_cmdbuf_setgstate(l_vars.cb, gst);
             yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
@@ -877,7 +892,7 @@ static int cmp_mdl(const void *a, const void *b)
     const T_kv_mdl *kv1 = a;
     const T_kv_mdl *kv2 = b;
 
-    return kv1->key.mesh != kv2->key.mesh || kv1->key.tex != kv2->key.tex;
+    return kv1->key.mesh != kv2->key.mesh || kv1->key.matl != kv2->key.matl;
 }
 
 /* Deallocates a 'T_kv_mdl'. */
