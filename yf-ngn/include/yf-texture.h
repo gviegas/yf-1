@@ -9,6 +9,7 @@
 #define YF_YF_TEXTURE_H
 
 #include "yf/com/yf-defs.h"
+#include "yf/com/yf-types.h"
 
 YF_DECLS_BEGIN
 
