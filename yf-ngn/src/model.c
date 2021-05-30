@@ -16,7 +16,7 @@
 struct YF_model_o {
     YF_node node;
     YF_mesh mesh;
-    YF_texture tex;
+    YF_material matl;
     /* TODO: Other model properties. */
 };
 
@@ -55,16 +55,16 @@ void yf_model_setmesh(YF_model mdl, YF_mesh mesh)
     mdl->mesh = mesh;
 }
 
-YF_texture yf_model_gettex(YF_model mdl)
+YF_material yf_model_getmatl(YF_model mdl)
 {
     assert(mdl != NULL);
-    return mdl->tex;
+    return mdl->matl;
 }
 
-void yf_model_settex(YF_model mdl, YF_texture tex)
+void yf_model_setmatl(YF_model mdl, YF_material matl)
 {
     assert(mdl != NULL);
-    mdl->tex = tex;
+    mdl->matl = matl;
 }
 
 void yf_model_deinit(YF_model mdl)

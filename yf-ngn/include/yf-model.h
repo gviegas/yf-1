@@ -12,7 +12,7 @@
 
 #include "yf-node.h"
 #include "yf-mesh.h"
-#include "yf-texture.h"
+#include "yf-material.h"
 
 YF_DECLS_BEGIN
 
@@ -54,20 +54,20 @@ YF_mesh yf_model_getmesh(YF_model mdl);
 void yf_model_setmesh(YF_model mdl, YF_mesh mesh);
 
 /**
- * Gets the texture of a model.
+ * Gets the material of a mesh.
  *
  * @param mdl: The model.
- * @return: The texture used by the model, or 'NULL' if none is set.
+ * @return: The material used by the model, or 'NULL' if none is set.
  */
-YF_texture yf_model_gettex(YF_model mdl);
+YF_material yf_model_getmatl(YF_model mdl);
 
 /**
- * Sets the texture for a model.
+ * Sets the material for a model.
  *
  * @param mdl: The model.
- * @param tex: The texture to set. Can be 'NULL'.
+ * @param matl: The material to set. Can be 'NULL'.
  */
-void yf_model_settex(YF_model mdl, YF_texture tex);
+void yf_model_setmatl(YF_model mdl, YF_material matl);
 
 /**
  * Deinitializes a model.
