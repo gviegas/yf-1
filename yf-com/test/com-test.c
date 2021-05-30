@@ -27,7 +27,7 @@ static int test_error(void)
     YF_TEST_SUBT;
 
     int err;
-    const size_t n = 72;
+    const size_t n = 128;
     char info[n];
 
     if (yf_geterrinfo(info, n) != info)
@@ -80,18 +80,18 @@ static int test_clock(void)
     double t1, t2;
 
     t1 = yf_gettime();
-    printf("\ntime (1) is %f\n", t1);
+    printf("\ngettime() is %f\n", t1);
     t2 = yf_gettime();
-    printf("time (2) is %f\n", t2);
-    printf("(%fs elapsed)\n", t2 - t1);
+    printf("\ngettime() is %f\n", t2);
+    printf("\n(%fs elapsed)\n", t2 - t1);
 
     double ts[] = {1.0, 1.5, 0.1, 0.01, 3.125};
 
-    for (size_t i = 0; i < sizeof ts / sizeof ts[0]; ++i) {
-        printf("\nsleeping for %fs...\n", ts[i]);
+    for (size_t i = 0; i < (sizeof ts / sizeof ts[0]); i++) {
+        printf("\nsleep(%f)\n", ts[i]);
         t1 = yf_gettime();
         yf_sleep(ts[i]);
-        printf("awake! (%fs elapsed)\n", yf_gettime()-t1);
+        printf("ret. (%fs elapsed)\n", yf_gettime()-t1);
     }
 
     puts("");
@@ -116,12 +116,15 @@ static int test_list(void)
     int c = 'c';
     int d = 'd';
 
+    puts("\ninit()");
     YF_list ls = yf_list_init(NULL);
 
     if (yf_list_getlen(ls) != 0)
         return -1;
     if (yf_list_contains(ls, NULL))
         return -1;
+
+    puts("\ninsert()");
 
     yf_list_insert(ls, &a);
     if (yf_list_getlen(ls) != 1)
@@ -149,6 +152,8 @@ static int test_list(void)
     if (yf_list_contains(ls, &d))
         return -1;
 
+    puts("\nremove()");
+
     yf_list_remove(ls, &b);
     if (yf_list_getlen(ls) != 2)
         return -1;
@@ -168,6 +173,8 @@ static int test_list(void)
         return -1;
     if (!yf_list_contains(ls, &c))
         return -1;
+
+    puts("\ninsert()");
 
     yf_list_insert(ls, &d);
     if (yf_list_getlen(ls) != 2)
@@ -195,7 +202,7 @@ static int test_list(void)
 
     YF_iter it;
 
-    printf("\n(list beg) ");
+    puts("\nnext()");
     it = YF_NILIT;
     for (;;) {
         int *v = yf_list_next(ls, &it);
@@ -203,15 +210,15 @@ static int test_list(void)
             break;
         printf("%c ", *v);
     }
-    puts("(list end)");
+    puts("(end)");
 
-    printf("(list beg) ");
+    puts("\neach()");
     yf_list_each(ls, list_cb, (void*)0x1f);
-    puts("(list end)");
+    puts("(end)");
 
     yf_list_remove(ls, &c);
 
-    printf("\n(list beg) ");
+    puts("\nnext()");
     it = YF_NILIT;
     for (;;) {
         int *v = yf_list_next(ls, &it);
@@ -219,15 +226,15 @@ static int test_list(void)
             break;
         printf("%c ", *v);
     }
-    puts("(list end)");
+    puts("(end)");
 
-    printf("(list beg) ");
+    puts("\neach()");
     yf_list_each(ls, list_cb, NULL);
-    puts("(list end)");
+    puts("(end)");
 
     yf_list_clear(ls);
 
-    printf("\n(list beg) ");
+    puts("\nnext()");
     it = YF_NILIT;
     for (;;) {
         int *v = yf_list_next(ls, &it);
@@ -235,11 +242,11 @@ static int test_list(void)
             break;
         printf("%c ", *v);
     }
-    puts("(list end)");
+    puts("(end)");
 
-    printf("(list beg) ");
+    puts("\neach()");
     yf_list_each(ls, list_cb, NULL);
-    puts("(list end)");
+    puts("(end)");
 
     if (yf_list_getlen(ls) != 0)
         return -1;
@@ -252,6 +259,7 @@ static int test_list(void)
     if (yf_list_contains(ls, &d))
         return -1;
 
+    puts("\ninsertat()");
     yf_list_insertat(ls, NULL, &a);
     if (yf_list_getlen(ls) != 1)
         return -1;
@@ -261,12 +269,14 @@ static int test_list(void)
     if (yf_list_getlen(ls) != 4)
         return -1;
 
-    printf("\n(list beg) ");
+    puts("\neach()");
     yf_list_each(ls, list_cb, NULL);
-    puts("(list end)");
+    puts("(end)");
 
+    puts("\nclear()");
     yf_list_clear(ls);
 
+    puts("\ninsertat()");
     it = YF_NILIT;
     yf_list_insertat(ls, &it, &a);
     if (yf_list_getlen(ls) != 1)
@@ -277,9 +287,9 @@ static int test_list(void)
     if (yf_list_getlen(ls) != 4)
         return -1;
 
-    printf("(list beg) ");
+    puts("\neach()");
     yf_list_each(ls, list_cb, NULL);
-    puts("(list end)");
+    puts("(end)");
 
     if (YF_IT_ISNIL(it))
         return -1;
@@ -289,39 +299,42 @@ static int test_list(void)
         return -1;
 
     int *v;
-    puts("");
     while ((v = yf_list_next(ls, NULL)) != NULL) {
+        puts("\nremoveat()");
         if (*v != *(int *)yf_list_removeat(ls, NULL))
             return -1;
-        printf("(list beg) ");
+        puts("\neach()");
         yf_list_each(ls, list_cb, NULL);
-        puts("(list end)");
+        puts("(end)");
     }
 
+    puts("\ninsert()");
     yf_list_insert(ls, &a);
     yf_list_insert(ls, &b);
     yf_list_insert(ls, &c);
     yf_list_insert(ls, &d);
 
     it = YF_NILIT;
-    puts("");
     while ((v = yf_list_next(ls, NULL)) != NULL) {
+        puts("\nremoveat()");
         if (*v != *(int *)yf_list_removeat(ls, &it))
             return -1;
-        printf("(list beg) ");
+        puts("\neach()");
         yf_list_each(ls, list_cb, NULL);
-        puts("(list end)");
+        puts("(end)");
     }
 
+    puts("\ninsertat()");
     it = YF_NILIT;
     yf_list_insertat(ls, &it, &a);
     yf_list_insertat(ls, &it, &b);
     yf_list_insertat(ls, &it, &c);
 
-    printf("\n(list beg) ");
+    puts("\neach()");
     yf_list_each(ls, list_cb, NULL);
-    puts("(list end)");
+    puts("(end)");
 
+    puts("\nnext()");
     it = YF_NILIT;
     for (;;) {
         v = yf_list_next(ls, &it);
@@ -330,16 +343,19 @@ static int test_list(void)
     }
     if (!yf_list_contains(ls, &b))
         return -1;
+
+    puts("\nremoveat()");
     yf_list_removeat(ls, &it);
     if (yf_list_contains(ls, &b))
         return -1;
     if (yf_list_getlen(ls) != 2)
         return -1;
 
-    printf("(list beg) ");
+    puts("\neach()");
     yf_list_each(ls, list_cb, NULL);
-    puts("(list end)");
+    puts("(end)");
 
+    puts("\ndeinit()");
     yf_list_deinit(ls);
 
     puts("");
@@ -361,8 +377,8 @@ static int test_dict(void)
 {
     YF_TEST_SUBT;
 
-    YF_dict dict = yf_dict_init(NULL, NULL);
     puts("\ninit()");
+    YF_dict dict = yf_dict_init(NULL, NULL);
 
     const void *key1 = (const void *)1ULL;
     const void *key2 = (const void *)1234UL;
@@ -448,7 +464,7 @@ static int test_dict(void)
     printf("\nnext() end\n");
 
     printf("\nnext() begin (no iter, 3 calls):");
-    for (size_t i = 0; i < 3; ++i) {
+    for (size_t i = 0; i < 3; i++) {
         val = yf_dict_next(dict, NULL, &key);
         printf("\n key: %p\n val: %s", key, val);
     }
@@ -456,7 +472,7 @@ static int test_dict(void)
 
     key = (void *)127UL;
     printf("\nnext() begin (no iter, no key dst, 3 calls):");
-    for (size_t i = 0; i < 3; ++i) {
+    for (size_t i = 0; i < 3; i++) {
         val = yf_dict_next(dict, NULL, NULL);
         printf("\n key: %p\n val: %s", key, val);
     }
@@ -475,16 +491,16 @@ static int test_dict(void)
     if (yf_dict_getlen(dict) != 0 || yf_dict_contains(dict, key3))
         return -1;
 
-    yf_dict_deinit(dict);
     puts("\ndeinit()");
+    yf_dict_deinit(dict);
 
-    dict = yf_dict_init(NULL, NULL);
     puts("\ninit()");
+    dict = yf_dict_init(NULL, NULL);
 
     size_t count = 1000;
 
     printf("\ninsert() #%lu\n", count);
-    for (size_t i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count; i++) {
         if (yf_dict_insert(dict, (void *)i, (void *)(i*i)) != 0)
             return -1;
     }
@@ -498,7 +514,7 @@ static int test_dict(void)
 
     printf("\nremove() #%lu\n", count);
     yf_seterr(YF_ERR_UNKNOWN, NULL);
-    for (size_t i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count; i++) {
         void *val = yf_dict_remove(dict, (void *)i);
         if (yf_geterr() == YF_ERR_NOTFND || (size_t)val != i*i)
             return -1;
@@ -510,11 +526,11 @@ static int test_dict(void)
         yf_dict_contains(dict, (void *)(count>>1)))
         return -1;
 
-    yf_dict_deinit(dict);
     puts("\ndeinit()");
+    yf_dict_deinit(dict);
 
-    dict = yf_dict_init(yf_hashstr, yf_cmpstr);
     puts("\ninit(str)");
+    dict = yf_dict_init(yf_hashstr, yf_cmpstr);
 
     count = 50;
     const size_t len = 32;
@@ -522,22 +538,22 @@ static int test_dict(void)
     assert(strs != NULL);
     srand(time(NULL));
 
-    for (size_t i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count; i++) {
         int n = 4 + rand() % 20;
-        for (int j = 0; j < n; ++j) {
+        for (int j = 0; j < n; j++) {
             strs[i*len+j] = 32 + rand() % 96;
         }
         strs[i*len+n] = '\0';
     }
 
     printf("\ninsert() #%lu\n", count);
-    for (size_t i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count; i++) {
         if (yf_dict_insert(dict, &strs[i*len], (void *)i) != 0)
             return -1;
     }
 
     puts("\ncontains()");
-    for (size_t i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count; i++) {
         if (!yf_dict_contains(dict, &strs[i*len]))
             return -1;
     }
@@ -554,7 +570,7 @@ static int test_dict(void)
 
     printf("\nremove() #%lu\n", count);
     yf_seterr(YF_ERR_UNKNOWN, NULL);
-    for (size_t i = 0; i < count; ++i) {
+    for (size_t i = 0; i < count; i++) {
         yf_dict_remove(dict, &strs[i*len]);
         if (yf_geterr() == YF_ERR_NOTFND)
             return -1;
@@ -597,9 +613,10 @@ static int test_dict(void)
 
     free(str3);
 
-    yf_dict_deinit(dict);
     puts("\ndeinit()");
+    yf_dict_deinit(dict);
 
+    puts("");
     return 0;
 }
 
@@ -811,12 +828,12 @@ static int test(int argc, char *argv[])
         test_n = sizeof tests / sizeof tests[0];
 
         results = 0;
-        for (size_t i = 0; i < test_n; ++i)
+        for (size_t i = 0; i < test_n; i++)
             results += tests[i]() == 0;
     } else {
         printf("! Error: no test named '%s'\n", argv[0]);
         printf("\nTry one of the following:\n");
-        for (size_t i = 0; i < (sizeof l_ids / sizeof l_ids[0]); ++i)
+        for (size_t i = 0; i < (sizeof l_ids / sizeof l_ids[0]); i++)
             printf("* %s\n", l_ids[i]);
         printf("\n! No tests executed\n");
         return -1;
