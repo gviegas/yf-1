@@ -33,6 +33,7 @@ struct T_vars {
     YF_model mdl[YF_MDLN];
     YF_mesh mesh[YF_MDLN];
     YF_texture tex[YF_MDLN];
+    YF_material matl[YF_MDLN];
     size_t uniq_res_n;
 
     struct {
@@ -261,13 +262,24 @@ int yf_test_model(void)
         assert(l_vars.tex[0] != NULL);
         assert(l_vars.tex[1] != NULL);
 
+        /* Create material */
+        l_vars.matl[0] = yf_material_init();
+        l_vars.matl[1] = yf_material_init();
+        assert(l_vars.matl[0] != NULL);
+        assert(l_vars.matl[1] != NULL);
+        for (unsigned i = 0; i < 2; i++) {
+            YF_matlprop *mprop = yf_material_getprop(l_vars.matl[i]);
+            mprop->pbr = YF_PBR_METALROUGH;
+            mprop->pbrmr.color_tex = l_vars.tex[i];
+        }
+
         /* Create model, assign resources and insert into a scene */
         for (unsigned i = 0; i < YF_MDLN; i++) {
             l_vars.mdl[i] = yf_model_init();
             assert(l_vars.mdl[i] != NULL);
 
             yf_model_setmesh(l_vars.mdl[i], l_vars.mesh[i&1]);
-            yf_model_settex(l_vars.mdl[i], l_vars.tex[i&1]);
+            yf_model_setmatl(l_vars.mdl[i], l_vars.matl[i&1]);
 
             yf_node_insert(yf_scene_getnode(l_vars.scn[YF_MIN(i, YF_SCNN-1)]),
                            yf_model_getnode(l_vars.mdl[i]));
@@ -295,6 +307,12 @@ int yf_test_model(void)
                 l_vars.tex[i] = yf_texture_init(YF_FILETYPE_PNG,
                                                 "tmp/model2.png");
             assert(l_vars.tex[i] != NULL);
+
+            l_vars.matl[i] = yf_material_init();
+            assert(l_vars.matl[i] != NULL);
+            YF_matlprop *mprop = yf_material_getprop(l_vars.matl[i]);
+            mprop->pbr = YF_PBR_METALROUGH;
+            mprop->pbrmr.color_tex = l_vars.tex[i];
         }
 
         /* Create model, assign resources and insert into a scene */
@@ -303,7 +321,7 @@ int yf_test_model(void)
             assert(l_vars.mdl[i] != NULL);
 
             yf_model_setmesh(l_vars.mdl[i], l_vars.mesh[i]);
-            yf_model_settex(l_vars.mdl[i], l_vars.tex[i]);
+            yf_model_setmatl(l_vars.mdl[i], l_vars.matl[i]);
 
             yf_node_insert(yf_scene_getnode(l_vars.scn[YF_MIN(i, YF_SCNN-1)]),
                            yf_model_getnode(l_vars.mdl[i]));
@@ -326,6 +344,7 @@ int yf_test_model(void)
     for (size_t i = 0; i < l_vars.uniq_res_n; i++) {
         yf_mesh_deinit(l_vars.mesh[i]);
         yf_texture_deinit(l_vars.tex[i]);
+        yf_material_deinit(l_vars.matl[i]);
     }
     yf_window_deinit(l_vars.win);
 

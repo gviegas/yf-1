@@ -29,6 +29,8 @@ struct T_vars {
     YF_mesh mesh2;
     YF_texture tex1;
     YF_texture tex2;
+    YF_material matl1;
+    YF_material matl2;
     YF_model mdls[YF_MDLN];
 
     struct {
@@ -152,6 +154,18 @@ int yf_test_render(void)
     assert(l_vars.tex1 != NULL);
     assert(l_vars.tex2 != NULL);
 
+    l_vars.matl1 = yf_material_init();
+    l_vars.matl2 = yf_material_init();
+    assert(l_vars.matl1 != NULL);
+    assert(l_vars.matl2 != NULL);
+    YF_matlprop *mprop;
+    mprop = yf_material_getprop(l_vars.matl1);
+    mprop->pbr = YF_PBR_METALROUGH;
+    mprop->pbrmr.color_tex = l_vars.tex1;
+    mprop = yf_material_getprop(l_vars.matl2);
+    mprop->pbr = YF_PBR_METALROUGH;
+    mprop->pbrmr.color_tex = l_vars.tex1;
+
     YF_node scn1_nd = yf_scene_getnode(l_vars.scn1);
     YF_float tf = YF_MDLN / -2.0;
     for (size_t i = 0; i < YF_MDLN; i++) {
@@ -159,7 +173,7 @@ int yf_test_render(void)
         assert(l_vars.mdls[i] != NULL);
 
         yf_model_setmesh(l_vars.mdls[i], l_vars.mesh1);
-        yf_model_settex(l_vars.mdls[i], l_vars.tex1);
+        yf_model_setmatl(l_vars.mdls[i], l_vars.matl1);
 
         YF_node nd = yf_model_getnode(l_vars.mdls[i]);
         YF_mat4 *m = yf_node_getxform(nd);
@@ -177,6 +191,8 @@ int yf_test_render(void)
 
     for (size_t i = 0; i < YF_MDLN; i++)
         yf_model_deinit(l_vars.mdls[i]);
+    yf_material_deinit(l_vars.matl1);
+    yf_material_deinit(l_vars.matl2);
     yf_texture_deinit(l_vars.tex1);
     yf_texture_deinit(l_vars.tex2);
     yf_mesh_deinit(l_vars.mesh1);

@@ -215,6 +215,20 @@ int yf_test_misc(void)
         yf_collection_manage(l_vars.coll, YF_COLLRES_FONT, "f2", font2) != 0)
         assert(0);
 
+    YF_material matl1 = yf_material_init();
+    assert(matl1 != NULL);
+    YF_material matl2 = yf_material_init();
+    assert(matl2 != NULL);
+    YF_matlprop *mprop;
+    mprop = yf_material_getprop(matl1);
+    mprop->pbr = YF_PBR_METALROUGH;
+    mprop->pbrmr.color_tex = yf_collection_getres(l_vars.coll,
+                                                  YF_COLLRES_TEXTURE, "t1");
+    mprop = yf_material_getprop(matl2);
+    mprop->pbr = YF_PBR_METALROUGH;
+    mprop->pbrmr.color_tex = yf_collection_getres(l_vars.coll,
+                                                  YF_COLLRES_TEXTURE, "t2");
+
     l_vars.mdl = yf_model_init();
     assert(l_vars.mdl != NULL);
 
@@ -222,9 +236,7 @@ int yf_test_misc(void)
     yf_model_setmesh(l_vars.mdl,
                      yf_collection_getres(l_vars.coll, YF_COLLRES_MESH,
                                           mdl_num == 1 ? "m1" : "m2"));
-    yf_model_settex(l_vars.mdl,
-                    yf_collection_getres(l_vars.coll, YF_COLLRES_TEXTURE,
-                                         mdl_num == 1 ? "t1" : "t2"));
+    yf_model_setmatl(l_vars.mdl, mdl_num == 1 ? matl1 : matl2);
 
     yf_node_insert(yf_scene_getnode(l_vars.scn), yf_model_getnode(l_vars.mdl));
 
@@ -286,6 +298,9 @@ int yf_test_misc(void)
     yf_model_deinit(l_vars.mdl);
     for (size_t i = 0; i < labl_n; i++)
         yf_label_deinit(l_vars.labls[i]);
+
+    yf_material_deinit(matl1);
+    yf_material_deinit(matl2);
 
     yf_collection_deinit(l_vars.coll);
 

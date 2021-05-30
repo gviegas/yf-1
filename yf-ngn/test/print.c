@@ -31,7 +31,7 @@ void yf_print_nodeobj(YF_node node)
     case YF_NODEOBJ_MODEL:
         printf("\nnodeobj is a model (%p)", obj);
         printf("\n mesh: %p", (void *)yf_model_getmesh((YF_model)obj));
-        printf("\n tex:  %p", (void *)yf_model_gettex((YF_model)obj));
+        printf("\n matl:  %p", (void *)yf_model_getmatl((YF_model)obj));
         break;
     case YF_NODEOBJ_TERRAIN:
         printf("\nnodeobj is a terrain (%p)", obj);
