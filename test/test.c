@@ -25,10 +25,10 @@ int main(int argc, char *argv[])
     printf("%s\n[YF][%s] - Test\n%s\n\n", line, yf_g_test.name, line);
 
     if (argc == 1) {
-        printf("! Error: missing test ID\n");
+        printf("! Error: missing TEST_ID\n");
         printf("! Usage: %s TEST_ID [parameters]\n", argv[0]);
         printf("\nPossible values for TEST_ID:\n");
-        for (size_t i = 0; i < yf_g_test.id_n; ++i)
+        for (size_t i = 0; i < yf_g_test.id_n; i++)
             printf("* %s\n", yf_g_test.ids[i]);
         printf("\n! No tests executed\n");
     } else {
