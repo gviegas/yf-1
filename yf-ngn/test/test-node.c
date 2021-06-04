@@ -15,7 +15,7 @@ static int do_each_node(YF_node node, void *arg)
     char name[16];
     yf_node_getname(node, name, sizeof name);
     int r = (long)arg;
-    printf("@%p, '%s', %d\n", (void *)node, name, r);
+    printf("%p, '%s', %d\n", (void *)node, name, r);
     return r;
 }
 
@@ -24,6 +24,7 @@ int yf_test_node(void)
 {
     YF_node n1, n2, n3, n4, n5;
     int chk[7];
+    YF_node pnt[5];
     size_t len[5];
 
     n1 = yf_node_init();
@@ -33,11 +34,11 @@ int yf_test_node(void)
     n5 = yf_node_init();
 
     puts("<init>");
-    printf("n1 is @%p\n", (void *)n1);
-    printf("n2 is @%p\n", (void *)n2);
-    printf("n3 is @%p\n", (void *)n3);
-    printf("n4 is @%p\n", (void *)n4);
-    printf("n5 is @%p\n", (void *)n5);
+    printf("n1 is %p\n", (void *)n1);
+    printf("n2 is %p\n", (void *)n2);
+    printf("n3 is %p\n", (void *)n3);
+    printf("n4 is %p\n", (void *)n4);
+    printf("n5 is %p\n", (void *)n5);
 
     if (n1 == NULL || n2 == NULL || n3 == NULL || n4 == NULL || n5 == NULL)
         return -1;
@@ -98,6 +99,33 @@ int yf_test_node(void)
     printf("n4: %s\n", chk[3] ? "yes" : "no"); \
     printf("n5: %s\n", chk[4] ? "yes" : "no"); } while (0)
 
+#define YF_ROOTCHK() do { \
+    chk[0] = yf_node_isroot(n1); \
+    chk[1] = yf_node_isroot(n2); \
+    chk[2] = yf_node_isroot(n3); \
+    chk[3] = yf_node_isroot(n4); \
+    chk[4] = yf_node_isroot(n5); \
+    \
+    puts("\n<isroot>"); \
+    printf("n1: %s\n", chk[0] ? "yes" : "no"); \
+    printf("n2: %s\n", chk[1] ? "yes" : "no"); \
+    printf("n3: %s\n", chk[2] ? "yes" : "no"); \
+    printf("n4: %s\n", chk[3] ? "yes" : "no"); \
+    printf("n5: %s\n", chk[4] ? "yes" : "no"); } while (0)
+
+#define YF_PNTCHK() do { \
+    pnt[0] = yf_node_getparent(n1); \
+    pnt[1] = yf_node_getparent(n2); \
+    pnt[2] = yf_node_getparent(n3); \
+    pnt[3] = yf_node_getparent(n4); \
+    pnt[4] = yf_node_getparent(n5); \
+    puts("\n<getparent>"); \
+    printf("n1: %p\n", (void *)pnt[0]); \
+    printf("n2: %p\n", (void *)pnt[1]); \
+    printf("n3: %p\n", (void *)pnt[2]); \
+    printf("n4: %p\n", (void *)pnt[3]); \
+    printf("n5: %p\n", (void *)pnt[4]); } while (0)
+
 #define YF_LENCHK() do { \
     len[0] = yf_node_getlen(n1); \
     len[1] = yf_node_getlen(n2); \
@@ -117,6 +145,13 @@ int yf_test_node(void)
         return -1;
     YF_LEAFCHK();
     if (chk[0] || !chk[1] || chk[2] || !chk[3] || !chk[4])
+        return -1;
+    YF_ROOTCHK();
+    if (!chk[0] || chk[1] || chk[2] || chk[3] || chk[4])
+        return -1;
+    YF_PNTCHK();
+    if (pnt[0] != NULL || pnt[1] != n1 || pnt[2] != n1 || pnt[3] != n1 ||
+        pnt[4] != n3)
         return -1;
     YF_LENCHK();
     if (len[0] != 5 || len[1] != 1 || len[2] != 2 || len[3] != 1 || len[4] != 1)
@@ -149,6 +184,13 @@ int yf_test_node(void)
     YF_LEAFCHK();
     if (chk[0] || !chk[1] || chk[2] || !chk[3] || !chk[4])
         return -1;
+    YF_ROOTCHK();
+    if (!chk[0] || chk[1] || !chk[2] || chk[3] || chk[4])
+        return -1;
+    YF_PNTCHK();
+    if (pnt[0] != NULL || pnt[1] != n1 || pnt[2] != NULL || pnt[3] != n1 ||
+        pnt[4] != n3)
+        return -1;
     YF_LENCHK();
     if (len[0] != 3 || len[1] != 1 || len[2] != 2 || len[3] != 1 || len[4] != 1)
         return -1;
@@ -167,6 +209,13 @@ int yf_test_node(void)
         return -1;
     YF_LEAFCHK();
     if (!chk[0] || !chk[1] || chk[2] || !chk[3] || !chk[4])
+        return -1;
+    YF_ROOTCHK();
+    if (!chk[0] || !chk[1] || !chk[2] || !chk[3] || chk[4])
+        return -1;
+    YF_PNTCHK();
+    if (pnt[0] != NULL || pnt[1] != NULL || pnt[2] != NULL || pnt[3] != NULL ||
+        pnt[4] != n3)
         return -1;
     YF_LENCHK();
     if (len[0] != 1 || len[1] != 1 || len[2] != 2 || len[3] != 1 || len[4] != 1)
