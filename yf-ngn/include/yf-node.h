@@ -96,6 +96,14 @@ int yf_node_isleaf(YF_node node);
 int yf_node_isroot(YF_node node);
 
 /**
+ * Gets the immediate ancestor of a node.
+ *
+ * @param node: The node.
+ * @return: The parent of 'node', or 'NULL' if 'node' is a root node.
+ */
+YF_node yf_node_getparent(YF_node node);
+
+/**
  * Gets the length of a node's subgraph.
  *
  * @param node: The node.

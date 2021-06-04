@@ -180,6 +180,12 @@ int yf_node_isroot(YF_node node)
     return node->parent == NULL;
 }
 
+YF_node yf_node_getparent(YF_node node)
+{
+    assert(node != NULL);
+    return node->parent;
+}
+
 size_t yf_node_getlen(YF_node node)
 {
     assert(node != NULL);
