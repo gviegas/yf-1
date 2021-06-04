@@ -87,6 +87,15 @@ int yf_node_descends(YF_node node, YF_node ancestor);
 int yf_node_isleaf(YF_node node);
 
 /**
+ * Checks whether or not a given node has no ancestors.
+ *
+ * @param node: The node to check.
+ * @return: If 'node' is a root node, returns a non-zero value. Otherwise,
+ *  zero is returned.
+ */
+int yf_node_isroot(YF_node node);
+
+/**
  * Gets the length of a node's subgraph.
  *
  * @param node: The node.

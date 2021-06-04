@@ -174,6 +174,12 @@ int yf_node_isleaf(YF_node node)
     return node->child == NULL;
 }
 
+int yf_node_isroot(YF_node node)
+{
+    assert(node != NULL);
+    return node->parent == NULL;
+}
+
 size_t yf_node_getlen(YF_node node)
 {
     assert(node != NULL);
