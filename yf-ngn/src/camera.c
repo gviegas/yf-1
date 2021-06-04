@@ -214,7 +214,7 @@ void yf_camera_turnu(YF_camera cam, YF_float d)
     YF_vec4 q;
     YF_mat3 rot;
     yf_vec3_cross(side, cam->dir, l_wld_u);
-    yf_vec4_rotq(q, ang, side);
+    yf_vec4_rotq(q, -ang, side);
     yf_mat3_rotq(rot, q);
     yf_mat3_mulv(front, rot, cam->dir);
     yf_vec3_norm(cam->dir, front);
@@ -235,7 +235,7 @@ void yf_camera_turnl(YF_camera cam, YF_float d)
     YF_vec3 front;
     YF_vec4 q;
     YF_mat3 rot;
-    yf_vec4_rotq(q, -d, l_wld_u);
+    yf_vec4_rotq(q, d, l_wld_u);
     yf_mat3_rotq(rot, q);
     yf_mat3_mulv(front, rot, cam->dir);
     yf_vec3_norm(cam->dir, front);
