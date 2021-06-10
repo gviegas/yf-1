@@ -18,6 +18,8 @@
 #define YF_WINT "test-render"
 #define YF_FPS  60
 #define YF_MDLN 10
+#define YF_PLACE (YF_vec3){0.0, 0.0, 20.0}
+#define YF_POINT (YF_vec3){0}
 
 /* Local variables. */
 struct T_vars {
@@ -36,6 +38,8 @@ struct T_vars {
     struct {
         int quit;
         int swap;
+        int place;
+        int point;
         int move[4];
         int turn[4];
     } input;
@@ -47,9 +51,6 @@ static void on_key(int key, int state,
                    YF_UNUSED unsigned mod_mask, YF_UNUSED void *arg)
 {
     switch (key) {
-    case YF_KEY_SPACE:
-        l_vars.input.swap = state;
-        break;
     case YF_KEY_W:
         l_vars.input.move[0] = state;
         break;
@@ -73,6 +74,15 @@ static void on_key(int key, int state,
         break;
     case YF_KEY_RIGHT:
         l_vars.input.turn[3] = state;
+        break;
+    case YF_KEY_RETURN:
+        l_vars.input.place = state;
+        break;
+    case YF_KEY_SPACE:
+        l_vars.input.point = state;
+        break;
+    case YF_KEY_TAB:
+        l_vars.input.swap = state;
         break;
     case YF_KEY_ESC:
         l_vars.input.quit |= state;
@@ -125,6 +135,15 @@ static void update(double elapsed_time)
         yf_camera_turnl(cam, td);
     if (l_vars.input.turn[3])
         yf_camera_turnr(cam, td);
+
+    if (l_vars.input.place) {
+        yf_camera_place(cam, YF_PLACE);
+        l_vars.input.place = 0;
+    }
+    if (l_vars.input.point) {
+        yf_camera_point(cam, YF_POINT);
+        l_vars.input.point = 0;
+    }
 }
 
 /* Tests rendering. */
@@ -167,7 +186,7 @@ int yf_test_render(void)
     mprop->pbrmr.color_tex = l_vars.tex1;
 
     YF_node scn1_nd = yf_scene_getnode(l_vars.scn1);
-    YF_float tf = YF_MDLN / -2.0;
+    YF_float tf = -YF_MDLN;
     for (size_t i = 0; i < YF_MDLN; i++) {
         l_vars.mdls[i] = yf_model_init();
         assert(l_vars.mdls[i] != NULL);
@@ -177,8 +196,8 @@ int yf_test_render(void)
 
         YF_node nd = yf_model_getnode(l_vars.mdls[i]);
         YF_mat4 *m = yf_node_getxform(nd);
-        yf_mat4_xlate(*m, tf, tf, -tf);
-        tf += 1.0;
+        yf_mat4_xlate(*m, tf, tf*0.5, 0.0);
+        tf += 2.0;
 
         yf_node_insert(scn1_nd, nd);
     }
