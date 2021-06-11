@@ -220,7 +220,7 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
     return 0;
 }
 
-YF_mesh yf_mesh_init(int filetype, const char *pathname)
+YF_mesh yf_mesh_init(int filetype, const char *pathname, size_t index)
 {
     YF_meshdt data = {0};
 
@@ -230,7 +230,7 @@ YF_mesh yf_mesh_init(int filetype, const char *pathname)
         assert(0);
         return NULL;
     case YF_FILETYPE_GLTF:
-        if (yf_loadgltf(pathname, &data) != 0)
+        if (yf_loadgltf_mesh(pathname, index, &data) != 0)
             return NULL;
         break;
     case YF_FILETYPE_OBJ:
