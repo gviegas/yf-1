@@ -2633,6 +2633,133 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
         (pathname)[path_len+name_len] = '\0'; \
     } } while (0)
 
+#ifdef YF_DEVEL
+static void print_gltf(const T_gltf *gltf);
+#endif
+
+/* Deinitializes glTF contents. */
+static void deinit_gltf(T_gltf *gltf)
+{
+    if (gltf == NULL)
+        return;
+
+    free(gltf->asset.copyright);
+    free(gltf->asset.generator);
+    free(gltf->asset.version);
+    free(gltf->asset.min_version);
+
+    for (size_t i = 0; i < gltf->scenes.n; i++) {
+        free(gltf->scenes.v[i].nodes);
+        free(gltf->scenes.v[i].name);
+    }
+    free(gltf->scenes.v);
+
+    for (size_t i = 0; i < gltf->nodes.n; i++) {
+        free(gltf->nodes.v[i].children);
+        free(gltf->nodes.v[i].weights);
+        free(gltf->nodes.v[i].name);
+    }
+    free(gltf->nodes.v);
+
+    for (size_t i = 0; i < gltf->cameras.n; i++)
+        free(gltf->cameras.v[i].name);
+    free(gltf->cameras.v);
+
+    for (size_t i = 0; i < gltf->meshes.n; i++) {
+        for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; j++)
+            free(gltf->meshes.v[i].primitives.v[j].targets.v);
+        free(gltf->meshes.v[i].primitives.v);
+        free(gltf->meshes.v[i].weights);
+        free(gltf->meshes.v[i].name);
+    }
+    free(gltf->meshes.v);
+
+    for (size_t i = 0; i < gltf->skins.n; i++) {
+        free(gltf->skins.v[i].joints);
+        free(gltf->skins.v[i].name);
+    }
+    free(gltf->skins.v);
+
+    for (size_t i = 0; i < gltf->materials.n; i++)
+        free(gltf->materials.v[i].name);
+    free(gltf->materials.v);
+
+    for (size_t i = 0; i < gltf->animations.n; i++) {
+        free(gltf->animations.v[i].channels.v);
+        free(gltf->animations.v[i].samplers.v);
+        free(gltf->animations.v[i].name);
+    }
+    free(gltf->animations.v);
+
+    for (size_t i = 0; i < gltf->accessors.n; i++)
+        free(gltf->accessors.v[i].name);
+    free(gltf->accessors.v);
+
+    for (size_t i = 0; i < gltf->bufferviews.n; i++)
+        free(gltf->bufferviews.v[i].name);
+    free(gltf->bufferviews.v);
+
+    for (size_t i = 0; i < gltf->buffers.n; i++) {
+        free(gltf->buffers.v[i].uri);
+        free(gltf->buffers.v[i].name);
+    }
+    free(gltf->buffers.v);
+
+    for (size_t i = 0; i < gltf->textures.n; i++)
+        free(gltf->textures.v[i].name);
+    free(gltf->textures.v);
+
+    for (size_t i = 0; i < gltf->images.n; i++) {
+        free(gltf->images.v[i].uri);
+        free(gltf->images.v[i].mime_type);
+        free(gltf->images.v[i].name);
+    }
+    free(gltf->images.v);
+
+    for (size_t i = 0; i < gltf->samplers.n; i++)
+        free(gltf->samplers.v[i].name);
+    free(gltf->samplers.v);
+}
+
+/* Initializes glTF contents. */
+static int init_gltf(const char *pathname, T_gltf *gltf)
+{
+    assert(gltf != NULL);
+
+    if (pathname == NULL) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    FILE *file = fopen(pathname, "r");
+    if (file == NULL) {
+        yf_seterr(YF_ERR_NOFILE, __func__);
+        return -1;
+    }
+
+    T_token token = {0};
+    next_token(file, &token);
+    /* TODO: .glb */
+    if (token.token != YF_TOKEN_OP && token.data[0] != '{') {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        fclose(file);
+        return -1;
+    }
+
+    if (parse_gltf(file, &token, gltf) != 0) {
+        deinit_gltf(gltf);
+        fclose(file);
+        return -1;
+    }
+
+#ifdef YF_DEVEL
+    print_gltf(gltf);
+#endif
+
+    fclose(file);
+    return 0;
+}
+
 /* Loads a single mesh from glTF contents. */
 static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
                        YF_meshdt *data)
@@ -2935,102 +3062,13 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
     return 0;
 }
 
-/* Deinitializes glTF contents. */
-static void deinit_gltf(T_gltf *gltf)
-{
-    if (gltf == NULL)
-        return;
-
-    free(gltf->asset.copyright);
-    free(gltf->asset.generator);
-    free(gltf->asset.version);
-    free(gltf->asset.min_version);
-
-    for (size_t i = 0; i < gltf->scenes.n; i++) {
-        free(gltf->scenes.v[i].nodes);
-        free(gltf->scenes.v[i].name);
-    }
-    free(gltf->scenes.v);
-
-    for (size_t i = 0; i < gltf->nodes.n; i++) {
-        free(gltf->nodes.v[i].children);
-        free(gltf->nodes.v[i].weights);
-        free(gltf->nodes.v[i].name);
-    }
-    free(gltf->nodes.v);
-
-    for (size_t i = 0; i < gltf->cameras.n; i++)
-        free(gltf->cameras.v[i].name);
-    free(gltf->cameras.v);
-
-    for (size_t i = 0; i < gltf->meshes.n; i++) {
-        for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; j++)
-            free(gltf->meshes.v[i].primitives.v[j].targets.v);
-        free(gltf->meshes.v[i].primitives.v);
-        free(gltf->meshes.v[i].weights);
-        free(gltf->meshes.v[i].name);
-    }
-    free(gltf->meshes.v);
-
-    for (size_t i = 0; i < gltf->skins.n; i++) {
-        free(gltf->skins.v[i].joints);
-        free(gltf->skins.v[i].name);
-    }
-    free(gltf->skins.v);
-
-    for (size_t i = 0; i < gltf->materials.n; i++)
-        free(gltf->materials.v[i].name);
-    free(gltf->materials.v);
-
-    for (size_t i = 0; i < gltf->animations.n; i++) {
-        free(gltf->animations.v[i].channels.v);
-        free(gltf->animations.v[i].samplers.v);
-        free(gltf->animations.v[i].name);
-    }
-    free(gltf->animations.v);
-
-    for (size_t i = 0; i < gltf->accessors.n; i++)
-        free(gltf->accessors.v[i].name);
-    free(gltf->accessors.v);
-
-    for (size_t i = 0; i < gltf->bufferviews.n; i++)
-        free(gltf->bufferviews.v[i].name);
-    free(gltf->bufferviews.v);
-
-    for (size_t i = 0; i < gltf->buffers.n; i++) {
-        free(gltf->buffers.v[i].uri);
-        free(gltf->buffers.v[i].name);
-    }
-    free(gltf->buffers.v);
-
-    for (size_t i = 0; i < gltf->textures.n; i++)
-        free(gltf->textures.v[i].name);
-    free(gltf->textures.v);
-
-    for (size_t i = 0; i < gltf->images.n; i++) {
-        free(gltf->images.v[i].uri);
-        free(gltf->images.v[i].mime_type);
-        free(gltf->images.v[i].name);
-    }
-    free(gltf->images.v);
-
-    for (size_t i = 0; i < gltf->samplers.n; i++)
-        free(gltf->samplers.v[i].name);
-    free(gltf->samplers.v);
-}
-
-#ifdef YF_DEVEL
-static void print_gltf(const T_gltf *gltf);
-#endif
-
 int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data)
 {
     assert(data != NULL);
 
-    if (pathname == NULL) {
-        yf_seterr(YF_ERR_INVARG, __func__);
+    T_gltf gltf = {0};
+    if (init_gltf(pathname, &gltf) != 0)
         return -1;
-    }
 
     char *path = NULL;
     YF_PATHOF(pathname, path);
@@ -3039,40 +3077,13 @@ int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data)
         return -1;
     }
 
-    FILE *file = fopen(pathname, "r");
-    if (file == NULL) {
-        yf_seterr(YF_ERR_NOFILE, __func__);
-        return -1;
-    }
-
-    T_token token = {0};
-    next_token(file, &token);
-    /* TODO: .glb */
-    if (token.token != YF_TOKEN_OP && token.data[0] != '{') {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        fclose(file);
-        return -1;
-    }
-
-    T_gltf gltf = {0};
-    if (parse_gltf(file, &token, &gltf) != 0) {
-        deinit_gltf(&gltf);
-        fclose(file);
-        return -1;
-    }
-
-#ifdef YF_DEVEL
-    print_gltf(&gltf);
-#endif
-
     if (load_meshdt(&gltf, path, index, data) != 0) {
         deinit_gltf(&gltf);
-        fclose(file);
+        free(path);
         return -1;
     }
 
     deinit_gltf(&gltf);
-    fclose(file);
     free(path);
     return 0;
 }
