@@ -3062,6 +3062,40 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
     return 0;
 }
 
+/* Loads glTF contents. */
+static int load_contents(T_gltf *gltf, const char *path, YF_collection *coll)
+{
+    assert(gltf != NULL);
+    assert(path != NULL);
+    assert(coll != NULL);
+
+    /* TODO */
+
+    return 0;
+}
+
+int yf_loadgltf(const char *pathname, YF_collection *coll)
+{
+    assert(coll != NULL);
+
+    T_gltf gltf = {0};
+    if (init_gltf(pathname, &gltf) != 0)
+        return -1;
+
+    char *path;
+    YF_PATHOF(pathname, path);
+    if (path == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        deinit_gltf(&gltf);
+        return -1;
+    }
+
+    int r = load_contents(&gltf, path, coll);
+    deinit_gltf(&gltf);
+    free(path);
+    return r;
+}
+
 int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data)
 {
     assert(data != NULL);
@@ -3074,18 +3108,14 @@ int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data)
     YF_PATHOF(pathname, path);
     if (path == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-
-    if (load_meshdt(&gltf, path, index, data) != 0) {
         deinit_gltf(&gltf);
-        free(path);
         return -1;
     }
 
+    int r = load_meshdt(&gltf, path, index, data);
     deinit_gltf(&gltf);
     free(path);
-    return 0;
+    return r;
 }
 
 /*
