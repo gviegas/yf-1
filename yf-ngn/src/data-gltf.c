@@ -18,6 +18,7 @@
 
 #include "data-gltf.h"
 #include "vertex.h"
+#include "data-png.h"
 
 /*
  * Token
@@ -3062,8 +3063,41 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
     return 0;
 }
 
+/* Loads a single texture from glTF contents. */
+static int load_texdt(const T_gltf *gltf, const char *path, size_t index,
+                      YF_texdt *data)
+{
+    assert(gltf != NULL);
+    assert(path != NULL);
+    assert(data != NULL);
+
+    if (gltf->textures.n <= index) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    const T_int img_i = gltf->textures.v[index].source;
+    if (gltf->images.v[img_i].mime_type != NULL &&
+        strcmp(gltf->images.v[img_i].mime_type, "image/png") != 0) {
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+    }
+
+    char *pathname = NULL;
+    YF_PATHCAT(path, gltf->images.v[img_i].uri, pathname);
+    if (pathname == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    int r = yf_loadpng(pathname, data);
+    free(pathname);
+    return r;
+}
+
 /* Loads glTF contents. */
-static int load_contents(T_gltf *gltf, const char *path, YF_collection *coll)
+static int load_contents(const T_gltf *gltf, const char *path,
+                         YF_collection coll)
 {
     assert(gltf != NULL);
     assert(path != NULL);
@@ -3074,7 +3108,7 @@ static int load_contents(T_gltf *gltf, const char *path, YF_collection *coll)
     return 0;
 }
 
-int yf_loadgltf(const char *pathname, YF_collection *coll)
+int yf_loadgltf(const char *pathname, YF_collection coll)
 {
     assert(coll != NULL);
 
