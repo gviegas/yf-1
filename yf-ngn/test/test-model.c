@@ -251,8 +251,8 @@ int yf_test_model(void)
         l_vars.uniq_res_n = 2;
 
         /* Create mesh */
-        l_vars.mesh[0] = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model1.gltf");
-        l_vars.mesh[1] = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model2.gltf");
+        l_vars.mesh[0] = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model1.gltf", 0);
+        l_vars.mesh[1] = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model2.gltf", 0);
         assert(l_vars.mesh[0] != NULL);
         assert(l_vars.mesh[1] != NULL);
 
@@ -291,10 +291,10 @@ int yf_test_model(void)
         for (unsigned i = 0; i < YF_MDLN; i++) {
             if (i&1)
                 l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_GLTF,
-                                              "tmp/model1.gltf");
+                                              "tmp/model1.gltf", 0);
             else
                 l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_GLTF,
-                                              "tmp/model2.gltf");
+                                              "tmp/model2.gltf", 0);
             assert(l_vars.mesh[i] != NULL);
         }
 

@@ -187,9 +187,9 @@ int yf_test_misc(void)
     l_vars.labl_node = yf_node_init();
     assert(l_vars.labl_node != NULL);
 
-    YF_mesh mesh1 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model1.gltf");
+    YF_mesh mesh1 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model1.gltf", 0);
     assert(mesh1 != NULL);
-    YF_mesh mesh2 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model2.gltf");
+    YF_mesh mesh2 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model2.gltf", 0);
     assert(mesh2 != NULL);
 
     YF_texture tex1 = yf_texture_init(YF_FILETYPE_PNG, "tmp/model1.png");

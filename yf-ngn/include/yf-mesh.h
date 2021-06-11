@@ -33,8 +33,9 @@ typedef struct YF_mesh_o *YF_mesh;
  * @param pathname: The pathname of the mesh file.
  * @return: On success, returns a new mesh. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
+ * @param index: The index of the mesh to load.
  */
-YF_mesh yf_mesh_init(int filetype, const char *pathname);
+YF_mesh yf_mesh_init(int filetype, const char *pathname, size_t index);
 
 /**
  * Deinitializes a mesh.

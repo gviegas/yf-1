@@ -163,8 +163,8 @@ int yf_test_render(void)
     assert(l_vars.scn1 != NULL);
     assert(l_vars.scn2 != NULL);
 
-    l_vars.mesh1 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.gltf");
-    l_vars.mesh2 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.gltf");
+    l_vars.mesh1 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.gltf", 0);
+    l_vars.mesh2 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.gltf", 0);
     assert(l_vars.mesh1 != NULL);
     assert(l_vars.mesh2 != NULL);
 
