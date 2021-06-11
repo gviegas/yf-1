@@ -11,6 +11,6 @@
 #include "mesh.h"
 
 /* Loads mesh data from a glTF file. */
-int yf_loadgltf(const char *pathname, YF_meshdt *data);
+int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data);
 
 #endif /* YF_DATA_GLTF_H */

@@ -2634,15 +2634,20 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
     } } while (0)
 
 /* Loads a single mesh from glTF contents. */
-static int load_meshdt(const T_gltf *gltf, const char *path, YF_meshdt *data)
+static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
+                       YF_meshdt *data)
 {
     assert(gltf != NULL);
     assert(path != NULL);
     assert(data != NULL);
 
+    if (gltf->meshes.n <= index) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
     if (gltf->accessors.n == 0 || gltf->bufferviews.n == 0 ||
-        gltf->buffers.n == 0 || gltf->meshes.n == 0 ||
-        gltf->meshes.v[0].primitives.n == 0) {
+        gltf->buffers.n == 0 || gltf->meshes.v[0].primitives.n == 0) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
@@ -3018,7 +3023,7 @@ static void deinit_gltf(T_gltf *gltf)
 static void print_gltf(const T_gltf *gltf);
 #endif
 
-int yf_loadgltf(const char *pathname, YF_meshdt *data)
+int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data)
 {
     assert(data != NULL);
 
@@ -3060,7 +3065,7 @@ int yf_loadgltf(const char *pathname, YF_meshdt *data)
     print_gltf(&gltf);
 #endif
 
-    if (load_meshdt(&gltf, path, data) != 0) {
+    if (load_meshdt(&gltf, path, index, data) != 0) {
         deinit_gltf(&gltf);
         fclose(file);
         return -1;
