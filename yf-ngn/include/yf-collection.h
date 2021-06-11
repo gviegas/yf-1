@@ -20,11 +20,14 @@ typedef struct YF_collection_o *YF_collection;
 /**
  * Types of resources that a collection can store.
  */
-#define YF_COLLRES_MESH    0
-#define YF_COLLRES_TEXTURE 1
-#define YF_COLLRES_FONT    2
+#define YF_COLLRES_SCENE    0
+#define YF_COLLRES_NODE     1
+#define YF_COLLRES_MESH     2
+#define YF_COLLRES_MATERIAL 3
+#define YF_COLLRES_TEXTURE  4
+#define YF_COLLRES_FONT     5
 
-#define YF_COLLRES_N 3
+#define YF_COLLRES_N 6
 
 /**
  * Initializes a new collection.

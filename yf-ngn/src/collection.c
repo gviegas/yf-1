@@ -13,9 +13,12 @@
 #include "yf/com/yf-error.h"
 
 #include "yf-collection.h"
-#include "mesh.h"
-#include "texture.h"
-#include "font.h"
+#include "yf-scene.h"
+#include "yf-node.h"
+#include "yf-mesh.h"
+#include "yf-material.h"
+#include "yf-texture.h"
+#include "yf-font.h"
 
 struct YF_collection_o {
     YF_dict res[YF_COLLRES_N];
@@ -26,8 +29,17 @@ struct YF_collection_o {
 static int deinit_res(void *key, void *val, void *arg)
 {
     switch ((size_t)arg) {
+    case YF_COLLRES_SCENE:
+        yf_scene_deinit(val);
+        break;
+    case YF_COLLRES_NODE:
+        yf_node_deinit(val);
+        break;
     case YF_COLLRES_MESH:
         yf_mesh_deinit(val);
+        break;
+    case YF_COLLRES_MATERIAL:
+        yf_material_deinit(val);
         break;
     case YF_COLLRES_TEXTURE:
         yf_texture_deinit(val);

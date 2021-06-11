@@ -205,14 +205,22 @@ int yf_test_misc(void)
     l_vars.coll = yf_collection_init(NULL);
     assert(l_vars.coll != NULL);
 
-    if (yf_collection_manage(l_vars.coll, YF_COLLRES_MESH, "m1", mesh1) != 0 ||
-        yf_collection_manage(l_vars.coll, YF_COLLRES_MESH, "m2", mesh2) != 0 ||
+    if (yf_collection_manage(l_vars.coll, YF_COLLRES_SCENE, "scn",
+                             l_vars.scn) != 0 ||
+        yf_collection_manage(l_vars.coll, YF_COLLRES_NODE, "labl",
+                             l_vars.labl_node) != 0 ||
+        yf_collection_manage(l_vars.coll, YF_COLLRES_MESH, "m1",
+                             mesh1) != 0 ||
+        yf_collection_manage(l_vars.coll, YF_COLLRES_MESH, "m2",
+                             mesh2) != 0 ||
         yf_collection_manage(l_vars.coll, YF_COLLRES_TEXTURE, "t1",
                              tex1) != 0 ||
         yf_collection_manage(l_vars.coll, YF_COLLRES_TEXTURE, "t2",
                              tex2) != 0 ||
-        yf_collection_manage(l_vars.coll, YF_COLLRES_FONT, "f1", font1) != 0 ||
-        yf_collection_manage(l_vars.coll, YF_COLLRES_FONT, "f2", font2) != 0)
+        yf_collection_manage(l_vars.coll, YF_COLLRES_FONT, "f1",
+                             font1) != 0 ||
+        yf_collection_manage(l_vars.coll, YF_COLLRES_FONT, "f2",
+                             font2) != 0)
         assert(0);
 
     YF_material matl1 = yf_material_init();
@@ -229,6 +237,12 @@ int yf_test_misc(void)
     mprop->pbrmr.color_tex = yf_collection_getres(l_vars.coll,
                                                   YF_COLLRES_TEXTURE, "t2");
 
+    if (yf_collection_manage(l_vars.coll, YF_COLLRES_MATERIAL, "m1",
+                             matl1) != 0 ||
+        yf_collection_manage(l_vars.coll, YF_COLLRES_MATERIAL, "m2",
+                             matl2) != 0)
+        assert(0);
+
     l_vars.mdl = yf_model_init();
     assert(l_vars.mdl != NULL);
 
@@ -236,7 +250,9 @@ int yf_test_misc(void)
     yf_model_setmesh(l_vars.mdl,
                      yf_collection_getres(l_vars.coll, YF_COLLRES_MESH,
                                           mdl_num == 1 ? "m1" : "m2"));
-    yf_model_setmatl(l_vars.mdl, mdl_num == 1 ? matl1 : matl2);
+    yf_model_setmatl(l_vars.mdl,
+                     yf_collection_getres(l_vars.coll, YF_COLLRES_MATERIAL,
+                                          mdl_num == 1 ? "m1" : "m2"));
 
     yf_node_insert(yf_scene_getnode(l_vars.scn), yf_model_getnode(l_vars.mdl));
 
@@ -273,8 +289,16 @@ int yf_test_misc(void)
             (*m)[13] = i*-0.15;
         }
 
+        if (yf_collection_getres(l_vars.coll, YF_COLLRES_NODE, "labl") !=
+            l_vars.labl_node)
+            assert(0);
+
         yf_node_insert(l_vars.labl_node, yf_label_getnode(l_vars.labls[i]));
     }
+
+    if (yf_collection_getres(l_vars.coll, YF_COLLRES_SCENE, "scn") !=
+        l_vars.scn)
+        assert(0);
 
     yf_node_insert(yf_scene_getnode(l_vars.scn), l_vars.labl_node);
 
@@ -291,16 +315,15 @@ int yf_test_misc(void)
         assert(0);
 
     yf_view_deinit(l_vars.view);
-    yf_scene_deinit(l_vars.scn);
+    /* managed... */
+    /*yf_scene_deinit(l_vars.scn);*/
     yf_window_deinit(l_vars.win);
-    yf_node_deinit(l_vars.labl_node);
+    /* managed... */
+    /*yf_node_deinit(l_vars.labl_node);*/
 
     yf_model_deinit(l_vars.mdl);
     for (size_t i = 0; i < labl_n; i++)
         yf_label_deinit(l_vars.labls[i]);
-
-    yf_material_deinit(matl1);
-    yf_material_deinit(matl2);
 
     yf_collection_deinit(l_vars.coll);
 
