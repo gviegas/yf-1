@@ -19,6 +19,7 @@
 #include "data-gltf.h"
 #include "vertex.h"
 #include "data-png.h"
+#include "yf-node.h"
 #include "yf-material.h"
 
 /*
@@ -3296,6 +3297,38 @@ static int load_contents(const T_gltf *gltf, const char *path,
     for (size_t i = 0; i < gltf->materials.n; i++) {
         if (load_material(gltf, path, i, NULL, coll) != 0)
             return -1;
+    }
+
+    /* nodes */
+    for (size_t i = 0; i < gltf->nodes.n; i++) {
+        const char *name = gltf->nodes.v[i].name;
+        if (name == NULL)
+            /* TODO */
+            assert(0);
+
+        YF_node node = yf_node_init();
+        if (node == NULL ||
+            yf_collection_manage(coll, YF_COLLRES_NODE, name, node) != 0) {
+
+            yf_node_deinit(node);
+            return -1;
+        }
+    }
+    for (size_t i = 0; i < gltf->nodes.n; i++) {
+        if (gltf->nodes.v[i].child_n == 0)
+            continue;
+
+        const char *name = gltf->nodes.v[i].name;
+        YF_node node = yf_collection_getres(coll, YF_COLLRES_NODE, name);
+        assert(node != NULL);
+        const T_int *children = gltf->nodes.v[i].children;
+
+        for (size_t j = 0; j < gltf->nodes.v[i].child_n; j++) {
+            name = gltf->nodes.v[children[j]].name;
+            YF_node child = yf_collection_getres(coll, YF_COLLRES_NODE, name);
+            assert(child != NULL);
+            yf_node_insert(node, child);
+        }
     }
 
     /* TODO */
