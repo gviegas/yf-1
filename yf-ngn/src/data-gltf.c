@@ -3096,6 +3096,21 @@ static int load_texdt(const T_gltf *gltf, const char *path, size_t index,
     return r;
 }
 
+#define YF_NAMEOFTEX(gltf_p, tex_i, name) do { \
+    name = (gltf_p)->textures.v[tex_i].name; \
+    if ((name) == NULL) { \
+        const T_int img_i = (gltf_p)->textures.v[tex_i].source; \
+        name = (gltf_p)->images.v[img_i].name; \
+        if ((name) == NULL) { \
+            name = (gltf_p)->images.v[img_i].uri; \
+            if ((name) == NULL) { \
+                /* TODO */ \
+                assert(0); \
+                abort(); \
+            } \
+        } \
+    } } while (0)
+
 /* Loads a single material from glTF contents. */
 static int load_material(const T_gltf *gltf, const char *path, size_t index,
                          YF_material *matl, YF_collection coll)
@@ -3163,19 +3178,8 @@ static int load_material(const T_gltf *gltf, const char *path, size_t index,
                 continue;
             }
 
-            const char *name = gltf->textures.v[tex_i[i]].name;
-            if (name == NULL) {
-                const T_int img_i = gltf->textures.v[tex_i[i]].source;
-                name = gltf->images.v[img_i].name;
-                if (name == NULL) {
-                    name = gltf->images.v[img_i].uri;
-                    if (name == NULL) {
-                        /* TODO */
-                        assert(0);
-                        return -1;
-                    }
-                }
-            }
+            const char *name = NULL;
+            YF_NAMEOFTEX(gltf, tex_i[i], name);
 
             /* texture may have been created already */
             if ((*tex_p[i] = yf_collection_getres(coll, YF_COLLRES_TEXTURE,
@@ -3266,6 +3270,26 @@ static int load_contents(const T_gltf *gltf, const char *path,
 
         free(data.v.data);
         free(data.i.data);
+    }
+
+    /* textures */
+    for (size_t i = 0; i < gltf->textures.n; i++) {
+        const char *name = NULL;
+        YF_NAMEOFTEX(gltf, i, name);
+
+        YF_texdt data = {0};
+        YF_texture tex = NULL;
+
+        if (load_texdt(gltf, path, i, &data) != 0 ||
+            (tex = yf_texture_initdt(&data)) == NULL ||
+            yf_collection_manage(coll, YF_COLLRES_TEXTURE, name, tex) != 0) {
+
+            free(data.data);
+            yf_texture_deinit(tex);
+            return -1;
+        }
+
+        free(data.data);
     }
 
     /* TODO */
