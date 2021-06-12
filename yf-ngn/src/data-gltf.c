@@ -3292,6 +3292,12 @@ static int load_contents(const T_gltf *gltf, const char *path,
         free(data.data);
     }
 
+    /* materials */
+    for (size_t i = 0; i < gltf->materials.n; i++) {
+        if (load_material(gltf, path, i, NULL, coll) != 0)
+            return -1;
+    }
+
     /* TODO */
 
     return 0;
