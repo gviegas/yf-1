@@ -73,10 +73,12 @@ typedef struct {
 /**
  * Initializes a new material.
  *
+ *
+ * @param prop: The 'YF_matlprop' to set on creation. Can be 'NULL'.
  * @return: On success, returns a new material. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_material yf_material_init(void);
+YF_material yf_material_init(const YF_matlprop *prop);
 
 /**
  * Gets the properties of a material.

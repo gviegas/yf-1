@@ -173,8 +173,8 @@ int yf_test_render(void)
     assert(l_vars.tex1 != NULL);
     assert(l_vars.tex2 != NULL);
 
-    l_vars.matl1 = yf_material_init();
-    l_vars.matl2 = yf_material_init();
+    l_vars.matl1 = yf_material_init(NULL);
+    l_vars.matl2 = yf_material_init(NULL);
     assert(l_vars.matl1 != NULL);
     assert(l_vars.matl2 != NULL);
     YF_matlprop *mprop;
