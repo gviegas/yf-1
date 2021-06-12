@@ -3244,6 +3244,30 @@ static int load_contents(const T_gltf *gltf, const char *path,
     assert(path != NULL);
     assert(coll != NULL);
 
+    /* meshes */
+    for (size_t i = 0; i < gltf->meshes.n; i++) {
+        const char *name = gltf->meshes.v[i].name;
+        if (name == NULL)
+            /* TODO */
+            assert(0);
+
+        YF_meshdt data = {0};
+        YF_mesh mesh = NULL;
+
+        if (load_meshdt(gltf, path, i, &data) != 0 ||
+            (mesh = yf_mesh_initdt(&data)) == NULL ||
+            yf_collection_manage(coll, YF_COLLRES_MESH, name, mesh) != 0) {
+
+            free(data.v.data);
+            free(data.i.data);
+            yf_mesh_deinit(mesh);
+            return -1;
+        }
+
+        free(data.v.data);
+        free(data.i.data);
+    }
+
     /* TODO */
 
     return 0;
