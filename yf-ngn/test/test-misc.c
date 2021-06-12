@@ -223,9 +223,9 @@ int yf_test_misc(void)
                              font2) != 0)
         assert(0);
 
-    YF_material matl1 = yf_material_init();
+    YF_material matl1 = yf_material_init(NULL);
     assert(matl1 != NULL);
-    YF_material matl2 = yf_material_init();
+    YF_material matl2 = yf_material_init(NULL);
     assert(matl2 != NULL);
     YF_matlprop *mprop;
     mprop = yf_material_getprop(matl1);

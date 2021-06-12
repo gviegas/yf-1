@@ -263,8 +263,8 @@ int yf_test_model(void)
         assert(l_vars.tex[1] != NULL);
 
         /* Create material */
-        l_vars.matl[0] = yf_material_init();
-        l_vars.matl[1] = yf_material_init();
+        l_vars.matl[0] = yf_material_init(NULL);
+        l_vars.matl[1] = yf_material_init(NULL);
         assert(l_vars.matl[0] != NULL);
         assert(l_vars.matl[1] != NULL);
         for (unsigned i = 0; i < 2; i++) {
@@ -308,7 +308,7 @@ int yf_test_model(void)
                                                 "tmp/model2.png");
             assert(l_vars.tex[i] != NULL);
 
-            l_vars.matl[i] = yf_material_init();
+            l_vars.matl[i] = yf_material_init(NULL);
             assert(l_vars.matl[i] != NULL);
             YF_matlprop *mprop = yf_material_getprop(l_vars.matl[i]);
             mprop->pbr = YF_PBR_METALROUGH;
