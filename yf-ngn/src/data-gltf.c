@@ -19,6 +19,7 @@
 #include "data-gltf.h"
 #include "vertex.h"
 #include "data-png.h"
+#include "yf-material.h"
 
 /*
  * Token
@@ -3093,6 +3094,146 @@ static int load_texdt(const T_gltf *gltf, const char *path, size_t index,
     int r = yf_loadpng(pathname, data);
     free(pathname);
     return r;
+}
+
+/* Loads a single material from glTF contents. */
+static int load_material(const T_gltf *gltf, const char *path, size_t index,
+                         YF_material *matl, YF_collection coll)
+{
+    assert(gltf != NULL);
+    assert(path != NULL);
+    assert(matl != NULL || coll != NULL);
+
+    if (gltf->materials.n <= index) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    /* TODO: Specular-Glossiness and Unlit exts. */
+
+    YF_matlprop prop;
+
+    prop.pbr = YF_PBR_METALROUGH;
+    memcpy(prop.pbrmr.color_fac, gltf->materials.v[index].pbrmr.base_clr_fac,
+           sizeof prop.pbrmr.color_fac);
+    prop.pbrmr.metallic_fac = gltf->materials.v[index].pbrmr.metallic_fac;
+    prop.pbrmr.roughness_fac = gltf->materials.v[index].pbrmr.roughness_fac;
+
+    prop.normal.scale = gltf->materials.v[index].normal_tex.scale;
+    prop.occlusion.strength = gltf->materials.v[index].occlusion_tex.strength;
+    memcpy(prop.emissive.factor, gltf->materials.v[index].emissive_fac,
+           sizeof prop.emissive.factor);
+
+    switch (gltf->materials.v[index].alpha_mode) {
+    case YF_GLTF_ALPHA_OPAQUE:
+        prop.alphamode = YF_ALPHAMODE_OPAQUE;
+        break;
+    case YF_GLTF_ALPHA_MASK:
+        /* TODO */
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+    case YF_GLTF_ALPHA_BLEND:
+        prop.alphamode = YF_ALPHAMODE_BLEND;
+        break;
+    default:
+        assert(0);
+        abort();
+    }
+
+    const T_int tex_i[] = {
+        gltf->materials.v[index].pbrmr.base_clr_tex.index,
+        gltf->materials.v[index].pbrmr.metal_rough_tex.index,
+        gltf->materials.v[index].normal_tex.index,
+        gltf->materials.v[index].occlusion_tex.index,
+        gltf->materials.v[index].emissive_tex.index
+    };
+
+    YF_texture *const tex_p[] = {
+        &prop.pbrmr.color_tex,
+        &prop.pbrmr.metal_rough_tex,
+        &prop.normal.tex,
+        &prop.occlusion.tex,
+        &prop.emissive.tex
+    };
+
+    if (coll != NULL) {
+        for (size_t i = 0; i < (sizeof tex_i / sizeof *tex_i); i++) {
+            if (tex_i[i] == YF_INT_MIN) {
+                *tex_p[i] = NULL;
+                continue;
+            }
+
+            const char *name = gltf->textures.v[tex_i[i]].name;
+            if (name == NULL) {
+                const T_int img_i = gltf->textures.v[tex_i[i]].source;
+                name = gltf->images.v[img_i].name;
+                if (name == NULL) {
+                    name = gltf->images.v[img_i].uri;
+                    if (name == NULL) {
+                        /* TODO */
+                        assert(0);
+                        return -1;
+                    }
+                }
+            }
+
+            /* texture may have been created already */
+            if ((*tex_p[i] = yf_collection_getres(coll, YF_COLLRES_TEXTURE,
+                                                  name)) != NULL)
+                continue;
+
+            /* create and add to collection otherwise */
+            YF_texdt data = {0};
+            if (load_texdt(gltf, path, tex_i[i], &data) != 0 ||
+                (*tex_p[i] = yf_texture_initdt(&data)) == NULL) {
+                free(data.data);
+                return -1;
+            }
+            free(data.data);
+            if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name,
+                                     *tex_p[i]) != 0) {
+                yf_texture_deinit(*tex_p[i]);
+                return -1;
+            }
+        }
+
+        const char *name = gltf->materials.v[index].name;
+        if (name == NULL)
+            /* TODO */
+            assert(0);
+
+        YF_material matl = yf_material_init(&prop);
+        if (matl == NULL ||
+            yf_collection_manage(coll, YF_COLLRES_MATERIAL, name, matl) != 0)
+            return -1;
+
+    } else {
+        for (size_t i = 0; i < (sizeof tex_i / sizeof *tex_i); i++) {
+            if (tex_i[i] == YF_INT_MIN) {
+                *tex_p[i] = NULL;
+                continue;
+            }
+
+            /* create the texture object in the material prop. */
+            YF_texdt data = {0};
+            if (load_texdt(gltf, path, tex_i[i], &data) != 0 ||
+                (*tex_p[i] = yf_texture_initdt(&data)) == NULL) {
+                for (size_t j = 0; j < i; j++)
+                    yf_texture_deinit(*tex_p[j]);
+                free(data.data);
+                return -1;
+            }
+            free(data.data);
+        }
+
+        if ((*matl = yf_material_init(&prop)) == NULL) {
+            for (size_t i = 0; i < (sizeof tex_p / sizeof *tex_p); i++)
+                yf_texture_deinit(*tex_p[i]);
+            return -1;
+        }
+    }
+
+    return 0;
 }
 
 /* Loads glTF contents. */
