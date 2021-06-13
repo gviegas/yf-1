@@ -125,6 +125,13 @@ static int init_grid(YF_terrain terr)
     return 0;
 }
 
+/* Terrain deinitialization callback. */
+static void deinit_terr(void *terr)
+{
+    yf_mesh_deinit(((YF_terrain)terr)->mesh);
+    free(terr);
+}
+
 YF_terrain yf_terrain_init(unsigned width, unsigned depth)
 {
     if (width == 0 || depth == 0) {
@@ -141,7 +148,7 @@ YF_terrain yf_terrain_init(unsigned width, unsigned depth)
         free(terr);
         return NULL;
     }
-    yf_node_setobj(terr->node, YF_NODEOBJ_TERRAIN, terr);
+    yf_node_setobj(terr->node, YF_NODEOBJ_TERRAIN, terr, deinit_terr);
     terr->width = width;
     terr->depth = depth;
 
@@ -190,9 +197,6 @@ void yf_terrain_settex(YF_terrain terr, YF_texture tex)
 
 void yf_terrain_deinit(YF_terrain terr)
 {
-    if (terr != NULL) {
+    if (terr != NULL)
         yf_node_deinit(terr->node);
-        yf_mesh_deinit(terr->mesh);
-        free(terr);
-    }
 }
