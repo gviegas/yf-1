@@ -3280,6 +3280,9 @@ static int load_contents(const T_gltf *gltf, const char *path,
         const char *name = NULL;
         YF_NAMEOFTEX(gltf, i, name);
 
+        if (yf_collection_contains(coll, YF_COLLRES_TEXTURE, name))
+            continue;
+
         YF_texdt data = {0};
         YF_texture tex = NULL;
 
