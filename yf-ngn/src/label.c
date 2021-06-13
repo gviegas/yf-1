@@ -143,6 +143,20 @@ static int copy_glyphs(YF_label labl)
     return yf_font_rasterize(labl->font, str, labl->pt, YF_DPI, &labl->rz);
 }
 
+/* Label deinitialization callback. */
+static void deinit_labl(void *obj)
+{
+    YF_label labl = obj;
+
+    yf_mesh_deinit(labl->mesh);
+
+    if (labl->font != NULL)
+        yf_font_yieldrz(labl->font, &labl->rz);
+
+    free(labl->str);
+    free(labl);
+}
+
 YF_label yf_label_init(void)
 {
     YF_label labl = calloc(1, sizeof(struct YF_label_o));
@@ -154,7 +168,7 @@ YF_label yf_label_init(void)
         free(labl);
         return NULL;
     }
-    yf_node_setobj(labl->node, YF_NODEOBJ_LABEL, labl);
+    yf_node_setobj(labl->node, YF_NODEOBJ_LABEL, labl, deinit_labl);
     labl->pt = 16;
     labl->pend_mask = YF_PEND_RZ;
 
@@ -366,14 +380,6 @@ YF_dim2 yf_label_getdim(YF_label labl)
 
 void yf_label_deinit(YF_label labl)
 {
-    if (labl != NULL) {
+    if (labl != NULL)
         yf_node_deinit(labl->node);
-        yf_mesh_deinit(labl->mesh);
-
-        if (labl->font != NULL)
-            yf_font_yieldrz(labl->font, &labl->rz);
-
-        free(labl->str);
-        free(labl);
-    }
 }
