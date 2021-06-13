@@ -18,6 +18,10 @@
 
 #include "data-gltf.h"
 #include "vertex.h"
+#include "data-png.h"
+#include "yf-scene.h"
+#include "yf-node.h"
+#include "yf-material.h"
 
 /*
  * Token
@@ -3062,6 +3066,334 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
     return 0;
 }
 
+/* Loads a single texture from glTF contents. */
+static int load_texdt(const T_gltf *gltf, const char *path, size_t index,
+                      YF_texdt *data)
+{
+    assert(gltf != NULL);
+    assert(path != NULL);
+    assert(data != NULL);
+
+    if (gltf->textures.n <= index) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    const T_int img_i = gltf->textures.v[index].source;
+    if (gltf->images.v[img_i].mime_type != NULL &&
+        strcmp(gltf->images.v[img_i].mime_type, "image/png") != 0) {
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+    }
+
+    char *pathname = NULL;
+    YF_PATHCAT(path, gltf->images.v[img_i].uri, pathname);
+    if (pathname == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    int r = yf_loadpng(pathname, data);
+    free(pathname);
+    return r;
+}
+
+#define YF_NAMEOFTEX(gltf_p, tex_i, name) do { \
+    name = (gltf_p)->textures.v[tex_i].name; \
+    if ((name) == NULL) { \
+        const T_int img_i = (gltf_p)->textures.v[tex_i].source; \
+        name = (gltf_p)->images.v[img_i].name; \
+        if ((name) == NULL) { \
+            name = (gltf_p)->images.v[img_i].uri; \
+            if ((name) == NULL) { \
+                /* TODO */ \
+                assert(0); \
+                abort(); \
+            } \
+        } \
+    } } while (0)
+
+/* Loads a single material from glTF contents. */
+static int load_material(const T_gltf *gltf, const char *path, size_t index,
+                         YF_material *matl, YF_collection coll)
+{
+    assert(gltf != NULL);
+    assert(path != NULL);
+    assert(matl != NULL || coll != NULL);
+
+    if (gltf->materials.n <= index) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    /* TODO: Specular-Glossiness and Unlit exts. */
+
+    YF_matlprop prop;
+
+    prop.pbr = YF_PBR_METALROUGH;
+    memcpy(prop.pbrmr.color_fac, gltf->materials.v[index].pbrmr.base_clr_fac,
+           sizeof prop.pbrmr.color_fac);
+    prop.pbrmr.metallic_fac = gltf->materials.v[index].pbrmr.metallic_fac;
+    prop.pbrmr.roughness_fac = gltf->materials.v[index].pbrmr.roughness_fac;
+
+    prop.normal.scale = gltf->materials.v[index].normal_tex.scale;
+    prop.occlusion.strength = gltf->materials.v[index].occlusion_tex.strength;
+    memcpy(prop.emissive.factor, gltf->materials.v[index].emissive_fac,
+           sizeof prop.emissive.factor);
+
+    switch (gltf->materials.v[index].alpha_mode) {
+    case YF_GLTF_ALPHA_OPAQUE:
+        prop.alphamode = YF_ALPHAMODE_OPAQUE;
+        break;
+    case YF_GLTF_ALPHA_MASK:
+        /* TODO */
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+    case YF_GLTF_ALPHA_BLEND:
+        prop.alphamode = YF_ALPHAMODE_BLEND;
+        break;
+    default:
+        assert(0);
+        abort();
+    }
+
+    const T_int tex_i[] = {
+        gltf->materials.v[index].pbrmr.base_clr_tex.index,
+        gltf->materials.v[index].pbrmr.metal_rough_tex.index,
+        gltf->materials.v[index].normal_tex.index,
+        gltf->materials.v[index].occlusion_tex.index,
+        gltf->materials.v[index].emissive_tex.index
+    };
+
+    YF_texture *const tex_p[] = {
+        &prop.pbrmr.color_tex,
+        &prop.pbrmr.metal_rough_tex,
+        &prop.normal.tex,
+        &prop.occlusion.tex,
+        &prop.emissive.tex
+    };
+
+    if (coll != NULL) {
+        for (size_t i = 0; i < (sizeof tex_i / sizeof *tex_i); i++) {
+            if (tex_i[i] == YF_INT_MIN) {
+                *tex_p[i] = NULL;
+                continue;
+            }
+
+            const char *name = NULL;
+            YF_NAMEOFTEX(gltf, tex_i[i], name);
+
+            /* texture may have been created already */
+            if ((*tex_p[i] = yf_collection_getres(coll, YF_COLLRES_TEXTURE,
+                                                  name)) != NULL)
+                continue;
+
+            /* create and add to collection otherwise */
+            YF_texdt data = {0};
+            if (load_texdt(gltf, path, tex_i[i], &data) != 0 ||
+                (*tex_p[i] = yf_texture_initdt(&data)) == NULL) {
+                free(data.data);
+                return -1;
+            }
+            free(data.data);
+            if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name,
+                                     *tex_p[i]) != 0) {
+                yf_texture_deinit(*tex_p[i]);
+                return -1;
+            }
+        }
+
+        const char *name = gltf->materials.v[index].name;
+        if (name == NULL)
+            /* TODO */
+            assert(0);
+
+        YF_material matl = yf_material_init(&prop);
+        if (matl == NULL ||
+            yf_collection_manage(coll, YF_COLLRES_MATERIAL, name, matl) != 0)
+            return -1;
+
+    } else {
+        for (size_t i = 0; i < (sizeof tex_i / sizeof *tex_i); i++) {
+            if (tex_i[i] == YF_INT_MIN) {
+                *tex_p[i] = NULL;
+                continue;
+            }
+
+            /* create the texture object in the material prop. */
+            YF_texdt data = {0};
+            if (load_texdt(gltf, path, tex_i[i], &data) != 0 ||
+                (*tex_p[i] = yf_texture_initdt(&data)) == NULL) {
+                for (size_t j = 0; j < i; j++)
+                    yf_texture_deinit(*tex_p[j]);
+                free(data.data);
+                return -1;
+            }
+            free(data.data);
+        }
+
+        if ((*matl = yf_material_init(&prop)) == NULL) {
+            for (size_t i = 0; i < (sizeof tex_p / sizeof *tex_p); i++)
+                yf_texture_deinit(*tex_p[i]);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* Loads glTF contents. */
+static int load_contents(const T_gltf *gltf, const char *path,
+                         YF_collection coll)
+{
+    assert(gltf != NULL);
+    assert(path != NULL);
+    assert(coll != NULL);
+
+    /* meshes */
+    for (size_t i = 0; i < gltf->meshes.n; i++) {
+        const char *name = gltf->meshes.v[i].name;
+        if (name == NULL)
+            /* TODO */
+            assert(0);
+
+        YF_meshdt data = {0};
+        YF_mesh mesh = NULL;
+
+        if (load_meshdt(gltf, path, i, &data) != 0 ||
+            (mesh = yf_mesh_initdt(&data)) == NULL ||
+            yf_collection_manage(coll, YF_COLLRES_MESH, name, mesh) != 0) {
+
+            free(data.v.data);
+            free(data.i.data);
+            yf_mesh_deinit(mesh);
+            return -1;
+        }
+
+        free(data.v.data);
+        free(data.i.data);
+    }
+
+    /* textures */
+    for (size_t i = 0; i < gltf->textures.n; i++) {
+        const char *name = NULL;
+        YF_NAMEOFTEX(gltf, i, name);
+
+        YF_texdt data = {0};
+        YF_texture tex = NULL;
+
+        if (load_texdt(gltf, path, i, &data) != 0 ||
+            (tex = yf_texture_initdt(&data)) == NULL ||
+            yf_collection_manage(coll, YF_COLLRES_TEXTURE, name, tex) != 0) {
+
+            free(data.data);
+            yf_texture_deinit(tex);
+            return -1;
+        }
+
+        free(data.data);
+    }
+
+    /* materials */
+    for (size_t i = 0; i < gltf->materials.n; i++) {
+        if (load_material(gltf, path, i, NULL, coll) != 0)
+            return -1;
+    }
+
+    /* nodes */
+    /* TODO: Create node objects & set their properties. */
+    for (size_t i = 0; i < gltf->nodes.n; i++) {
+        const char *name = gltf->nodes.v[i].name;
+        if (name == NULL)
+            /* TODO */
+            assert(0);
+
+        YF_node node = yf_node_init();
+        if (node == NULL ||
+            yf_collection_manage(coll, YF_COLLRES_NODE, name, node) != 0) {
+
+            yf_node_deinit(node);
+            return -1;
+        }
+        yf_node_setname(node, name);
+    }
+    for (size_t i = 0; i < gltf->nodes.n; i++) {
+        if (gltf->nodes.v[i].child_n == 0)
+            continue;
+
+        const char *name = gltf->nodes.v[i].name;
+        YF_node node = yf_collection_getres(coll, YF_COLLRES_NODE, name);
+        assert(node != NULL);
+        const T_int *children = gltf->nodes.v[i].children;
+
+        for (size_t j = 0; j < gltf->nodes.v[i].child_n; j++) {
+            name = gltf->nodes.v[children[j]].name;
+            YF_node child = yf_collection_getres(coll, YF_COLLRES_NODE, name);
+            assert(child != NULL);
+            yf_node_insert(node, child);
+        }
+    }
+
+    /* scenes */
+    for (size_t i = 0; i < gltf->scenes.n; i++) {
+        const char *name = gltf->scenes.v[i].name;
+        if (name == NULL)
+            /* TODO */
+            assert(0);
+
+        YF_scene scn = yf_scene_init();
+        if (scn == NULL ||
+            yf_collection_manage(coll, YF_COLLRES_SCENE, name, scn) != 0) {
+
+            yf_scene_deinit(scn);
+            return -1;
+        }
+        yf_node_setname(yf_scene_getnode(scn), name);
+    }
+    for (size_t i = 0; i < gltf->scenes.n; i++) {
+        if (gltf->scenes.v[i].nodes == 0)
+            continue;
+
+        const char *name = gltf->scenes.v[i].name;
+        YF_scene scn = yf_collection_getres(coll, YF_COLLRES_SCENE, name);
+        assert(scn != NULL);
+        const T_int *nodes = gltf->scenes.v[i].nodes;
+
+        for (size_t j = 0; j < gltf->scenes.v[i].node_n; j++) {
+            name = gltf->nodes.v[nodes[j]].name;
+            YF_node node = yf_collection_getres(coll, YF_COLLRES_NODE, name);
+            assert(node != NULL);
+            yf_node_insert(yf_scene_getnode(scn), node);
+        }
+    }
+
+    /* TODO: Skins, animations, ... */
+
+    return 0;
+}
+
+int yf_loadgltf(const char *pathname, YF_collection coll)
+{
+    assert(coll != NULL);
+
+    T_gltf gltf = {0};
+    if (init_gltf(pathname, &gltf) != 0)
+        return -1;
+
+    char *path;
+    YF_PATHOF(pathname, path);
+    if (path == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        deinit_gltf(&gltf);
+        return -1;
+    }
+
+    int r = load_contents(&gltf, path, coll);
+    deinit_gltf(&gltf);
+    free(path);
+    return r;
+}
+
 int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data)
 {
     assert(data != NULL);
@@ -3074,18 +3406,14 @@ int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data)
     YF_PATHOF(pathname, path);
     if (path == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-
-    if (load_meshdt(&gltf, path, index, data) != 0) {
         deinit_gltf(&gltf);
-        free(path);
         return -1;
     }
 
+    int r = load_meshdt(&gltf, path, index, data);
     deinit_gltf(&gltf);
     free(path);
-    return 0;
+    return r;
 }
 
 /*
