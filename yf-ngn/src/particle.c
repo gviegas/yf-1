@@ -78,6 +78,17 @@ static int init_points(YF_particle part)
     return 0;
 }
 
+/* Particle system deinitialization callback. */
+static void deinit_part(void *obj)
+{
+    YF_particle part = obj;
+
+    yf_mesh_deinit(part->mesh);
+    free(part->pts);
+    free(part->sts);
+    free(part);
+}
+
 YF_particle yf_particle_init(unsigned count)
 {
     if (count == 0) {
@@ -94,7 +105,7 @@ YF_particle yf_particle_init(unsigned count)
         free(part);
         return NULL;
     }
-    yf_node_setobj(part->node, YF_NODEOBJ_PARTICLE, part);
+    yf_node_setobj(part->node, YF_NODEOBJ_PARTICLE, part, deinit_part);
     part->count = count;
 
     part->sys.emitter.norm[0] = 0.0;
@@ -264,11 +275,6 @@ void yf_particle_simulate(YF_particle part, double tm)
 
 void yf_particle_deinit(YF_particle part)
 {
-    if (part != NULL) {
+    if (part != NULL)
         yf_node_deinit(part->node);
-        yf_mesh_deinit(part->mesh);
-        free(part->pts);
-        free(part->sts);
-        free(part);
-    }
 }
