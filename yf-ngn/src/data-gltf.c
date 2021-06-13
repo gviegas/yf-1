@@ -22,6 +22,7 @@
 #include "yf-scene.h"
 #include "yf-node.h"
 #include "yf-material.h"
+#include "yf-model.h"
 
 /*
  * Token
@@ -3301,14 +3302,45 @@ static int load_contents(const T_gltf *gltf, const char *path,
     }
 
     /* nodes */
-    /* TODO: Create node objects & set their properties. */
     for (size_t i = 0; i < gltf->nodes.n; i++) {
         const char *name = gltf->nodes.v[i].name;
         if (name == NULL)
             /* TODO */
             assert(0);
 
-        YF_node node = yf_node_init();
+        YF_node node = NULL;
+        const T_int mesh_i = gltf->nodes.v[i].mesh;
+
+        if (mesh_i != YF_INT_MIN) {
+            /* model */
+            YF_model mdl = yf_model_init();
+            if (mdl != NULL) {
+                node = yf_model_getnode(mdl);
+
+                const char *mesh_name = gltf->meshes.v[mesh_i].name;
+                YF_mesh mesh = yf_collection_getres(coll, YF_COLLRES_MESH,
+                                                    mesh_name);
+                assert(mesh != NULL);
+                yf_model_setmesh(mdl, mesh);
+
+                /* TODO: Support for multiple primitives. */
+                const T_int matl_i =
+                    gltf->meshes.v[mesh_i].primitives.v[0].material;
+
+                if (matl_i != YF_INT_MIN) {
+                    const char *matl_name = gltf->materials.v[matl_i].name;
+                    YF_material matl =
+                        yf_collection_getres(coll, YF_COLLRES_MATERIAL,
+                                             matl_name);
+                    assert(matl != NULL);
+                    yf_model_setmatl(mdl, matl);
+                }
+            }
+        } else {
+            /* node */
+            node = yf_node_init();
+        }
+
         if (node == NULL ||
             yf_collection_manage(coll, YF_COLLRES_NODE, name, node) != 0) {
 
