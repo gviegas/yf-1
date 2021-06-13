@@ -43,6 +43,7 @@ YF_node yf_node_init(void)
     node->name = NULL;
     node->nodeobj = YF_NODEOBJ_NONE;
     node->obj = NULL;
+    node->deinit = NULL;
 
     return node;
 }
