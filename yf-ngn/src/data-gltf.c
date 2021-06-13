@@ -3315,6 +3315,34 @@ static int load_contents(const T_gltf *gltf, const char *path,
             yf_node_deinit(node);
             return -1;
         }
+
+        const unsigned mask = gltf->nodes.v[i].xform_mask;
+        if (mask != YF_GLTF_XFORM_NONE) {
+            if (mask & YF_GLTF_XFORM_M) {
+                yf_mat4_copy(*yf_node_getxform(node), gltf->nodes.v[i].matrix);
+            } else {
+                YF_mat4 *m = yf_node_getxform(node);
+                if (mask & YF_GLTF_XFORM_T) {
+                    const T_num *t = gltf->nodes.v[i].trs.t;
+                    yf_mat4_xlate(*m, t[0], t[1], t[2]);
+                }
+                if (mask & YF_GLTF_XFORM_R) {
+                    const T_num *r = gltf->nodes.v[i].trs.r;
+                    YF_mat4 mr, rot;
+                    yf_mat4_rotq(rot, r);
+                    yf_mat4_mul(mr, *m, rot);
+                    yf_mat4_copy(*m, mr);
+                }
+                if (mask & YF_GLTF_XFORM_S) {
+                    const T_num *s = gltf->nodes.v[i].trs.s;
+                    YF_mat4 ms, scl;
+                    yf_mat4_scale(scl, s[0], s[1], s[2]);
+                    yf_mat4_mul(ms, *m, scl);
+                    yf_mat4_copy(*m, ms);
+                }
+            }
+        }
+
         yf_node_setname(node, name);
     }
     for (size_t i = 0; i < gltf->nodes.n; i++) {
