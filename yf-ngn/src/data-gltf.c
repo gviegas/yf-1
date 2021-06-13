@@ -19,6 +19,7 @@
 #include "data-gltf.h"
 #include "vertex.h"
 #include "data-png.h"
+#include "yf-scene.h"
 #include "yf-node.h"
 #include "yf-material.h"
 
@@ -3300,6 +3301,7 @@ static int load_contents(const T_gltf *gltf, const char *path,
     }
 
     /* nodes */
+    /* TODO: Create node objects & set their properties. */
     for (size_t i = 0; i < gltf->nodes.n; i++) {
         const char *name = gltf->nodes.v[i].name;
         if (name == NULL)
@@ -3313,6 +3315,7 @@ static int load_contents(const T_gltf *gltf, const char *path,
             yf_node_deinit(node);
             return -1;
         }
+        yf_node_setname(node, name);
     }
     for (size_t i = 0; i < gltf->nodes.n; i++) {
         if (gltf->nodes.v[i].child_n == 0)
@@ -3331,7 +3334,40 @@ static int load_contents(const T_gltf *gltf, const char *path,
         }
     }
 
-    /* TODO */
+    /* scenes */
+    for (size_t i = 0; i < gltf->scenes.n; i++) {
+        const char *name = gltf->scenes.v[i].name;
+        if (name == NULL)
+            /* TODO */
+            assert(0);
+
+        YF_scene scn = yf_scene_init();
+        if (scn == NULL ||
+            yf_collection_manage(coll, YF_COLLRES_SCENE, name, scn) != 0) {
+
+            yf_scene_deinit(scn);
+            return -1;
+        }
+        yf_node_setname(yf_scene_getnode(scn), name);
+    }
+    for (size_t i = 0; i < gltf->scenes.n; i++) {
+        if (gltf->scenes.v[i].nodes == 0)
+            continue;
+
+        const char *name = gltf->scenes.v[i].name;
+        YF_scene scn = yf_collection_getres(coll, YF_COLLRES_SCENE, name);
+        assert(scn != NULL);
+        const T_int *nodes = gltf->scenes.v[i].nodes;
+
+        for (size_t j = 0; j < gltf->scenes.v[i].node_n; j++) {
+            name = gltf->nodes.v[nodes[j]].name;
+            YF_node node = yf_collection_getres(coll, YF_COLLRES_NODE, name);
+            assert(node != NULL);
+            yf_node_insert(yf_scene_getnode(scn), node);
+        }
+    }
+
+    /* TODO: Skins, animations, ... */
 
     return 0;
 }
