@@ -23,6 +23,7 @@ struct YF_node_o {
     char *name;
     int nodeobj;
     void *obj;
+    void (*deinit)(void *);
 };
 
 YF_node yf_node_init(void)
@@ -42,6 +43,7 @@ YF_node yf_node_init(void)
     node->name = NULL;
     node->nodeobj = YF_NODEOBJ_NONE;
     node->obj = NULL;
+    node->deinit = NULL;
 
     return node;
 }
@@ -267,19 +269,25 @@ int yf_node_getobj(YF_node node, void **obj)
 
 void yf_node_deinit(YF_node node)
 {
-    if (node != NULL) {
-        yf_node_drop(node);
-        yf_node_prune(node);
-        free(node->name);
-        free(node);
-    }
+    if (node == NULL)
+        return;
+
+    if (node->deinit != NULL)
+        node->deinit(node->obj);
+
+    yf_node_drop(node);
+    yf_node_prune(node);
+    free(node->name);
+    free(node);
 }
 
-void yf_node_setobj(YF_node node, int nodeobj, void *obj)
+void yf_node_setobj(YF_node node, int nodeobj, void *obj,
+                    void (*deinit)(void *obj))
 {
     assert(node != NULL);
+    assert(nodeobj >= YF_NODEOBJ_NONE && nodeobj <= YF_NODEOBJ_EFFECT);
 
-    /* TODO: Ensure that 'nodeobj' is valid. */
     node->nodeobj = nodeobj;
     node->obj = obj;
+    node->deinit = deinit;
 }

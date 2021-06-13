@@ -126,6 +126,13 @@ static void update_rect(YF_quad quad)
 #endif
 }
 
+/* Quad deinitialization callback. */
+static void deinit_quad(void *quad)
+{
+    yf_mesh_deinit(((YF_quad)quad)->mesh);
+    free(quad);
+}
+
 YF_quad yf_quad_init(void)
 {
     YF_quad quad = calloc(1, sizeof(struct YF_quad_o));
@@ -137,7 +144,7 @@ YF_quad yf_quad_init(void)
         free(quad);
         return NULL;
     }
-    yf_node_setobj(quad->node, YF_NODEOBJ_QUAD, quad);
+    yf_node_setobj(quad->node, YF_NODEOBJ_QUAD, quad, deinit_quad);
 
     if (init_rect(quad) != 0) {
         yf_quad_deinit(quad);
@@ -257,9 +264,6 @@ void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color)
 
 void yf_quad_deinit(YF_quad quad)
 {
-    if (quad != NULL) {
+    if (quad != NULL)
         yf_node_deinit(quad->node);
-        yf_mesh_deinit(quad->mesh);
-        free(quad);
-    }
 }

@@ -20,6 +20,12 @@ struct YF_model_o {
     /* TODO: Other model properties. */
 };
 
+/* Model deinitialization callback. */
+static void deinit_mdl(void *mdl)
+{
+    free(mdl);
+}
+
 YF_model yf_model_init(void)
 {
     YF_model mdl = calloc(1, sizeof(struct YF_model_o));
@@ -33,7 +39,7 @@ YF_model yf_model_init(void)
         return NULL;
     }
 
-    yf_node_setobj(mdl->node, YF_NODEOBJ_MODEL, mdl);
+    yf_node_setobj(mdl->node, YF_NODEOBJ_MODEL, mdl, deinit_mdl);
     return mdl;
 }
 
@@ -69,8 +75,6 @@ void yf_model_setmatl(YF_model mdl, YF_material matl)
 
 void yf_model_deinit(YF_model mdl)
 {
-    if (mdl != NULL) {
+    if (mdl != NULL)
         yf_node_deinit(mdl->node);
-        free(mdl);
-    }
 }
