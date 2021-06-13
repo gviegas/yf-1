@@ -19,6 +19,7 @@
 #include "yf-material.h"
 #include "yf-texture.h"
 #include "yf-font.h"
+#include "data-gltf.h"
 
 struct YF_collection_o {
     YF_dict res[YF_COLLRES_N];
@@ -71,9 +72,9 @@ YF_collection yf_collection_init(const char *pathname)
         }
     }
 
-    if (pathname != NULL) {
-        /* TODO */
-        assert(0);
+    if (pathname != NULL && yf_loadgltf(pathname, coll) != 0) {
+        yf_collection_deinit(coll);
+        return NULL;
     }
 
     return coll;
