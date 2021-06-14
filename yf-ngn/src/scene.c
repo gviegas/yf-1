@@ -17,6 +17,7 @@
 #include "scene.h"
 #include "coreobj.h"
 #include "resmgr.h"
+#include "node.h"
 #include "yf-model.h"
 #include "yf-terrain.h"
 #include "yf-particle.h"
@@ -215,6 +216,14 @@ static int traverse_scn(YF_node node, void *arg)
         /* this is not a drawable object, nothing to do */
         break;
     }
+
+    /* transforms */
+    YF_mat4 *wld = yf_node_getwldxform(node);
+    YF_mat4 *inv = yf_node_getwldinv(node);
+    YF_mat4 *pnt = yf_node_getwldxform(yf_node_getparent(node));
+    YF_mat4 *loc = yf_node_getxform(node);
+    yf_mat4_mul(*wld, *pnt, *loc);
+    yf_mat4_inv(*inv, *wld);
 
 #ifdef YF_DEVEL
     yf_print_nodeobj(node);
