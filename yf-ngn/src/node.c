@@ -19,11 +19,16 @@ struct YF_node_o {
     YF_node next_sibl;
     YF_node child;
     size_t n;
+
     YF_mat4 xform;
     char *name;
+
     int nodeobj;
     void *obj;
     void (*deinit)(void *);
+
+    YF_mat4 wld_xform;
+    YF_mat4 wld_inv;
 };
 
 YF_node yf_node_init(void)
@@ -44,6 +49,8 @@ YF_node yf_node_init(void)
     node->nodeobj = YF_NODEOBJ_NONE;
     node->obj = NULL;
     node->deinit = NULL;
+    yf_mat4_iden(node->wld_xform);
+    yf_mat4_iden(node->wld_inv);
 
     return node;
 }
@@ -290,4 +297,16 @@ void yf_node_setobj(YF_node node, int nodeobj, void *obj,
     node->nodeobj = nodeobj;
     node->obj = obj;
     node->deinit = deinit;
+}
+
+YF_mat4 *yf_node_getwldxform(YF_node node)
+{
+    assert(node != NULL);
+    return &node->wld_xform;
+}
+
+YF_mat4 *yf_node_getwldinv(YF_node node)
+{
+    assert(node != NULL);
+    return &node->wld_inv;
 }
