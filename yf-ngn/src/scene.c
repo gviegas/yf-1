@@ -17,6 +17,7 @@
 #include "scene.h"
 #include "coreobj.h"
 #include "resmgr.h"
+#include "node.h"
 #include "yf-model.h"
 #include "yf-terrain.h"
 #include "yf-particle.h"
@@ -212,9 +213,17 @@ static int traverse_scn(YF_node node, void *arg)
         assert(0);
 
     default:
-        /* this is not a drawable object, nothing to do */
+        /* not a drawable object */
         break;
     }
+
+    /* transforms */
+    YF_mat4 *wld = yf_node_getwldxform(node);
+    YF_mat4 *inv = yf_node_getwldinv(node);
+    YF_mat4 *pnt = yf_node_getwldxform(yf_node_getparent(node));
+    YF_mat4 *loc = yf_node_getxform(node);
+    yf_mat4_mul(*wld, *pnt, *loc);
+    yf_mat4_inv(*inv, *wld);
 
 #ifdef YF_DEVEL
     yf_print_nodeobj(node);
@@ -287,7 +296,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
 
         for (unsigned i = 0; i < obj_n; i++) {
             YF_model mdl = ((YF_model *)objs)[i];
-            m = yf_node_getxform(yf_model_getnode(mdl));
+            m = yf_node_getwldxform(yf_model_getnode(mdl));
             yf_mat4_mul(mv, *v, *m);
 
             /* model matrix */
@@ -314,7 +323,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
         sz = obj_n * YF_INSTSZ_TERR;
         {
             YF_terrain terr = ((YF_terrain *)objs)[0];
-            m = yf_node_getxform(yf_terrain_getnode(terr));
+            m = yf_node_getwldxform(yf_terrain_getnode(terr));
             yf_mat4_mul(mv, *v, *m);
 
             /* model matrix */
@@ -340,7 +349,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
         sz = obj_n * YF_INSTSZ_PART;
         {
             YF_particle part = ((YF_particle *)objs)[0];
-            m = yf_node_getxform(yf_particle_getnode(part));
+            m = yf_node_getwldxform(yf_particle_getnode(part));
             yf_mat4_mul(mv, *v, *m);
 
             /* model matrix */
@@ -366,7 +375,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
         sz = obj_n * YF_INSTSZ_QUAD;
         {
             YF_quad quad = ((YF_quad *)objs)[0];
-            m = yf_node_getxform(yf_quad_getnode(quad));
+            m = yf_node_getwldxform(yf_quad_getnode(quad));
             yf_mat4_mul(mv, *v, *m);
             const YF_rect *rect = yf_quad_getrect(quad);
             const float dim[2] = {rect->size.width, rect->size.height};
@@ -400,7 +409,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
         sz = obj_n * YF_INSTSZ_LABL;
         {
             YF_label labl = ((YF_label *)objs)[0];
-            m = yf_node_getxform(yf_label_getnode(labl));
+            m = yf_node_getwldxform(yf_label_getnode(labl));
             yf_mat4_mul(mv, *v, *m);
             const YF_dim2 udim = yf_label_getdim(labl);
             const float dim[2] = {udim.width, udim.height};
