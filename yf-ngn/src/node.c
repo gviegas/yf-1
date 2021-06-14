@@ -29,6 +29,7 @@ struct YF_node_o {
 
     YF_mat4 wld_xform;
     YF_mat4 wld_inv;
+    YF_mat4 wld_norm;
 };
 
 YF_node yf_node_init(void)
@@ -51,6 +52,7 @@ YF_node yf_node_init(void)
     node->deinit = NULL;
     yf_mat4_iden(node->wld_xform);
     yf_mat4_iden(node->wld_inv);
+    yf_mat4_iden(node->wld_norm);
 
     return node;
 }
@@ -309,4 +311,10 @@ YF_mat4 *yf_node_getwldinv(YF_node node)
 {
     assert(node != NULL);
     return &node->wld_inv;
+}
+
+YF_mat4 *yf_node_getwldnorm(YF_node node)
+{
+    assert(node != NULL);
+    return &node->wld_norm;
 }
