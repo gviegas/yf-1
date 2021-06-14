@@ -18,7 +18,7 @@
 #define YF_WINT "Quad"
 #define YF_FPS  60
 
-/* Local variables. */
+/* Shared variables. */
 struct T_vars {
     YF_window win;
     YF_view view;

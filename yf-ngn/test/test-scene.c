@@ -12,13 +12,14 @@
 
 #include "yf-ngn.h"
 
-#define YF_WINW 600
-#define YF_WINH 480
-#define YF_WINT "test-scene"
+#define YF_WINW 960
+#define YF_WINH 600
+#define YF_WINT "Scene"
 #define YF_FPS  60
 #define YF_PLACE (YF_vec3){20.0, 20.0, 20.0}
 #define YF_POINT (YF_vec3){0}
 
+/* Shared variables. */
 struct T_vars {
     YF_window win;
     YF_view view;
@@ -35,6 +36,7 @@ struct T_vars {
 };
 static struct T_vars l_vars = {0};
 
+/* Handles key events. */
 static void on_key(int key, int state,
                    YF_UNUSED unsigned mod_mask, YF_UNUSED void *arg)
 {
@@ -83,6 +85,7 @@ static void on_key(int key, int state,
     }
 }
 
+/* Updates content. */
 static void update(double elapsed_time)
 {
     printf("update (%.4f)\n", elapsed_time);
@@ -133,6 +136,7 @@ static int traverse(YF_node node, YF_UNUSED void *arg)
     return 0;
 }
 
+/* Tests scene loading and rendering. */
 int yf_test_scene(void)
 {
     YF_evtfn evtfn = {.key_kb = on_key};

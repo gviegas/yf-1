@@ -20,8 +20,10 @@
 #define YF_WINH 600
 #define YF_WINT "Model"
 #define YF_FPS 60
+#define YF_PLACE (YF_vec3){20.0, 20.0, 20.0}
+#define YF_POINT (YF_vec3){0}
 
-/* Local variables. */
+/* Shared variables. */
 struct T_vars {
     YF_window win;
     YF_view view;
@@ -39,7 +41,9 @@ struct T_vars {
     struct {
         int quit;
         int swap;
-        int move[4];
+        int place;
+        int point;
+        int move[6];
         int turn[4];
         float speed;
     } input;
@@ -127,7 +131,7 @@ static void on_key(int key, int state,
                    YF_UNUSED unsigned mod_mask, YF_UNUSED void *arg)
 {
     switch (key) {
-    case YF_KEY_SPACE:
+    case YF_KEY_TAB:
         l_vars.input.swap = state;
         break;
     case YF_KEY_1:
@@ -135,6 +139,12 @@ static void on_key(int key, int state,
         break;
     case YF_KEY_2:
         l_vars.input.speed += 0.25f;
+        break;
+    case YF_KEY_RETURN:
+        l_vars.input.place = state;
+        break;
+    case YF_KEY_SPACE:
+        l_vars.input.point = state;
         break;
     case YF_KEY_W:
         l_vars.input.move[0] = state;
@@ -147,6 +157,12 @@ static void on_key(int key, int state,
         break;
     case YF_KEY_D:
         l_vars.input.move[3] = state;
+        break;
+    case YF_KEY_R:
+        l_vars.input.move[4] = state;
+        break;
+    case YF_KEY_F:
+        l_vars.input.move[5] = state;
         break;
     case YF_KEY_UP:
         l_vars.input.turn[0] = state;
@@ -199,9 +215,13 @@ static void update(double elapsed_time)
 
     /* Update camera */
     YF_camera cam = yf_scene_getcam(l_vars.scn[scn_i]);
-    static const YF_float md = 0.65;
-    static const YF_float td = 0.05;
+    const YF_float md = 20.0 * elapsed_time;
+    const YF_float td = 2.0 * elapsed_time;
 
+    if (l_vars.input.place)
+        yf_camera_place(cam, YF_PLACE);
+    if (l_vars.input.point)
+        yf_camera_point(cam, YF_POINT);
     if (l_vars.input.move[0])
         yf_camera_movef(cam, md);
     if (l_vars.input.move[1])
@@ -210,6 +230,10 @@ static void update(double elapsed_time)
         yf_camera_movel(cam, md);
     if (l_vars.input.move[3])
         yf_camera_mover(cam, md);
+    if (l_vars.input.move[4])
+        yf_camera_moveu(cam, md);
+    if (l_vars.input.move[5])
+        yf_camera_moved(cam, md);
     if (l_vars.input.turn[0])
         yf_camera_turnu(cam, td);
     if (l_vars.input.turn[1])

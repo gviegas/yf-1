@@ -13,12 +13,14 @@
 
 #include "yf-ngn.h"
 
-#define YF_WINW 800
+#define YF_WINW 960
 #define YF_WINH 600
 #define YF_WINT "Misc"
 #define YF_FPS  60
+#define YF_PLACE (YF_vec3){20.0, 20.0, 20.0}
+#define YF_POINT (YF_vec3){0}
 
-/* Local variables. */
+/* Shared variables. */
 struct T_vars {
     YF_window win;
     YF_view view;
@@ -30,7 +32,9 @@ struct T_vars {
 
     struct {
         int camera;
-        int move[4];
+        int place;
+        int point;
+        int move[6];
         int turn[4];
         int toggle;
         int quit;
@@ -51,6 +55,12 @@ static void on_key(int key, int state,
         l_vars.input.camera = 0;
         yf_label_setstr(l_vars.labls[0], L"MODE: Object");
         break;
+    case YF_KEY_RETURN:
+        l_vars.input.place = state;
+        break;
+    case YF_KEY_SPACE:
+        l_vars.input.point = state;
+        break;
     case YF_KEY_W:
         l_vars.input.move[0] = state;
         break;
@@ -62,6 +72,12 @@ static void on_key(int key, int state,
         break;
     case YF_KEY_D:
         l_vars.input.move[3] = state;
+        break;
+    case YF_KEY_R:
+        l_vars.input.move[4] = state;
+        break;
+    case YF_KEY_F:
+        l_vars.input.move[5] = state;
         break;
     case YF_KEY_UP:
         l_vars.input.turn[0] = state;
@@ -95,9 +111,13 @@ static void update(double elapsed_time)
 
     if (l_vars.input.camera) {
         YF_camera cam = yf_scene_getcam(l_vars.scn);
-        const YF_float md = 9.0 * elapsed_time;
-        const YF_float td = 1.0 * elapsed_time;
+        const YF_float md = 20.0 * elapsed_time;
+        const YF_float td = 2.0 * elapsed_time;
 
+        if (l_vars.input.place)
+            yf_camera_place(cam, YF_PLACE);
+        if (l_vars.input.point)
+            yf_camera_point(cam, YF_POINT);
         if (l_vars.input.move[0])
             yf_camera_movef(cam, md);
         if (l_vars.input.move[1])
@@ -106,6 +126,10 @@ static void update(double elapsed_time)
             yf_camera_movel(cam, md);
         if (l_vars.input.move[3])
             yf_camera_mover(cam, md);
+        if (l_vars.input.move[4])
+            yf_camera_moveu(cam, md);
+        if (l_vars.input.move[5])
+            yf_camera_moved(cam, md);
         if (l_vars.input.turn[0])
             yf_camera_turnu(cam, td);
         if (l_vars.input.turn[1])
@@ -117,44 +141,58 @@ static void update(double elapsed_time)
 
     } else {
         const YF_float d = 6.0 * elapsed_time;
-        const YF_float a = 3.14159265 * elapsed_time;
-        YF_mat4 t, r;
-        yf_mat4_iden(t);
-        yf_mat4_iden(r);
+        const YF_float a = 3.14159265358979 * elapsed_time;
+
+        YF_vec3 t = {0};
+        YF_vec4 r = {0.0, 0.0, 0.0, 1.0};
+
+        if (l_vars.input.place) {
+            YF_mat4 *xform = yf_node_getxform(yf_model_getnode(l_vars.mdl));
+            (*xform)[12] = (*xform)[13] = (*xform)[14] = 0.0;
+            l_vars.input.place = 0;
+        }
 
         if (l_vars.input.move[0])
-            yf_mat4_xlate(t, 0.0, 0.0, d);
+            t[2] += d;
         if (l_vars.input.move[1])
-            yf_mat4_xlate(t, 0.0, 0.0, -d);
+            t[2] -= d;
         if (l_vars.input.move[2])
-            yf_mat4_xlate(t, -d, 0.0, 0.0);
+            t[0] += d;
         if (l_vars.input.move[3])
-            yf_mat4_xlate(t, d, 0.0, 0.0);
+            t[0] -= d;
+        if (l_vars.input.move[4])
+            t[1] += d;
+        if (l_vars.input.move[5])
+            t[1] -= d;
 
         if (l_vars.input.turn[0]) {
             YF_vec4 q;
             yf_vec4_rotqx(q, a);
-            yf_mat4_rotq(r, q);
+            yf_vec4_mulqi(r, q);
         }
         if (l_vars.input.turn[1]) {
             YF_vec4 q;
             yf_vec4_rotqx(q, -a);
-            yf_mat4_rotq(r, q);
+            yf_vec4_mulqi(r, q);
         }
         if (l_vars.input.turn[2]) {
             YF_vec4 q;
             yf_vec4_rotqy(q, a);
-            yf_mat4_rotq(r, q);
+            yf_vec4_mulqi(r, q);
         }
         if (l_vars.input.turn[3]) {
             YF_vec4 q;
             yf_vec4_rotqy(q, -a);
-            yf_mat4_rotq(r, q);
+            yf_vec4_mulqi(r, q);
         }
+
+        YF_mat4 mt, mr;
+        yf_mat4_xlate(mt, t[0], t[1], t[2]);
+        yf_mat4_rotq(mr, r);
 
         YF_mat4 m, tr;
         yf_mat4_copy(m, *yf_node_getxform(yf_model_getnode(l_vars.mdl)));
-        yf_mat4_mul(tr, t, r);
+        yf_mat4_mul(tr, mt, mr);
         yf_mat4_mul(*yf_node_getxform(yf_model_getnode(l_vars.mdl)), m, tr);
     }
 

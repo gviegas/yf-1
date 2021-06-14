@@ -14,16 +14,16 @@
 
 #include "yf-ngn.h"
 
-#define YF_WINW 600
-#define YF_WINH 480
-#define YF_WINT "test-render"
+#define YF_WINW 960
+#define YF_WINH 600
+#define YF_WINT "Render"
 #define YF_FPS  60
 #define YF_MDLN_1 10
 #define YF_MDLN_2 5
-#define YF_PLACE (YF_vec3){0.0, 0.0, 20.0}
+#define YF_PLACE (YF_vec3){20.0, 20.0, 20.0}
 #define YF_POINT (YF_vec3){0}
 
-/* Local variables. */
+/* Shared variables. */
 struct T_vars {
     YF_window win;
     YF_view view;
@@ -133,8 +133,8 @@ static void update(double elapsed_time)
     }
 
     YF_camera cam = yf_scene_getcam(scn_i == 1 ? l_vars.scn1 : l_vars.scn2);
-    const YF_float md = 16.0 * elapsed_time;
-    const YF_float td = 1.3 * elapsed_time;
+    const YF_float md = 20.0 * elapsed_time;
+    const YF_float td = 2.0 * elapsed_time;
 
     if (l_vars.input.place)
         yf_camera_place(cam, YF_PLACE);
