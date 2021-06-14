@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <math.h>
 #include <assert.h>
 
 #include "yf/wsys/yf-event.h"
@@ -17,7 +18,8 @@
 #define YF_WINH 480
 #define YF_WINT "test-render"
 #define YF_FPS  60
-#define YF_MDLN 10
+#define YF_MDLN_1 10
+#define YF_MDLN_2 5
 #define YF_PLACE (YF_vec3){0.0, 0.0, 20.0}
 #define YF_POINT (YF_vec3){0}
 
@@ -33,15 +35,18 @@ struct T_vars {
     YF_texture tex2;
     YF_material matl1;
     YF_material matl2;
-    YF_model mdls[YF_MDLN];
+    YF_model mdls1[YF_MDLN_1];
+    YF_model mdls2[YF_MDLN_2];
 
     struct {
         int quit;
         int swap;
         int place;
         int point;
-        int move[4];
+        int move[6];
         int turn[4];
+        int drop;
+        int insert;
     } input;
 };
 static struct T_vars l_vars = {0};
@@ -63,6 +68,12 @@ static void on_key(int key, int state,
     case YF_KEY_D:
         l_vars.input.move[3] = state;
         break;
+    case YF_KEY_R:
+        l_vars.input.move[4] = state;
+        break;
+    case YF_KEY_F:
+        l_vars.input.move[5] = state;
+        break;
     case YF_KEY_UP:
         l_vars.input.turn[0] = state;
         break;
@@ -83,6 +94,12 @@ static void on_key(int key, int state,
         break;
     case YF_KEY_TAB:
         l_vars.input.swap = state;
+        break;
+    case YF_KEY_X:
+        l_vars.input.drop = state;
+        break;
+    case YF_KEY_Z:
+        l_vars.input.insert = state;
         break;
     case YF_KEY_ESC:
         l_vars.input.quit |= state;
@@ -116,9 +133,13 @@ static void update(double elapsed_time)
     }
 
     YF_camera cam = yf_scene_getcam(scn_i == 1 ? l_vars.scn1 : l_vars.scn2);
-    const YF_float md = 9.0 * elapsed_time;
-    const YF_float td = 1.0 * elapsed_time;
+    const YF_float md = 16.0 * elapsed_time;
+    const YF_float td = 1.3 * elapsed_time;
 
+    if (l_vars.input.place)
+        yf_camera_place(cam, YF_PLACE);
+    if (l_vars.input.point)
+        yf_camera_point(cam, YF_POINT);
     if (l_vars.input.move[0])
         yf_camera_movef(cam, md);
     if (l_vars.input.move[1])
@@ -127,6 +148,10 @@ static void update(double elapsed_time)
         yf_camera_movel(cam, md);
     if (l_vars.input.move[3])
         yf_camera_mover(cam, md);
+    if (l_vars.input.move[4])
+        yf_camera_moveu(cam, md);
+    if (l_vars.input.move[5])
+        yf_camera_moved(cam, md);
     if (l_vars.input.turn[0])
         yf_camera_turnu(cam, td);
     if (l_vars.input.turn[1])
@@ -136,13 +161,24 @@ static void update(double elapsed_time)
     if (l_vars.input.turn[3])
         yf_camera_turnr(cam, td);
 
-    if (l_vars.input.place) {
-        yf_camera_place(cam, YF_PLACE);
-        l_vars.input.place = 0;
+    if (scn_i == 1)
+        return;
+
+    if (l_vars.input.drop && YF_MDLN_2 > 1) {
+        l_vars.input.drop = 0;
+        static size_t prev = YF_MDLN_2 >> 1;
+        size_t next = (prev + 1) % YF_MDLN_2;
+        yf_node_drop(yf_model_getnode(l_vars.mdls2[next]));
+        prev = next;
     }
-    if (l_vars.input.point) {
-        yf_camera_point(cam, YF_POINT);
-        l_vars.input.point = 0;
+
+    if (l_vars.input.insert && YF_MDLN_2 > 0) {
+        l_vars.input.insert = 0;
+        yf_node_insert(yf_scene_getnode(l_vars.scn2),
+                       yf_model_getnode(l_vars.mdls2[0]));
+        for (size_t i = 1; i < YF_MDLN_2; i++)
+            yf_node_insert(yf_model_getnode(l_vars.mdls2[i-1]),
+                           yf_model_getnode(l_vars.mdls2[i]));
     }
 }
 
@@ -186,20 +222,45 @@ int yf_test_render(void)
     mprop->pbrmr.color_tex = l_vars.tex1;
 
     YF_node scn1_nd = yf_scene_getnode(l_vars.scn1);
-    YF_float tf = -YF_MDLN;
-    for (size_t i = 0; i < YF_MDLN; i++) {
-        l_vars.mdls[i] = yf_model_init();
-        assert(l_vars.mdls[i] != NULL);
+    YF_float tf = -YF_MDLN_1;
+    for (size_t i = 0; i < YF_MDLN_1; i++) {
+        l_vars.mdls1[i] = yf_model_init();
+        assert(l_vars.mdls1[i] != NULL);
 
-        yf_model_setmesh(l_vars.mdls[i], l_vars.mesh1);
-        yf_model_setmatl(l_vars.mdls[i], l_vars.matl1);
+        yf_model_setmesh(l_vars.mdls1[i], l_vars.mesh1);
+        yf_model_setmatl(l_vars.mdls1[i], l_vars.matl1);
 
-        YF_node nd = yf_model_getnode(l_vars.mdls[i]);
+        YF_node nd = yf_model_getnode(l_vars.mdls1[i]);
         YF_mat4 *m = yf_node_getxform(nd);
         yf_mat4_xlate(*m, tf, tf*0.5, 0.0);
         tf += 2.0;
 
         yf_node_insert(scn1_nd, nd);
+    }
+
+    YF_node scn2_nd = yf_scene_getnode(l_vars.scn2);
+    for (size_t i = 0; i < YF_MDLN_2; i++) {
+        l_vars.mdls2[i] = yf_model_init();
+        assert(l_vars.mdls2[i] != NULL);
+
+        yf_model_setmesh(l_vars.mdls2[i], l_vars.mesh2);
+        yf_model_setmatl(l_vars.mdls2[i], l_vars.matl2);
+
+        YF_node nd = yf_model_getnode(l_vars.mdls2[i]);
+        YF_mat4 *m = yf_node_getxform(nd);
+        YF_mat4 t, r, s, tr;
+        YF_vec4 q;
+        yf_mat4_xlate(t, 0.0, 0.0, -2.0);
+        yf_vec4_rotqz(q, M_PI_4);
+        yf_mat4_rotq(r, q);
+        yf_mat4_scale(s, 1.2, 1.2, 1.0);
+        yf_mat4_mul(tr, t, r);
+        yf_mat4_mul(*m, tr, s);
+
+        if (i == 0)
+            yf_node_insert(scn2_nd, nd);
+        else
+            yf_node_insert(yf_model_getnode(l_vars.mdls2[i-1]), nd);
     }
 
     yf_scene_setcolor(l_vars.scn1, YF_COLOR_YELLOW);
@@ -208,8 +269,11 @@ int yf_test_render(void)
     yf_view_setscene(l_vars.view, l_vars.scn1);
     yf_view_start(l_vars.view, YF_FPS, update);
 
-    for (size_t i = 0; i < YF_MDLN; i++)
-        yf_model_deinit(l_vars.mdls[i]);
+    for (size_t i = 0; i < YF_MDLN_1; i++)
+        yf_model_deinit(l_vars.mdls1[i]);
+    for (size_t i = 0; i < YF_MDLN_2; i++)
+        yf_model_deinit(l_vars.mdls2[i]);
+
     yf_material_deinit(l_vars.matl1);
     yf_material_deinit(l_vars.matl2);
     yf_texture_deinit(l_vars.tex1);
