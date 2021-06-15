@@ -74,20 +74,17 @@ static int cmp_kv(const void *a, const void *b)
 static int init_layout(YF_dtable dtb)
 {
     dtb->samplers = yf_dict_init(NULL, NULL);
-
     if (dtb->samplers == NULL)
         return -1;
 
-    VkDescriptorSetLayoutBinding *bindings;
-    bindings = malloc(dtb->entry_n * sizeof *bindings);
-
+    VkDescriptorSetLayoutBinding *bindings =
+        malloc(dtb->entry_n * sizeof *bindings);
     if (bindings == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
 
     VkSampler *samplers = calloc(dtb->entry_n, sizeof(VkSampler));
-
     if (samplers == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         free(bindings);
@@ -164,7 +161,8 @@ static int init_layout(YF_dtable dtb)
                 return -1;
             }
 
-            /* XXX */
+            /* XXX: Certain drivers would not do reference counting for
+               sampler handlers. Consider managing samplers elsewhere. */
             if (yf_dict_insert(dtb->samplers, (void *)samplers[j],
                                (void *)samplers[j]) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST) {
@@ -222,7 +220,6 @@ YF_dtable yf_dtable_init(YF_context ctx, const YF_dentry *entries,
 
     const size_t sz = entry_n * sizeof *entries;
     dtb->entries = malloc(sz);
-
     if (dtb->entries == NULL) {
         free(dtb);
         yf_seterr(YF_ERR_NOMEM, __func__);
@@ -258,32 +255,32 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
     if (dtb->count.unif > 0) {
         sizes[sz_i].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         sizes[sz_i].descriptorCount = dtb->count.unif * n;
-        ++sz_i;
+        sz_i++;
     }
     if (dtb->count.mut > 0) {
         sizes[sz_i].type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         sizes[sz_i].descriptorCount = dtb->count.mut * n;
-        ++sz_i;
+        sz_i++;
     }
     if (dtb->count.img > 0) {
         sizes[sz_i].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         sizes[sz_i].descriptorCount = dtb->count.img * n;
-        ++sz_i;
+        sz_i++;
     }
     if (dtb->count.spld > 0) {
         sizes[sz_i].type = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         sizes[sz_i].descriptorCount = dtb->count.spld * n;
-        ++sz_i;
+        sz_i++;
     }
     if (dtb->count.splr > 0) {
         sizes[sz_i].type = VK_DESCRIPTOR_TYPE_SAMPLER;
         sizes[sz_i].descriptorCount = dtb->count.splr * n;
-        ++sz_i;
+        sz_i++;
     }
     if (dtb->count.ispl > 0) {
         sizes[sz_i].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         sizes[sz_i].descriptorCount = dtb->count.ispl * n;
-        ++sz_i;
+        sz_i++;
     }
 
     VkResult res;
@@ -305,7 +302,6 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
     }
 
     dtb->sets = malloc(n * sizeof *dtb->sets);
-
     if (dtb->sets == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         vkDestroyDescriptorPool(dtb->ctx->device, dtb->pool, NULL);
@@ -314,8 +310,8 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
     }
 
     dtb->set_n = n;
-    VkDescriptorSetLayout *layouts = malloc(n * sizeof dtb->layout);
 
+    VkDescriptorSetLayout *layouts = malloc(n * sizeof dtb->layout);
     if (layouts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         yf_dtable_dealloc(dtb);
@@ -345,7 +341,6 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
     free(layouts);
 
     dtb->iviews = yf_dict_init(hash_kv, cmp_kv);
-
     if (dtb->iviews == NULL) {
         yf_dtable_dealloc(dtb);
         return -1;
@@ -358,7 +353,6 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
         case YF_DTYPE_ISAMPLER:
             for (unsigned j = 0; j < n; j++) {
                 T_kv *kv = calloc(1, sizeof(T_kv));
-
                 if (kv == NULL) {
                     yf_dtable_dealloc(dtb);
                     return -1;
@@ -407,7 +401,6 @@ void yf_dtable_dealloc(YF_dtable dtb)
                 yf_image_ungetiview(kv->imgs[i], kv->iviews+i);
             }
         }
-
         free(kv->iviews);
         free(kv->imgs);
         free(kv);
@@ -457,9 +450,8 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         return -1;
     }
 
-    VkDescriptorBufferInfo *buf_infos;
-    buf_infos = malloc(elements.n * sizeof *buf_infos);
-
+    VkDescriptorBufferInfo *buf_infos =
+        malloc(elements.n * sizeof *buf_infos);
     if (buf_infos == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -538,9 +530,7 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         return -1;
     }
 
-    VkDescriptorImageInfo *img_infos;
-    img_infos = malloc(elements.n * sizeof *img_infos);
-
+    VkDescriptorImageInfo *img_infos = malloc(elements.n * sizeof *img_infos);
     if (img_infos == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
