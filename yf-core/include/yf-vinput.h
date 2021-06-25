@@ -16,34 +16,50 @@
 /**
  * 1-component formats.
  */
-#define YF_VFMT_INT    16
-#define YF_VFMT_UINT   17
-#define YF_VFMT_FLOAT  18
-#define YF_VFMT_DOUBLE 19
+#define YF_VFMT_BYTE   16
+#define YF_VFMT_UBYTE  17
+#define YF_VFMT_SHORT  18
+#define YF_VFMT_USHORT 19
+#define YF_VFMT_INT    20
+#define YF_VFMT_UINT   21
+#define YF_VFMT_FLOAT  22
+#define YF_VFMT_DOUBLE 23
 
 /**
  * 2-component formats.
  */
-#define YF_VFMT_INT2    32
-#define YF_VFMT_UINT2   33
-#define YF_VFMT_FLOAT2  34
-#define YF_VFMT_DOUBLE2 35
+#define YF_VFMT_BYTE2   32
+#define YF_VFMT_UBYTE2  33
+#define YF_VFMT_SHORT2  34
+#define YF_VFMT_USHORT2 35
+#define YF_VFMT_INT2    36
+#define YF_VFMT_UINT2   37
+#define YF_VFMT_FLOAT2  38
+#define YF_VFMT_DOUBLE2 39
 
 /**
  * 3-component formats.
  */
-#define YF_VFMT_INT3    48
-#define YF_VFMT_UINT3   49
-#define YF_VFMT_FLOAT3  50
-#define YF_VFMT_DOUBLE3 51
+#define YF_VFMT_BYTE3   48
+#define YF_VFMT_UBYTE3  49
+#define YF_VFMT_SHORT3  50
+#define YF_VFMT_USHORT3 51
+#define YF_VFMT_INT3    52
+#define YF_VFMT_UINT3   53
+#define YF_VFMT_FLOAT3  54
+#define YF_VFMT_DOUBLE3 55
 
 /**
  * 4-component formats.
  */
-#define YF_VFMT_INT4    64
-#define YF_VFMT_UINT4   65
-#define YF_VFMT_FLOAT4  66
-#define YF_VFMT_DOUBLE4 67
+#define YF_VFMT_BYTE4   64
+#define YF_VFMT_UBYTE4  65
+#define YF_VFMT_SHORT4  66
+#define YF_VFMT_USHORT4 67
+#define YF_VFMT_INT4    68
+#define YF_VFMT_UINT4   69
+#define YF_VFMT_FLOAT4  70
+#define YF_VFMT_DOUBLE4 71
 
 /**
  * Type defining a single vertex attribute.
