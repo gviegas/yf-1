@@ -73,17 +73,15 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
         }
 
         val = &kv->val;
-
         dim = (YF_dim3){data->dim.width, data->dim.height, 1};
-        val->img = yf_image_init(l_ctx, data->pixfmt, dim, YF_LAYCAP, 1, 1);
 
+        val->img = yf_image_init(l_ctx, data->pixfmt, dim, YF_LAYCAP, 1, 1);
         if (val->img == NULL) {
             free(kv);
             return -1;
         }
 
         val->lay_used = calloc(YF_LAYCAP, sizeof *val->lay_used);
-
         if (val->lay_used == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             yf_image_deinit(val->img);
@@ -138,7 +136,6 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
             }
 
             char *new_lay_used = realloc(val->lay_used, new_lay_cap);
-
             if (new_lay_used == NULL) {
                 yf_image_deinit(new_img);
                 return -1;
