@@ -11,46 +11,46 @@
 #include "yf-matrix.h"
 
 #define YF_MAT_SET(m, s, cn, rn) do { \
-    for (unsigned i = 0; i < cn; i++) { \
-        for (unsigned j = 0; j < rn; j++) \
-            m[i*rn+j] = s; \
+    for (unsigned i = 0; i < (cn); i++) { \
+        for (unsigned j = 0; j < (rn); j++) \
+            (m)[i*(rn)+j] = s; \
     } } while (0)
 
 #define YF_MAT_XPOSE(dst, m, n) do { \
-    for (unsigned i = 0; i < n; i++) { \
-        dst[i*(n+1)] = m[i*(n+1)]; \
-        for (unsigned j = i + 1; j < n; j++) { \
-            dst[i*n+j] = m[j*n+i]; \
-            dst[j*n+i] = m[i*n+j]; \
+    for (unsigned i = 0; i < (n); i++) { \
+        (dst)[i*((n)+1)] = (m)[i*((n)+1)]; \
+        for (unsigned j = i + 1; j < (n); j++) { \
+            (dst)[i*(n)+j] = (m)[j*(n)+i]; \
+            (dst)[j*(n)+i] = (m)[i*(n)+j]; \
         } \
     } } while (0)
 
 #define YF_MAT_SUB(dst, a, b, cn, rn) do { \
-    for (unsigned i = 0; i < cn; i++) { \
-        for (unsigned j = 0; j < rn; j++) \
-            dst[i*rn+j] = a[i*rn+j] - b[i*rn+j]; \
+    for (unsigned i = 0; i < (cn); i++) { \
+        for (unsigned j = 0; j < (rn); j++) \
+            (dst)[i*(rn)+j] = (a)[i*(rn)+j] - (b)[i*(rn)+j]; \
     } } while (0)
 
 #define YF_MAT_ADD(dst, a, b, cn, rn) do { \
-    for (unsigned i = 0; i < cn; i++) { \
-        for (unsigned j = 0; j < rn; j++) \
-            dst[i*rn+j] = a[i*rn+j] + b[i*rn+j]; \
+    for (unsigned i = 0; i < (cn); i++) { \
+        for (unsigned j = 0; j < (rn); j++) \
+            (dst)[i*(rn)+j] = (a)[i*(rn)+j] + (b)[i*(rn)+j]; \
     } } while (0)
 
 #define YF_MAT_MUL(dst, a, b, cn, rn, n) do { \
-    for (unsigned i = 0; i < cn; i++) { \
-        for (unsigned j = 0; j < rn; j++) { \
-            dst[i*rn+j] = 0.0; \
-            for (unsigned k = 0; k < n; k++) \
-                dst[i*rn+j] += a[k*n+j] * b[i*n+k]; \
+    for (unsigned i = 0; i < (cn); i++) { \
+        for (unsigned j = 0; j < (rn); j++) { \
+            (dst)[i*(rn)+j] = 0.0; \
+            for (unsigned k = 0; k < (n); k++) \
+                (dst)[i*(rn)+j] += (a)[k*(n)+j] * (b)[i*(n)+k]; \
         } \
     } } while (0)
 
 #define YF_MAT_MULV(dst, m, v, n) do { \
-    for (unsigned i = 0; i < n; i++) { \
-        dst[i] = 0.0; \
-        for (unsigned j = 0; j < n; j++) \
-            dst[i] += m[j*n+i] * v[j]; \
+    for (unsigned i = 0; i < (n); i++) { \
+        (dst)[i] = 0.0; \
+        for (unsigned j = 0; j < (n); j++) \
+            (dst)[i] += (m)[j*(n)+i] * (v)[j]; \
     } } while (0)
 
 void yf_mat2_iden(YF_mat2 m)
