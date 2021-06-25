@@ -11,37 +11,37 @@
 #include "yf-vector.h"
 
 #ifdef YF_USE_FLOAT64
-# define YF_FLT_ISEQ(a, b) (fabs(a-b) < 1e-15)
+# define YF_FLT_ISEQ(a, b) (fabs((a)-(b)) < 1e-15)
 #else
-# define YF_FLT_ISEQ(a, b) (fabsf(a-b) < 1e-6)
+# define YF_FLT_ISEQ(a, b) (fabsf((a)-(b)) < 1e-6)
 #endif
 
 #define YF_VEC_ISEQ(r, a, b, n) do { \
-    for (unsigned i = 0; i < n; i++) { \
-        if (!(r = YF_FLT_ISEQ(a[i], b[i]))) \
+    for (unsigned i = 0; i < (n); i++) { \
+        if (!(r = YF_FLT_ISEQ((a)[i], (b)[i]))) \
             break; \
     } } while (0);
 
 #define YF_VEC_SET(v, s, n) do { \
-    for (unsigned i = 0; i < n; i++) \
-        v[i] = s; } while (0)
+    for (unsigned i = 0; i < (n); i++) \
+        (v)[i] = s; } while (0)
 
 #define YF_VEC_SUB(dst, a, b, n) do { \
-    for (unsigned i = 0; i < n; i++) \
-        dst[i] = a[i] - b[i]; } while (0)
+    for (unsigned i = 0; i < (n); i++) \
+        (dst)[i] = (a)[i] - (b)[i]; } while (0)
 
 #define YF_VEC_ADD(dst, a, b, n) do { \
-    for (unsigned i = 0; i < n; i++) \
-        dst[i] = a[i] + b[i]; } while (0)
+    for (unsigned i = 0; i < (n); i++) \
+        (dst)[i] = (a)[i] + (b)[i]; } while (0)
 
 #define YF_VEC_MULS(dst, v, s, n) do { \
-    for (unsigned i = 0; i < n; i++) \
-        dst[i] = v[i] * s; } while (0)
+    for (unsigned i = 0; i < (n); i++) \
+        (dst)[i] = (v)[i] * (s); } while (0)
 
 #define YF_VEC_DOT(r, a, b, n) do { \
     r = 0.0; \
-    for (unsigned i = 0; i < n; i++) \
-        r += a[i] * b[i]; } while (0)
+    for (unsigned i = 0; i < (n); i++) \
+        r += (a)[i] * (b)[i]; } while (0)
 
 int yf_vec2_iszero(const YF_vec2 v)
 {
