@@ -191,7 +191,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
                     vattr = conf->vins[i].attrs+j;
                     attrs[k].location = vattr->location;
                     attrs[k].binding = i;
-                    YF_TYPEFMT_FROM(vattr->typefmt, attrs[k].format);
+                    YF_VFMT_FROM(vattr->vfmt, attrs[k].format);
 
                     assert(attrs[k].format != VK_FORMAT_UNDEFINED);
 

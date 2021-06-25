@@ -84,8 +84,8 @@ static void init(void)
 
     /* VInput */
     const YF_vattr attrs[] = {
-        {0, YF_TYPEFMT_FLOAT3, 0},
-        {1, YF_TYPEFMT_FLOAT4, offsetof(struct T_vertex, clr)}
+        {0, YF_VFMT_FLOAT3, 0},
+        {1, YF_VFMT_FLOAT4, offsetof(struct T_vertex, clr)}
     };
 
     const YF_vinput vin = {

@@ -10,55 +10,55 @@
 
 #include "yf-vinput.h"
 
-/* Converts from a 'YF_TYPEFMT' value. */
-#define YF_TYPEFMT_FROM(tf, to) do { \
-    switch (tf) { \
-    case YF_TYPEFMT_INT: \
+/* Converts from a 'YF_VFMT' value. */
+#define YF_VFMT_FROM(vf, to) do { \
+    switch (vf) { \
+    case YF_VFMT_INT: \
         to = VK_FORMAT_R32_SINT; \
         break; \
-    case YF_TYPEFMT_UINT: \
+    case YF_VFMT_UINT: \
         to = VK_FORMAT_R32_UINT; \
         break; \
-    case YF_TYPEFMT_FLOAT: \
+    case YF_VFMT_FLOAT: \
         to = VK_FORMAT_R32_SFLOAT; \
         break; \
-    case YF_TYPEFMT_DOUBLE: \
+    case YF_VFMT_DOUBLE: \
         to = VK_FORMAT_R64_SFLOAT; \
         break; \
-    case YF_TYPEFMT_INT2: \
+    case YF_VFMT_INT2: \
         to = VK_FORMAT_R32G32_SINT; \
         break; \
-    case YF_TYPEFMT_UINT2: \
+    case YF_VFMT_UINT2: \
         to = VK_FORMAT_R32G32_UINT; \
         break; \
-    case YF_TYPEFMT_FLOAT2: \
+    case YF_VFMT_FLOAT2: \
         to = VK_FORMAT_R32G32_SFLOAT; \
         break; \
-    case YF_TYPEFMT_DOUBLE2: \
+    case YF_VFMT_DOUBLE2: \
         to = VK_FORMAT_R64G64_SFLOAT; \
         break; \
-    case YF_TYPEFMT_INT3: \
+    case YF_VFMT_INT3: \
         to = VK_FORMAT_R32G32B32_SINT; \
         break; \
-    case YF_TYPEFMT_UINT3: \
+    case YF_VFMT_UINT3: \
         to = VK_FORMAT_R32G32B32_UINT; \
         break; \
-    case YF_TYPEFMT_FLOAT3: \
+    case YF_VFMT_FLOAT3: \
         to = VK_FORMAT_R32G32B32_SFLOAT; \
         break; \
-    case YF_TYPEFMT_DOUBLE3: \
+    case YF_VFMT_DOUBLE3: \
         to = VK_FORMAT_R64G64B64_SFLOAT; \
         break; \
-    case YF_TYPEFMT_INT4: \
+    case YF_VFMT_INT4: \
         to = VK_FORMAT_R32G32B32A32_SINT; \
         break; \
-    case YF_TYPEFMT_UINT4: \
+    case YF_VFMT_UINT4: \
         to = VK_FORMAT_R32G32B32A32_UINT; \
         break; \
-    case YF_TYPEFMT_FLOAT4: \
+    case YF_VFMT_FLOAT4: \
         to = VK_FORMAT_R32G32B32A32_SFLOAT; \
         break; \
-    case YF_TYPEFMT_DOUBLE4: \
+    case YF_VFMT_DOUBLE4: \
         to = VK_FORMAT_R64G64B64A64_SFLOAT; \
         break; \
     default: \
