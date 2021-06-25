@@ -20,7 +20,7 @@
 #define YF_NRND ((YF_float)rand() / (YF_float)RAND_MAX)
 
 #undef YF_LERP
-#define YF_LERP(a, b, t) (((YF_float)1-t)*a + t*b)
+#define YF_LERP(a, b, t) (((YF_float)1 - (t)) * (a) + (t) * (b))
 
 /* Type defining the state of a single particle. */
 typedef struct {
