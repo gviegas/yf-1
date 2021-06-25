@@ -206,9 +206,9 @@ static int init_mdl(T_entry *entry, unsigned elements)
 
     /* vertex input */
     const YF_vattr attrs[] = {
-        {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
-        {YF_RESLOC_TC, YF_TYPEFMT_FLOAT2, offsetof(YF_vmdl, tc)},
-        {YF_RESLOC_NORM, YF_TYPEFMT_FLOAT3, offsetof(YF_vmdl, norm)}
+        {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+        {YF_RESLOC_TC, YF_VFMT_FLOAT2, offsetof(YF_vmdl, tc)},
+        {YF_RESLOC_NORM, YF_VFMT_FLOAT3, offsetof(YF_vmdl, norm)}
     };
     const YF_vinput vins[] = {
         {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vmdl), YF_VRATE_VERT}
@@ -302,9 +302,9 @@ static int init_terr(T_entry *entry)
 
     /* vertex input */
     const YF_vattr attrs[] = {
-        {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
-        {YF_RESLOC_TC, YF_TYPEFMT_FLOAT2, offsetof(YF_vterr, tc)},
-        {YF_RESLOC_NORM, YF_TYPEFMT_FLOAT3, offsetof(YF_vterr, norm)}
+        {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+        {YF_RESLOC_TC, YF_VFMT_FLOAT2, offsetof(YF_vterr, tc)},
+        {YF_RESLOC_NORM, YF_VFMT_FLOAT3, offsetof(YF_vterr, norm)}
     };
     const YF_vinput vins[] = {
         {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vterr), YF_VRATE_VERT}
@@ -397,8 +397,8 @@ static int init_part(T_entry *entry)
 
     /* vertex input */
     const YF_vattr attrs[] = {
-        {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
-        {YF_RESLOC_CLR, YF_TYPEFMT_FLOAT4, offsetof(YF_vpart, clr)}
+        {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+        {YF_RESLOC_CLR, YF_VFMT_FLOAT4, offsetof(YF_vpart, clr)}
     };
     const YF_vinput vins[] = {
         {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vpart), YF_VRATE_VERT}
@@ -491,9 +491,9 @@ static int init_quad(T_entry *entry)
 
     /* vertex input */
     const YF_vattr attrs[] = {
-        {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
-        {YF_RESLOC_TC, YF_TYPEFMT_FLOAT2, offsetof(YF_vquad, tc)},
-        {YF_RESLOC_CLR, YF_TYPEFMT_FLOAT4, offsetof(YF_vquad, clr)}
+        {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+        {YF_RESLOC_TC, YF_VFMT_FLOAT2, offsetof(YF_vquad, tc)},
+        {YF_RESLOC_CLR, YF_VFMT_FLOAT4, offsetof(YF_vquad, clr)}
     };
     const YF_vinput vins[] = {
         {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vquad), YF_VRATE_VERT}
@@ -586,9 +586,9 @@ static int init_labl(T_entry *entry)
 
     /* vertex input */
     const YF_vattr attrs[] = {
-        {YF_RESLOC_POS, YF_TYPEFMT_FLOAT3, 0},
-        {YF_RESLOC_TC, YF_TYPEFMT_FLOAT2, offsetof(YF_vlabl, tc)},
-        {YF_RESLOC_CLR, YF_TYPEFMT_FLOAT4, offsetof(YF_vlabl, clr)}
+        {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+        {YF_RESLOC_TC, YF_VFMT_FLOAT2, offsetof(YF_vlabl, tc)},
+        {YF_RESLOC_CLR, YF_VFMT_FLOAT4, offsetof(YF_vlabl, clr)}
     };
     const YF_vinput vins[] = {
         {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vlabl), YF_VRATE_VERT}
