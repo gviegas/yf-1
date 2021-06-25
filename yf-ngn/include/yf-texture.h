@@ -24,7 +24,6 @@ typedef struct YF_texture_o *YF_texture;
 #define YF_FILETYPE_UNKNOWN  0
 #define YF_FILETYPE_INTERNAL 1
 #define YF_FILETYPE_PNG      48
-#define YF_FILETYPE_BMP      49
 
 /**
  * Initializes a new texture.

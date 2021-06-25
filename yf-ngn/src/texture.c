@@ -16,7 +16,6 @@
 #include "texture.h"
 #include "coreobj.h"
 #include "data-png.h"
-#include "data-bmp.h"
 
 /* TODO: Thread-safe. */
 
@@ -210,10 +209,6 @@ YF_texture yf_texture_init(int filetype, const char *pathname)
         return NULL;
     case YF_FILETYPE_PNG:
         if (yf_loadpng(pathname, &data) != 0)
-            return NULL;
-        break;
-    case YF_FILETYPE_BMP:
-        if (yf_loadbmp(pathname, &data) != 0)
             return NULL;
         break;
     default:
