@@ -19,7 +19,6 @@
 #include "coreobj.h"
 #include "vertex.h"
 #include "data-gltf.h"
-#include "data-obj.h"
 
 #undef YF_BUFLEN
 #define YF_BUFLEN 1048576
@@ -231,10 +230,6 @@ YF_mesh yf_mesh_init(int filetype, const char *pathname, size_t index)
         return NULL;
     case YF_FILETYPE_GLTF:
         if (yf_loadgltf_mesh(pathname, index, &data) != 0)
-            return NULL;
-        break;
-    case YF_FILETYPE_OBJ:
-        if (yf_loadobj(pathname, &data) != 0)
             return NULL;
         break;
     default:
