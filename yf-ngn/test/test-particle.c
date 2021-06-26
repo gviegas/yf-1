@@ -6,6 +6,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
 #include <assert.h>
 
 #include "yf/wsys/yf-event.h"
@@ -152,6 +154,8 @@ static void update(double elapsed_time)
 /* Tests particle rendering. */
 int yf_test_particle(void)
 {
+    srand(time(NULL));
+
     YF_evtfn evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
