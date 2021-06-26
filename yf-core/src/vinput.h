@@ -13,6 +13,18 @@
 /* Converts from a 'YF_VFMT' value. */
 #define YF_VFMT_FROM(vf, to) do { \
     switch (vf) { \
+    case YF_VFMT_BYTE: \
+        to = VK_FORMAT_R8_SINT; \
+        break; \
+    case YF_VFMT_UBYTE: \
+        to = VK_FORMAT_R8_UINT; \
+        break; \
+    case YF_VFMT_SHORT: \
+        to = VK_FORMAT_R16_SINT; \
+        break; \
+    case YF_VFMT_USHORT: \
+        to = VK_FORMAT_R16_UINT; \
+        break; \
     case YF_VFMT_INT: \
         to = VK_FORMAT_R32_SINT; \
         break; \
@@ -24,6 +36,18 @@
         break; \
     case YF_VFMT_DOUBLE: \
         to = VK_FORMAT_R64_SFLOAT; \
+        break; \
+    case YF_VFMT_BYTE2: \
+        to = VK_FORMAT_R8G8_SINT; \
+        break; \
+    case YF_VFMT_UBYTE2: \
+        to = VK_FORMAT_R8G8_UINT; \
+        break; \
+    case YF_VFMT_SHORT2: \
+        to = VK_FORMAT_R16G16_SINT; \
+        break; \
+    case YF_VFMT_USHORT2: \
+        to = VK_FORMAT_R16G16_UINT; \
         break; \
     case YF_VFMT_INT2: \
         to = VK_FORMAT_R32G32_SINT; \
@@ -37,6 +61,18 @@
     case YF_VFMT_DOUBLE2: \
         to = VK_FORMAT_R64G64_SFLOAT; \
         break; \
+    case YF_VFMT_BYTE3: \
+        to = VK_FORMAT_R8G8B8_SINT; \
+        break; \
+    case YF_VFMT_UBYTE3: \
+        to = VK_FORMAT_R8G8B8_UINT; \
+        break; \
+    case YF_VFMT_SHORT3: \
+        to = VK_FORMAT_R16G16B16_SINT; \
+        break; \
+    case YF_VFMT_USHORT3: \
+        to = VK_FORMAT_R16G16B16_UINT; \
+        break; \
     case YF_VFMT_INT3: \
         to = VK_FORMAT_R32G32B32_SINT; \
         break; \
@@ -48,6 +84,18 @@
         break; \
     case YF_VFMT_DOUBLE3: \
         to = VK_FORMAT_R64G64B64_SFLOAT; \
+        break; \
+    case YF_VFMT_BYTE4: \
+        to = VK_FORMAT_R8G8B8A8_SINT; \
+        break; \
+    case YF_VFMT_UBYTE4: \
+        to = VK_FORMAT_R8G8B8A8_UINT; \
+        break; \
+    case YF_VFMT_SHORT4: \
+        to = VK_FORMAT_R16G16B16A16_SINT; \
+        break; \
+    case YF_VFMT_USHORT4: \
+        to = VK_FORMAT_R16G16B16A16_UINT; \
         break; \
     case YF_VFMT_INT4: \
         to = VK_FORMAT_R32G32B32A32_SINT; \
