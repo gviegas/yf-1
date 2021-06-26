@@ -12,14 +12,14 @@
  */
 layout(set=1, binding=1) uniform sampler2D u_tex;
 
-layout(location=0) in IO_vtx {
+layout(location=0) in IO_v {
     vec2 tc;
     vec4 clr;
-} in_vtx;
+} in_v;
 
-layout(location=0) out vec4 clr0;
+layout(location=0) out vec4 out_clr;
 
 void main()
 {
-    clr0 = in_vtx.clr * textureLod(u_tex, in_vtx.tc, 0.0);
+    out_clr = in_v.clr * textureLod(u_tex, in_v.tc, 0.0);
 }
