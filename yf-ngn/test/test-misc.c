@@ -38,6 +38,8 @@ struct T_vars {
         int turn[4];
         int toggle;
         int quit;
+        int x[2];
+        int y[2];
     } input;
 };
 static struct T_vars l_vars = {0};
@@ -99,6 +101,15 @@ static void on_key(int key, int state,
     }
 }
 
+/* Handles motion events. */
+static void on_motion(int x, int y, YF_UNUSED void *arg)
+{
+    l_vars.input.x[0] = l_vars.input.x[1];
+    l_vars.input.y[0] = l_vars.input.y[1];
+    l_vars.input.x[1] = x;
+    l_vars.input.y[1] = y;
+}
+
 /* Updates content. */
 static void update(double elapsed_time)
 {
@@ -138,6 +149,27 @@ static void update(double elapsed_time)
             yf_camera_turnl(cam, td);
         if (l_vars.input.turn[3])
             yf_camera_turnr(cam, td);
+
+        const YF_float ld = 0.5 * elapsed_time;
+        const int x0 = l_vars.input.x[0];
+        const int x1 = l_vars.input.x[1];
+        const int y0 = l_vars.input.y[0];
+        const int y1 = l_vars.input.y[1];
+
+        if (x1 < x0) {
+            yf_camera_turnl(cam, ld);
+            l_vars.input.x[0] = x1;
+        } else if (x1 > x0) {
+            yf_camera_turnr(cam, ld);
+            l_vars.input.x[0] = x1;
+        }
+        if (y1 < y0) {
+            yf_camera_turnu(cam, ld);
+            l_vars.input.y[0] = y1;
+        } else if (y1 > y0) {
+            yf_camera_turnd(cam, ld);
+            l_vars.input.y[0] = y1;
+        }
 
     } else {
         const YF_float d = 6.0 * elapsed_time;
@@ -212,6 +244,9 @@ int yf_test_misc(void)
 
     YF_evtfn evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
+
+    evtfn.motion_pt = on_motion;
+    yf_setevtfn(YF_EVT_MOTIONPT, evtfn, NULL);
 
     l_vars.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
     assert(l_vars.win != NULL);
