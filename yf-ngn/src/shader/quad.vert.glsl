@@ -7,6 +7,10 @@
 
 #version 460 core
 
+#ifndef VPORT_N
+# error "VPORT_N not defined"
+#endif
+
 layout(std140, column_major) uniform;
 
 /**
@@ -24,12 +28,13 @@ struct T_vport {
 /**
  * Global uniform data.
  */
-layout(set=0, binding=0) uniform U_glob {
+layout(set=0, binding=0) uniform U_globl {
     mat4 v;
     mat4 p;
     mat4 o;
-    T_vport vport[1];
-} u_glob;
+    mat4 vp;
+    T_vport vport[VPORT_N];
+} u_globl;
 
 /**
  * Instance's uniform data.
@@ -41,20 +46,21 @@ layout(set=1, binding=0) uniform U_inst {
     float hgt;
 } u_inst;
 
-layout(location=0) in vec3 pos;
-layout(location=1) in vec2 tc;
-layout(location=3) in vec4 clr;
+layout(location=0) in vec3 in_pos;
+layout(location=1) in vec2 in_tc;
+layout(location=2) in vec4 in_clr;
 
-layout(location=0) out IO_vtx {
+layout(location=0) out IO_v {
     vec2 tc;
     vec4 clr;
-} out_vtx;
+} out_v;
 
 void main()
 {
-    vec2 s = vec2(u_inst.wdt / u_glob.vport[0].wdt,
-                  u_inst.hgt / u_glob.vport[0].hgt);
-    gl_Position = u_glob.o * u_inst.m * vec4(pos.xy*s, pos.z, 1.0);
-    out_vtx.tc = tc;
-    out_vtx.clr = clr;
+    vec2 s = vec2(u_inst.wdt / u_globl.vport[0].wdt,
+                  u_inst.hgt / u_globl.vport[0].hgt);
+    gl_Position = u_globl.o * u_inst.m * vec4(in_pos.xy * s, in_pos.z, 1.0);
+
+    out_v.tc = in_tc;
+    out_v.clr = in_clr;
 }

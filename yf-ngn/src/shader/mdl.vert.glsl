@@ -7,6 +7,14 @@
 
 #version 460 core
 
+#ifndef VPORT_N
+# error "VPORT_N not defined"
+#endif
+
+#ifndef INST_N
+# error "INST_N not defined"
+#endif
+
 layout(std140, column_major) uniform;
 
 /**
@@ -22,35 +30,54 @@ struct T_vport {
 };
 
 /**
+ * Type defining instance-specific data.
+ */
+struct T_inst {
+    mat4 m;
+    mat4 norm;
+    mat4 mv;
+};
+
+/**
  * Global uniform data.
  */
-layout(set=0, binding=0) uniform U_glob {
+layout(set=0, binding=0) uniform U_globl {
     mat4 v;
     mat4 p;
     mat4 o;
-    T_vport vport[1];
-} u_glob;
+    mat4 vp;
+    T_vport vport[VPORT_N];
+} u_globl;
 
 /**
  * Instance's uniform data.
  */
 layout(set=1, binding=0) uniform U_inst {
-    mat4 m;
-    mat4 mv;
+    T_inst i[INST_N];
 } u_inst;
 
-layout(location=0) in vec3 pos;
-layout(location=1) in vec2 tc;
-layout(location=2) in vec3 norm;
+layout(location=0) in vec3 in_pos;
+layout(location=1) in vec2 in_tc;
+layout(location=2) in vec3 in_norm;
+layout(location=3) in vec4 in_tgnt;
+layout(location=4) in vec4 in_clr;
+layout(location=5) in uvec4 in_jnts;
+layout(location=6) in vec4 in_wgts;
 
-layout(location=0) out IO_vtx {
+layout(location=0) out IO_v {
+    vec3 pos;
     vec2 tc;
     vec3 norm;
-} out_vtx;
+    vec4 clr;
+} out_v;
 
 void main()
 {
-    gl_Position = u_glob.p * u_inst.mv * vec4(pos, 1.0);
-    out_vtx.tc = tc;
-    out_vtx.norm = norm;
+    const int i = gl_InstanceIndex;
+    gl_Position = u_globl.p * u_inst.i[i].mv * vec4(in_pos, 1.0);
+
+    out_v.pos = in_pos; /* TODO */
+    out_v.tc = in_tc;
+    out_v.norm = in_norm; /* TODO */
+    out_v.clr = in_clr;
 }
