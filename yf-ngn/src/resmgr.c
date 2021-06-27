@@ -162,7 +162,7 @@ static int init_mdl(T_entry *entry, unsigned elements)
 
     /* shader stage */
     char *vert_path = make_shdpath(YF_NODEOBJ_MODEL, YF_STAGE_VERT, elements);
-    char *frag_path = make_shdpath(YF_NODEOBJ_MODEL, YF_STAGE_FRAG, elements);
+    char *frag_path = make_shdpath(YF_NODEOBJ_MODEL, YF_STAGE_FRAG, 1);
     if (vert_path == NULL || frag_path == NULL) {
         free(vert_path);
         free(frag_path);
