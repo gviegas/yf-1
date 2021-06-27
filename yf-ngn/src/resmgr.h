@@ -12,15 +12,18 @@
 
 /* Resource requirements for node objects. */
 #define YF_RESRQ_MDL   0
-#define YF_RESRQ_MDL4  1
-#define YF_RESRQ_MDL16 2
-#define YF_RESRQ_MDL64 3
-#define YF_RESRQ_TERR  4
-#define YF_RESRQ_PART  5
-#define YF_RESRQ_QUAD  6
-#define YF_RESRQ_LABL  7
+#define YF_RESRQ_MDL2  1
+#define YF_RESRQ_MDL4  2
+#define YF_RESRQ_MDL8  3
+#define YF_RESRQ_MDL16 4
+#define YF_RESRQ_MDL32 5
+#define YF_RESRQ_MDL64 6
+#define YF_RESRQ_TERR  7
+#define YF_RESRQ_PART  8
+#define YF_RESRQ_QUAD  9
+#define YF_RESRQ_LABL  10
 
-#define YF_RESRQ_N 8
+#define YF_RESRQ_N 11
 
 /* Obtains a resource that satisfies the given requirements. */
 YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc);
