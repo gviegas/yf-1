@@ -46,7 +46,7 @@ typedef struct {
 static T_entry l_entries[YF_RESRQ_N] = {0};
 
 /* Global descriptor table. */
-static YF_dtable l_glob = NULL;
+static YF_dtable l_globl = NULL;
 
 /* Sizes used for instance allocations, indexed by 'resrq' values. */
 static unsigned l_allocn[YF_RESRQ_N] = {
@@ -201,7 +201,7 @@ static int init_mdl(T_entry *entry, unsigned elements)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {l_glob, inst_dtb};
+    const YF_dtable dtbs[] = {l_globl, inst_dtb};
     const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
     /* vertex input */
@@ -297,7 +297,7 @@ static int init_terr(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {l_glob, inst_dtb};
+    const YF_dtable dtbs[] = {l_globl, inst_dtb};
     const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
     /* vertex input */
@@ -392,7 +392,7 @@ static int init_part(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {l_glob, inst_dtb};
+    const YF_dtable dtbs[] = {l_globl, inst_dtb};
     const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
     /* vertex input */
@@ -486,7 +486,7 @@ static int init_quad(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {l_glob, inst_dtb};
+    const YF_dtable dtbs[] = {l_globl, inst_dtb};
     const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
     /* vertex input */
@@ -581,7 +581,7 @@ static int init_labl(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {l_glob, inst_dtb};
+    const YF_dtable dtbs[] = {l_globl, inst_dtb};
     const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
 
     /* vertex input */
@@ -627,7 +627,7 @@ static int init_entry(int resrq)
     assert(resrq >= 0 && resrq < YF_RESRQ_N);
     assert(l_allocn[resrq] > 0);
 
-    if (yf_resmgr_getglob() == NULL)
+    if (yf_resmgr_getglobl() == NULL)
         return -1;
 
     const unsigned n = l_allocn[resrq];
@@ -736,21 +736,21 @@ void yf_resmgr_yield(int resrq, unsigned inst_alloc)
     l_entries[resrq].i = inst_alloc;
 }
 
-YF_dtable yf_resmgr_getglob(void)
+YF_dtable yf_resmgr_getglobl(void)
 {
-    if (l_glob != NULL)
-        return l_glob;
+    if (l_globl != NULL)
+        return l_globl;
 
     YF_context ctx = yf_getctx();
     assert(ctx != NULL);
 
     const YF_dentry ents[] = {{YF_RESIDX_GLOB, YF_DTYPE_UNIFORM, 1, NULL}};
-    l_glob = yf_dtable_init(ctx, ents, sizeof ents / sizeof ents[0]);
-    if (l_glob == NULL || yf_dtable_alloc(l_glob, 1) != 0) {
-        yf_dtable_deinit(l_glob);
-        l_glob = NULL;
+    l_globl = yf_dtable_init(ctx, ents, sizeof ents / sizeof ents[0]);
+    if (l_globl == NULL || yf_dtable_alloc(l_globl, 1) != 0) {
+        yf_dtable_deinit(l_globl);
+        l_globl = NULL;
     }
-    return l_glob;
+    return l_globl;
 }
 
 unsigned yf_resmgr_getallocn(int resrq)
@@ -822,6 +822,6 @@ void yf_resmgr_clear(void)
         if (l_entries[i].gst != NULL)
             deinit_entry(i);
     }
-    yf_dtable_deinit(l_glob);
-    l_glob = NULL;
+    yf_dtable_deinit(l_globl);
+    l_globl = NULL;
 }
