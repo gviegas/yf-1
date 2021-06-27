@@ -26,13 +26,16 @@
 
 /* XXX: This arbitrary defaults are expected to be replaced by 'setallocn'. */
 #define YF_ALLOCN_MDL   64
+#define YF_ALLOCN_MDL2  16
 #define YF_ALLOCN_MDL4  16
-#define YF_ALLOCN_MDL16 16
+#define YF_ALLOCN_MDL8  8
+#define YF_ALLOCN_MDL16 8
+#define YF_ALLOCN_MDL32 4
 #define YF_ALLOCN_MDL64 4
 #define YF_ALLOCN_TERR  4
-#define YF_ALLOCN_PART  8
-#define YF_ALLOCN_QUAD  24
-#define YF_ALLOCN_LABL  24
+#define YF_ALLOCN_PART  32
+#define YF_ALLOCN_QUAD  16
+#define YF_ALLOCN_LABL  32
 
 /* Type defining an entry in the resource list. */
 typedef struct {
@@ -51,8 +54,11 @@ static YF_dtable l_globl = NULL;
 /* Sizes used for instance allocations, indexed by 'resrq' values. */
 static unsigned l_allocn[YF_RESRQ_N] = {
     [YF_RESRQ_MDL]   = YF_ALLOCN_MDL,
+    [YF_RESRQ_MDL2]  = YF_ALLOCN_MDL2,
     [YF_RESRQ_MDL4]  = YF_ALLOCN_MDL4,
+    [YF_RESRQ_MDL8]  = YF_ALLOCN_MDL8,
     [YF_RESRQ_MDL16] = YF_ALLOCN_MDL16,
+    [YF_RESRQ_MDL32] = YF_ALLOCN_MDL32,
     [YF_RESRQ_MDL64] = YF_ALLOCN_MDL64,
     [YF_RESRQ_TERR]  = YF_ALLOCN_TERR,
     [YF_RESRQ_PART]  = YF_ALLOCN_PART,
@@ -643,10 +649,16 @@ static int init_entry(int resrq)
     switch (resrq) {
     case YF_RESRQ_MDL:
         return init_mdl(l_entries+resrq, 1);
+    case YF_RESRQ_MDL2:
+        return init_mdl(l_entries+resrq, 2);
     case YF_RESRQ_MDL4:
         return init_mdl(l_entries+resrq, 4);
+    case YF_RESRQ_MDL8:
+        return init_mdl(l_entries+resrq, 8);
     case YF_RESRQ_MDL16:
         return init_mdl(l_entries+resrq, 16);
+    case YF_RESRQ_MDL32:
+        return init_mdl(l_entries+resrq, 32);
     case YF_RESRQ_MDL64:
         return init_mdl(l_entries+resrq, 64);
     case YF_RESRQ_TERR:
