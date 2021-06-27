@@ -29,7 +29,7 @@ YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc);
 void yf_resmgr_yield(int resrq, unsigned inst_alloc);
 
 /* Gets the global descriptor table. */
-YF_dtable yf_resmgr_getglob(void);
+YF_dtable yf_resmgr_getglobl(void);
 
 /* Gets the number of instance allocations for a given 'resrq' value. */
 unsigned yf_resmgr_getallocn(int resrq);

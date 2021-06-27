@@ -41,7 +41,7 @@
 
 #define YF_INSTCAP 4
 
-#define YF_GLOBSZ      (sizeof(YF_mat4) * 3 + 32)
+#define YF_GLOBLSZ     ((sizeof(YF_mat4) << 2) + 32)
 #define YF_INSTSZ_MDL  (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
@@ -234,15 +234,15 @@ static int traverse_scn(YF_node node, void *arg)
 }
 
 /* Copies uniform global data to buffer and updates dtable contents. */
-static int copy_glob(YF_scene scn)
+static int copy_globl(YF_scene scn)
 {
-    YF_dtable dtb = yf_resmgr_getglob();
+    YF_dtable dtb = yf_resmgr_getglobl();
     if (dtb == NULL)
         return -1;
 
     const YF_slice elems = {0, 1};
     size_t off = l_vars.buf_off;
-    size_t sz = YF_GLOBSZ;
+    size_t sz = YF_GLOBLSZ;
 
     /* view matrix */
     if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
@@ -261,6 +261,12 @@ static int copy_glob(YF_scene scn)
     YF_mat4 ortho;
     yf_mat4_ortho(ortho, 1.0, 1.0, 0.0, -1.0);
     if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, ortho, sizeof ortho) != 0)
+        return -1;
+    l_vars.buf_off += sizeof(YF_mat4);
+
+    /* view-projection matrix */
+    if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+                       *yf_camera_getxform(scn->cam), sizeof(YF_mat4)) != 0)
         return -1;
     l_vars.buf_off += sizeof(YF_mat4);
 
@@ -1003,7 +1009,7 @@ static int init_vars(void)
 
     while (1) {
         int failed = 0;
-        buf_sz = YF_GLOBSZ;
+        buf_sz = YF_GLOBLSZ;
 
         for (unsigned i = 0; i < YF_RESRQ_N; i++) {
             if (yf_resmgr_setallocn(i, insts[i]) != 0 ||
@@ -1174,7 +1180,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     yf_cmdbuf_clearcolor(l_vars.cb, 0, scn->color);
     yf_cmdbuf_cleardepth(l_vars.cb, 1.0f);
 
-    if (copy_glob(scn) != 0) {
+    if (copy_globl(scn) != 0) {
         clear_obj();
         return -1;
     }
