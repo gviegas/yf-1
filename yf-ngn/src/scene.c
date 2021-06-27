@@ -42,7 +42,7 @@
 #define YF_INSTCAP 4
 
 #define YF_GLOBLSZ     ((sizeof(YF_mat4) << 2) + 32)
-#define YF_INSTSZ_MDL  (sizeof(YF_mat4) << 1)
+#define YF_INSTSZ_MDL  (sizeof(YF_mat4) * 3)
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_QUAD ((sizeof(YF_mat4) << 1) + 16)
@@ -292,7 +292,7 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
     const YF_slice elems = {0, 1};
     size_t off, sz;
     const YF_mat4 *v = yf_camera_getview(scn->cam);
-    YF_mat4 mv, *m;
+    YF_mat4 mv, *m, *norm;
 
     switch (resrq) {
     case YF_RESRQ_MDL:
@@ -304,11 +304,19 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
 
         for (unsigned i = 0; i < obj_n; i++) {
             YF_model mdl = ((YF_model *)objs)[i];
-            m = yf_node_getwldxform(yf_model_getnode(mdl));
+            YF_node node = yf_model_getnode(mdl);
+            m = yf_node_getwldxform(node);
+            norm = yf_node_getwldnorm(node);
             yf_mat4_mul(mv, *v, *m);
 
             /* model matrix */
             if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+                return -1;
+            l_vars.buf_off += sizeof(YF_mat4);
+
+            /* normal matrix */
+            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *norm,
+                               sizeof *norm) != 0)
                 return -1;
             l_vars.buf_off += sizeof(YF_mat4);
 
