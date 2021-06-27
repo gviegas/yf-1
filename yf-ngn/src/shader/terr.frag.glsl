@@ -10,7 +10,7 @@
 /**
  * Primary texture.
  */
-layout(set=1, binding=1) uniform sampler2D u_tex;
+layout(set=1, binding=4) uniform sampler2D u_tex;
 
 layout(location=0) in IO_v {
     vec2 tc;

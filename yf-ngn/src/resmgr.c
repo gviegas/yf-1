@@ -744,7 +744,7 @@ YF_dtable yf_resmgr_getglobl(void)
     YF_context ctx = yf_getctx();
     assert(ctx != NULL);
 
-    const YF_dentry ents[] = {{YF_RESIDX_GLOB, YF_DTYPE_UNIFORM, 1, NULL}};
+    const YF_dentry ents[] = {{YF_RESIDX_GLOBL, YF_DTYPE_UNIFORM, 1, NULL}};
     l_globl = yf_dtable_init(ctx, ents, sizeof ents / sizeof ents[0]);
     if (l_globl == NULL || yf_dtable_alloc(l_globl, 1) != 0) {
         yf_dtable_deinit(l_globl);

@@ -277,7 +277,7 @@ static int copy_globl(YF_scene scn)
     l_vars.buf_off += 32;
 
     /* copy */
-    if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_GLOB, elems,
+    if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_GLOBL, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
 
@@ -1193,7 +1193,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
         return -1;
     }
 
-    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOB, 0);
+    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOBL, 0);
 
 #ifdef YF_DEVEL
     unsigned exec_n = 0;

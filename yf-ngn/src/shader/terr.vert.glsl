@@ -47,7 +47,7 @@ layout(set=1, binding=0) uniform U_inst {
 /**
  * Height map.
  */
-layout(set=1, binding=3) uniform sampler2D u_hmap;
+layout(set=1, binding=2) uniform sampler2D u_hmap;
 
 layout(location=0) in vec3 in_pos;
 layout(location=1) in vec2 in_tc;

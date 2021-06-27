@@ -51,19 +51,35 @@ void yf_resmgr_clear(void);
  */
 
 /* Descriptor table indices. */
-#define YF_RESIDX_GLOB 0
-#define YF_RESIDX_INST 1
+#define YF_RESIDX_GLOBL 0
+#define YF_RESIDX_INST  1
 
 /* Descriptor table bindings. */
-#define YF_RESBIND_GLOB 0
-#define YF_RESBIND_INST 0
-#define YF_RESBIND_TEX  1
-#define YF_RESBIND_HMAP 3
+#define YF_RESBIND_GLOBL 0
+#define YF_RESBIND_INST  0
+#define YF_RESBIND_MASK  1
+#define YF_RESBIND_SKIN  2
+#define YF_RESBIND_HMAP  2
+#define YF_RESBIND_MATL  3
+#define YF_RESBIND_TEX   4
+#define YF_RESBIND_TEX1  5
+#define YF_RESBIND_TEX2  6
+#define YF_RESBIND_TEX3  7
+#define YF_RESBIND_TEX4  8
 
 /* Vertex input locations. */
-#define YF_RESLOC_POS  0
-#define YF_RESLOC_TC   1
-#define YF_RESLOC_NORM 2
-#define YF_RESLOC_CLR  3
+#define YF_RESLOC_POS   0
+#define YF_RESLOC_TC    1
+#define YF_RESLOC_NORM  2
+#define YF_RESLOC_TGNT  3
+#define YF_RESLOC_CLR   4
+#define YF_RESLOC_JNTS  5
+#define YF_RESLOC_WGTS  6
+#define YF_RESLOC_TC1   7
+#define YF_RESLOC_TC2   8
+#define YF_RESLOC_CLR1  9
+#define YF_RESLOC_CLR2  10
+#define YF_RESLOC_JNTS1 11
+#define YF_RESLOC_WGTS1 12
 
 #endif /* YF_RESMGR_H */
