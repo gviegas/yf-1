@@ -296,8 +296,11 @@ static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
 
     switch (resrq) {
     case YF_RESRQ_MDL:
+    case YF_RESRQ_MDL2:
     case YF_RESRQ_MDL4:
+    case YF_RESRQ_MDL8:
     case YF_RESRQ_MDL16:
+    case YF_RESRQ_MDL32:
     case YF_RESRQ_MDL64:
         off = l_vars.buf_off;
         sz = obj_n * YF_INSTSZ_MDL;
@@ -536,8 +539,11 @@ static int render_mdl(YF_scene scn)
 /* Renders model objects using instanced drawing. */
 static int render_mdl_inst(YF_scene scn)
 {
-    static const int resrq[] = {YF_RESRQ_MDL4, YF_RESRQ_MDL16, YF_RESRQ_MDL64};
-    static const unsigned insts[] = {4, 16, 64};
+    static const int resrq[] = {
+        YF_RESRQ_MDL2, YF_RESRQ_MDL4, YF_RESRQ_MDL8, YF_RESRQ_MDL16,
+        YF_RESRQ_MDL32, YF_RESRQ_MDL64
+    };
+    static const unsigned insts[] = {2, 4, 8, 16, 32, 64};
     static const int sz = sizeof resrq / sizeof resrq[0];
 
     unsigned n, rem;
@@ -995,13 +1001,16 @@ static int init_vars(void)
 
     /* TODO: Check limits. */
     unsigned insts[YF_RESRQ_N] = {
-        [YF_RESRQ_MDL]   = 128,
-        [YF_RESRQ_MDL4]  = 48,
-        [YF_RESRQ_MDL16] = 48,
-        [YF_RESRQ_MDL64] = 16,
-        [YF_RESRQ_TERR]  = 16,
-        [YF_RESRQ_PART]  = 24,
-        [YF_RESRQ_QUAD]  = 48,
+        [YF_RESRQ_MDL]   = 64,
+        [YF_RESRQ_MDL2]  = 16,
+        [YF_RESRQ_MDL4]  = 16,
+        [YF_RESRQ_MDL8]  = 16,
+        [YF_RESRQ_MDL16] = 8,
+        [YF_RESRQ_MDL32] = 8,
+        [YF_RESRQ_MDL64] = 4,
+        [YF_RESRQ_TERR]  = 4,
+        [YF_RESRQ_PART]  = 64,
+        [YF_RESRQ_QUAD]  = 32,
         [YF_RESRQ_LABL]  = 64
     };
 
@@ -1031,11 +1040,20 @@ static int init_vars(void)
             case YF_RESRQ_MDL:
                 buf_sz += insts[i] * YF_INSTSZ_MDL;
                 break;
+            case YF_RESRQ_MDL2:
+                buf_sz += insts[i] * (YF_INSTSZ_MDL<<1);
+                break;
             case YF_RESRQ_MDL4:
                 buf_sz += insts[i] * (YF_INSTSZ_MDL<<2);
                 break;
+            case YF_RESRQ_MDL8:
+                buf_sz += insts[i] * (YF_INSTSZ_MDL<<3);
+                break;
             case YF_RESRQ_MDL16:
                 buf_sz += insts[i] * (YF_INSTSZ_MDL<<4);
+                break;
+            case YF_RESRQ_MDL32:
+                buf_sz += insts[i] * (YF_INSTSZ_MDL<<5);
                 break;
             case YF_RESRQ_MDL64:
                 buf_sz += insts[i] * (YF_INSTSZ_MDL<<6);
@@ -1054,6 +1072,7 @@ static int init_vars(void)
                 break;
             default:
                 assert(0);
+                abort();
             }
         }
 
