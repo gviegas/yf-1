@@ -46,7 +46,7 @@ layout(set=1, binding=0) uniform U_inst {
 
 /* TODO: Other per-particle params., e.g. clrN, size... */
 layout(location=0) in vec3 in_pos;
-layout(location=1) in vec4 in_clr;
+layout(location=4) in vec4 in_clr;
 
 layout(location=0) out IO_v {
     vec4 clr;

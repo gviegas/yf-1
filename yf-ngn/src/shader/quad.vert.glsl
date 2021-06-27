@@ -48,7 +48,7 @@ layout(set=1, binding=0) uniform U_inst {
 
 layout(location=0) in vec3 in_pos;
 layout(location=1) in vec2 in_tc;
-layout(location=2) in vec4 in_clr;
+layout(location=4) in vec4 in_clr;
 
 layout(location=0) out IO_v {
     vec2 tc;
