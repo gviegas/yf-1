@@ -328,6 +328,43 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
     return 0;
 }
 
+/* Copies terrain's instance uniform to buffer and updates dtable. */
+static int copy_inst_terr(YF_scene scn, YF_terrain *terrs, unsigned terr_n,
+                          YF_gstate gst, unsigned inst_alloc)
+{
+    YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
+    const size_t off = l_vars.buf_off;
+    YF_node node;
+    YF_mat4 mv, *m;
+
+    for (unsigned i = 0; i < terr_n; i++) {
+        node = yf_terrain_getnode(terrs[i]);
+        m = yf_node_getwldxform(node);
+        yf_mat4_mul(mv, *v, *m);
+
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+
+        /* model-view matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+    }
+
+    const YF_slice elems = {0, 1};
+    const size_t sz = terr_n * YF_INSTSZ_TERR;
+
+    /* copy */
+    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+                          &l_vars.buf, &off, &sz) != 0)
+        return -1;
+
+    return 0;
+}
+
 /* Copies uniform instance data to buffer and updates dtable contents. */
 static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
                      YF_gstate gst, unsigned inst_alloc)
@@ -750,7 +787,7 @@ static int render_terr(YF_scene scn)
             return -1;
         }
 
-        if (copy_inst(scn, YF_RESRQ_TERR, &terr, 1, gst, inst_alloc) != 0)
+        if (copy_inst_terr(scn, &terr, 1, gst, inst_alloc) != 0)
             return -1;
 
         if ((hmap = yf_terrain_gethmap(terr)) != NULL)
