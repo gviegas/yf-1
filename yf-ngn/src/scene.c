@@ -402,6 +402,53 @@ static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
     return 0;
 }
 
+/* Copies quad's instance uniform to buffer and updates dtable. */
+static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
+                          YF_gstate gst, unsigned inst_alloc)
+{
+    YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
+    const size_t off = l_vars.buf_off;
+    YF_node node;
+    YF_mat4 mv, *m;
+    const YF_rect *rect;
+    float dim[2];
+
+    for (unsigned i = 0; i < quad_n; i++) {
+        node = yf_quad_getnode(quads[i]);
+        m = yf_node_getwldxform(node);
+        yf_mat4_mul(mv, *v, *m);
+        rect = yf_quad_getrect(quads[i]);
+        dim[0] = rect->size.width;
+        dim[1] = rect->size.height;
+
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+
+        /* model-view matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+
+        /* dimensions */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim, sizeof dim) != 0)
+            return -1;
+        l_vars.buf_off += 16;
+    }
+
+    const YF_slice elems = {0, 1};
+    const size_t sz = quad_n * YF_INSTSZ_QUAD;
+
+    /* copy */
+    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+                          &l_vars.buf, &off, &sz) != 0)
+        return -1;
+
+    return 0;
+}
+
 /* Copies uniform instance data to buffer and updates dtable contents. */
 static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
                      YF_gstate gst, unsigned inst_alloc)
@@ -952,7 +999,7 @@ static int render_quad(YF_scene scn)
             return -1;
         }
 
-        if (copy_inst(scn, YF_RESRQ_QUAD, &quad, 1, gst, inst_alloc) != 0)
+        if (copy_inst_quad(scn, &quad, 1, gst, inst_alloc) != 0)
             return -1;
 
         if ((tex = yf_quad_gettex(quad)) != NULL)
