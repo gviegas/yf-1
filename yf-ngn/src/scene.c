@@ -240,8 +240,7 @@ static int prepare_res(void)
 
     /* TODO: Check limits. */
 
-//#ifdef YF_SCN_DYNAMIC
-#if 1
+#ifdef YF_SCN_DYNAMIC
     unsigned insts[YF_RESRQ_N] = {
         [YF_RESRQ_MDL]   = yf_dict_getlen(l_vars.mdls),
         [YF_RESRQ_MDL2]  = 0,
@@ -1202,7 +1201,7 @@ static void deinit_vars(void)
     memset(&l_vars, 0, sizeof l_vars);
 }
 
-/* Initializes shared variables and prepares required resources. */
+/* Initializes shared variables and prepares static resources. */
 static int init_vars(void)
 {
     assert(l_vars.ctx == NULL);
@@ -1210,112 +1209,24 @@ static int init_vars(void)
     if ((l_vars.ctx = yf_getctx()) == NULL)
         return -1;
 
-    /* TODO: Check limits. */
-    unsigned insts[YF_RESRQ_N] = {
-        [YF_RESRQ_MDL]   = 64,
-        [YF_RESRQ_MDL2]  = 16,
-        [YF_RESRQ_MDL4]  = 16,
-        [YF_RESRQ_MDL8]  = 16,
-        [YF_RESRQ_MDL16] = 8,
-        [YF_RESRQ_MDL32] = 8,
-        [YF_RESRQ_MDL64] = 4,
-        [YF_RESRQ_TERR]  = 4,
-        [YF_RESRQ_PART]  = 64,
-        [YF_RESRQ_QUAD]  = 32,
-        [YF_RESRQ_LABL]  = 64
-    };
-
-    size_t inst_min = 0;
-    size_t inst_sum = 0;
-    for (unsigned i = 0; i < YF_RESRQ_N; i++) {
-        inst_min += insts[i] != 0;
-        inst_sum += insts[i];
-    }
-    assert(inst_min > 0);
-
-    size_t buf_sz;
-
-    while (1) {
-        int failed = 0;
-        buf_sz = YF_GLOBLSZ;
-
-        for (unsigned i = 0; i < YF_RESRQ_N; i++) {
-            if (yf_resmgr_setallocn(i, insts[i]) != 0 ||
-                yf_resmgr_prealloc(i) != 0) {
-                yf_resmgr_clear();
-                failed = 1;
-                break;
-            }
-
-            switch (i) {
-            case YF_RESRQ_MDL:
-                buf_sz += insts[i] * YF_INSTSZ_MDL;
-                break;
-            case YF_RESRQ_MDL2:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<1);
-                break;
-            case YF_RESRQ_MDL4:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<2);
-                break;
-            case YF_RESRQ_MDL8:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<3);
-                break;
-            case YF_RESRQ_MDL16:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<4);
-                break;
-            case YF_RESRQ_MDL32:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<5);
-                break;
-            case YF_RESRQ_MDL64:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<6);
-                break;
-            case YF_RESRQ_TERR:
-                buf_sz += insts[i] * YF_INSTSZ_TERR;
-                break;
-            case YF_RESRQ_PART:
-                buf_sz += insts[i] * YF_INSTSZ_PART;
-                break;
-            case YF_RESRQ_QUAD:
-                buf_sz += insts[i] * YF_INSTSZ_QUAD;
-                break;
-            case YF_RESRQ_LABL:
-                buf_sz += insts[i] * YF_INSTSZ_LABL;
-                break;
-            default:
-                assert(0);
-                abort();
-            }
-        }
-
-        /* proceed if all allocations succeed */
-        if (!failed)
-            break;
-
-        /* give up if cannot allocate the minimum */
-        if (inst_sum <= inst_min)
-            return -1;
-
-        /* try again with reduced number of instances */
-        inst_sum = 0;
-        for (unsigned i = 0; i < YF_RESRQ_N; i++) {
-            if (insts[i] > 0) {
-                insts[i] = YF_MAX(1, insts[i] >> 1);
-                inst_sum += insts[i];
-            }
-        }
-    }
-
-    if ((l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz)) == NULL ||
-        (l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
+    if ((l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
         (l_vars.mdls = yf_dict_init(hash_mdl, cmp_mdl)) == NULL ||
         (l_vars.mdls_inst = yf_dict_init(hash_mdl, cmp_mdl)) == NULL ||
         (l_vars.terrs = yf_list_init(NULL)) == NULL ||
         (l_vars.parts = yf_list_init(NULL)) == NULL ||
         (l_vars.quads = yf_list_init(NULL)) == NULL ||
         (l_vars.labls = yf_list_init(NULL)) == NULL) {
+
         deinit_vars();
         return -1;
     }
+
+#ifndef YF_SCN_DYNAMIC
+    if (prepare_res() != 0) {
+        deinit_vars();
+        return -1;
+    }
+#endif
 
     return 0;
 }
