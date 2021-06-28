@@ -1306,6 +1306,13 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
         return -1;
     }
 
+#ifdef YF_SCN_DYNAMIC
+    if (prepare_res() != 0) {
+        clear_obj();
+        return -1;
+    }
+#endif
+
     unsigned pend = YF_PEND_NONE;
     if (yf_dict_getlen(l_vars.mdls) != 0)
         pend |= YF_PEND_MDL;
