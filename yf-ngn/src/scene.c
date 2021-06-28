@@ -233,7 +233,7 @@ static int traverse_scn(YF_node node, void *arg)
     return 0;
 }
 
-/* Copies uniform global data to buffer and updates dtable contents. */
+/* Copies global uniform to buffer and updates dtable. */
 static int copy_globl(YF_scene scn)
 {
     YF_dtable dtb = yf_resmgr_getglobl();
@@ -241,8 +241,8 @@ static int copy_globl(YF_scene scn)
         return -1;
 
     const YF_slice elems = {0, 1};
+    const size_t sz = YF_GLOBLSZ;
     size_t off = l_vars.buf_off;
-    size_t sz = YF_GLOBLSZ;
 
     /* view matrix */
     if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
@@ -284,182 +284,214 @@ static int copy_globl(YF_scene scn)
     return 0;
 }
 
-/* Copies uniform instance data to buffer and updates dtable contents. */
-static int copy_inst(YF_scene scn, int resrq, void *objs, unsigned obj_n,
-                     YF_gstate gst, unsigned inst_alloc)
+/* Copies model's instance uniform to buffer and updates dtable. */
+static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
+                         YF_gstate gst, unsigned inst_alloc)
 {
     YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-    const YF_slice elems = {0, 1};
-    size_t off, sz;
     const YF_mat4 *v = yf_camera_getview(scn->cam);
+    const size_t off = l_vars.buf_off;
+    YF_node node;
     YF_mat4 mv, *m, *norm;
 
-    switch (resrq) {
-    case YF_RESRQ_MDL:
-    case YF_RESRQ_MDL2:
-    case YF_RESRQ_MDL4:
-    case YF_RESRQ_MDL8:
-    case YF_RESRQ_MDL16:
-    case YF_RESRQ_MDL32:
-    case YF_RESRQ_MDL64:
-        off = l_vars.buf_off;
-        sz = obj_n * YF_INSTSZ_MDL;
+    for (unsigned i = 0; i < mdl_n; i++) {
+        node = yf_model_getnode(mdls[i]);
+        m = yf_node_getwldxform(node);
+        norm = yf_node_getwldnorm(node);
+        yf_mat4_mul(mv, *v, *m);
 
-        for (unsigned i = 0; i < obj_n; i++) {
-            YF_model mdl = ((YF_model *)objs)[i];
-            YF_node node = yf_model_getnode(mdl);
-            m = yf_node_getwldxform(node);
-            norm = yf_node_getwldnorm(node);
-            yf_mat4_mul(mv, *v, *m);
-
-            /* model matrix */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
-                return -1;
-            l_vars.buf_off += sizeof(YF_mat4);
-
-            /* normal matrix */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *norm,
-                               sizeof *norm) != 0)
-                return -1;
-            l_vars.buf_off += sizeof(YF_mat4);
-
-            /* model-view matrix */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
-                return -1;
-            l_vars.buf_off += sizeof(YF_mat4);
-        }
-
-        /* copy */
-        if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
-                              &l_vars.buf, &off, &sz) != 0)
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
             return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
 
-        break;
+        /* normal matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *norm,
+                           sizeof *norm) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
 
-    case YF_RESRQ_TERR:
-        assert(obj_n == 1);
-        off = l_vars.buf_off;
-        sz = obj_n * YF_INSTSZ_TERR;
-        {
-            YF_terrain terr = ((YF_terrain *)objs)[0];
-            m = yf_node_getwldxform(yf_terrain_getnode(terr));
-            yf_mat4_mul(mv, *v, *m);
-
-            /* model matrix */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
-                return -1;
-            l_vars.buf_off += sizeof(YF_mat4);
-
-            /* model-view matrix */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
-                return -1;
-            l_vars.buf_off += sizeof(YF_mat4);
-
-            /* copy */
-            if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
-                                  &l_vars.buf, &off, &sz) != 0)
-                return -1;
-        }
-        break;
-
-    case YF_RESRQ_PART:
-        assert(obj_n == 1);
-        off = l_vars.buf_off;
-        sz = obj_n * YF_INSTSZ_PART;
-        {
-            YF_particle part = ((YF_particle *)objs)[0];
-            m = yf_node_getwldxform(yf_particle_getnode(part));
-            yf_mat4_mul(mv, *v, *m);
-
-            /* model matrix */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
-                return -1;
-            l_vars.buf_off += sizeof(YF_mat4);
-
-            /* model-view matrix */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
-                return -1;
-            l_vars.buf_off += sizeof(YF_mat4);
-
-            /* copy */
-            if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
-                                  &l_vars.buf, &off, &sz) != 0)
-                return -1;
-        }
-        break;
-
-    case YF_RESRQ_QUAD:
-        assert(obj_n == 1);
-        off = l_vars.buf_off;
-        sz = obj_n * YF_INSTSZ_QUAD;
-        {
-            YF_quad quad = ((YF_quad *)objs)[0];
-            m = yf_node_getwldxform(yf_quad_getnode(quad));
-            yf_mat4_mul(mv, *v, *m);
-            const YF_rect *rect = yf_quad_getrect(quad);
-            const float dim[2] = {rect->size.width, rect->size.height};
-
-            /* model matrix */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
-                return -1;
-            l_vars.buf_off += sizeof(YF_mat4);
-
-            /* model-view matrix */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
-                return -1;
-            l_vars.buf_off += sizeof(YF_mat4);
-
-            /* dimensions */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim,
-                               sizeof dim) != 0)
-                return -1;
-            l_vars.buf_off += 16;
-
-            /* copy */
-            if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
-                                  &l_vars.buf, &off, &sz) != 0)
-                return -1;
-        }
-        break;
-
-    case YF_RESRQ_LABL:
-        assert(obj_n == 1);
-        off = l_vars.buf_off;
-        sz = obj_n * YF_INSTSZ_LABL;
-        {
-            YF_label labl = ((YF_label *)objs)[0];
-            m = yf_node_getwldxform(yf_label_getnode(labl));
-            yf_mat4_mul(mv, *v, *m);
-            const YF_dim2 udim = yf_label_getdim(labl);
-            const float dim[2] = {udim.width, udim.height};
-
-            /* model matrix */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
-                return -1;
-            l_vars.buf_off += sizeof(YF_mat4);
-
-            /* model-view matrix */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
-                return -1;
-            l_vars.buf_off += sizeof(YF_mat4);
-
-            /* dimensions */
-            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim,
-                               sizeof dim) != 0)
-                return -1;
-            l_vars.buf_off += 16;
-
-            /* copy */
-            if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
-                                  &l_vars.buf, &off, &sz) != 0)
-                return -1;
-        }
-        break;
-
-    default:
-        assert(0);
-        abort();
+        /* model-view matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
     }
+
+    const YF_slice elems = {0, 1};
+    const size_t sz = mdl_n * YF_INSTSZ_MDL;
+
+    /* copy */
+    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+                          &l_vars.buf, &off, &sz) != 0)
+        return -1;
+
+    return 0;
+}
+
+/* Copies terrain's instance uniform to buffer and updates dtable. */
+static int copy_inst_terr(YF_scene scn, YF_terrain *terrs, unsigned terr_n,
+                          YF_gstate gst, unsigned inst_alloc)
+{
+    YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
+    const size_t off = l_vars.buf_off;
+    YF_node node;
+    YF_mat4 mv, *m;
+
+    for (unsigned i = 0; i < terr_n; i++) {
+        node = yf_terrain_getnode(terrs[i]);
+        m = yf_node_getwldxform(node);
+        yf_mat4_mul(mv, *v, *m);
+
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+
+        /* model-view matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+    }
+
+    const YF_slice elems = {0, 1};
+    const size_t sz = terr_n * YF_INSTSZ_TERR;
+
+    /* copy */
+    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+                          &l_vars.buf, &off, &sz) != 0)
+        return -1;
+
+    return 0;
+}
+
+/* Copies particle's instance uniform to buffer and updates dtable. */
+static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
+                          YF_gstate gst, unsigned inst_alloc)
+{
+    YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
+    const size_t off = l_vars.buf_off;
+    YF_node node;
+    YF_mat4 mv, *m;
+
+    for (unsigned i = 0; i < part_n; i++) {
+        node = yf_particle_getnode(parts[i]);
+        m = yf_node_getwldxform(node);
+        yf_mat4_mul(mv, *v, *m);
+
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+
+        /* model-view matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+    }
+
+    const YF_slice elems = {0, 1};
+    const size_t sz = part_n * YF_INSTSZ_PART;
+
+    /* copy */
+    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+                          &l_vars.buf, &off, &sz) != 0)
+        return -1;
+
+    return 0;
+}
+
+/* Copies quad's instance uniform to buffer and updates dtable. */
+static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
+                          YF_gstate gst, unsigned inst_alloc)
+{
+    YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
+    const size_t off = l_vars.buf_off;
+    YF_node node;
+    YF_mat4 mv, *m;
+    const YF_rect *rect;
+    float dim[2];
+
+    for (unsigned i = 0; i < quad_n; i++) {
+        node = yf_quad_getnode(quads[i]);
+        m = yf_node_getwldxform(node);
+        yf_mat4_mul(mv, *v, *m);
+        rect = yf_quad_getrect(quads[i]);
+        dim[0] = rect->size.width;
+        dim[1] = rect->size.height;
+
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+
+        /* model-view matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+
+        /* dimensions */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim, sizeof dim) != 0)
+            return -1;
+        l_vars.buf_off += 16;
+    }
+
+    const YF_slice elems = {0, 1};
+    const size_t sz = quad_n * YF_INSTSZ_QUAD;
+
+    /* copy */
+    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+                          &l_vars.buf, &off, &sz) != 0)
+        return -1;
+
+    return 0;
+}
+
+/* Copies label's instance uniform to buffer and updates dtable. */
+static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
+                          YF_gstate gst, unsigned inst_alloc)
+{
+    YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
+    const size_t off = l_vars.buf_off;
+    YF_node node;
+    YF_mat4 mv, *m;
+    YF_dim2 udim;
+    float dim[2];
+
+    for (unsigned i = 0; i < labl_n; i++) {
+        node = yf_label_getnode(labls[i]);
+        m = yf_node_getwldxform(node);
+        yf_mat4_mul(mv, *v, *m);
+        udim = yf_label_getdim(labls[i]);
+        dim[0] = udim.width;
+        dim[1] = udim.height;
+
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+
+        /* model-view matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+
+        /* dimensions */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim, sizeof dim) != 0)
+            return -1;
+        l_vars.buf_off += 16;
+    }
+
+    const YF_slice elems = {0, 1};
+    const size_t sz = labl_n * YF_INSTSZ_LABL;
+
+    /* copy */
+    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+                          &l_vars.buf, &off, &sz) != 0)
+        return -1;
 
     return 0;
 }
@@ -503,7 +535,7 @@ static int render_mdl(YF_scene scn)
             return -1;
         }
 
-        if (copy_inst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
+        if (copy_inst_mdl(scn, &val->mdl, 1, gst, inst_alloc) != 0)
             return -1;
 
         /* TODO: 'copy_matl()'. */
@@ -619,8 +651,7 @@ static int render_mdl_inst(YF_scene scn)
                 return -1;
             }
 
-            if (copy_inst(scn, resrq[rq_i], val->mdls+rem, n, gst,
-                          inst_alloc) != 0) {
+            if (copy_inst_mdl(scn, val->mdls+rem, n, gst, inst_alloc) != 0) {
                 yf_list_deinit(done);
                 return -1;
             }
@@ -707,7 +738,7 @@ static int render_terr(YF_scene scn)
             return -1;
         }
 
-        if (copy_inst(scn, YF_RESRQ_TERR, &terr, 1, gst, inst_alloc) != 0)
+        if (copy_inst_terr(scn, &terr, 1, gst, inst_alloc) != 0)
             return -1;
 
         if ((hmap = yf_terrain_gethmap(terr)) != NULL)
@@ -774,7 +805,7 @@ static int render_part(YF_scene scn)
             return -1;
         }
 
-        if (copy_inst(scn, YF_RESRQ_PART, &part, 1, gst, inst_alloc) != 0)
+        if (copy_inst_part(scn, &part, 1, gst, inst_alloc) != 0)
             return -1;
 
         if ((tex = yf_particle_gettex(part)) != NULL)
@@ -835,7 +866,7 @@ static int render_quad(YF_scene scn)
             return -1;
         }
 
-        if (copy_inst(scn, YF_RESRQ_QUAD, &quad, 1, gst, inst_alloc) != 0)
+        if (copy_inst_quad(scn, &quad, 1, gst, inst_alloc) != 0)
             return -1;
 
         if ((tex = yf_quad_gettex(quad)) != NULL)
@@ -896,7 +927,7 @@ static int render_labl(YF_scene scn)
             return -1;
         }
 
-        if (copy_inst(scn, YF_RESRQ_LABL, &labl, 1, gst, inst_alloc) != 0)
+        if (copy_inst_labl(scn, &labl, 1, gst, inst_alloc) != 0)
             return -1;
 
         /* FIXME: Texture may be invalid. */
