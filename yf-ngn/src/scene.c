@@ -233,6 +233,122 @@ static int traverse_scn(YF_node node, void *arg)
     return 0;
 }
 
+/* Creates uniform buffer and pre-allocates resources. */
+static int prepare_res(void)
+{
+    assert(l_vars.ctx != NULL);
+
+    /* TODO: Check limits. */
+    unsigned insts[YF_RESRQ_N] = {
+        [YF_RESRQ_MDL]   = 64,
+        [YF_RESRQ_MDL2]  = 16,
+        [YF_RESRQ_MDL4]  = 16,
+        [YF_RESRQ_MDL8]  = 16,
+        [YF_RESRQ_MDL16] = 8,
+        [YF_RESRQ_MDL32] = 8,
+        [YF_RESRQ_MDL64] = 4,
+        [YF_RESRQ_TERR]  = 4,
+        [YF_RESRQ_PART]  = 64,
+        [YF_RESRQ_QUAD]  = 32,
+        [YF_RESRQ_LABL]  = 64
+    };
+
+    size_t inst_min = 0;
+    size_t inst_sum = 0;
+    for (unsigned i = 0; i < YF_RESRQ_N; i++) {
+        inst_min += insts[i] != 0;
+        inst_sum += insts[i];
+    }
+    assert(inst_min > 0);
+
+    size_t buf_sz;
+
+    while (1) {
+        int failed = 0;
+        buf_sz = YF_GLOBLSZ;
+
+        for (unsigned i = 0; i < YF_RESRQ_N; i++) {
+            if (yf_resmgr_setallocn(i, insts[i]) != 0 ||
+                yf_resmgr_prealloc(i) != 0) {
+                yf_resmgr_clear();
+                failed = 1;
+                break;
+            }
+
+            switch (i) {
+            case YF_RESRQ_MDL:
+                buf_sz += insts[i] * YF_INSTSZ_MDL;
+                break;
+            case YF_RESRQ_MDL2:
+                buf_sz += insts[i] * (YF_INSTSZ_MDL << 1);
+                break;
+            case YF_RESRQ_MDL4:
+                buf_sz += insts[i] * (YF_INSTSZ_MDL << 2);
+                break;
+            case YF_RESRQ_MDL8:
+                buf_sz += insts[i] * (YF_INSTSZ_MDL << 3);
+                break;
+            case YF_RESRQ_MDL16:
+                buf_sz += insts[i] * (YF_INSTSZ_MDL << 4);
+                break;
+            case YF_RESRQ_MDL32:
+                buf_sz += insts[i] * (YF_INSTSZ_MDL << 5);
+                break;
+            case YF_RESRQ_MDL64:
+                buf_sz += insts[i] * (YF_INSTSZ_MDL << 6);
+                break;
+            case YF_RESRQ_TERR:
+                buf_sz += insts[i] * YF_INSTSZ_TERR;
+                break;
+            case YF_RESRQ_PART:
+                buf_sz += insts[i] * YF_INSTSZ_PART;
+                break;
+            case YF_RESRQ_QUAD:
+                buf_sz += insts[i] * YF_INSTSZ_QUAD;
+                break;
+            case YF_RESRQ_LABL:
+                buf_sz += insts[i] * YF_INSTSZ_LABL;
+                break;
+            default:
+                assert(0);
+                abort();
+            }
+        }
+
+        /* proceed if all allocations succeed */
+        if (!failed)
+            break;
+
+        /* give up if cannot allocate the minimum */
+        if (inst_sum <= inst_min)
+            return -1;
+
+        /* try again with reduced number of instances */
+        inst_sum = 0;
+        for (unsigned i = 0; i < YF_RESRQ_N; i++) {
+            if (insts[i] > 0) {
+                insts[i] = YF_MAX(1, insts[i] >> 1);
+                inst_sum += insts[i];
+            }
+        }
+    }
+
+    if (l_vars.buf != NULL) {
+        size_t cur_sz = yf_buffer_getsize(l_vars.buf);
+        if (cur_sz < buf_sz || (cur_sz >> 1) > buf_sz) {
+            yf_buffer_deinit(l_vars.buf);
+            l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz);
+        }
+    } else {
+        l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz);
+    }
+
+    if (l_vars.buf == NULL)
+        return -1;
+
+    return 0;
+}
+
 /* Copies global uniform to buffer and updates dtable. */
 static int copy_globl(YF_scene scn)
 {
