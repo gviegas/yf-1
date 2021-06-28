@@ -239,6 +239,59 @@ static int prepare_res(void)
     assert(l_vars.ctx != NULL);
 
     /* TODO: Check limits. */
+
+//#ifdef YF_SCN_DYNAMIC
+#if 1
+    unsigned insts[YF_RESRQ_N] = {
+        [YF_RESRQ_MDL]   = yf_dict_getlen(l_vars.mdls),
+        [YF_RESRQ_MDL2]  = 0,
+        [YF_RESRQ_MDL4]  = 0,
+        [YF_RESRQ_MDL8]  = 0,
+        [YF_RESRQ_MDL16] = 0,
+        [YF_RESRQ_MDL32] = 0,
+        [YF_RESRQ_MDL64] = 0,
+        [YF_RESRQ_TERR]  = yf_list_getlen(l_vars.terrs),
+        [YF_RESRQ_PART]  = yf_list_getlen(l_vars.parts),
+        [YF_RESRQ_QUAD]  = yf_list_getlen(l_vars.quads),
+        [YF_RESRQ_LABL]  = yf_list_getlen(l_vars.labls)
+    };
+
+    YF_iter it = YF_NILIT;
+    T_kv_mdl *kv_mdl;
+
+    while ((kv_mdl = yf_dict_next(l_vars.mdls_inst, &it, NULL)) != NULL) {
+        unsigned n = kv_mdl->mdl_n;
+        while (n >= 64) {
+            insts[YF_RESRQ_MDL64]++;
+            n -= 64;
+        }
+        if (n >= 32) {
+            insts[YF_RESRQ_MDL32]++;
+            n -= 32;
+        }
+        if (n >= 16) {
+            insts[YF_RESRQ_MDL16]++;
+            n -= 16;
+        }
+        if (n >= 8) {
+            insts[YF_RESRQ_MDL8]++;
+            n -= 8;
+        }
+        if (n >= 4) {
+            insts[YF_RESRQ_MDL4]++;
+            n -= 4;
+        }
+        if (n >= 2) {
+            insts[YF_RESRQ_MDL2]++;
+            n -= 2;
+        }
+        if (n == 1) {
+            insts[YF_RESRQ_MDL]++;
+            n--;
+        }
+        assert(n == 0);
+    }
+#else
     unsigned insts[YF_RESRQ_N] = {
         [YF_RESRQ_MDL]   = 64,
         [YF_RESRQ_MDL2]  = 16,
@@ -252,6 +305,7 @@ static int prepare_res(void)
         [YF_RESRQ_QUAD]  = 32,
         [YF_RESRQ_LABL]  = 64
     };
+#endif /* YF_SCN_DYNAMIC */
 
     size_t inst_min = 0;
     size_t inst_sum = 0;
