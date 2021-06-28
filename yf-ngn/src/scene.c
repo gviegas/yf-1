@@ -322,12 +322,14 @@ static int prepare_res(void)
         buf_sz = YF_GLOBLSZ;
 
         for (unsigned i = 0; i < YF_RESRQ_N; i++) {
-            if (yf_resmgr_setallocn(i, insts[i]) != 0 ||
-                yf_resmgr_prealloc(i) != 0) {
+            if (yf_resmgr_setallocn(i, insts[i]) != 0) {
                 yf_resmgr_clear();
                 failed = 1;
                 break;
             }
+
+            if (insts[i] == 0)
+                continue;
 
             switch (i) {
             case YF_RESRQ_MDL:
