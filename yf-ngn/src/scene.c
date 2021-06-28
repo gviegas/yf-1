@@ -233,7 +233,7 @@ static int traverse_scn(YF_node node, void *arg)
     return 0;
 }
 
-/* Copies uniform global data to buffer and updates dtable contents. */
+/* Copies global uniform to buffer and updates dtable. */
 static int copy_globl(YF_scene scn)
 {
     YF_dtable dtb = yf_resmgr_getglobl();
@@ -278,6 +278,50 @@ static int copy_globl(YF_scene scn)
 
     /* copy */
     if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_GLOBL, elems,
+                          &l_vars.buf, &off, &sz) != 0)
+        return -1;
+
+    return 0;
+}
+
+/* Copies model's instance uniform to buffer and updates dtable. */
+static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
+                         YF_gstate gst, unsigned inst_alloc)
+{
+    YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+    const YF_mat4 *v = yf_camera_getview(scn->cam);
+    const size_t off = l_vars.buf_off;
+    YF_node node;
+    YF_mat4 mv, *m, *norm;
+
+    for (unsigned i = 0; i < mdl_n; i++) {
+        node = yf_model_getnode(mdls[i]);
+        m = yf_node_getwldxform(node);
+        norm = yf_node_getwldnorm(node);
+        yf_mat4_mul(mv, *v, *m);
+
+        /* model matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+
+        /* normal matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *norm,
+                           sizeof *norm) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+
+        /* model-view matrix */
+        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+            return -1;
+        l_vars.buf_off += sizeof(YF_mat4);
+    }
+
+    const YF_slice elems = {0, 1};
+    const size_t sz = mdl_n * YF_INSTSZ_MDL;
+
+    /* copy */
+    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
 
@@ -503,7 +547,7 @@ static int render_mdl(YF_scene scn)
             return -1;
         }
 
-        if (copy_inst(scn, YF_RESRQ_MDL, &val->mdl, 1, gst, inst_alloc) != 0)
+        if (copy_inst_mdl(scn, &val->mdl, 1, gst, inst_alloc) != 0)
             return -1;
 
         /* TODO: 'copy_matl()'. */
@@ -619,8 +663,7 @@ static int render_mdl_inst(YF_scene scn)
                 return -1;
             }
 
-            if (copy_inst(scn, resrq[rq_i], val->mdls+rem, n, gst,
-                          inst_alloc) != 0) {
+            if (copy_inst_mdl(scn, val->mdls+rem, n, gst, inst_alloc) != 0) {
                 yf_list_deinit(done);
                 return -1;
             }
