@@ -539,6 +539,14 @@ static int render_mdl(YF_scene scn)
 /* Renders model objects using instanced drawing. */
 static int render_mdl_inst(YF_scene scn)
 {
+    /* FIXME: Currently, this function expects all these to be non-zero. */
+    assert(yf_resmgr_getallocn(YF_RESRQ_MDL2 > 0));
+    assert(yf_resmgr_getallocn(YF_RESRQ_MDL4 > 0));
+    assert(yf_resmgr_getallocn(YF_RESRQ_MDL8 > 0));
+    assert(yf_resmgr_getallocn(YF_RESRQ_MDL16 > 0));
+    assert(yf_resmgr_getallocn(YF_RESRQ_MDL32 > 0));
+    assert(yf_resmgr_getallocn(YF_RESRQ_MDL64 > 0));
+
     static const int resrq[] = {
         YF_RESRQ_MDL2, YF_RESRQ_MDL4, YF_RESRQ_MDL8, YF_RESRQ_MDL16,
         YF_RESRQ_MDL32, YF_RESRQ_MDL64
