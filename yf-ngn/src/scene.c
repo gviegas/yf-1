@@ -742,19 +742,14 @@ static int render_mdl(YF_scene scn)
 /* Renders model objects using instanced drawing. */
 static int render_mdl_inst(YF_scene scn)
 {
-    /* FIXME: Currently, this function expects all these to be non-zero. */
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL2 > 0));
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL4 > 0));
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL8 > 0));
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL16 > 0));
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL32 > 0));
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL64 > 0));
+    /* FIXME: Currently, this function might fail if any RESRQ_MDL* value
+       has no resources allocated. */
 
     static const int resrq[] = {
-        YF_RESRQ_MDL2, YF_RESRQ_MDL4, YF_RESRQ_MDL8, YF_RESRQ_MDL16,
-        YF_RESRQ_MDL32, YF_RESRQ_MDL64
+        YF_RESRQ_MDL, YF_RESRQ_MDL2, YF_RESRQ_MDL4, YF_RESRQ_MDL8,
+        YF_RESRQ_MDL16, YF_RESRQ_MDL32, YF_RESRQ_MDL64
     };
-    static const unsigned insts[] = {2, 4, 8, 16, 32, 64};
+    static const unsigned insts[] = {1, 2, 4, 8, 16, 32, 64};
     static const int sz = sizeof resrq / sizeof resrq[0];
 
     unsigned n, rem;
