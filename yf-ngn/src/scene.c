@@ -41,6 +41,42 @@
 
 #define YF_INSTCAP 4
 
+#ifndef YF_SCN_DYNAMIC
+# ifndef YF_SCN_MDLN
+#  define YF_SCN_MDLN 64
+# endif
+# ifndef YF_SCN_MDL2N
+#  define YF_SCN_MDL2N 16
+# endif
+# ifndef YF_SCN_MDL4N
+#  define YF_SCN_MDL4N 16
+# endif
+# ifndef YF_SCN_MDL8N
+#  define YF_SCN_MDL8N 16
+# endif
+# ifndef YF_SCN_MDL16N
+#  define YF_SCN_MDL16N 8
+# endif
+# ifndef YF_SCN_MDL32N
+#  define YF_SCN_MDL32N 8
+# endif
+# ifndef YF_SCN_MDL64N
+#  define YF_SCN_MDL64N 4
+# endif
+# ifndef YF_SCN_TERRN
+#  define YF_SCN_TERRN 4
+# endif
+# ifndef YF_SCN_PARTN
+#  define YF_SCN_PARTN 64
+# endif
+# ifndef YF_SCN_QUADN
+#  define YF_SCN_QUADN 32
+# endif
+# ifndef YF_SCN_LABLN
+#  define YF_SCN_LABLN 64
+# endif
+#endif /* !YF_SCN_DYNAMIC */
+
 #define YF_GLOBLSZ     ((sizeof(YF_mat4) << 2) + 32)
 #define YF_INSTSZ_MDL  (sizeof(YF_mat4) * 3)
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
@@ -241,6 +277,7 @@ static int prepare_res(void)
     /* TODO: Check limits. */
 
 #ifdef YF_SCN_DYNAMIC
+    /* dynamically allocate resources based on processed objects */
     unsigned insts[YF_RESRQ_N] = {
         [YF_RESRQ_MDL]   = yf_dict_getlen(l_vars.mdls),
         [YF_RESRQ_MDL2]  = 0,
@@ -291,18 +328,19 @@ static int prepare_res(void)
         assert(n == 0);
     }
 #else
+    /* use predefined number of resource allocations */
     unsigned insts[YF_RESRQ_N] = {
-        [YF_RESRQ_MDL]   = 64,
-        [YF_RESRQ_MDL2]  = 16,
-        [YF_RESRQ_MDL4]  = 16,
-        [YF_RESRQ_MDL8]  = 16,
-        [YF_RESRQ_MDL16] = 8,
-        [YF_RESRQ_MDL32] = 8,
-        [YF_RESRQ_MDL64] = 4,
-        [YF_RESRQ_TERR]  = 4,
-        [YF_RESRQ_PART]  = 64,
-        [YF_RESRQ_QUAD]  = 32,
-        [YF_RESRQ_LABL]  = 64
+        [YF_RESRQ_MDL]   = YF_SCN_MDLN,
+        [YF_RESRQ_MDL2]  = YF_SCN_MDL2N,
+        [YF_RESRQ_MDL4]  = YF_SCN_MDL4N,
+        [YF_RESRQ_MDL8]  = YF_SCN_MDL8N,
+        [YF_RESRQ_MDL16] = YF_SCN_MDL16N,
+        [YF_RESRQ_MDL32] = YF_SCN_MDL32N,
+        [YF_RESRQ_MDL64] = YF_SCN_MDL64N,
+        [YF_RESRQ_TERR]  = YF_SCN_TERRN,
+        [YF_RESRQ_PART]  = YF_SCN_PARTN,
+        [YF_RESRQ_QUAD]  = YF_SCN_QUADN,
+        [YF_RESRQ_LABL]  = YF_SCN_LABLN
     };
 #endif /* YF_SCN_DYNAMIC */
 
