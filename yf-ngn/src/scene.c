@@ -41,6 +41,42 @@
 
 #define YF_INSTCAP 4
 
+#ifndef YF_SCN_DYNAMIC
+# ifndef YF_SCN_MDLN
+#  define YF_SCN_MDLN 64
+# endif
+# ifndef YF_SCN_MDL2N
+#  define YF_SCN_MDL2N 16
+# endif
+# ifndef YF_SCN_MDL4N
+#  define YF_SCN_MDL4N 16
+# endif
+# ifndef YF_SCN_MDL8N
+#  define YF_SCN_MDL8N 16
+# endif
+# ifndef YF_SCN_MDL16N
+#  define YF_SCN_MDL16N 8
+# endif
+# ifndef YF_SCN_MDL32N
+#  define YF_SCN_MDL32N 8
+# endif
+# ifndef YF_SCN_MDL64N
+#  define YF_SCN_MDL64N 4
+# endif
+# ifndef YF_SCN_TERRN
+#  define YF_SCN_TERRN 4
+# endif
+# ifndef YF_SCN_PARTN
+#  define YF_SCN_PARTN 64
+# endif
+# ifndef YF_SCN_QUADN
+#  define YF_SCN_QUADN 32
+# endif
+# ifndef YF_SCN_LABLN
+#  define YF_SCN_LABLN 64
+# endif
+#endif /* !YF_SCN_DYNAMIC */
+
 #define YF_GLOBLSZ     ((sizeof(YF_mat4) << 2) + 32)
 #define YF_INSTSZ_MDL  (sizeof(YF_mat4) * 3)
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
@@ -69,6 +105,7 @@ typedef struct {
     YF_context ctx;
     YF_buffer buf;
     unsigned buf_off;
+    unsigned insts[YF_RESRQ_N];
     YF_list res_obtd;
     YF_cmdbuf cb;
     YF_dict mdls;
@@ -230,6 +267,175 @@ static int traverse_scn(YF_node node, void *arg)
 #ifdef YF_DEVEL
     yf_print_nodeobj(node);
 #endif
+    return 0;
+}
+
+/* Creates uniform buffer and pre-allocates resources. */
+static int prepare_res(void)
+{
+    assert(l_vars.ctx != NULL);
+
+    /* TODO: Check limits. */
+
+#ifdef YF_SCN_DYNAMIC
+    /* dynamically allocate resources based on processed objects */
+    l_vars.insts[YF_RESRQ_MDL]   = yf_dict_getlen(l_vars.mdls);
+    l_vars.insts[YF_RESRQ_MDL2]  = 0;
+    l_vars.insts[YF_RESRQ_MDL4]  = 0;
+    l_vars.insts[YF_RESRQ_MDL8]  = 0;
+    l_vars.insts[YF_RESRQ_MDL16] = 0;
+    l_vars.insts[YF_RESRQ_MDL32] = 0;
+    l_vars.insts[YF_RESRQ_MDL64] = 0;
+    l_vars.insts[YF_RESRQ_TERR]  = yf_list_getlen(l_vars.terrs);
+    l_vars.insts[YF_RESRQ_PART]  = yf_list_getlen(l_vars.parts);
+    l_vars.insts[YF_RESRQ_QUAD]  = yf_list_getlen(l_vars.quads);
+    l_vars.insts[YF_RESRQ_LABL]  = yf_list_getlen(l_vars.labls);
+
+    YF_iter it = YF_NILIT;
+    T_kv_mdl *kv_mdl;
+
+    while ((kv_mdl = yf_dict_next(l_vars.mdls_inst, &it, NULL)) != NULL) {
+        unsigned n = kv_mdl->mdl_n;
+        while (n >= 64) {
+            l_vars.insts[YF_RESRQ_MDL64]++;
+            n -= 64;
+        }
+        if (n >= 32) {
+            l_vars.insts[YF_RESRQ_MDL32]++;
+            n -= 32;
+        }
+        if (n >= 16) {
+            l_vars.insts[YF_RESRQ_MDL16]++;
+            n -= 16;
+        }
+        if (n >= 8) {
+            l_vars.insts[YF_RESRQ_MDL8]++;
+            n -= 8;
+        }
+        if (n >= 4) {
+            l_vars.insts[YF_RESRQ_MDL4]++;
+            n -= 4;
+        }
+        if (n >= 2) {
+            l_vars.insts[YF_RESRQ_MDL2]++;
+            n -= 2;
+        }
+        if (n == 1) {
+            l_vars.insts[YF_RESRQ_MDL]++;
+            n--;
+        }
+        assert(n == 0);
+    }
+#else
+    /* use predefined number of resource allocations */
+    l_vars.insts[YF_RESRQ_MDL]   = YF_SCN_MDLN;
+    l_vars.insts[YF_RESRQ_MDL2]  = YF_SCN_MDL2N;
+    l_vars.insts[YF_RESRQ_MDL4]  = YF_SCN_MDL4N;
+    l_vars.insts[YF_RESRQ_MDL8]  = YF_SCN_MDL8N;
+    l_vars.insts[YF_RESRQ_MDL16] = YF_SCN_MDL16N;
+    l_vars.insts[YF_RESRQ_MDL32] = YF_SCN_MDL32N;
+    l_vars.insts[YF_RESRQ_MDL64] = YF_SCN_MDL64N;
+    l_vars.insts[YF_RESRQ_TERR]  = YF_SCN_TERRN;
+    l_vars.insts[YF_RESRQ_PART]  = YF_SCN_PARTN;
+    l_vars.insts[YF_RESRQ_QUAD]  = YF_SCN_QUADN;
+    l_vars.insts[YF_RESRQ_LABL]  = YF_SCN_LABLN;
+#endif /* YF_SCN_DYNAMIC */
+
+    size_t inst_min = 0;
+    size_t inst_sum = 0;
+    for (unsigned i = 0; i < YF_RESRQ_N; i++) {
+        inst_min += l_vars.insts[i] != 0;
+        inst_sum += l_vars.insts[i];
+    }
+    assert(inst_min > 0);
+
+    size_t buf_sz;
+
+    while (1) {
+        int failed = 0;
+        buf_sz = YF_GLOBLSZ;
+
+        for (unsigned i = 0; i < YF_RESRQ_N; i++) {
+            if (yf_resmgr_setallocn(i, l_vars.insts[i]) != 0) {
+                yf_resmgr_clear();
+                failed = 1;
+                break;
+            }
+
+            if (l_vars.insts[i] == 0)
+                continue;
+
+            switch (i) {
+            case YF_RESRQ_MDL:
+                buf_sz += l_vars.insts[i] * YF_INSTSZ_MDL;
+                break;
+            case YF_RESRQ_MDL2:
+                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 1);
+                break;
+            case YF_RESRQ_MDL4:
+                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 2);
+                break;
+            case YF_RESRQ_MDL8:
+                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 3);
+                break;
+            case YF_RESRQ_MDL16:
+                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 4);
+                break;
+            case YF_RESRQ_MDL32:
+                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 5);
+                break;
+            case YF_RESRQ_MDL64:
+                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 6);
+                break;
+            case YF_RESRQ_TERR:
+                buf_sz += l_vars.insts[i] * YF_INSTSZ_TERR;
+                break;
+            case YF_RESRQ_PART:
+                buf_sz += l_vars.insts[i] * YF_INSTSZ_PART;
+                break;
+            case YF_RESRQ_QUAD:
+                buf_sz += l_vars.insts[i] * YF_INSTSZ_QUAD;
+                break;
+            case YF_RESRQ_LABL:
+                buf_sz += l_vars.insts[i] * YF_INSTSZ_LABL;
+                break;
+            default:
+                assert(0);
+                abort();
+            }
+        }
+
+        /* proceed if all allocations succeed */
+        if (!failed)
+            break;
+
+        /* give up if cannot allocate the minimum */
+        if (inst_sum <= inst_min)
+            return -1;
+
+        /* try again with reduced number of instances */
+        inst_sum = 0;
+        for (unsigned i = 0; i < YF_RESRQ_N; i++) {
+            if (l_vars.insts[i] > 0) {
+                l_vars.insts[i] = YF_MAX(1, l_vars.insts[i] >> 1);
+                inst_sum += l_vars.insts[i];
+            }
+        }
+    }
+
+    if (l_vars.buf != NULL) {
+        size_t cur_sz = yf_buffer_getsize(l_vars.buf);
+        if (cur_sz < buf_sz || (cur_sz >> 1) > buf_sz) {
+            yf_buffer_deinit(l_vars.buf);
+            l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz);
+        }
+    } else {
+        l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz);
+    }
+
+    if (l_vars.buf == NULL)
+        return -1;
+
     return 0;
 }
 
@@ -571,19 +777,14 @@ static int render_mdl(YF_scene scn)
 /* Renders model objects using instanced drawing. */
 static int render_mdl_inst(YF_scene scn)
 {
-    /* FIXME: Currently, this function expects all these to be non-zero. */
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL2 > 0));
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL4 > 0));
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL8 > 0));
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL16 > 0));
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL32 > 0));
-    assert(yf_resmgr_getallocn(YF_RESRQ_MDL64 > 0));
+    /* FIXME: Currently, this function might fail if any RESRQ_MDL* value
+       has no resources allocated. */
 
     static const int resrq[] = {
-        YF_RESRQ_MDL2, YF_RESRQ_MDL4, YF_RESRQ_MDL8, YF_RESRQ_MDL16,
-        YF_RESRQ_MDL32, YF_RESRQ_MDL64
+        YF_RESRQ_MDL, YF_RESRQ_MDL2, YF_RESRQ_MDL4, YF_RESRQ_MDL8,
+        YF_RESRQ_MDL16, YF_RESRQ_MDL32, YF_RESRQ_MDL64
     };
-    static const unsigned insts[] = {2, 4, 8, 16, 32, 64};
+    static const unsigned insts[] = {1, 2, 4, 8, 16, 32, 64};
     static const int sz = sizeof resrq / sizeof resrq[0];
 
     unsigned n, rem;
@@ -1030,7 +1231,7 @@ static void deinit_vars(void)
     memset(&l_vars, 0, sizeof l_vars);
 }
 
-/* Initializes shared variables and prepares required resources. */
+/* Initializes shared variables and prepares static resources. */
 static int init_vars(void)
 {
     assert(l_vars.ctx == NULL);
@@ -1038,112 +1239,24 @@ static int init_vars(void)
     if ((l_vars.ctx = yf_getctx()) == NULL)
         return -1;
 
-    /* TODO: Check limits. */
-    unsigned insts[YF_RESRQ_N] = {
-        [YF_RESRQ_MDL]   = 64,
-        [YF_RESRQ_MDL2]  = 16,
-        [YF_RESRQ_MDL4]  = 16,
-        [YF_RESRQ_MDL8]  = 16,
-        [YF_RESRQ_MDL16] = 8,
-        [YF_RESRQ_MDL32] = 8,
-        [YF_RESRQ_MDL64] = 4,
-        [YF_RESRQ_TERR]  = 4,
-        [YF_RESRQ_PART]  = 64,
-        [YF_RESRQ_QUAD]  = 32,
-        [YF_RESRQ_LABL]  = 64
-    };
-
-    size_t inst_min = 0;
-    size_t inst_sum = 0;
-    for (unsigned i = 0; i < YF_RESRQ_N; i++) {
-        inst_min += insts[i] != 0;
-        inst_sum += insts[i];
-    }
-    assert(inst_min > 0);
-
-    size_t buf_sz;
-
-    while (1) {
-        int failed = 0;
-        buf_sz = YF_GLOBLSZ;
-
-        for (unsigned i = 0; i < YF_RESRQ_N; i++) {
-            if (yf_resmgr_setallocn(i, insts[i]) != 0 ||
-                yf_resmgr_prealloc(i) != 0) {
-                yf_resmgr_clear();
-                failed = 1;
-                break;
-            }
-
-            switch (i) {
-            case YF_RESRQ_MDL:
-                buf_sz += insts[i] * YF_INSTSZ_MDL;
-                break;
-            case YF_RESRQ_MDL2:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<1);
-                break;
-            case YF_RESRQ_MDL4:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<2);
-                break;
-            case YF_RESRQ_MDL8:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<3);
-                break;
-            case YF_RESRQ_MDL16:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<4);
-                break;
-            case YF_RESRQ_MDL32:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<5);
-                break;
-            case YF_RESRQ_MDL64:
-                buf_sz += insts[i] * (YF_INSTSZ_MDL<<6);
-                break;
-            case YF_RESRQ_TERR:
-                buf_sz += insts[i] * YF_INSTSZ_TERR;
-                break;
-            case YF_RESRQ_PART:
-                buf_sz += insts[i] * YF_INSTSZ_PART;
-                break;
-            case YF_RESRQ_QUAD:
-                buf_sz += insts[i] * YF_INSTSZ_QUAD;
-                break;
-            case YF_RESRQ_LABL:
-                buf_sz += insts[i] * YF_INSTSZ_LABL;
-                break;
-            default:
-                assert(0);
-                abort();
-            }
-        }
-
-        /* proceed if all allocations succeed */
-        if (!failed)
-            break;
-
-        /* give up if cannot allocate the minimum */
-        if (inst_sum <= inst_min)
-            return -1;
-
-        /* try again with reduced number of instances */
-        inst_sum = 0;
-        for (unsigned i = 0; i < YF_RESRQ_N; i++) {
-            if (insts[i] > 0) {
-                insts[i] = YF_MAX(1, insts[i] >> 1);
-                inst_sum += insts[i];
-            }
-        }
-    }
-
-    if ((l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz)) == NULL ||
-        (l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
+    if ((l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
         (l_vars.mdls = yf_dict_init(hash_mdl, cmp_mdl)) == NULL ||
         (l_vars.mdls_inst = yf_dict_init(hash_mdl, cmp_mdl)) == NULL ||
         (l_vars.terrs = yf_list_init(NULL)) == NULL ||
         (l_vars.parts = yf_list_init(NULL)) == NULL ||
         (l_vars.quads = yf_list_init(NULL)) == NULL ||
         (l_vars.labls = yf_list_init(NULL)) == NULL) {
+
         deinit_vars();
         return -1;
     }
+
+#ifndef YF_SCN_DYNAMIC
+    if (prepare_res() != 0) {
+        deinit_vars();
+        return -1;
+    }
+#endif
 
     return 0;
 }
@@ -1222,6 +1335,13 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
         clear_obj();
         return -1;
     }
+
+#ifdef YF_SCN_DYNAMIC
+    if (prepare_res() != 0) {
+        clear_obj();
+        return -1;
+    }
+#endif
 
     unsigned pend = YF_PEND_NONE;
     if (yf_dict_getlen(l_vars.mdls) != 0)
