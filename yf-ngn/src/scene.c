@@ -104,7 +104,7 @@ struct YF_scene_o {
 typedef struct {
     YF_context ctx;
     YF_buffer buf;
-    unsigned buf_off;
+    size_t buf_off;
     unsigned insts[YF_RESRQ_N];
     YF_list res_obtd;
     YF_cmdbuf cb;
