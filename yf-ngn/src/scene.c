@@ -148,54 +148,16 @@ static int traverse_scn(YF_node node, void *arg)
     switch (nodeobj) {
     case YF_NODEOBJ_MODEL: {
         YF_model mdl = obj;
-        T_kv_mdl key = {
-            {yf_model_getmesh(mdl), yf_model_getmatl(mdl)},
-            {NULL}, 0, 0
-        };
-        T_kv_mdl *val = NULL;
+        YF_mesh mesh = yf_model_getmesh(mdl);
+        YF_material matl = yf_model_getmatl(mdl);
 
-        if ((val = yf_dict_search(l_vars.mdls, &key)) != NULL) {
-            /* model with shared resources, move to instanced drawing set */
-            YF_model *mdls = malloc(YF_INSTCAP * sizeof mdl);
-            if (mdls == NULL) {
-                yf_seterr(YF_ERR_NOMEM, __func__);
-                *(int *)arg = -1;
-                return -1;
-            }
+        T_kv_mdl key = {{mesh, matl}, {NULL}, 0, 0};
+        T_kv_mdl *val = yf_dict_search(l_vars.mdls, &key);
 
-            yf_dict_remove(l_vars.mdls, &key);
-            if (yf_dict_insert(l_vars.mdls_inst, val, val) != 0) {
-                free(mdls);
-                *(int *)arg = -1;
-                return -1;
-            }
-
-            mdls[0] = val->mdl;
-            mdls[1] = mdl;
-            val->mdls = mdls;
-            val->mdl_n = 2;
-            val->mdl_cap = YF_INSTCAP;
-
-        } else if ((val = yf_dict_search(l_vars.mdls_inst, &key)) != NULL) {
-            /* another model for instanced drawing */
-            if (val->mdl_n == val->mdl_cap) {
-                YF_model *mdls = realloc(val->mdls,
-                                         (val->mdl_cap * sizeof mdl) << 1);
-                if (mdls == NULL) {
-                    yf_seterr(YF_ERR_NOMEM, __func__);
-                    *(int *)arg = -1;
-                    return -1;
-                }
-
-                val->mdls = mdls;
-                val->mdl_cap <<= 1;
-            }
-
-            val->mdls[val->mdl_n++] = mdl;
-
-        } else {
+        if (val == NULL) {
             /* new unique model */
-            if ((val = malloc(sizeof *val)) == NULL) {
+            val = malloc(sizeof *val);
+            if (val == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 *(int *)arg = -1;
                 return -1;
@@ -203,6 +165,7 @@ static int traverse_scn(YF_node node, void *arg)
 
             *val = key;
             if (yf_dict_insert(l_vars.mdls, val, val) != 0) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
                 *(int *)arg = -1;
                 return -1;
             }
@@ -210,6 +173,37 @@ static int traverse_scn(YF_node node, void *arg)
             val->mdl = mdl;
             val->mdl_n = 1;
             val->mdl_cap = 1;
+
+        } else {
+            /* model with shared resources */
+            if (val->mdl_n == val->mdl_cap) {
+                if (val->mdl_cap == 1) {
+                    YF_model *mdls = malloc(YF_INSTCAP * sizeof mdl);
+                    if (mdls == NULL) {
+                        yf_seterr(YF_ERR_NOMEM, __func__);
+                        *(int *)arg = -1;
+                        return -1;
+                    }
+
+                    mdls[0] = val->mdl;
+                    val->mdls = mdls;
+                    val->mdl_cap = YF_INSTCAP;
+
+                } else {
+                    YF_model *mdls = realloc(val->mdls,
+                                             (val->mdl_cap * sizeof mdl) << 1);
+                    if (mdls == NULL) {
+                        yf_seterr(YF_ERR_NOMEM, __func__);
+                        *(int *)arg = -1;
+                        return -1;
+                    }
+
+                    val->mdls = mdls;
+                    val->mdl_cap <<= 1;
+                }
+            }
+
+            val->mdls[val->mdl_n++] = mdl;
         }
     } break;
 
