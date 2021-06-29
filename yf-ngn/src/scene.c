@@ -705,71 +705,137 @@ static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
 /* Renders model objects. */
 static int render_mdl(YF_scene scn)
 {
-    YF_gstate gst = NULL;
-    unsigned inst_alloc = 0;
-    YF_dtable inst_dtb = NULL;
-    T_reso *reso = NULL;
-    YF_material matl = NULL;
-    YF_mesh mesh = NULL;
+    assert(YF_RESRQ_MDL == 0 && YF_RESRQ_MDL2 == 1 && YF_RESRQ_MDL4 == 2 &&
+           YF_RESRQ_MDL8 == 3 && YF_RESRQ_MDL16 == 4 && YF_RESRQ_MDL32 == 5 &&
+           YF_RESRQ_MDL64 == 6);
+
+    int resrq[YF_RESRQ_MDL64 + 1];
+    unsigned insts[YF_RESRQ_N];
+    unsigned rq_n = 0;
+    for (int i = 0; i < YF_RESRQ_MDL64 + 1; i++) {
+        if (l_vars.insts[i] != 0) {
+            resrq[rq_n] = i;
+            insts[rq_n] = 1 << i;
+            rq_n++;
+        }
+    }
+
+    YF_list done = yf_list_init(NULL);
+    if (done == NULL)
+        return -1;
+
     YF_iter it = YF_NILIT;
-    T_kv_mdl *val = NULL;
+    T_kv_mdl *val;
 
     while (1) {
         val = yf_dict_next(l_vars.mdls, &it, NULL);
         if (YF_IT_ISNIL(it))
             break;
 
-        if ((gst = yf_resmgr_obtain(YF_RESRQ_MDL, &inst_alloc)) == NULL) {
-            switch (yf_geterr()) {
-            case YF_ERR_INUSE:
-                /* out of resources, need to execute pending work */
-                return 0;
-            default:
+        YF_model *mdls;
+        if (val->mdl_cap == 1)
+            mdls = &val->mdl;
+        else
+            mdls = val->mdls;
+
+        unsigned rem = val->mdl_n;
+        unsigned n = 0;
+
+        while (1) {
+            unsigned rq_i = 0;
+            for (; rq_i + 1 < rq_n; rq_i++) {
+                if (insts[rq_i] >= rem)
+                    break;
+            }
+
+            YF_gstate gst = NULL;
+            unsigned inst_alloc;
+            for (int i = rq_i; i >= 0; i--) {
+                gst = yf_resmgr_obtain(resrq[i], &inst_alloc);
+                if (gst != NULL) {
+                    n = YF_MIN(insts[i], rem);
+                    rem -= n;
+                    rq_i = i;
+                    break;
+                }
+            }
+
+            if (gst == NULL) {
+                if (yf_geterr() == YF_ERR_INUSE) {
+                    /* out of resources, the remaining instances for this entry
+                       will be rendered in future passes */
+                    val->mdl_n = rem;
+                    break;
+                } else {
+                    yf_list_deinit(done);
+                    return -1;
+                }
+            }
+
+            YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+
+            T_reso *reso = malloc(sizeof *reso);
+            if (reso == NULL) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                yf_list_deinit(done);
+                return -1;
+            }
+            reso->resrq = resrq[rq_i];
+            reso->inst_alloc = inst_alloc;
+            if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
+                free(reso);
+                yf_list_deinit(done);
+                return -1;
+            }
+
+            if (copy_inst_mdl(scn, mdls+rem, n, gst, inst_alloc) != 0) {
+                yf_list_deinit(done);
+                return -1;
+            }
+
+            /* TODO: 'copy_matl()'. */
+            YF_material matl = yf_model_getmatl(mdls[rem]);
+            if (matl != NULL) {
+                YF_matlprop *prop = yf_material_getprop(matl);
+
+                /* TODO */
+                assert(prop->pbr == YF_PBR_METALROUGH &&
+                       prop->pbrmr.color_tex != NULL);
+
+                yf_texture_copyres(prop->pbrmr.color_tex, inst_dtb, inst_alloc,
+                                   YF_RESBIND_TEX, 0);
+            } else {
+                /* TODO */
+                assert(0);
+                abort();
+            }
+
+            yf_cmdbuf_setgstate(l_vars.cb, gst);
+            yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
+
+            YF_mesh mesh = yf_model_getmesh(mdls[rem]);
+            if (mesh != NULL) {
+                yf_mesh_draw(mesh, l_vars.cb, n);
+            } else {
+                /* TODO */
+                assert(0);
+                abort();
+            }
+
+            if (rem == 0) {
+                /* cannot invalidate the dictionary iterator */
+                if (yf_list_insert(done, val) == 0)
+                    break;
+                yf_list_deinit(done);
                 return -1;
             }
         }
-        inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-
-        if ((reso = malloc(sizeof *reso)) == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        reso->resrq = YF_RESRQ_MDL;
-        reso->inst_alloc = inst_alloc;
-        if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
-            free(reso);
-            return -1;
-        }
-
-        if (copy_inst_mdl(scn, &val->mdl, 1, gst, inst_alloc) != 0)
-            return -1;
-
-        /* TODO: 'copy_matl()'. */
-        if ((matl = yf_model_getmatl(val->mdl)) != NULL) {
-            YF_matlprop *prop = yf_material_getprop(matl);
-
-            assert(prop->pbr == YF_PBR_METALROUGH &&
-                   prop->pbrmr.color_tex != NULL);
-
-            yf_texture_copyres(prop->pbrmr.color_tex, inst_dtb, inst_alloc,
-                               YF_RESBIND_TEX, 0);
-        } else {
-            /* TODO: Handle models lacking material. */
-            assert(0);
-        }
-
-        yf_cmdbuf_setgstate(l_vars.cb, gst);
-        yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
-
-        if ((mesh = yf_model_getmesh(val->mdl)) != NULL)
-            yf_mesh_draw(mesh, l_vars.cb, 1);
-        else
-            /* TODO: Handle models lacking mesh. */
-            assert(0);
-
-        yf_dict_remove(l_vars.mdls, val);
-        it = YF_NILIT;
     }
+
+    while ((val = yf_list_removeat(done, NULL)) != NULL)
+        yf_dict_remove(l_vars.mdls, val);
+
+    yf_list_deinit(done);
 
     return 0;
 }
