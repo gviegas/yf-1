@@ -1374,6 +1374,19 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOBL, 0);
 
 #ifdef YF_DEVEL
+    printf("\n[YF] OUTPUT (%s):\nresource allocations:\n", __func__);
+    printf(" RESRQ_MDL:   %u\n", l_vars.insts[YF_RESRQ_MDL]);
+    printf(" RESRQ_MDL2:  %u\n", l_vars.insts[YF_RESRQ_MDL2]);
+    printf(" RESRQ_MDL4:  %u\n", l_vars.insts[YF_RESRQ_MDL4]);
+    printf(" RESRQ_MDL8:  %u\n", l_vars.insts[YF_RESRQ_MDL8]);
+    printf(" RESRQ_MDL16: %u\n", l_vars.insts[YF_RESRQ_MDL16]);
+    printf(" RESRQ_MDL32: %u\n", l_vars.insts[YF_RESRQ_MDL32]);
+    printf(" RESRQ_MDL64: %u\n", l_vars.insts[YF_RESRQ_MDL64]);
+    printf(" RESRQ_TERR:  %u\n", l_vars.insts[YF_RESRQ_TERR]);
+    printf(" RESRQ_PART:  %u\n", l_vars.insts[YF_RESRQ_PART]);
+    printf(" RESRQ_QUAD:  %u\n", l_vars.insts[YF_RESRQ_QUAD]);
+    printf(" RESRQ_LABL:  %u\n\n", l_vars.insts[YF_RESRQ_LABL]);
+
     unsigned exec_n = 0;
 #endif
 
@@ -1485,7 +1498,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     }
 
 #ifdef YF_DEVEL
-    printf("\n[YF] OUTPUT (%s):\n number of executions: %u\n\n",
+    printf("\n[YF] OUTPUT (%s):\nnumber of executions: %u\n\n",
            __func__, exec_n);
 #endif
 
