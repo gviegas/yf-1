@@ -5,6 +5,9 @@
  * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
+/* XXX */
+#define YF_SCN_DYNAMIC
+
 #include <stdlib.h>
 #include <assert.h>
 
@@ -28,18 +31,6 @@
 # include <stdio.h>
 # include "../test/print.h"
 #endif
-
-#ifdef YF_USE_FLOAT64
-# define YF_CAMORIG (YF_vec3){-20.0, 20.0, 20.0}
-# define YF_CAMTGT  (YF_vec3){0.0, 0.0, 0.0}
-# define YF_CAMASP  1.0
-#else
-# define YF_CAMORIG (YF_vec3){-20.0f, 20.0f, 20.0f}
-# define YF_CAMTGT  (YF_vec3){0.0f, 0.0f, 0.0f}
-# define YF_CAMASP  1.0f
-#endif
-
-#define YF_INSTCAP 4
 
 #ifndef YF_SCN_DYNAMIC
 # ifndef YF_SCN_MDLN
@@ -77,6 +68,16 @@
 # endif
 #endif /* !YF_SCN_DYNAMIC */
 
+#ifdef YF_USE_FLOAT64
+# define YF_CAMORIG (YF_vec3){-20.0, 20.0, 20.0}
+# define YF_CAMTGT  (YF_vec3){0.0, 0.0, 0.0}
+# define YF_CAMASP  1.0
+#else
+# define YF_CAMORIG (YF_vec3){-20.0f, 20.0f, 20.0f}
+# define YF_CAMTGT  (YF_vec3){0.0f, 0.0f, 0.0f}
+# define YF_CAMASP  1.0f
+#endif
+
 #define YF_GLOBLSZ     ((sizeof(YF_mat4) << 2) + 32)
 #define YF_INSTSZ_MDL  (sizeof(YF_mat4) * 3)
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
@@ -86,11 +87,13 @@
 
 #define YF_PEND_NONE 0
 #define YF_PEND_MDL  0x01
-#define YF_PEND_MDLI 0x02
-#define YF_PEND_TERR 0x04
-#define YF_PEND_PART 0x08
-#define YF_PEND_QUAD 0x10
-#define YF_PEND_LABL 0x20
+#define YF_PEND_TERR 0x02
+#define YF_PEND_PART 0x04
+#define YF_PEND_QUAD 0x08
+#define YF_PEND_LABL 0x10
+
+#define YF_INSTCAP 16
+static_assert(YF_INSTCAP > 1);
 
 struct YF_scene_o {
     YF_node node;
@@ -121,7 +124,7 @@ typedef struct {
     unsigned inst_alloc;
 } T_reso;
 
-/* Type defining key/value pair for the model dictionaries. */
+/* Type defining key/value pair for the model dictionary. */
 typedef struct {
     struct {
         YF_mesh mesh;
@@ -272,7 +275,7 @@ static int prepare_res(void)
 
 #ifdef YF_SCN_DYNAMIC
     /* dynamically allocate resources based on processed objects */
-    l_vars.insts[YF_RESRQ_MDL]   = yf_dict_getlen(l_vars.mdls);
+    l_vars.insts[YF_RESRQ_MDL]   = 0;
     l_vars.insts[YF_RESRQ_MDL2]  = 0;
     l_vars.insts[YF_RESRQ_MDL4]  = 0;
     l_vars.insts[YF_RESRQ_MDL8]  = 0;
@@ -767,6 +770,7 @@ static int render_mdl(YF_scene scn)
 
             YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
 
+            /* TODO: Consider using an exclusive function for this. */
             T_reso *reso = malloc(sizeof *reso);
             if (reso == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
@@ -1105,7 +1109,7 @@ static int dealloc_mdl(YF_UNUSED void *key, void *val, YF_UNUSED void *arg)
 {
     T_kv_mdl *kv = val;
 
-    if (kv->mdl_n > 1)
+    if (kv->mdl_cap > 1)
         free(kv->mdls);
 
     free(val);
