@@ -840,22 +840,16 @@ static int render_mdl(YF_scene scn)
 /* Renders terrain objects. */
 static int render_terr(YF_scene scn)
 {
-    YF_gstate gst = NULL;
-    unsigned inst_alloc = 0;
-    YF_dtable inst_dtb = NULL;
-    T_reso *reso = NULL;
-    YF_texture hmap = NULL;
-    YF_texture tex = NULL;
-    YF_mesh mesh = NULL;
     YF_iter it = YF_NILIT;
-    YF_terrain terr = NULL;
 
     while (1) {
-        terr = yf_list_next(l_vars.terrs, &it);
+        YF_terrain terr = yf_list_next(l_vars.terrs, &it);
         if (YF_IT_ISNIL(it))
             break;
 
-        if ((gst = yf_resmgr_obtain(YF_RESRQ_TERR, &inst_alloc)) == NULL) {
+        unsigned inst_alloc;
+        YF_gstate gst = yf_resmgr_obtain(YF_RESRQ_TERR, &inst_alloc);
+        if (gst == NULL) {
             switch (yf_geterr()) {
             case YF_ERR_INUSE:
                 /* out of resources, need to execute pending work */
@@ -864,9 +858,11 @@ static int render_terr(YF_scene scn)
                 return -1;
             }
         }
-        inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
 
-        if ((reso = malloc(sizeof *reso)) == NULL) {
+        YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+
+        T_reso *reso = malloc(sizeof *reso);
+        if (reso == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
@@ -880,22 +876,28 @@ static int render_terr(YF_scene scn)
         if (copy_inst_terr(scn, &terr, 1, gst, inst_alloc) != 0)
             return -1;
 
-        if ((hmap = yf_terrain_gethmap(terr)) != NULL)
+        YF_texture hmap = yf_terrain_gethmap(terr);
+        if (hmap != NULL) {
             yf_texture_copyres(hmap, inst_dtb, inst_alloc, YF_RESBIND_HMAP, 0);
-        else
-            /* TODO: Handle terrains lacking height map. */
+        } else {
+            /* TODO */
             assert(0);
+            abort();
+        }
 
-        if ((tex = yf_terrain_gettex(terr)) != NULL)
+        YF_texture tex = yf_terrain_gettex(terr);
+        if (tex != NULL) {
             yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
-        else
-            /* TODO: Handle terrains lacking texture. */
+        } else {
+            /* TODO */
             assert(0);
+            abort();
+        }
 
         yf_cmdbuf_setgstate(l_vars.cb, gst);
         yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
-        mesh = yf_terrain_getmesh(terr);
+        YF_mesh mesh = yf_terrain_getmesh(terr);
         yf_mesh_draw(mesh, l_vars.cb, 1);
 
         yf_list_removeat(l_vars.terrs, &it);
