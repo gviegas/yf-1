@@ -266,7 +266,7 @@ static int traverse_scn(YF_node node, void *arg)
     return 0;
 }
 
-/* Creates uniform buffer and pre-allocates resources. */
+/* Creates uniform buffer and sets required resources. */
 static int prepare_res(void)
 {
     assert(l_vars.ctx != NULL);
@@ -433,6 +433,28 @@ static int prepare_res(void)
         return -1;
 
     return 0;
+}
+
+/* Obtains a resource for rendering. */
+static YF_gstate obtain_res(int resrq, unsigned *inst_alloc)
+{
+    YF_gstate gst = yf_resmgr_obtain(resrq, inst_alloc);
+    if (gst == NULL)
+        return NULL;
+
+    T_reso *reso = malloc(sizeof *reso);
+    if (reso == NULL || yf_list_insert(l_vars.res_obtd, reso) != 0) {
+        if (reso == NULL)
+            yf_seterr(YF_ERR_NOMEM, __func__);
+        else
+            free(reso);
+        yf_resmgr_yield(resrq, *inst_alloc);
+        return NULL;
+    }
+    reso->resrq = resrq;
+    reso->inst_alloc = *inst_alloc;
+
+    return gst;
 }
 
 /* Copies global uniform to buffer and updates dtable. */
@@ -747,7 +769,7 @@ static int render_mdl(YF_scene scn)
             YF_gstate gst = NULL;
             unsigned inst_alloc;
             for (int i = rq_i; i >= 0; i--) {
-                gst = yf_resmgr_obtain(resrq[i], &inst_alloc);
+                gst = obtain_res(resrq[i], &inst_alloc);
                 if (gst != NULL) {
                     n = YF_MIN(insts[i], rem);
                     rem -= n;
@@ -769,21 +791,6 @@ static int render_mdl(YF_scene scn)
             }
 
             YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-
-            /* TODO: Consider using an exclusive function for this. */
-            T_reso *reso = malloc(sizeof *reso);
-            if (reso == NULL) {
-                yf_seterr(YF_ERR_NOMEM, __func__);
-                yf_list_deinit(done);
-                return -1;
-            }
-            reso->resrq = resrq[rq_i];
-            reso->inst_alloc = inst_alloc;
-            if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
-                free(reso);
-                yf_list_deinit(done);
-                return -1;
-            }
 
             if (copy_inst_mdl(scn, mdls+rem, n, gst, inst_alloc) != 0) {
                 yf_list_deinit(done);
@@ -848,7 +855,7 @@ static int render_terr(YF_scene scn)
             break;
 
         unsigned inst_alloc;
-        YF_gstate gst = yf_resmgr_obtain(YF_RESRQ_TERR, &inst_alloc);
+        YF_gstate gst = obtain_res(YF_RESRQ_TERR, &inst_alloc);
         if (gst == NULL) {
             switch (yf_geterr()) {
             case YF_ERR_INUSE:
@@ -860,18 +867,6 @@ static int render_terr(YF_scene scn)
         }
 
         YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-
-        T_reso *reso = malloc(sizeof *reso);
-        if (reso == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        reso->resrq = YF_RESRQ_TERR;
-        reso->inst_alloc = inst_alloc;
-        if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
-            free(reso);
-            return -1;
-        }
 
         if (copy_inst_terr(scn, &terr, 1, gst, inst_alloc) != 0)
             return -1;
@@ -918,7 +913,7 @@ static int render_part(YF_scene scn)
             break;
 
         unsigned inst_alloc;
-        YF_gstate gst = yf_resmgr_obtain(YF_RESRQ_PART, &inst_alloc);
+        YF_gstate gst = obtain_res(YF_RESRQ_PART, &inst_alloc);
         if (gst == NULL) {
             switch (yf_geterr()) {
             case YF_ERR_INUSE:
@@ -930,18 +925,6 @@ static int render_part(YF_scene scn)
         }
 
         YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-
-        T_reso *reso = malloc(sizeof *reso);
-        if (reso == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        reso->resrq = YF_RESRQ_PART;
-        reso->inst_alloc = inst_alloc;
-        if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
-            free(reso);
-            return -1;
-        }
 
         if (copy_inst_part(scn, &part, 1, gst, inst_alloc) != 0)
             return -1;
@@ -979,7 +962,7 @@ static int render_quad(YF_scene scn)
             break;
 
         unsigned inst_alloc;
-        YF_gstate gst = yf_resmgr_obtain(YF_RESRQ_QUAD, &inst_alloc);
+        YF_gstate gst = obtain_res(YF_RESRQ_QUAD, &inst_alloc);
         if (gst == NULL) {
             switch (yf_geterr()) {
             case YF_ERR_INUSE:
@@ -991,18 +974,6 @@ static int render_quad(YF_scene scn)
         }
 
         YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-
-        T_reso *reso = malloc(sizeof *reso);
-        if (reso == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        reso->resrq = YF_RESRQ_QUAD;
-        reso->inst_alloc = inst_alloc;
-        if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
-            free(reso);
-            return -1;
-        }
 
         if (copy_inst_quad(scn, &quad, 1, gst, inst_alloc) != 0)
             return -1;
@@ -1040,7 +1011,7 @@ static int render_labl(YF_scene scn)
             break;
 
         unsigned inst_alloc;
-        YF_gstate gst = yf_resmgr_obtain(YF_RESRQ_LABL, &inst_alloc);
+        YF_gstate gst = obtain_res(YF_RESRQ_LABL, &inst_alloc);
         if (gst == NULL) {
             switch (yf_geterr()) {
             case YF_ERR_INUSE:
@@ -1052,18 +1023,6 @@ static int render_labl(YF_scene scn)
         }
 
         YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-
-        T_reso *reso = malloc(sizeof *reso);
-        if (reso == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        reso->resrq = YF_RESRQ_LABL;
-        reso->inst_alloc = inst_alloc;
-        if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
-            free(reso);
-            return -1;
-        }
 
         if (copy_inst_labl(scn, &labl, 1, gst, inst_alloc) != 0)
             return -1;
