@@ -769,7 +769,7 @@ static int render_mdl(YF_scene scn)
             YF_gstate gst = NULL;
             unsigned inst_alloc;
             for (int i = rq_i; i >= 0; i--) {
-                gst = yf_resmgr_obtain(resrq[i], &inst_alloc);
+                gst = obtain_res(resrq[i], &inst_alloc);
                 if (gst != NULL) {
                     n = YF_MIN(insts[i], rem);
                     rem -= n;
@@ -791,21 +791,6 @@ static int render_mdl(YF_scene scn)
             }
 
             YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-
-            /* TODO: Consider using an exclusive function for this. */
-            T_reso *reso = malloc(sizeof *reso);
-            if (reso == NULL) {
-                yf_seterr(YF_ERR_NOMEM, __func__);
-                yf_list_deinit(done);
-                return -1;
-            }
-            reso->resrq = resrq[rq_i];
-            reso->inst_alloc = inst_alloc;
-            if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
-                free(reso);
-                yf_list_deinit(done);
-                return -1;
-            }
 
             if (copy_inst_mdl(scn, mdls+rem, n, gst, inst_alloc) != 0) {
                 yf_list_deinit(done);
