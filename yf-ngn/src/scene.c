@@ -266,7 +266,7 @@ static int traverse_scn(YF_node node, void *arg)
     return 0;
 }
 
-/* Creates uniform buffer and pre-allocates resources. */
+/* Creates uniform buffer and sets required resources. */
 static int prepare_res(void)
 {
     assert(l_vars.ctx != NULL);
@@ -433,6 +433,28 @@ static int prepare_res(void)
         return -1;
 
     return 0;
+}
+
+/* Obtains a resource for rendering. */
+static YF_gstate obtain_res(int resrq, unsigned *inst_alloc)
+{
+    YF_gstate gst = yf_resmgr_obtain(resrq, inst_alloc);
+    if (gst == NULL)
+        return NULL;
+
+    T_reso *reso = malloc(sizeof *reso);
+    if (reso == NULL || yf_list_insert(l_vars.res_obtd, reso) != 0) {
+        if (reso == NULL)
+            yf_seterr(YF_ERR_NOMEM, __func__);
+        else
+            free(reso);
+        yf_resmgr_yield(resrq, *inst_alloc);
+        return NULL;
+    }
+    reso->resrq = resrq;
+    reso->inst_alloc = *inst_alloc;
+
+    return gst;
 }
 
 /* Copies global uniform to buffer and updates dtable. */
