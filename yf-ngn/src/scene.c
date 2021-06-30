@@ -510,11 +510,10 @@ static int copy_globl(YF_scene scn)
 
 /* Copies model's instance uniform to buffer and updates dtable. */
 static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
-                         YF_gstate gst, unsigned inst_alloc)
+                         YF_dtable inst_dtb, unsigned inst_alloc)
 {
-    YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-    const YF_mat4 *v = yf_camera_getview(scn->cam);
     const size_t off = l_vars.buf_off;
+    const YF_mat4 *v = yf_camera_getview(scn->cam);
     YF_node node;
     YF_mat4 mv, *m, *norm;
 
@@ -545,7 +544,7 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
     const size_t sz = mdl_n * YF_INSTSZ_MDL;
 
     /* copy */
-    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+    if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
 
@@ -791,8 +790,7 @@ static int render_mdl(YF_scene scn)
             }
 
             YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-
-            if (copy_inst_mdl(scn, mdls+rem, n, gst, inst_alloc) != 0) {
+            if (copy_inst_mdl(scn, mdls+rem, n, inst_dtb, inst_alloc) != 0) {
                 yf_list_deinit(done);
                 return -1;
             }
