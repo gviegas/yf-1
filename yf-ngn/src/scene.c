@@ -625,11 +625,10 @@ static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
 
 /* Copies quad's instance uniform to buffer and updates dtable. */
 static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
-                          YF_gstate gst, unsigned inst_alloc)
+                          YF_dtable inst_dtb, unsigned inst_alloc)
 {
-    YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
     const size_t off = l_vars.buf_off;
+    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
     YF_node node;
     YF_mat4 mv, *m;
     const YF_rect *rect;
@@ -663,7 +662,7 @@ static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
     const size_t sz = quad_n * YF_INSTSZ_QUAD;
 
     /* copy */
-    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+    if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
 
@@ -968,8 +967,7 @@ static int render_quad(YF_scene scn)
         }
 
         YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-
-        if (copy_inst_quad(scn, &quad, 1, gst, inst_alloc) != 0)
+        if (copy_inst_quad(scn, &quad, 1, inst_dtb, inst_alloc) != 0)
             return -1;
 
         YF_texture tex = yf_quad_gettex(quad);
