@@ -24,19 +24,6 @@
 # define YF_SHD_FILEEXT ""
 #endif
 
-/* XXX: This arbitrary defaults are expected to be replaced by 'setallocn'. */
-#define YF_ALLOCN_MDL   64
-#define YF_ALLOCN_MDL2  16
-#define YF_ALLOCN_MDL4  16
-#define YF_ALLOCN_MDL8  8
-#define YF_ALLOCN_MDL16 8
-#define YF_ALLOCN_MDL32 4
-#define YF_ALLOCN_MDL64 4
-#define YF_ALLOCN_TERR  4
-#define YF_ALLOCN_PART  32
-#define YF_ALLOCN_QUAD  16
-#define YF_ALLOCN_LABL  32
-
 /* Type defining an entry in the resource list. */
 typedef struct {
     YF_gstate gst;
@@ -52,19 +39,7 @@ static T_entry l_entries[YF_RESRQ_N] = {0};
 static YF_dtable l_globl = NULL;
 
 /* Sizes used for instance allocations, indexed by 'resrq' values. */
-static unsigned l_allocn[YF_RESRQ_N] = {
-    [YF_RESRQ_MDL]   = YF_ALLOCN_MDL,
-    [YF_RESRQ_MDL2]  = YF_ALLOCN_MDL2,
-    [YF_RESRQ_MDL4]  = YF_ALLOCN_MDL4,
-    [YF_RESRQ_MDL8]  = YF_ALLOCN_MDL8,
-    [YF_RESRQ_MDL16] = YF_ALLOCN_MDL16,
-    [YF_RESRQ_MDL32] = YF_ALLOCN_MDL32,
-    [YF_RESRQ_MDL64] = YF_ALLOCN_MDL64,
-    [YF_RESRQ_TERR]  = YF_ALLOCN_TERR,
-    [YF_RESRQ_PART]  = YF_ALLOCN_PART,
-    [YF_RESRQ_QUAD]  = YF_ALLOCN_QUAD,
-    [YF_RESRQ_LABL]  = YF_ALLOCN_LABL
-};
+static unsigned l_allocn[YF_RESRQ_N] = {0};
 
 /* Makes a string to use as the pathname of a shader module.
    The caller is responsible for deallocating the returned string. */
