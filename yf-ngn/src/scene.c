@@ -671,11 +671,10 @@ static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
 
 /* Copies label's instance uniform to buffer and updates dtable. */
 static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
-                          YF_gstate gst, unsigned inst_alloc)
+                          YF_dtable inst_dtb, unsigned inst_alloc)
 {
-    YF_dtable dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
     const size_t off = l_vars.buf_off;
+    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
     YF_node node;
     YF_mat4 mv, *m;
     YF_dim2 udim;
@@ -709,7 +708,7 @@ static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
     const size_t sz = labl_n * YF_INSTSZ_LABL;
 
     /* copy */
-    if (yf_dtable_copybuf(dtb, inst_alloc, YF_RESBIND_INST, elems,
+    if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
 
@@ -1015,8 +1014,7 @@ static int render_labl(YF_scene scn)
         }
 
         YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-
-        if (copy_inst_labl(scn, &labl, 1, gst, inst_alloc) != 0)
+        if (copy_inst_labl(scn, &labl, 1, inst_dtb, inst_alloc) != 0)
             return -1;
 
         /* FIXME: Texture may be invalid. */
