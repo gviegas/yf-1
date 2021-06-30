@@ -855,7 +855,7 @@ static int render_terr(YF_scene scn)
             break;
 
         unsigned inst_alloc;
-        YF_gstate gst = yf_resmgr_obtain(YF_RESRQ_TERR, &inst_alloc);
+        YF_gstate gst = obtain_res(YF_RESRQ_TERR, &inst_alloc);
         if (gst == NULL) {
             switch (yf_geterr()) {
             case YF_ERR_INUSE:
@@ -867,18 +867,6 @@ static int render_terr(YF_scene scn)
         }
 
         YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
-
-        T_reso *reso = malloc(sizeof *reso);
-        if (reso == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
-        }
-        reso->resrq = YF_RESRQ_TERR;
-        reso->inst_alloc = inst_alloc;
-        if (yf_list_insert(l_vars.res_obtd, reso) != 0) {
-            free(reso);
-            return -1;
-        }
 
         if (copy_inst_terr(scn, &terr, 1, gst, inst_alloc) != 0)
             return -1;
