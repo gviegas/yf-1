@@ -910,21 +910,16 @@ static int render_terr(YF_scene scn)
 /* Renders particle system objects. */
 static int render_part(YF_scene scn)
 {
-    YF_gstate gst = NULL;
-    unsigned inst_alloc = 0;
-    YF_dtable inst_dtb = NULL;
-    T_reso *reso = NULL;
-    YF_texture tex = NULL;
-    YF_mesh mesh = NULL;
     YF_iter it = YF_NILIT;
-    YF_particle part = NULL;
 
     while (1) {
-        part = yf_list_next(l_vars.parts, &it);
+        YF_particle part = yf_list_next(l_vars.parts, &it);
         if (YF_IT_ISNIL(it))
             break;
 
-        if ((gst = yf_resmgr_obtain(YF_RESRQ_PART, &inst_alloc)) == NULL) {
+        unsigned inst_alloc;
+        YF_gstate gst = yf_resmgr_obtain(YF_RESRQ_PART, &inst_alloc);
+        if (gst == NULL) {
             switch (yf_geterr()) {
             case YF_ERR_INUSE:
                 /* out of resources, need to execute pending work */
@@ -933,9 +928,11 @@ static int render_part(YF_scene scn)
                 return -1;
             }
         }
-        inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
 
-        if ((reso = malloc(sizeof *reso)) == NULL) {
+        YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+
+        T_reso *reso = malloc(sizeof *reso);
+        if (reso == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
@@ -949,16 +946,19 @@ static int render_part(YF_scene scn)
         if (copy_inst_part(scn, &part, 1, gst, inst_alloc) != 0)
             return -1;
 
-        if ((tex = yf_particle_gettex(part)) != NULL)
+        YF_texture tex = yf_particle_gettex(part);
+        if (tex != NULL) {
             yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
-        else
-            /* TODO: Handle particle systems lacking texture. */
+        } else {
+            /* TODO */
             assert(0);
+            abort();
+        }
 
         yf_cmdbuf_setgstate(l_vars.cb, gst);
         yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
 
-        mesh = yf_particle_getmesh(part);
+        YF_mesh mesh = yf_particle_getmesh(part);
         yf_mesh_draw(mesh, l_vars.cb, 1);
 
         yf_list_removeat(l_vars.parts, &it);
