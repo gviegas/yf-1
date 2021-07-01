@@ -77,6 +77,12 @@ typedef struct YF_limits {
     struct {
         unsigned vert_out_max;
         unsigned frag_in_max;
+        float point_sz_min;
+        float point_sz_max;
+        float point_sz_gran;
+        float line_wdt_min;
+        float line_wdt_max;
+        float line_wdt_gran;
     } shader;
 
     struct {

@@ -90,6 +90,12 @@ const YF_limits *yf_getlimits(YF_context ctx)
 
     lim->shader.vert_out_max = dl->maxVertexOutputComponents;
     lim->shader.frag_in_max = dl->maxFragmentInputComponents;
+    lim->shader.point_sz_min = dl->pointSizeRange[0];
+    lim->shader.point_sz_max = dl->pointSizeRange[1];
+    lim->shader.point_sz_gran = dl->pointSizeGranularity;
+    lim->shader.line_wdt_min = dl->lineWidthRange[0];
+    lim->shader.line_wdt_max = dl->lineWidthRange[1];
+    lim->shader.line_wdt_gran = dl->lineWidthGranularity;
 
     lim->cmdbuf.draw_idx_max = dl->maxDrawIndexedIndexValue;
 
