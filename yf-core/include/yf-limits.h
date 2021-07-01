@@ -75,6 +75,11 @@ typedef struct YF_limits {
     } state;
 
     struct {
+        unsigned vert_out_max;
+        unsigned frag_in_max;
+    } shader;
+
+    struct {
         unsigned draw_idx_max;
     } cmdbuf;
 } YF_limits;

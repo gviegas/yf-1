@@ -88,6 +88,9 @@ const YF_limits *yf_getlimits(YF_context ctx)
     lim->state.dtable_max = dl->maxBoundDescriptorSets;
     lim->state.vinput_max = dl->maxVertexInputBindings;
 
+    lim->shader.vert_out_max = dl->maxVertexOutputComponents;
+    lim->shader.frag_in_max = dl->maxFragmentInputComponents;
+
     lim->cmdbuf.draw_idx_max = dl->maxDrawIndexedIndexValue;
 
     ctx->lim.priv = lim;
