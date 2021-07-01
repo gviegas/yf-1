@@ -87,6 +87,7 @@ typedef struct YF_limits {
 
     struct {
         unsigned draw_idx_max;
+        YF_dim3 disp_dim_max;
     } cmdbuf;
 } YF_limits;
 

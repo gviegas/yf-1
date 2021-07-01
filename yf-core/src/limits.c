@@ -98,6 +98,9 @@ const YF_limits *yf_getlimits(YF_context ctx)
     lim->shader.line_wdt_gran = dl->lineWidthGranularity;
 
     lim->cmdbuf.draw_idx_max = dl->maxDrawIndexedIndexValue;
+    lim->cmdbuf.disp_dim_max.width = dl->maxComputeWorkGroupCount[0];
+    lim->cmdbuf.disp_dim_max.height = dl->maxComputeWorkGroupCount[1];
+    lim->cmdbuf.disp_dim_max.depth = dl->maxComputeWorkGroupCount[2];
 
     ctx->lim.priv = lim;
     ctx->lim.deinit_callb = destroy_lim;
