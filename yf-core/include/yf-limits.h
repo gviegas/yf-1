@@ -44,10 +44,10 @@ typedef struct YF_limits {
         unsigned sampd_max;
         unsigned sampr_max;
         unsigned isamp_max;
-        size_t cpy_unif_sz_max;
         size_t cpy_unif_align_min;
-        size_t cpy_mut_sz_max;
+        size_t cpy_unif_sz_max;
         size_t cpy_mut_align_min;
+        size_t cpy_mut_sz_max;
     } dtable;
 
     struct {

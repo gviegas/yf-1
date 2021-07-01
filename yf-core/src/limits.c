@@ -65,10 +65,10 @@ const YF_limits *yf_getlimits(YF_context ctx)
     lim->dtable.sampr_max = dl->maxPerStageDescriptorSamplers;
     lim->dtable.isamp_max = YF_MIN(lim->dtable.sampd_max,
                                    lim->dtable.sampr_max);
-    lim->dtable.cpy_unif_sz_max = dl->maxUniformBufferRange;
     lim->dtable.cpy_unif_align_min = dl->minUniformBufferOffsetAlignment;
-    lim->dtable.cpy_mut_sz_max = dl->maxStorageBufferRange;
+    lim->dtable.cpy_unif_sz_max = dl->maxUniformBufferRange;
     lim->dtable.cpy_mut_align_min = dl->minStorageBufferOffsetAlignment;
+    lim->dtable.cpy_mut_sz_max = dl->maxStorageBufferRange;
 
     lim->vinput.attr_max = dl->maxVertexInputAttributes;
     lim->vinput.off_max = dl->maxVertexInputAttributeOffset;
