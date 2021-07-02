@@ -18,6 +18,7 @@
 #include "stage.h"
 #include "dtable.h"
 #include "vinput.h"
+#include "yf-limits.h"
 
 YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
 {
@@ -26,6 +27,14 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
 
     if (conf->pass == NULL || conf->stg_n == 0) {
         yf_seterr(YF_ERR_INVARG, __func__);
+        return NULL;
+    }
+
+    const YF_limits *lim = yf_getlimits(ctx);
+
+    if (conf->dtb_n > lim->state.dtable_max ||
+        conf->vin_n > lim->state.vinput_max) {
+        yf_seterr(YF_ERR_LIMIT, __func__);
         return NULL;
     }
 
