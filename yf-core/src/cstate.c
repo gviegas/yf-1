@@ -14,6 +14,7 @@
 #include "context.h"
 #include "stage.h"
 #include "dtable.h"
+#include "yf-limits.h"
 
 YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
 {
@@ -22,6 +23,11 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
 
     if (conf->stg.stage != YF_STAGE_COMP) {
         yf_seterr(YF_ERR_INVARG, __func__);
+        return NULL;
+    }
+
+    if (conf->dtb_n > yf_getlimits(ctx)->state.dtable_max) {
+        yf_seterr(YF_ERR_LIMIT, __func__);
         return NULL;
     }
 
