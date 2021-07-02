@@ -200,7 +200,43 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     /* TODO: Further validation. */
     if (usage == 0) {
         yf_seterr(YF_ERR_UNSUP, __func__);
+        yf_image_deinit(img);
         return NULL;
+    }
+
+    /* TODO: Consider providing image usage param. for init(), since usage
+       may restrict available sample counts. */
+    if (samples != 1) {
+        limit = 0x7f;
+
+        if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
+            if (img->aspect & VK_IMAGE_ASPECT_COLOR_BIT) {
+                limit &= lim->image.sample_mask_clr;
+            } else {
+                if (img->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
+                    limit &= lim->image.sample_mask_dep;
+                if (img->aspect & VK_IMAGE_ASPECT_STENCIL_BIT)
+                    limit &= lim->image.sample_mask_sten;
+            }
+        }
+
+        if (usage & VK_IMAGE_USAGE_STORAGE_BIT)
+            limit &= lim->image.sample_mask_mut;
+
+        if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+            limit &= lim->pass.sample_mask_clr;
+        } else if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+            if (img->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
+                limit &= lim->pass.sample_mask_dep;
+            if (img->aspect & VK_IMAGE_ASPECT_STENCIL_BIT)
+                limit &= lim->pass.sample_mask_sten;
+        }
+
+        if (!(limit & samples)) {
+            yf_seterr(YF_ERR_LIMIT, __func__);
+            yf_image_deinit(img);
+            return NULL;
+        }
     }
 
     VkImageCreateInfo info = {
