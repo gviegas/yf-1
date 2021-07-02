@@ -34,6 +34,10 @@ typedef struct YF_limits {
         unsigned dim_2d_max;
         unsigned dim_3d_max;
         unsigned layer_max;
+        unsigned sample_mask_clr;
+        unsigned sample_mask_dep;
+        unsigned sample_mask_sten;
+        unsigned sample_mask_mut;
     } image;
 
     struct {
