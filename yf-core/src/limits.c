@@ -59,7 +59,7 @@ const YF_limits *yf_getlimits(YF_context ctx)
     lim->image.sample_mask_clr = dl->sampledImageColorSampleCounts & 0x7f;
     lim->image.sample_mask_dep = dl->sampledImageDepthSampleCounts & 0x7f;
     lim->image.sample_mask_sten = dl->sampledImageStencilSampleCounts & 0x7f;
-    lim->image.sample_mask_mut = dl->storageImageSampleCounts & 0x7f;
+    lim->image.sample_mask_img = dl->storageImageSampleCounts & 0x7f;
 
     lim->dtable.stg_res_max = dl->maxPerStageResources;
     lim->dtable.unif_max = dl->maxPerStageDescriptorUniformBuffers;

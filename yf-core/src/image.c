@@ -221,7 +221,7 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
         }
 
         if (usage & VK_IMAGE_USAGE_STORAGE_BIT)
-            limit &= lim->image.sample_mask_mut;
+            limit &= lim->image.sample_mask_img;
 
         if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
             limit &= lim->pass.sample_mask_clr;
