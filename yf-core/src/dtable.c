@@ -17,6 +17,7 @@
 #include "sampler.h"
 #include "buffer.h"
 #include "image.h"
+#include "yf-limits.h"
 
 /* Type defining key/value for the iview's dictionary. */
 typedef struct {
@@ -178,6 +179,21 @@ static int init_layout(YF_dtable dtb)
 
         bindings[i].pImmutableSamplers = samplers+spl_i;
         spl_i += dtb->entries[i].elements;
+    }
+
+    const YF_limits *lim = yf_getlimits(dtb->ctx);
+
+    if (dtb->count.unif > lim->dtable.unif_max ||
+        dtb->count.mut > lim->dtable.mut_max ||
+        dtb->count.img > lim->dtable.img_max ||
+        dtb->count.spld > lim->dtable.spld_max ||
+        dtb->count.splr > lim->dtable.splr_max ||
+        dtb->count.ispl > lim->dtable.ispl_max) {
+
+        yf_seterr(YF_ERR_LIMIT, __func__);
+        free(bindings);
+        free(samplers);
+        return -1;
     }
 
     VkDescriptorSetLayoutCreateInfo info = {
