@@ -78,6 +78,9 @@ const YF_limits *yf_getlimits(YF_context ctx)
     lim->pass.dim_max.width = dl->maxFramebufferWidth;
     lim->pass.dim_max.height = dl->maxFramebufferHeight;
     lim->pass.layer_max = dl->maxFramebufferLayers;
+    lim->pass.sample_mask_clr = dl->framebufferColorSampleCounts & 0x7f;
+    lim->pass.sample_mask_dep = dl->framebufferDepthSampleCounts & 0x7f;
+    lim->pass.sample_mask_sten = dl->framebufferStencilSampleCounts & 0x7f;
 
     lim->viewport.max = dl->maxViewports;
     lim->viewport.dim_max.width = dl->maxViewportDimensions[0];

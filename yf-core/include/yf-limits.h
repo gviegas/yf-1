@@ -60,6 +60,9 @@ typedef struct YF_limits {
         unsigned color_max;
         YF_dim2 dim_max;
         unsigned layer_max;
+        unsigned sample_mask_clr;
+        unsigned sample_mask_dep;
+        unsigned sample_mask_sten;
     } pass;
 
     struct {
