@@ -107,7 +107,7 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
         dscs[dsc_i].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color_refs[i].attachment = dsc_i;
         color_refs[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        ++dsc_i;
+        dsc_i++;
     }
     for (unsigned i = 0; i < pass->resolve_n; i++) {
         dscs[dsc_i].flags = 0;
@@ -121,7 +121,7 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
         dscs[dsc_i].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         resolve_refs[i].attachment = dsc_i;
         resolve_refs[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        ++dsc_i;
+        dsc_i++;
     }
     if (depth_stencil != NULL) {
         dscs[dsc_i].flags = 0;

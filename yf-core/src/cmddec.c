@@ -457,6 +457,14 @@ static int decode_disp(const YF_cmd *cmd)
     assert(cmd->disp.dim.height > 0);
     assert(cmd->disp.dim.depth > 0);
 
+    const YF_limits *lim = yf_getlimits(l_cdec->ctx);
+    if (cmd->disp.dim.width > lim->cmdbuf.disp_dim_max.width ||
+        cmd->disp.dim.height > lim->cmdbuf.disp_dim_max.height ||
+        cmd->disp.dim.depth > lim->cmdbuf.disp_dim_max.depth) {
+        yf_seterr(YF_ERR_LIMIT, __func__);
+        return -1;
+    }
+
     /* dtables */
     if (l_cdec->dtb.pending) {
         if (l_cdec->cst == NULL) {

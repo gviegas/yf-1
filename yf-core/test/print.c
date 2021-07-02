@@ -37,6 +37,7 @@ void yf_print_ctx(YF_context ctx)
     printf("\n\n");
 }
 
+/* TODO: Missing members. */
 void yf_print_lim(const YF_limits *lim)
 {
     YF_PTITLE;
@@ -54,9 +55,9 @@ void yf_print_lim(const YF_limits *lim)
     printf("\ndtable - max uniforms buffers: %u", lim->dtable.unif_max);
     printf("\ndtable - max mutables buffers: %u", lim->dtable.mut_max);
     printf("\ndtable - max r/w images: %u", lim->dtable.img_max);
-    printf("\ndtable - max sampled images: %u", lim->dtable.sampd_max);
-    printf("\ndtable - max samplers: %u", lim->dtable.sampr_max);
-    printf("\ndtable - max image+samplers: %u", lim->dtable.isamp_max);
+    printf("\ndtable - max sampled images: %u", lim->dtable.spld_max);
+    printf("\ndtable - max samplers: %u", lim->dtable.splr_max);
+    printf("\ndtable - max image+samplers: %u", lim->dtable.ispl_max);
     printf("\ndtable - max copy size (uniform): %lu",
            lim->dtable.cpy_unif_sz_max);
     printf("\ndtable - max copy size (mutable): %lu",

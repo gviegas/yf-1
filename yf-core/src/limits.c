@@ -59,16 +59,15 @@ const YF_limits *yf_getlimits(YF_context ctx)
     lim->image.sample_mask_clr = dl->sampledImageColorSampleCounts & 0x7f;
     lim->image.sample_mask_dep = dl->sampledImageDepthSampleCounts & 0x7f;
     lim->image.sample_mask_sten = dl->sampledImageStencilSampleCounts & 0x7f;
-    lim->image.sample_mask_mut = dl->storageImageSampleCounts & 0x7f;
+    lim->image.sample_mask_img = dl->storageImageSampleCounts & 0x7f;
 
     lim->dtable.stg_res_max = dl->maxPerStageResources;
     lim->dtable.unif_max = dl->maxPerStageDescriptorUniformBuffers;
     lim->dtable.mut_max = dl->maxPerStageDescriptorStorageBuffers;
     lim->dtable.img_max = dl->maxPerStageDescriptorStorageImages;
-    lim->dtable.sampd_max = dl->maxPerStageDescriptorSampledImages;
-    lim->dtable.sampr_max = dl->maxPerStageDescriptorSamplers;
-    lim->dtable.isamp_max = YF_MIN(lim->dtable.sampd_max,
-                                   lim->dtable.sampr_max);
+    lim->dtable.spld_max = dl->maxPerStageDescriptorSampledImages;
+    lim->dtable.splr_max = dl->maxPerStageDescriptorSamplers;
+    lim->dtable.ispl_max = YF_MIN(lim->dtable.spld_max, lim->dtable.splr_max);
     lim->dtable.cpy_unif_align_min = dl->minUniformBufferOffsetAlignment;
     lim->dtable.cpy_unif_sz_max = dl->maxUniformBufferRange;
     lim->dtable.cpy_mut_align_min = dl->minStorageBufferOffsetAlignment;

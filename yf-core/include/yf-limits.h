@@ -37,7 +37,7 @@ typedef struct YF_limits {
         unsigned sample_mask_clr;
         unsigned sample_mask_dep;
         unsigned sample_mask_sten;
-        unsigned sample_mask_mut;
+        unsigned sample_mask_img;
     } image;
 
     struct {
@@ -45,9 +45,9 @@ typedef struct YF_limits {
         unsigned unif_max;
         unsigned mut_max;
         unsigned img_max;
-        unsigned sampd_max;
-        unsigned sampr_max;
-        unsigned isamp_max;
+        unsigned spld_max;
+        unsigned splr_max;
+        unsigned ispl_max;
         size_t cpy_unif_align_min;
         size_t cpy_unif_sz_max;
         size_t cpy_mut_align_min;
