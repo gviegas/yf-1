@@ -196,6 +196,15 @@ static int init_layout(YF_dtable dtb)
         return -1;
     }
 
+    if (dtb->count.unif + dtb->count.mut + dtb->count.img + dtb->count.spld +
+        dtb->count.splr + dtb->count.ispl > lim->dtable.stg_res_max) {
+
+        yf_seterr(YF_ERR_LIMIT, __func__);
+        free(bindings);
+        free(samplers);
+        return -1;
+    }
+
     VkDescriptorSetLayoutCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
         .pNext = NULL,
