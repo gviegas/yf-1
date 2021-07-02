@@ -56,6 +56,10 @@ const YF_limits *yf_getlimits(YF_context ctx)
     lim->image.dim_2d_max = dl->maxImageDimension2D;
     lim->image.dim_3d_max = dl->maxImageDimension3D;
     lim->image.layer_max = dl->maxImageArrayLayers;
+    lim->image.sample_mask_clr = dl->sampledImageColorSampleCounts & 0x7f;
+    lim->image.sample_mask_dep = dl->sampledImageDepthSampleCounts & 0x7f;
+    lim->image.sample_mask_sten = dl->sampledImageStencilSampleCounts & 0x7f;
+    lim->image.sample_mask_mut = dl->storageImageSampleCounts & 0x7f;
 
     lim->dtable.stg_res_max = dl->maxPerStageResources;
     lim->dtable.unif_max = dl->maxPerStageDescriptorUniformBuffers;
@@ -65,7 +69,9 @@ const YF_limits *yf_getlimits(YF_context ctx)
     lim->dtable.sampr_max = dl->maxPerStageDescriptorSamplers;
     lim->dtable.isamp_max = YF_MIN(lim->dtable.sampd_max,
                                    lim->dtable.sampr_max);
+    lim->dtable.cpy_unif_align_min = dl->minUniformBufferOffsetAlignment;
     lim->dtable.cpy_unif_sz_max = dl->maxUniformBufferRange;
+    lim->dtable.cpy_mut_align_min = dl->minStorageBufferOffsetAlignment;
     lim->dtable.cpy_mut_sz_max = dl->maxStorageBufferRange;
 
     lim->vinput.attr_max = dl->maxVertexInputAttributes;
@@ -76,6 +82,9 @@ const YF_limits *yf_getlimits(YF_context ctx)
     lim->pass.dim_max.width = dl->maxFramebufferWidth;
     lim->pass.dim_max.height = dl->maxFramebufferHeight;
     lim->pass.layer_max = dl->maxFramebufferLayers;
+    lim->pass.sample_mask_clr = dl->framebufferColorSampleCounts & 0x7f;
+    lim->pass.sample_mask_dep = dl->framebufferDepthSampleCounts & 0x7f;
+    lim->pass.sample_mask_sten = dl->framebufferStencilSampleCounts & 0x7f;
 
     lim->viewport.max = dl->maxViewports;
     lim->viewport.dim_max.width = dl->maxViewportDimensions[0];
@@ -86,7 +95,19 @@ const YF_limits *yf_getlimits(YF_context ctx)
     lim->state.dtable_max = dl->maxBoundDescriptorSets;
     lim->state.vinput_max = dl->maxVertexInputBindings;
 
+    lim->shader.vert_out_max = dl->maxVertexOutputComponents;
+    lim->shader.frag_in_max = dl->maxFragmentInputComponents;
+    lim->shader.point_sz_min = dl->pointSizeRange[0];
+    lim->shader.point_sz_max = dl->pointSizeRange[1];
+    lim->shader.point_sz_gran = dl->pointSizeGranularity;
+    lim->shader.line_wdt_min = dl->lineWidthRange[0];
+    lim->shader.line_wdt_max = dl->lineWidthRange[1];
+    lim->shader.line_wdt_gran = dl->lineWidthGranularity;
+
     lim->cmdbuf.draw_idx_max = dl->maxDrawIndexedIndexValue;
+    lim->cmdbuf.disp_dim_max.width = dl->maxComputeWorkGroupCount[0];
+    lim->cmdbuf.disp_dim_max.height = dl->maxComputeWorkGroupCount[1];
+    lim->cmdbuf.disp_dim_max.depth = dl->maxComputeWorkGroupCount[2];
 
     ctx->lim.priv = lim;
     ctx->lim.deinit_callb = destroy_lim;

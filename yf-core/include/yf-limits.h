@@ -34,6 +34,10 @@ typedef struct YF_limits {
         unsigned dim_2d_max;
         unsigned dim_3d_max;
         unsigned layer_max;
+        unsigned sample_mask_clr;
+        unsigned sample_mask_dep;
+        unsigned sample_mask_sten;
+        unsigned sample_mask_mut;
     } image;
 
     struct {
@@ -44,7 +48,9 @@ typedef struct YF_limits {
         unsigned sampd_max;
         unsigned sampr_max;
         unsigned isamp_max;
+        size_t cpy_unif_align_min;
         size_t cpy_unif_sz_max;
+        size_t cpy_mut_align_min;
         size_t cpy_mut_sz_max;
     } dtable;
 
@@ -58,6 +64,9 @@ typedef struct YF_limits {
         unsigned color_max;
         YF_dim2 dim_max;
         unsigned layer_max;
+        unsigned sample_mask_clr;
+        unsigned sample_mask_dep;
+        unsigned sample_mask_sten;
     } pass;
 
     struct {
@@ -73,7 +82,19 @@ typedef struct YF_limits {
     } state;
 
     struct {
+        unsigned vert_out_max;
+        unsigned frag_in_max;
+        float point_sz_min;
+        float point_sz_max;
+        float point_sz_gran;
+        float line_wdt_min;
+        float line_wdt_max;
+        float line_wdt_gran;
+    } shader;
+
+    struct {
         unsigned draw_idx_max;
+        YF_dim3 disp_dim_max;
     } cmdbuf;
 } YF_limits;
 
