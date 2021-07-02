@@ -177,6 +177,12 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
             attr_n += conf->vins[i].attr_n;
 
         if (attr_n > 0) {
+            if (attr_n > lim->vinput.attr_max) {
+                yf_seterr(YF_ERR_LIMIT, __func__);
+                free(ss);
+                return NULL;
+            }
+
             binds = malloc(conf->vin_n * sizeof *binds);
             attrs = malloc(attr_n * sizeof *attrs);
             if (binds == NULL || attrs == NULL) {
@@ -190,6 +196,14 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
             const YF_vattr *vattr = NULL;
             unsigned k = 0;
             for (unsigned i = 0; i < conf->vin_n; i++) {
+                if (conf->vins[i].stride > lim->vinput.strd_max) {
+                    yf_seterr(YF_ERR_LIMIT, __func__);
+                    free(attrs);
+                    free(binds);
+                    free(ss);
+                    return NULL;
+                }
+
                 binds[i].binding = i;
                 binds[i].stride = conf->vins[i].stride;
                 YF_VRATE_FROM(conf->vins[i].vrate, binds[i].inputRate);
@@ -198,6 +212,15 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
 
                 for (unsigned j = 0; j < conf->vins[i].attr_n; j++, k++) {
                     vattr = conf->vins[i].attrs+j;
+
+                    if (vattr->offset > lim->vinput.off_max) {
+                        yf_seterr(YF_ERR_LIMIT, __func__);
+                        free(attrs);
+                        free(binds);
+                        free(ss);
+                        return NULL;
+                    }
+
                     attrs[k].location = vattr->location;
                     attrs[k].binding = i;
                     YF_VFMT_FROM(vattr->vfmt, attrs[k].format);
