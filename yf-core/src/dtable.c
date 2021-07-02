@@ -475,8 +475,7 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         return -1;
     }
 
-    VkDescriptorBufferInfo *buf_infos =
-        malloc(elements.n * sizeof *buf_infos);
+    VkDescriptorBufferInfo *buf_infos = malloc(elements.n * sizeof *buf_infos);
     if (buf_infos == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -502,11 +501,29 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         .pTexelBufferView = NULL
     };
 
+    const YF_limits *lim = yf_getlimits(dtb->ctx);
+
     switch (entry->dtype) {
     case YF_DTYPE_UNIFORM:
+        for (unsigned i = 0; i < elements.n; i++) {
+            if (offsets[i] % lim->dtable.cpy_unif_align_min != 0 ||
+                sizes[i] > lim->dtable.cpy_unif_sz_max) {
+                yf_seterr(YF_ERR_LIMIT, __func__);
+                free(buf_infos);
+                return -1;
+            }
+        }
         ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         break;
     case YF_DTYPE_MUTABLE:
+        for (unsigned i = 0; i < elements.n; i++) {
+            if (offsets[i] % lim->dtable.cpy_mut_align_min != 0 ||
+                sizes[i] > lim->dtable.cpy_mut_sz_max) {
+                yf_seterr(YF_ERR_LIMIT, __func__);
+                free(buf_infos);
+                return -1;
+            }
+        }
         ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         break;
     default:
