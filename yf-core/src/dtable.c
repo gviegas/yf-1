@@ -584,6 +584,7 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
                     return -1;
                 }
             }
+            img_infos[i].sampler = kv->val[elem_i].sampler;
         }
         ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         break;
