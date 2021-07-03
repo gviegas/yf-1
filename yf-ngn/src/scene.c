@@ -16,6 +16,7 @@
 #include "yf/com/yf-dict.h"
 #include "yf/com/yf-error.h"
 #include "yf/core/yf-cmdbuf.h"
+#include "yf/core/yf-limits.h"
 
 #include "scene.h"
 #include "coreobj.h"
@@ -108,6 +109,12 @@ typedef struct {
     YF_context ctx;
     YF_buffer buf;
     size_t buf_off;
+    unsigned globlpd;
+    unsigned instpd_mdl;
+    unsigned instpd_terr;
+    unsigned instpd_part;
+    unsigned instpd_quad;
+    unsigned instpd_labl;
     unsigned insts[YF_RESRQ_N];
     YF_list res_obtd;
     YF_cmdbuf cb;
@@ -349,7 +356,7 @@ static int prepare_res(void)
 
     while (1) {
         int failed = 0;
-        buf_sz = YF_GLOBLSZ;
+        buf_sz = YF_GLOBLSZ + l_vars.globlpd;
 
         for (unsigned i = 0; i < YF_RESRQ_N; i++) {
             if (yf_resmgr_setallocn(i, l_vars.insts[i]) != 0) {
@@ -361,44 +368,48 @@ static int prepare_res(void)
             if (l_vars.insts[i] == 0)
                 continue;
 
+            size_t inst_sz;
+
             switch (i) {
             case YF_RESRQ_MDL:
-                buf_sz += l_vars.insts[i] * YF_INSTSZ_MDL;
+                inst_sz = YF_INSTSZ_MDL + l_vars.instpd_mdl;
                 break;
             case YF_RESRQ_MDL2:
-                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 1);
+                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 1;
                 break;
             case YF_RESRQ_MDL4:
-                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 2);
+                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 2;
                 break;
             case YF_RESRQ_MDL8:
-                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 3);
+                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 3;
                 break;
             case YF_RESRQ_MDL16:
-                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 4);
+                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 4;
                 break;
             case YF_RESRQ_MDL32:
-                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 5);
+                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 5;
                 break;
             case YF_RESRQ_MDL64:
-                buf_sz += l_vars.insts[i] * (YF_INSTSZ_MDL << 6);
+                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 6;
                 break;
             case YF_RESRQ_TERR:
-                buf_sz += l_vars.insts[i] * YF_INSTSZ_TERR;
+                inst_sz = YF_INSTSZ_TERR + l_vars.instpd_terr;
                 break;
             case YF_RESRQ_PART:
-                buf_sz += l_vars.insts[i] * YF_INSTSZ_PART;
+                inst_sz = YF_INSTSZ_PART + l_vars.instpd_part;
                 break;
             case YF_RESRQ_QUAD:
-                buf_sz += l_vars.insts[i] * YF_INSTSZ_QUAD;
+                inst_sz = YF_INSTSZ_QUAD + l_vars.instpd_quad;
                 break;
             case YF_RESRQ_LABL:
-                buf_sz += l_vars.insts[i] * YF_INSTSZ_LABL;
+                inst_sz = YF_INSTSZ_LABL + l_vars.instpd_labl;
                 break;
             default:
                 assert(0);
                 abort();
             }
+
+            buf_sz += l_vars.insts[i] * inst_sz;
         }
 
         /* proceed if all allocations succeed */
@@ -501,6 +512,7 @@ static int copy_globl(YF_scene scn)
     l_vars.buf_off += 32;
 
     /* copy */
+    l_vars.buf_off += l_vars.globlpd;
     if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_GLOBL, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -545,6 +557,7 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
     const size_t sz = mdl_n * YF_INSTSZ_MDL;
 
     /* copy */
+    l_vars.buf_off += l_vars.instpd_mdl * mdl_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -582,6 +595,7 @@ static int copy_inst_terr(YF_scene scn, YF_terrain *terrs, unsigned terr_n,
     const size_t sz = terr_n * YF_INSTSZ_TERR;
 
     /* copy */
+    l_vars.buf_off += l_vars.instpd_terr * terr_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -619,6 +633,7 @@ static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
     const size_t sz = part_n * YF_INSTSZ_PART;
 
     /* copy */
+    l_vars.buf_off += l_vars.instpd_part * part_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -666,6 +681,7 @@ static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
     const size_t sz = quad_n * YF_INSTSZ_QUAD;
 
     /* copy */
+    l_vars.buf_off += l_vars.instpd_quad * quad_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -713,6 +729,7 @@ static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
     const size_t sz = labl_n * YF_INSTSZ_LABL;
 
     /* copy */
+    l_vars.buf_off += l_vars.instpd_labl * labl_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -1132,6 +1149,22 @@ static int init_vars(void)
         deinit_vars();
         return -1;
     }
+
+    const unsigned align = yf_getlimits(l_vars.ctx)->dtable.cpy_unif_align_min;
+    unsigned mod;
+
+    if ((mod = YF_GLOBLSZ % align) != 0)
+        l_vars.globlpd = align - mod;
+    if ((mod = YF_INSTSZ_MDL % align) != 0)
+        l_vars.instpd_mdl = align - mod;
+    if ((mod = YF_INSTSZ_TERR % align) != 0)
+        l_vars.instpd_terr = align - mod;
+    if ((mod = YF_INSTSZ_PART % align) != 0)
+        l_vars.instpd_part = align - mod;
+    if ((mod = YF_INSTSZ_QUAD % align) != 0)
+        l_vars.instpd_quad = align - mod;
+    if ((mod = YF_INSTSZ_LABL % align) != 0)
+        l_vars.instpd_labl = align - mod;
 
 #ifndef YF_SCN_DYNAMIC
     if (prepare_res() != 0) {
