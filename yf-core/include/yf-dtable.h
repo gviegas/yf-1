@@ -13,6 +13,7 @@
 #include "yf-context.h"
 #include "yf-buffer.h"
 #include "yf-image.h"
+#include "yf-sampler.h"
 
 YF_DECLS_BEGIN
 
@@ -109,14 +110,15 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
  * @param alloc_i: The index of the destination allocation.
  * @param binding: The binding number identifying the descriptor to update.
  * @param elements: The range of elements to update.
- * @param bufs: The source images, one for each element.
+ * @param imgs: The source images, one for each element.
  * @param layers: The source layers, one for each image.
+ * @param splrs: The source samplers, either 'NULL' or one for each element.
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
 int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
                       YF_slice elements, const YF_image *imgs,
-                      const unsigned *layers);
+                      const unsigned *layers, const YF_sampler *splrs);
 
 /**
  * Deinitializes a descriptor table.

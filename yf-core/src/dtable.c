@@ -540,7 +540,7 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
 
 int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
                       YF_slice elements, const YF_image *imgs,
-                      const unsigned *layers)
+                      const unsigned *layers, const YF_sampler *splrs)
 {
     assert(dtb != NULL);
     assert(elements.n > 0);
