@@ -23,9 +23,6 @@
 
 /**
  * Type defining an image sampler.
- *
- * This structure can be set as the 'info' member of any 'YF_dentry' whose
- * type defines a sampler resource.
  */
 typedef struct {
     struct {
