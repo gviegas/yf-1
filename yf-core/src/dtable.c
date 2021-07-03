@@ -583,12 +583,14 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
     const YF_slice lvl = {0, 1};
     YF_slice lay = {0, 1};
     YF_iview iview;
+    unsigned elem_i;
 
     assert(kv != NULL);
 
     for (unsigned i = 0; i < elements.n; i++) {
         /* TODO: Check if region is within bounds. */
         lay.i = layers[i];
+        elem_i = elements.i + i;
 
         if (yf_image_getiview(imgs[i], lay, lvl, &iview) != 0) {
             free(img_infos);
@@ -597,17 +599,18 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
 
         yf_subscribe(imgs[i], dtb, YF_PUBSUB_DEINIT, inval_iview, dtb);
 
-        if (kv->val[i].img != NULL) {
-            if (kv->val[i].img != imgs[i])
-                yf_subscribe(kv->val[i].img, dtb, YF_PUBSUB_NONE, NULL, NULL);
+        if (kv->val[elem_i].img != NULL) {
+            if (kv->val[elem_i].img != imgs[i])
+                yf_subscribe(kv->val[elem_i].img, dtb, YF_PUBSUB_NONE,
+                             NULL, NULL);
 
-            yf_image_ungetiview(kv->val[i].img, &kv->val[i].iview);
+            yf_image_ungetiview(kv->val[elem_i].img, &kv->val[elem_i].iview);
         }
 
-        kv->val[i].iview = iview;
-        kv->val[i].img = imgs[i];
+        kv->val[elem_i].iview = iview;
+        kv->val[elem_i].img = imgs[i];
 
-        img_infos[i].sampler = VK_NULL_HANDLE;
+        /*img_infos[i].sampler = VK_NULL_HANDLE;*/
         img_infos[i].imageView = iview.view;
         img_infos[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     }
@@ -633,6 +636,27 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         break;
     case YF_DTYPE_ISAMPLER:
+        /* TODO: Manage sampler handler creation/destruction elsewhere. */
+        for (unsigned i = 0; i < elements.n; i++) {
+            elem_i = elements.i + i;
+            if (kv->val[elem_i].sampler == VK_NULL_HANDLE) {
+                kv->val[elem_i].sampler = yf_sampler_make(dtb->ctx,
+                                                          splrs != NULL ?
+                                                          splrs+i : NULL);
+                if (kv->val[elem_i].sampler == VK_NULL_HANDLE) {
+                    free(img_infos);
+                    return -1;
+                }
+            } else if (splrs != NULL) {
+                vkDestroySampler(dtb->ctx->device, kv->val[elem_i].sampler,
+                                 NULL);
+                kv->val[elem_i].sampler = yf_sampler_make(dtb->ctx, splrs+i);
+                if (kv->val[elem_i].sampler == VK_NULL_HANDLE) {
+                    free(img_infos);
+                    return -1;
+                }
+            }
+        }
         ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         break;
     default:
