@@ -16,6 +16,7 @@
 #include "yf/com/yf-dict.h"
 #include "yf/com/yf-error.h"
 #include "yf/core/yf-cmdbuf.h"
+#include "yf/core/yf-limits.h"
 
 #include "scene.h"
 #include "coreobj.h"
@@ -108,6 +109,12 @@ typedef struct {
     YF_context ctx;
     YF_buffer buf;
     size_t buf_off;
+    unsigned globlpd;
+    unsigned instpd_mdl;
+    unsigned instpd_terr;
+    unsigned instpd_part;
+    unsigned instpd_quad;
+    unsigned instpd_labl;
     unsigned insts[YF_RESRQ_N];
     YF_list res_obtd;
     YF_cmdbuf cb;
@@ -1132,6 +1139,28 @@ static int init_vars(void)
         deinit_vars();
         return -1;
     }
+
+    const unsigned align = yf_getlimits(l_vars.ctx)->dtable.cpy_unif_align_min;
+    unsigned mod;
+
+    mod = YF_GLOBLSZ % align;
+    if (mod != 0)
+        l_vars.globlpd = YF_GLOBLSZ + align - mod;
+    mod = YF_INSTSZ_MDL % align;
+    if (mod != 0)
+        l_vars.instpd_mdl = YF_INSTSZ_MDL + align - mod;
+    mod = YF_INSTSZ_TERR % align;
+    if (mod != 0)
+        l_vars.instpd_terr = YF_INSTSZ_TERR + align - mod;
+    mod = YF_INSTSZ_PART % align;
+    if (mod != 0)
+        l_vars.instpd_part = YF_INSTSZ_PART + align - mod;
+    mod = YF_INSTSZ_QUAD % align;
+    if (mod != 0)
+        l_vars.instpd_quad = YF_INSTSZ_QUAD + align - mod;
+    mod = YF_INSTSZ_LABL % align;
+    if (mod != 0)
+        l_vars.instpd_labl = YF_INSTSZ_LABL + align - mod;
 
 #ifndef YF_SCN_DYNAMIC
     if (prepare_res() != 0) {
