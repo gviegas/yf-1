@@ -25,8 +25,12 @@ typedef struct {
         unsigned alloc_i;
         unsigned entry_i;
     } key;
-    YF_iview *iviews;
-    YF_image *imgs;
+    /* one value for each element */
+    struct {
+        YF_iview iview;
+        YF_image img;
+        VkSampler sampler;
+    } *val;
 } T_kv;
 
 /* Invalidates all iviews acquired from a given image. */
@@ -46,8 +50,8 @@ static void inval_iview(void *img, int pubsub, void *dtb)
         const unsigned n = ((YF_dtable)dtb)->entries[kv->key.entry_i].elements;
 
         for (unsigned i = 0; i < n; i++) {
-            if (kv->imgs[i] == img)
-                kv->imgs[i] = NULL;
+            if (kv->val[i].img == img)
+                kv->val[i].img = NULL;
         }
     }
 }
@@ -375,6 +379,7 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
         switch (dtb->entries[i].dtype) {
         case YF_DTYPE_IMAGE:
         case YF_DTYPE_SAMPLED:
+        case YF_DTYPE_SAMPLER:
         case YF_DTYPE_ISAMPLER:
             for (unsigned j = 0; j < n; j++) {
                 T_kv *kv = calloc(1, sizeof(T_kv));
@@ -383,21 +388,17 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
                     return -1;
                 }
 
-                kv->iviews = calloc(dtb->entries[i].elements,
-                                    sizeof *kv->iviews);
-                kv->imgs = calloc(dtb->entries[i].elements, sizeof *kv->imgs);
-                kv->key.alloc_i = j;
-                kv->key.entry_i = i;
-
-                if (kv->iviews == NULL || kv->imgs == NULL ||
-                    yf_dict_insert(dtb->iviews, kv, kv) != 0) {
-
+                kv->val = calloc(dtb->entries[i].elements, sizeof *kv->val);
+                if (kv->val == NULL || yf_dict_insert(dtb->iviews,
+                                                      kv, kv) != 0) {
                     yf_dtable_dealloc(dtb);
-                    free(kv->iviews);
-                    free(kv->imgs);
+                    free(kv->val);
                     free(kv);
                     return -1;
                 }
+
+                kv->key.alloc_i = j;
+                kv->key.entry_i = i;
             }
             break;
 
@@ -421,13 +422,13 @@ void yf_dtable_dealloc(YF_dtable dtb)
 
     while ((kv = yf_dict_next(dtb->iviews, &it, NULL)) != NULL) {
         for (unsigned i = 0; i < dtb->entries[kv->key.entry_i].elements; i++) {
-            if (kv->imgs[i] != NULL) {
-                yf_subscribe(kv->imgs[i], dtb, YF_PUBSUB_NONE, NULL, NULL);
-                yf_image_ungetiview(kv->imgs[i], kv->iviews+i);
+            if (kv->val[i].img != NULL) {
+                yf_subscribe(kv->val[i].img, dtb, YF_PUBSUB_NONE, NULL, NULL);
+                yf_image_ungetiview(kv->val[i].img, &kv->val[i].iview);
+                /* TODO: Samplers. */
             }
         }
-        free(kv->iviews);
-        free(kv->imgs);
+        free(kv->val);
         free(kv);
     }
 
@@ -578,7 +579,7 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         return -1;
     }
 
-    const T_kv k = {{alloc_i, entry_i}, NULL, NULL};
+    const T_kv k = {{alloc_i, entry_i}, NULL};
     T_kv *kv = yf_dict_search(dtb->iviews, &k);
     const YF_slice lvl = {0, 1};
     YF_slice lay = {0, 1};
@@ -597,15 +598,15 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
 
         yf_subscribe(imgs[i], dtb, YF_PUBSUB_DEINIT, inval_iview, dtb);
 
-        if (kv->imgs[i] != NULL) {
-            if (kv->imgs[i] != imgs[i])
-                yf_subscribe(kv->imgs[i], dtb, YF_PUBSUB_NONE, NULL, NULL);
+        if (kv->val[i].img != NULL) {
+            if (kv->val[i].img != imgs[i])
+                yf_subscribe(kv->val[i].img, dtb, YF_PUBSUB_NONE, NULL, NULL);
 
-            yf_image_ungetiview(kv->imgs[i], kv->iviews+i);
+            yf_image_ungetiview(kv->val[i].img, &kv->val[i].iview);
         }
 
-        kv->iviews[i] = iview;
-        kv->imgs[i] = imgs[i];
+        kv->val[i].iview = iview;
+        kv->val[i].img = imgs[i];
 
         img_infos[i].sampler = VK_NULL_HANDLE;
         img_infos[i].imageView = iview.view;
