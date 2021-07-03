@@ -298,5 +298,5 @@ int yf_texture_copyres(YF_texture tex, YF_dtable dtb, unsigned alloc_i,
 
     YF_slice elem = {element, 1};
     return yf_dtable_copyimg(dtb, alloc_i, binding, elem,
-                             &tex->imge->img, &tex->layer);
+                             &tex->imge->img, &tex->layer, NULL);
 }
