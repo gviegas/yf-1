@@ -512,6 +512,7 @@ static int copy_globl(YF_scene scn)
     l_vars.buf_off += 32;
 
     /* copy */
+    l_vars.buf_off += l_vars.globlpd;
     if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_GLOBL, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -556,6 +557,7 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
     const size_t sz = mdl_n * YF_INSTSZ_MDL;
 
     /* copy */
+    l_vars.buf_off += l_vars.instpd_mdl * mdl_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -593,6 +595,7 @@ static int copy_inst_terr(YF_scene scn, YF_terrain *terrs, unsigned terr_n,
     const size_t sz = terr_n * YF_INSTSZ_TERR;
 
     /* copy */
+    l_vars.buf_off += l_vars.instpd_terr * terr_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -630,6 +633,7 @@ static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
     const size_t sz = part_n * YF_INSTSZ_PART;
 
     /* copy */
+    l_vars.buf_off += l_vars.instpd_part * part_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -677,6 +681,7 @@ static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
     const size_t sz = quad_n * YF_INSTSZ_QUAD;
 
     /* copy */
+    l_vars.buf_off += l_vars.instpd_quad * quad_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -724,6 +729,7 @@ static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
     const size_t sz = labl_n * YF_INSTSZ_LABL;
 
     /* copy */
+    l_vars.buf_off += l_vars.instpd_labl * labl_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
                           &l_vars.buf, &off, &sz) != 0)
         return -1;
@@ -1147,24 +1153,18 @@ static int init_vars(void)
     const unsigned align = yf_getlimits(l_vars.ctx)->dtable.cpy_unif_align_min;
     unsigned mod;
 
-    mod = YF_GLOBLSZ % align;
-    if (mod != 0)
-        l_vars.globlpd = YF_GLOBLSZ + align - mod;
-    mod = YF_INSTSZ_MDL % align;
-    if (mod != 0)
-        l_vars.instpd_mdl = YF_INSTSZ_MDL + align - mod;
-    mod = YF_INSTSZ_TERR % align;
-    if (mod != 0)
-        l_vars.instpd_terr = YF_INSTSZ_TERR + align - mod;
-    mod = YF_INSTSZ_PART % align;
-    if (mod != 0)
-        l_vars.instpd_part = YF_INSTSZ_PART + align - mod;
-    mod = YF_INSTSZ_QUAD % align;
-    if (mod != 0)
-        l_vars.instpd_quad = YF_INSTSZ_QUAD + align - mod;
-    mod = YF_INSTSZ_LABL % align;
-    if (mod != 0)
-        l_vars.instpd_labl = YF_INSTSZ_LABL + align - mod;
+    if ((mod = YF_GLOBLSZ % align) != 0)
+        l_vars.globlpd = align - mod;
+    if ((mod = YF_INSTSZ_MDL % align) != 0)
+        l_vars.instpd_mdl = align - mod;
+    if ((mod = YF_INSTSZ_TERR % align) != 0)
+        l_vars.instpd_terr = align - mod;
+    if ((mod = YF_INSTSZ_PART % align) != 0)
+        l_vars.instpd_part = align - mod;
+    if ((mod = YF_INSTSZ_QUAD % align) != 0)
+        l_vars.instpd_quad = align - mod;
+    if ((mod = YF_INSTSZ_LABL % align) != 0)
+        l_vars.instpd_labl = align - mod;
 
 #ifndef YF_SCN_DYNAMIC
     if (prepare_res() != 0) {
