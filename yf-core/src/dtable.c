@@ -352,7 +352,8 @@ void yf_dtable_dealloc(YF_dtable dtb)
                 yf_subscribe(kv->val[i].img, dtb, YF_PUBSUB_NONE, NULL, NULL);
                 yf_image_ungetiview(kv->val[i].img, &kv->val[i].iview);
             }
-            /* TODO: Samplers. */
+            if (kv->val[i].sampler != VK_NULL_HANDLE)
+                vkDestroySampler(dtb->ctx->device, kv->val[i].sampler, NULL);
         }
         free(kv->val);
         free(kv);
