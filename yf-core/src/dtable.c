@@ -19,7 +19,7 @@
 #include "image.h"
 #include "yf-limits.h"
 
-/* Type defining key/value for the iview's dictionary. */
+/* Type defining key/value for the iss dictionary. */
 typedef struct {
     struct {
         unsigned alloc_i;
@@ -42,11 +42,11 @@ static void inval_iview(void *img, int pubsub, void *dtb)
 
     /* XXX: This may end up being too slow if images are destroyed often. */
 
-    YF_dict iviews = ((YF_dtable)dtb)->iviews;
+    YF_dict iss = ((YF_dtable)dtb)->iss;
     YF_iter it = YF_NILIT;
     T_kv *kv;
 
-    while ((kv = yf_dict_next(iviews, &it, NULL)) != NULL) {
+    while ((kv = yf_dict_next(iss, &it, NULL)) != NULL) {
         const unsigned n = ((YF_dtable)dtb)->entries[kv->key.entry_i].elements;
 
         for (unsigned i = 0; i < n; i++) {
@@ -369,8 +369,8 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
 
     free(layouts);
 
-    dtb->iviews = yf_dict_init(hash_kv, cmp_kv);
-    if (dtb->iviews == NULL) {
+    dtb->iss = yf_dict_init(hash_kv, cmp_kv);
+    if (dtb->iss == NULL) {
         yf_dtable_dealloc(dtb);
         return -1;
     }
@@ -388,17 +388,16 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
                     return -1;
                 }
 
+                kv->key.alloc_i = j;
+                kv->key.entry_i = i;
+
                 kv->val = calloc(dtb->entries[i].elements, sizeof *kv->val);
-                if (kv->val == NULL || yf_dict_insert(dtb->iviews,
-                                                      kv, kv) != 0) {
+                if (kv->val == NULL || yf_dict_insert(dtb->iss, kv, kv) != 0) {
                     yf_dtable_dealloc(dtb);
                     free(kv->val);
                     free(kv);
                     return -1;
                 }
-
-                kv->key.alloc_i = j;
-                kv->key.entry_i = i;
             }
             break;
 
@@ -420,7 +419,7 @@ void yf_dtable_dealloc(YF_dtable dtb)
     YF_iter it = YF_NILIT;
     T_kv *kv;
 
-    while ((kv = yf_dict_next(dtb->iviews, &it, NULL)) != NULL) {
+    while ((kv = yf_dict_next(dtb->iss, &it, NULL)) != NULL) {
         for (unsigned i = 0; i < dtb->entries[kv->key.entry_i].elements; i++) {
             if (kv->val[i].img != NULL) {
                 yf_subscribe(kv->val[i].img, dtb, YF_PUBSUB_NONE, NULL, NULL);
@@ -432,8 +431,8 @@ void yf_dtable_dealloc(YF_dtable dtb)
         free(kv);
     }
 
-    yf_dict_deinit(dtb->iviews);
-    dtb->iviews = NULL;
+    yf_dict_deinit(dtb->iss);
+    dtb->iss = NULL;
 
     vkDestroyDescriptorPool(dtb->ctx->device, dtb->pool, NULL);
     dtb->pool = VK_NULL_HANDLE;
@@ -580,7 +579,7 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
     }
 
     const T_kv k = {{alloc_i, entry_i}, NULL};
-    T_kv *kv = yf_dict_search(dtb->iviews, &k);
+    T_kv *kv = yf_dict_search(dtb->iss, &k);
     const YF_slice lvl = {0, 1};
     YF_slice lay = {0, 1};
     YF_iview iview;

@@ -27,7 +27,7 @@ typedef struct YF_dtable_o {
         unsigned ispl;
     } count;
 
-    YF_dict iviews;
+    YF_dict iss;
     YF_dict samplers;
     VkDescriptorSetLayout layout;
     VkDescriptorPool pool;
