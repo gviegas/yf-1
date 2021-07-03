@@ -78,53 +78,36 @@ static int cmp_kv(const void *a, const void *b)
 /* Initializes the descriptor set layout. */
 static int init_layout(YF_dtable dtb)
 {
-    dtb->samplers = yf_dict_init(NULL, NULL);
-    if (dtb->samplers == NULL)
-        return -1;
-
-    VkDescriptorSetLayoutBinding *bindings =
-        malloc(dtb->entry_n * sizeof *bindings);
+    VkDescriptorSetLayoutBinding *bindings = malloc(dtb->entry_n *
+                                                    sizeof *bindings);
     if (bindings == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
 
-    VkSampler *samplers = calloc(dtb->entry_n, sizeof(VkSampler));
-    if (samplers == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        free(bindings);
-        return -1;
-    }
-
-    unsigned spl_n = dtb->entry_n;
-    unsigned spl_i = 0;
-
     for (unsigned i = 0; i < dtb->entry_n; i++) {
         bindings[i].binding = dtb->entries[i].binding;
         bindings[i].descriptorCount = dtb->entries[i].elements;
         bindings[i].stageFlags = VK_SHADER_STAGE_ALL;
+        bindings[i].pImmutableSamplers = NULL;
 
         switch (dtb->entries[i].dtype) {
         case YF_DTYPE_UNIFORM:
             bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            bindings[i].pImmutableSamplers = NULL;
             dtb->count.unif += dtb->entries[i].elements;
-            continue;
+            break;
         case YF_DTYPE_MUTABLE:
             bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-            bindings[i].pImmutableSamplers = NULL;
             dtb->count.mut += dtb->entries[i].elements;
-            continue;
+            break;
         case YF_DTYPE_IMAGE:
             bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-            bindings[i].pImmutableSamplers = NULL;
             dtb->count.img += dtb->entries[i].elements;
-            continue;
+            break;
         case YF_DTYPE_SAMPLED:
             bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-            bindings[i].pImmutableSamplers = NULL;
             dtb->count.spld += dtb->entries[i].elements;
-            continue;
+            break;
         case YF_DTYPE_SAMPLER:
             bindings[i].descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
             dtb->count.splr += dtb->entries[i].elements;
@@ -137,52 +120,8 @@ static int init_layout(YF_dtable dtb)
         default:
             yf_seterr(YF_ERR_INVARG, __func__);
             free(bindings);
-            free(samplers);
             return -1;
         }
-
-        /* YF_DTYPE_SAMPLER or YF_DTYPE_ISAMPLER */
-
-        if (spl_i + dtb->entries[i].elements > spl_n) {
-            spl_n = spl_i + dtb->entries[i].elements;
-            VkSampler *tmp = realloc(samplers, spl_n * sizeof *samplers);
-
-            if (tmp == NULL) {
-                yf_seterr(YF_ERR_NOMEM, __func__);
-                free(bindings);
-                free(samplers);
-                return -1;
-            }
-
-            samplers = tmp;
-        }
-
-        for (unsigned j = spl_i; j < spl_i + dtb->entries[i].elements; j++) {
-            samplers[j] = yf_sampler_make(dtb->ctx, dtb->entries[i].info);
-
-            if (samplers[j] == VK_NULL_HANDLE) {
-                free(bindings);
-                free(samplers);
-                return -1;
-            }
-
-            /* XXX: Certain drivers would not do reference counting for
-               sampler handlers. Consider managing samplers elsewhere. */
-            if (yf_dict_insert(dtb->samplers, (void *)samplers[j],
-                               (void *)samplers[j]) != 0) {
-                if (yf_geterr() != YF_ERR_EXIST) {
-                    vkDestroySampler(dtb->ctx->device, samplers[j], NULL);
-                    free(bindings);
-                    free(samplers);
-                    return -1;
-                }
-            }
-
-            static_assert(sizeof(void *) >= sizeof *samplers, "!sizeof");
-        }
-
-        bindings[i].pImmutableSamplers = samplers+spl_i;
-        spl_i += dtb->entries[i].elements;
     }
 
     const YF_limits *lim = yf_getlimits(dtb->ctx);
@@ -192,20 +131,11 @@ static int init_layout(YF_dtable dtb)
         dtb->count.img > lim->dtable.img_max ||
         dtb->count.spld > lim->dtable.spld_max ||
         dtb->count.splr > lim->dtable.splr_max ||
-        dtb->count.ispl > lim->dtable.ispl_max) {
-
+        dtb->count.ispl > lim->dtable.ispl_max ||
+        (dtb->count.unif + dtb->count.mut + dtb->count.img + dtb->count.spld +
+         dtb->count.splr + dtb->count.ispl) > lim->dtable.stg_res_max) {
         yf_seterr(YF_ERR_LIMIT, __func__);
         free(bindings);
-        free(samplers);
-        return -1;
-    }
-
-    if (dtb->count.unif + dtb->count.mut + dtb->count.img + dtb->count.spld +
-        dtb->count.splr + dtb->count.ispl > lim->dtable.stg_res_max) {
-
-        yf_seterr(YF_ERR_LIMIT, __func__);
-        free(bindings);
-        free(samplers);
         return -1;
     }
 
@@ -222,13 +152,10 @@ static int init_layout(YF_dtable dtb)
     if (res != VK_SUCCESS) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
         free(bindings);
-        free(samplers);
         return -1;
     }
 
     free(bindings);
-    free(samplers);
-
     return 0;
 }
 
@@ -424,8 +351,8 @@ void yf_dtable_dealloc(YF_dtable dtb)
             if (kv->val[i].img != NULL) {
                 yf_subscribe(kv->val[i].img, dtb, YF_PUBSUB_NONE, NULL, NULL);
                 yf_image_ungetiview(kv->val[i].img, &kv->val[i].iview);
-                /* TODO: Samplers. */
             }
+            /* TODO: Samplers. */
         }
         free(kv->val);
         free(kv);
@@ -678,19 +605,6 @@ void yf_dtable_deinit(YF_dtable dtb)
 
     yf_dtable_dealloc(dtb);
     vkDestroyDescriptorSetLayout(dtb->ctx->device, dtb->layout, NULL);
-
-    YF_iter it = YF_NILIT;
-    VkSampler sampler;
-
-    while (1) {
-        sampler = yf_dict_next(dtb->samplers, &it, NULL);
-        if (YF_IT_ISNIL(it))
-            break;
-        vkDestroySampler(dtb->ctx->device, sampler, NULL);
-    }
-
-    yf_dict_deinit(dtb->samplers);
-
     free(dtb->entries);
     free(dtb);
 }

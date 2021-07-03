@@ -28,7 +28,6 @@ typedef struct YF_dtable_o {
     } count;
 
     YF_dict iss;
-    YF_dict samplers;
     VkDescriptorSetLayout layout;
     VkDescriptorPool pool;
     VkDescriptorSet *sets;
