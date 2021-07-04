@@ -122,6 +122,7 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
         ctx->splr.priv = yf_dict_init(hash_splr, cmp_splr);
         if (ctx->splr.priv == NULL)
             return NULL;
+        ctx->splr.deinit_callb = destroy_splrhs;
     }
 
     if (splr == NULL)
@@ -152,10 +153,11 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
             free(splrh);
             return NULL;
         }
-        splrh->count = 0;
+        splrh->count = 1;
+    } else {
+        splrh->count++;
     }
 
-    splrh->count++;
     return splrh;
 }
 
