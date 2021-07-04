@@ -111,8 +111,34 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr)
 {
     assert(ctx != NULL);
 
-    /* TODO */
-    return NULL;
+    if (ctx->splr.priv == NULL) {
+        ctx->splr.priv = yf_dict_init(hash_splr, cmp_splr);
+        if (ctx->splr.priv == NULL)
+            return NULL;
+    }
+
+    YF_dict splrhs = ctx->splr.priv;
+    YF_splrh *splrh = yf_dict_search(splrhs, splr);
+
+    if (splrh == NULL) {
+        splrh = malloc(sizeof *splrh);
+        if (splrh == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return NULL;
+        }
+        if ((splrh->handle = yf_sampler_make(ctx, splr)) == VK_NULL_HANDLE) {
+            free(splrh);
+            return NULL;
+        }
+        splrh->splr = *splr;
+        if (yf_dict_insert(splrhs, &splrh->splr, splrh) != 0) {
+            vkDestroySampler(ctx->device, splrh->handle, NULL);
+            free(splrh);
+            return NULL;
+        }
+    }
+
+    return splrh;
 }
 
 void yf_sampler_unget(YF_context ctx, const YF_splrh *splrh)
