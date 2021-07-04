@@ -12,6 +12,18 @@
 #include "yf-sampler.h"
 #include "vk.h"
 
+/* Type defining a managed sampler. */
+typedef struct {
+    VkSampler handle;
+    YF_sampler splr;
+} YF_splrh;
+
+/* Gets a managed sampler. */
+const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr);
+
+/* Ungets a managed sampler. */
+void yf_sampler_unget(YF_context ctx, const YF_splrh *splrh);
+
 /* Makes a new sampler from a given 'YF_sampler'.
    The caller is responsible for the object's destruction. */
 VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *spl);
