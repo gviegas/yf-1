@@ -12,9 +12,23 @@
 #include "yf-sampler.h"
 #include "vk.h"
 
-/* Makes a new sampler from a given 'YF_sampler'.
-   The caller is responsible for the object's destruction. */
-VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *spl);
+/* Type defining a managed sampler. */
+typedef struct {
+    VkSampler handle;
+    YF_sampler splr;
+    unsigned count;
+} YF_splrh;
+
+/* Gets a managed sampler.
+   If 'splr' is 'NULL', the default sampler is used. A non-null 'subs'
+   argument indicates that the caller is exchanging samplers. */
+const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
+                               const YF_splrh *subs);
+
+/* Ungets a managed sampler.
+   When exchanging samplers, one should use 'sampler_get()' instead to avoid
+   unnecessary recreation of sampler handles. */
+void yf_sampler_unget(YF_context ctx, const YF_splrh *splrh);
 
 /* Converts from a 'YF_WRAPMODE' value. */
 #define YF_WRAPMODE_FROM(wm, to) do { \

@@ -29,7 +29,7 @@ typedef struct {
     struct {
         YF_iview iview;
         YF_image img;
-        VkSampler sampler;
+        const YF_splrh *splrh;
     } *val;
 } T_kv;
 
@@ -352,8 +352,8 @@ void yf_dtable_dealloc(YF_dtable dtb)
                 yf_subscribe(kv->val[i].img, dtb, YF_PUBSUB_NONE, NULL, NULL);
                 yf_image_ungetiview(kv->val[i].img, &kv->val[i].iview);
             }
-            if (kv->val[i].sampler != VK_NULL_HANDLE)
-                vkDestroySampler(dtb->ctx->device, kv->val[i].sampler, NULL);
+            if (kv->val[i].splrh != NULL)
+                yf_sampler_unget(dtb->ctx, kv->val[i].splrh);
         }
         free(kv->val);
         free(kv);
@@ -443,6 +443,7 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         }
         ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         break;
+
     case YF_DTYPE_MUTABLE:
         for (unsigned i = 0; i < elements.n; i++) {
             if (offsets[i] % lim->dtable.cpy_mut_align_min != 0 ||
@@ -454,6 +455,7 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         }
         ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
         break;
+
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
         free(buf_infos);
@@ -560,34 +562,28 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
     case YF_DTYPE_IMAGE:
         ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
         break;
+
     case YF_DTYPE_SAMPLED:
         ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
         break;
+
     case YF_DTYPE_ISAMPLER:
-        /* TODO: Manage sampler handler creation/destruction elsewhere. */
         for (unsigned i = 0; i < elements.n; i++) {
             elem_i = elements.i + i;
-            if (kv->val[elem_i].sampler == VK_NULL_HANDLE) {
-                kv->val[elem_i].sampler = yf_sampler_make(dtb->ctx,
-                                                          splrs != NULL ?
-                                                          splrs+i : NULL);
-                if (kv->val[elem_i].sampler == VK_NULL_HANDLE) {
-                    free(img_infos);
-                    return -1;
-                }
-            } else if (splrs != NULL) {
-                vkDestroySampler(dtb->ctx->device, kv->val[elem_i].sampler,
-                                 NULL);
-                kv->val[elem_i].sampler = yf_sampler_make(dtb->ctx, splrs+i);
-                if (kv->val[elem_i].sampler == VK_NULL_HANDLE) {
-                    free(img_infos);
-                    return -1;
-                }
+            const YF_sampler *splr = splrs != NULL ? splrs+i : NULL;
+            const YF_splrh *subs = kv->val[elem_i].splrh;
+
+            kv->val[elem_i].splrh = yf_sampler_get(dtb->ctx, splr, subs);
+            if (kv->val[elem_i].splrh == NULL) {
+                free(img_infos);
+                return -1;
             }
-            img_infos[i].sampler = kv->val[elem_i].sampler;
+
+            img_infos[i].sampler = kv->val[elem_i].splrh->handle;
         }
         ds_wr.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
         break;
+
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
         free(img_infos);
