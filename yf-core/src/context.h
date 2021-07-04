@@ -49,6 +49,7 @@ typedef struct YF_context_o {
     YF_ctxmgd cmde;
     YF_ctxmgd lim;
     YF_ctxmgd stg;
+    YF_ctxmgd splr;
 } YF_context_o;
 
 #endif /* YF_CONTEXT_H */
