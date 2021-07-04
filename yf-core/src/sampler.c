@@ -88,21 +88,21 @@ static void destroy_splrhs(YF_context ctx)
     ctx->splr.priv = NULL;
 }
 
-/* Hashes a 'YF_splrh'. */
-static size_t hash_splrh(const void *x)
+/* Hashes a 'YF_sampler'. */
+static size_t hash_splr(const void *x)
 {
-    const YF_splrh *splrh = x;
-    return yf_hashv(&splrh->splr, sizeof(YF_sampler), NULL);
+    const YF_sampler *splr = x;
+    return yf_hashv(splr, sizeof *splr, NULL);
 
     static_assert(sizeof(YF_sampler) == 6*sizeof(int), "!sizeof");
 }
 
-/* Compares a 'YF_splrh' to another. */
-static int cmp_splrh(const void *a, const void *b)
+/* Compares a 'YF_sampler' to another. */
+static int cmp_splr(const void *a, const void *b)
 {
-    const YF_splrh *splrh1 = a;
-    const YF_splrh *splrh2 = b;
-    return memcmp(&splrh1->splr, &splrh2->splr, sizeof(YF_sampler));
+    const YF_sampler *splr1 = a;
+    const YF_sampler *splr2 = b;
+    return memcmp(splr1, splr2, sizeof *splr1);
 
     static_assert(sizeof(YF_sampler) == 6*sizeof(int), "!sizeof");
 }
