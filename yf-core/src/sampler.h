@@ -26,10 +26,6 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
 /* Ungets a managed sampler. */
 void yf_sampler_unget(YF_context ctx, const YF_splrh *splrh);
 
-/* Makes a new sampler from a given 'YF_sampler'.
-   The caller is responsible for the object's destruction. */
-VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *spl);
-
 /* Converts from a 'YF_WRAPMODE' value. */
 #define YF_WRAPMODE_FROM(wm, to) do { \
     switch (wm) { \

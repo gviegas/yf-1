@@ -30,9 +30,11 @@ static YF_sampler l_splr = {
     }
 };
 
-VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *spl)
+/* Creates a sampler handle. */
+static VkSampler create_handle(YF_context ctx, const YF_sampler *splr)
 {
     assert(ctx != NULL);
+    assert(splr != NULL);
 
     VkSamplerCreateInfo info = {0};
     info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -49,29 +51,19 @@ VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *spl)
     info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
     info.unnormalizedCoordinates = VK_FALSE;
 
-    if (spl != NULL) {
-        YF_WRAPMODE_FROM(spl->wrapmode.u, info.addressModeU);
-        YF_WRAPMODE_FROM(spl->wrapmode.v, info.addressModeV);
-        YF_WRAPMODE_FROM(spl->wrapmode.w, info.addressModeW);
-        YF_FILTER_FROM(spl->filter.mag, info.magFilter);
-        YF_FILTER_FROM(spl->filter.min, info.minFilter);
-        YF_FILTER_MIP_FROM(spl->filter.mipmap, info.mipmapMode);
+    YF_WRAPMODE_FROM(splr->wrapmode.u, info.addressModeU);
+    YF_WRAPMODE_FROM(splr->wrapmode.v, info.addressModeV);
+    YF_WRAPMODE_FROM(splr->wrapmode.w, info.addressModeW);
+    YF_FILTER_FROM(splr->filter.mag, info.magFilter);
+    YF_FILTER_FROM(splr->filter.min, info.minFilter);
+    YF_FILTER_MIP_FROM(splr->filter.mipmap, info.mipmapMode);
 
-        assert(info.addressModeU != INT_MAX);
-        assert(info.addressModeV != INT_MAX);
-        assert(info.addressModeW != INT_MAX);
-        assert(info.magFilter != INT_MAX);
-        assert(info.minFilter != INT_MAX);
-        assert(info.mipmapMode != INT_MAX);
-
-    } else {
-        info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-        info.magFilter = VK_FILTER_NEAREST;
-        info.minFilter = VK_FILTER_NEAREST;
-        info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    }
+    assert(info.addressModeU != INT_MAX);
+    assert(info.addressModeV != INT_MAX);
+    assert(info.addressModeW != INT_MAX);
+    assert(info.magFilter != INT_MAX);
+    assert(info.minFilter != INT_MAX);
+    assert(info.mipmapMode != INT_MAX);
 
     VkSampler sampler;
     VkResult res = vkCreateSampler(ctx->device, &info, NULL, &sampler);
@@ -150,7 +142,7 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
             yf_seterr(YF_ERR_NOMEM, __func__);
             return NULL;
         }
-        if ((splrh->handle = yf_sampler_make(ctx, splr)) == VK_NULL_HANDLE) {
+        if ((splrh->handle = create_handle(ctx, splr)) == VK_NULL_HANDLE) {
             free(splrh);
             return NULL;
         }
