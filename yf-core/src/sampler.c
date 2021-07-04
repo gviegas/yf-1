@@ -5,6 +5,7 @@
  * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
+#include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 #include <assert.h>
@@ -65,6 +66,26 @@ VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *spl)
         return NULL;
     }
     return sampler;
+}
+
+/* Destroys the dictionary of 'YF_splrh' stored in a context. */
+static void destroy_splrhs(YF_context ctx)
+{
+    assert(ctx != NULL);
+
+    YF_dict splrhs = ctx->splr.priv;
+    if (splrhs == NULL)
+        return;
+
+    YF_iter it = YF_NILIT;
+    YF_splrh *splrh;
+    while ((splrh = yf_dict_next(splrhs, &it, NULL)) != NULL) {
+        vkDestroySampler(ctx->device, splrh->handle, NULL);
+        free(splrh);
+    }
+
+    yf_dict_deinit(splrhs);
+    ctx->splr.priv = NULL;
 }
 
 /* Hashes a 'YF_splrh'. */
