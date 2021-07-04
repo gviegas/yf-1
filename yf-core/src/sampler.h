@@ -16,6 +16,7 @@
 typedef struct {
     VkSampler handle;
     YF_sampler splr;
+    unsigned count;
 } YF_splrh;
 
 /* Gets a managed sampler. */

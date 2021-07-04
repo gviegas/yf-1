@@ -136,8 +136,10 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr)
             free(splrh);
             return NULL;
         }
+        splrh->count = 0;
     }
 
+    splrh->count++;
     return splrh;
 }
 
