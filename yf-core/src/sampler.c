@@ -17,7 +17,7 @@
 #include "context.h"
 
 /* Default sampler. */
-static YF_sampler l_splr = {
+static const YF_sampler l_splr = {
     .wrapmode = {
         .u = YF_WRAPMODE_REPEAT,
         .v = YF_WRAPMODE_REPEAT,
