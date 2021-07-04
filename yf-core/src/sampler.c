@@ -121,7 +121,8 @@ static int cmp_splr(const void *a, const void *b)
     static_assert(sizeof(YF_sampler) == 6*sizeof(int), "!sizeof");
 }
 
-const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr)
+const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
+                               const YF_splrh *subs)
 {
     assert(ctx != NULL);
 
@@ -133,6 +134,12 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr)
 
     if (splr == NULL)
         splr = &l_splr;
+
+    if (subs != NULL) {
+        if (cmp_splr(splr, &subs->splr) == 0)
+            return subs;
+        yf_sampler_unget(ctx, subs);
+    }
 
     YF_dict splrhs = ctx->splr.priv;
     YF_splrh *splrh = yf_dict_search(splrhs, splr);

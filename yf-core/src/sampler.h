@@ -20,7 +20,8 @@ typedef struct {
 } YF_splrh;
 
 /* Gets a managed sampler. */
-const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr);
+const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
+                               const YF_splrh *subs);
 
 /* Ungets a managed sampler. */
 void yf_sampler_unget(YF_context ctx, const YF_splrh *splrh);
