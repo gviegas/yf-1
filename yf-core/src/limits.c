@@ -14,8 +14,14 @@
 #include "yf-limits.h"
 #include "context.h"
 
-/* Destroys the 'YF_limits' data stored in a given context. */
-static void destroy_lim(YF_context ctx);
+/* Destroys the 'YF_limits' data stored in a context. */
+static void destroy_lim(YF_context ctx)
+{
+    assert(ctx != NULL);
+
+    free(ctx->lim.priv);
+    ctx->lim.priv = NULL;
+}
 
 const YF_limits *yf_getlimits(YF_context ctx)
 {
@@ -111,12 +117,4 @@ const YF_limits *yf_getlimits(YF_context ctx)
     ctx->lim.priv = lim;
     ctx->lim.deinit_callb = destroy_lim;
     return lim;
-}
-
-static void destroy_lim(YF_context ctx)
-{
-    assert(ctx != NULL);
-
-    free(ctx->lim.priv);
-    ctx->lim.priv = NULL;
 }
