@@ -16,6 +16,20 @@
 #include "sampler.h"
 #include "context.h"
 
+/* Default sampler. */
+static YF_sampler l_splr = {
+    .wrapmode = {
+        .u = YF_WRAPMODE_REPEAT,
+        .v = YF_WRAPMODE_REPEAT,
+        .w = YF_WRAPMODE_REPEAT
+    },
+    .filter = {
+        .mag = YF_FILTER_NEAREST,
+        .min = YF_FILTER_NEAREST,
+        .mipmap = YF_FILTER_NEAREST
+    }
+};
+
 VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *spl)
 {
     assert(ctx != NULL);
@@ -116,6 +130,9 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr)
         if (ctx->splr.priv == NULL)
             return NULL;
     }
+
+    if (splr == NULL)
+        splr = &l_splr;
 
     YF_dict splrhs = ctx->splr.priv;
     YF_splrh *splrh = yf_dict_search(splrhs, splr);
