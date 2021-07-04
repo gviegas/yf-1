@@ -163,7 +163,21 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr)
 void yf_sampler_unget(YF_context ctx, const YF_splrh *splrh)
 {
     assert(ctx != NULL);
-    assert(splrh != NULL);
 
-    /* TODO */
+    if (splrh == NULL)
+        return;
+
+    YF_dict splrhs = ctx->splr.priv;
+    assert(splrhs != NULL);
+
+    YF_splrh *val = yf_dict_search(splrhs, &splrh->splr);
+    assert(val != NULL);
+
+    if (val->count == 1) {
+        yf_dict_remove(splrhs, &splrh->splr);
+        vkDestroySampler(ctx->device, val->handle, NULL);
+        free(val);
+    } else {
+        val->count--;
+    }
 }
