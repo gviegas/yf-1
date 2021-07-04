@@ -5,9 +5,11 @@
  * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
+#include <string.h>
 #include <limits.h>
 #include <assert.h>
 
+#include "yf/com/yf-dict.h"
 #include "yf/com/yf-error.h"
 
 #include "sampler.h"
@@ -63,4 +65,39 @@ VkSampler yf_sampler_make(YF_context ctx, const YF_sampler *spl)
         return NULL;
     }
     return sampler;
+}
+
+/* Hashes a 'YF_splrh'. */
+static size_t hash_splrh(const void *x)
+{
+    const YF_splrh *splrh = x;
+    return yf_hashv(&splrh->splr, sizeof(YF_sampler), NULL);
+
+    static_assert(sizeof(YF_sampler) == 6*sizeof(int), "!sizeof");
+}
+
+/* Compares a 'YF_splrh' to another. */
+static int cmp_splrh(const void *a, const void *b)
+{
+    const YF_splrh *splrh1 = a;
+    const YF_splrh *splrh2 = b;
+    return memcmp(&splrh1->splr, &splrh2->splr, sizeof(YF_sampler));
+
+    static_assert(sizeof(YF_sampler) == 6*sizeof(int), "!sizeof");
+}
+
+const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr)
+{
+    assert(ctx != NULL);
+
+    /* TODO */
+    return NULL;
+}
+
+void yf_sampler_unget(YF_context ctx, const YF_splrh *splrh)
+{
+    assert(ctx != NULL);
+    assert(splrh != NULL);
+
+    /* TODO */
 }
