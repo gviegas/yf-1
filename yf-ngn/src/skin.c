@@ -7,7 +7,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
 
 #include "yf/com/yf-error.h"
 
@@ -41,4 +40,12 @@ YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n)
     skin->jnt_n = jnt_n;
 
     return skin;
+}
+
+void yf_skin_deinit(YF_skin skin)
+{
+    if (skin != NULL) {
+        free(skin->jnts);
+        free(skin);
+    }
 }
