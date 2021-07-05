@@ -50,6 +50,7 @@ static int deinit_res(void *key, void *val, void *arg)
         break;
     default:
         assert(0);
+        abort();
     }
 
     free(key);
@@ -98,7 +99,6 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
     assert(res != NULL);
 
     char *key = malloc(1+strlen(name));
-
     if (key == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -111,6 +111,25 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
 
     coll->n++;
     return 0;
+}
+
+void *yf_collection_release(YF_collection coll, int collres, const char *name)
+{
+    assert(coll != NULL);
+    assert(collres >= 0 && collres < YF_COLLRES_N);
+    assert(name != NULL);
+
+    void *key = (void *)name;
+    void *res = yf_dict_delete(coll->res[collres], &key);
+
+    if (res != NULL) {
+        assert(key != name);
+
+        free(key);
+        coll->n--;
+    }
+
+    return res;
 }
 
 int yf_collection_contains(YF_collection coll, int collres, const char *name)
