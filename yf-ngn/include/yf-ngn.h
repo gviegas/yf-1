@@ -23,6 +23,7 @@
 #include "yf-particle.h"
 #include "yf-quad.h"
 #include "yf-scene.h"
+#include "yf-skin.h"
 #include "yf-terrain.h"
 #include "yf-texture.h"
 #include "yf-vector.h"
