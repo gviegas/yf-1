@@ -31,6 +31,14 @@ YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n)
         return NULL;
     }
 
+    for (unsigned i = 0; i < jnt_n; i++) {
+        if (jnts[i].pnt_i >= jnt_n || memchr(jnts[i].name, '\0',
+                                             sizeof jnts[i].name) == NULL) {
+            yf_seterr(YF_ERR_INVARG, __func__);
+            return NULL;
+        }
+    }
+
     YF_skin skin = malloc(sizeof(struct YF_skin_o));
     if (skin == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
@@ -82,16 +90,19 @@ YF_skeleton yf_skin_makeskel(YF_skin skin)
         YF_joint *jnt = skin->jnts+i;
 
         yf_mat4_copy(*yf_node_getxform(node), jnt->xform);
-        /* XXX: Make sure name is null-terminated (on init()). */
-        yf_node_setname(node, jnt->name);
 
-        /* XXX: Make sure index is less than joint count (on init()). */
+        if (yf_node_setname(node, jnt->name) != 0) {
+            yf_skin_unmkskel(skin, skel);
+            return NULL;
+        }
+
         if (jnt->pnt_i < 0)
             yf_node_insert(skel->nodes[skin->jnt_n], node);
         else
             yf_node_insert(skel->nodes[jnt->pnt_i], node);
     }
 
+    /* XXX */
     assert(!yf_node_isleaf(skel->nodes[skin->jnt_n]));
 
     return skel;
