@@ -16,8 +16,9 @@
 struct YF_model_o {
     YF_node node;
     YF_mesh mesh;
+    YF_skin skin;
+    YF_skeleton skel;
     YF_material matl;
-    /* TODO: Other model properties. */
 };
 
 /* Model deinitialization callback. */
