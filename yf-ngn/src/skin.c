@@ -12,7 +12,6 @@
 #include "yf/com/yf-error.h"
 
 #include "yf-skin.h"
-#include "yf-node.h"
 
 struct YF_skin_o {
     YF_joint *jnts;

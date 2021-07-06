@@ -15,13 +15,19 @@
 
 YF_DECLS_BEGIN
 
-/* Opaque type defining a skin. */
+/**
+ * Opaque type defining a skin.
+ */
 typedef struct YF_skin_o *YF_skin;
 
-/* Opaque type defining an instance of a skin's joint hierarchy. */
+/**
+ * Opaque type defining an instance of a skin's joint hierarchy.
+ */
 typedef struct YF_skeleton_o *YF_skeleton;
 
-/* Type describing a joint for skinning. */
+/**
+ * Type describing a joint for skinning.
+ */
 typedef struct {
     YF_mat4 xform;
     YF_mat4 ibm;
@@ -69,6 +75,9 @@ void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel);
 
 /**
  * Deinitializes a skin.
+ *
+ * One must ensure that all instantiated skeletons of 'skin' have been
+ * destroyed through 'skin_unmkskel()' before calling this function.
  *
  * @param skin: The skin to deinitialize. Can be 'NULL'.
  */
