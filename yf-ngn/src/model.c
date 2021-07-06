@@ -62,6 +62,23 @@ void yf_model_setmesh(YF_model mdl, YF_mesh mesh)
     mdl->mesh = mesh;
 }
 
+YF_skin yf_model_getskin(YF_model mdl, YF_skeleton *skel)
+{
+    assert(mdl != NULL);
+    assert(skel != NULL);
+
+    *skel = mdl->skel;
+    return mdl->skin;
+}
+
+void yf_model_setskin(YF_model mdl, YF_skin skin, YF_skeleton skel)
+{
+    assert(mdl != NULL);
+
+    mdl->skin = skin;
+    mdl->skel = skel;
+}
+
 YF_material yf_model_getmatl(YF_model mdl)
 {
     assert(mdl != NULL);
