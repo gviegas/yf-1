@@ -16,6 +16,7 @@
 #include "yf-scene.h"
 #include "yf-node.h"
 #include "yf-mesh.h"
+#include "yf-skin.h"
 #include "yf-material.h"
 #include "yf-texture.h"
 #include "yf-font.h"
@@ -38,6 +39,10 @@ static int deinit_res(void *key, void *val, void *arg)
         break;
     case YF_COLLRES_MESH:
         yf_mesh_deinit(val);
+        break;
+    case YF_COLLRES_SKIN:
+        /* XXX: Skeletons. */
+        yf_skin_deinit(val);
         break;
     case YF_COLLRES_MATERIAL:
         yf_material_deinit(val);
