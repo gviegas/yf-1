@@ -10,6 +10,7 @@
 
 #include "yf/com/yf-defs.h"
 
+#include "yf-node.h"
 #include "yf-matrix.h"
 
 YF_DECLS_BEGIN
@@ -48,6 +49,15 @@ YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n);
  *  and the global error is set to indicate the cause.
  */
 YF_skeleton yf_skin_makeskel(YF_skin skin);
+
+/**
+ * Gets the root node of a skin's skeleton.
+ *
+ * @param skin: The skin.
+ * @param skel: The skeleton.
+ * @return: The skeleton's root node.
+ */
+YF_node yf_skin_getnode(YF_skin skin, YF_skeleton skel);
 
 /**
  * Unmakes a skin's skeleton.

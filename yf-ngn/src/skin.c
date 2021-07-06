@@ -97,6 +97,14 @@ YF_skeleton yf_skin_makeskel(YF_skin skin)
     return skel;
 }
 
+YF_node yf_skin_getnode(YF_skin skin, YF_skeleton skel)
+{
+    assert(skin != NULL);
+    assert(skel != NULL);
+
+    return skel->nodes[skin->jnt_n];
+}
+
 void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel)
 {
     assert(skin != NULL);
