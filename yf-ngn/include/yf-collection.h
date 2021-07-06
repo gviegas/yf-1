@@ -23,11 +23,12 @@ typedef struct YF_collection_o *YF_collection;
 #define YF_COLLRES_SCENE    0
 #define YF_COLLRES_NODE     1
 #define YF_COLLRES_MESH     2
-#define YF_COLLRES_MATERIAL 3
-#define YF_COLLRES_TEXTURE  4
-#define YF_COLLRES_FONT     5
+#define YF_COLLRES_SKIN     3
+#define YF_COLLRES_MATERIAL 4
+#define YF_COLLRES_TEXTURE  5
+#define YF_COLLRES_FONT     6
 
-#define YF_COLLRES_N 6
+#define YF_COLLRES_N 7
 
 /**
  * Initializes a new collection.
@@ -68,7 +69,7 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
  *
  * @param coll: The collection.
  * @param collres: The 'YF_COLLRES' value indicating the type of the resource.
- * @param name: The name of the resource to be released.
+ * @param name: The name of the resource to release.
  * @return: On success, returns the resource. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
