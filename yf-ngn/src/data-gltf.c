@@ -3099,6 +3099,14 @@ static int load_texdt(const T_gltf *gltf, const char *path, size_t index,
     return r;
 }
 
+/* Loads a single skin from glTF contents. */
+static int load_skin(const T_gltf *gltf, const char *path, size_t index,
+                     YF_skin *skin, YF_collection coll)
+{
+    /* TODO */
+    return -1;
+}
+
 #define YF_NAMEOFTEX(gltf_p, tex_i, name) do { \
     name = (gltf_p)->textures.v[tex_i].name; \
     if ((name) == NULL) { \
@@ -3474,6 +3482,28 @@ int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data)
     }
 
     int r = load_meshdt(&gltf, path, index, data);
+    deinit_gltf(&gltf);
+    free(path);
+    return r;
+}
+
+int yf_loadgltf_skin(const char *pathname, size_t index, YF_skin *skin)
+{
+    assert(skin != NULL);
+
+    T_gltf gltf = {0};
+    if (init_gltf(pathname, &gltf) != 0)
+        return -1;
+
+    char *path = NULL;
+    YF_PATHOF(pathname, path);
+    if (path == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        deinit_gltf(&gltf);
+        return -1;
+    }
+
+    int r = load_skin(&gltf, path, index, skin, NULL);
     deinit_gltf(&gltf);
     free(path);
     return r;
