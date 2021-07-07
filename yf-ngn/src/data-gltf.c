@@ -3099,6 +3099,168 @@ static int load_texdt(const T_gltf *gltf, const char *path, size_t index,
     return r;
 }
 
+/* Loads a single skin from glTF contents. */
+static int load_skin(const T_gltf *gltf, const char *path, size_t index,
+                     YF_skin *skin, YF_collection coll)
+{
+    assert(gltf != NULL);
+    assert(path != NULL);
+    assert(skin != NULL || coll != NULL);
+
+    if (gltf->skins.n <= index) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    const size_t jnt_n = gltf->skins.v[index].joint_n;
+    assert(jnt_n > 0);
+
+    T_int *jnt_hier = calloc(gltf->nodes.n, sizeof *jnt_hier);
+    YF_joint *jnts = malloc(jnt_n * sizeof *jnts);
+    if (jnt_hier == NULL || jnts == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(jnt_hier);
+        free(jnts);
+        return -1;
+    }
+
+    for (size_t i = 0; i < jnt_n; i++) {
+        const T_int node = gltf->skins.v[index].joints[i];
+
+        /* joint transform */
+        const unsigned mask = gltf->nodes.v[node].xform_mask;
+        if (mask != YF_GLTF_XFORM_NONE) {
+            if (mask & YF_GLTF_XFORM_M) {
+                yf_mat4_copy(jnts[i].xform, gltf->nodes.v[node].matrix);
+            } else {
+                if (mask & YF_GLTF_XFORM_T) {
+                    const T_num *t = gltf->nodes.v[node].trs.t;
+                    yf_mat4_xlate(jnts[i].xform, t[0], t[1], t[2]);
+                } else {
+                    yf_mat4_iden(jnts[i].xform);
+                }
+                if (mask & YF_GLTF_XFORM_R) {
+                    const T_num *r = gltf->nodes.v[node].trs.r;
+                    YF_mat4 mr, rot;
+                    yf_mat4_rotq(mr, r);
+                    yf_mat4_mul(rot, jnts[i].xform, mr);
+                    yf_mat4_copy(jnts[i].xform, rot);
+                }
+                if (mask & YF_GLTF_XFORM_S) {
+                    const T_num *s = gltf->nodes.v[node].trs.s;
+                    YF_mat4 ms, scl;
+                    yf_mat4_scale(ms, s[0], s[1], s[2]);
+                    yf_mat4_mul(scl, jnts[i].xform, ms);
+                    yf_mat4_copy(jnts[i].xform, scl);
+                }
+            }
+        } else {
+            yf_mat4_iden(jnts[i].xform);
+        }
+
+        /* joint name */
+        if (gltf->nodes.v[node].name != NULL) {
+            const size_t len = sizeof jnts[0].name - 1;
+            strncpy(jnts[i].name, gltf->nodes.v[node].name, len);
+            jnts[i].name[len] = '\0';
+        } else {
+            jnts[i].name[0] = '\0';
+        }
+
+        /* joint hierarchy */
+        for (size_t j = 0; j < gltf->nodes.v[node].child_n; j++)
+            jnt_hier[gltf->nodes.v[node].children[j]] = i + 1;
+    }
+
+    for (size_t i = 0; i < jnt_n; i++) {
+        const T_int node = gltf->skins.v[index].joints[i];
+        /* negative 'pnt_i' means no parent */
+        jnts[i].pnt_i = jnt_hier[node] - 1;
+    }
+
+    /* ibm data */
+    const T_int acc = gltf->skins.v[index].inv_bind_matrices;
+    if (acc != YF_INT_MIN) {
+        const T_int view = gltf->accessors.v[acc].buffer_view;
+        const T_int buf = gltf->bufferviews.v[view].buffer;
+        const size_t off = gltf->accessors.v[acc].byte_off +
+            gltf->bufferviews.v[view].byte_off;
+
+        assert(gltf->accessors.v[acc].count == (T_int)jnt_n);
+        assert(gltf->accessors.v[acc].comp_type == YF_GLTF_COMP_FLOAT);
+        assert(gltf->accessors.v[acc].type == YF_GLTF_TYPE_MAT4);
+        assert(gltf->buffers.v[buf].byte_len - off >= sizeof(YF_mat4));
+
+        if (gltf->buffers.v[buf].uri == NULL) {
+            /* TODO: .glb */
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            free(jnt_hier);
+            free(jnts);
+            return -1;
+        }
+        char *pathname = NULL;
+        YF_PATHCAT(path, gltf->buffers.v[buf].uri, pathname);
+        if (pathname == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            free(jnt_hier);
+            free(jnts);
+            return -1;
+        }
+        FILE *file = fopen(pathname, "r");
+        free(pathname);
+        if (file == NULL) {
+            yf_seterr(YF_ERR_NOFILE, __func__);
+            free(jnt_hier);
+            free(jnts);
+            return -1;
+        }
+        if (fseek(file, off, SEEK_SET) != 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            free(jnt_hier);
+            free(jnts);
+            fclose(file);
+            return -1;
+        }
+
+        for (size_t i = 0; i < jnt_n; i++) {
+            if (fread(jnts[i].ibm, sizeof jnts[i].ibm, 1, file) != 1) {
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                free(jnt_hier);
+                free(jnts);
+                fclose(file);
+                return -1;
+            }
+        }
+        fclose(file);
+
+    } else {
+        for (size_t i = 0; i < jnt_n; i++)
+            yf_mat4_iden(jnts[i].ibm);
+    }
+
+    /* skin */
+    YF_skin tmp = yf_skin_init(jnts, jnt_n);
+    free(jnt_hier);
+    free(jnts);
+    if (tmp == NULL)
+        return -1;
+
+    if (coll != NULL) {
+        /* TODO: Name. */
+        const char *name = gltf->skins.v[index].name;
+        if (name == NULL)
+            name = "Skin";
+        if (yf_collection_manage(coll, YF_COLLRES_SKIN, name, tmp) != 0) {
+            yf_skin_deinit(tmp);
+            return -1;
+        }
+    } else {
+        *skin = tmp;
+    }
+
+    return 0;
+}
+
 #define YF_NAMEOFTEX(gltf_p, tex_i, name) do { \
     name = (gltf_p)->textures.v[tex_i].name; \
     if ((name) == NULL) { \
@@ -3298,6 +3460,12 @@ static int load_contents(const T_gltf *gltf, const char *path,
         free(data.data);
     }
 
+    /* skins */
+    for (size_t i = 0; i < gltf->skins.n; i++) {
+        if (load_skin(gltf, path, i, NULL, coll) != 0)
+            return -1;
+    }
+
     /* materials */
     for (size_t i = 0; i < gltf->materials.n; i++) {
         if (load_material(gltf, path, i, NULL, coll) != 0)
@@ -3305,6 +3473,7 @@ static int load_contents(const T_gltf *gltf, const char *path,
     }
 
     /* nodes */
+    /* TODO: Filter joint nodes, since they must be instantiated from skin. */
     for (size_t i = 0; i < gltf->nodes.n; i++) {
         const char *name = gltf->nodes.v[i].name;
         if (name == NULL)
@@ -3430,7 +3599,7 @@ static int load_contents(const T_gltf *gltf, const char *path,
         }
     }
 
-    /* TODO: Skins, animations, ... */
+    /* TODO: Animations, ... */
 
     return 0;
 }
@@ -3474,6 +3643,28 @@ int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data)
     }
 
     int r = load_meshdt(&gltf, path, index, data);
+    deinit_gltf(&gltf);
+    free(path);
+    return r;
+}
+
+int yf_loadgltf_skin(const char *pathname, size_t index, YF_skin *skin)
+{
+    assert(skin != NULL);
+
+    T_gltf gltf = {0};
+    if (init_gltf(pathname, &gltf) != 0)
+        return -1;
+
+    char *path = NULL;
+    YF_PATHOF(pathname, path);
+    if (path == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        deinit_gltf(&gltf);
+        return -1;
+    }
+
+    int r = load_skin(&gltf, path, index, skin, NULL);
     deinit_gltf(&gltf);
     free(path);
     return r;
