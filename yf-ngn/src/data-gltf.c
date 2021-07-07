@@ -3168,8 +3168,8 @@ static int load_skin(const T_gltf *gltf, const char *path, size_t index,
         }
 
         /* joint hierarchy */
-        for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++)
-            jnt_hier[gltf->nodes.v[node].children[i]] = node + 1;
+        for (size_t j = 0; j < gltf->nodes.v[node].child_n; j++)
+            jnt_hier[gltf->nodes.v[node].children[j]] = i + 1;
     }
 
     for (size_t i = 0; i < jnt_n; i++) {
