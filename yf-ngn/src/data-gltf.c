@@ -3103,8 +3103,80 @@ static int load_texdt(const T_gltf *gltf, const char *path, size_t index,
 static int load_skin(const T_gltf *gltf, const char *path, size_t index,
                      YF_skin *skin, YF_collection coll)
 {
+    assert(gltf != NULL);
+    assert(path != NULL);
+    assert(skin != NULL || coll != NULL);
+
+    if (gltf->skins.n <= index) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    const size_t jnt_n = gltf->skins.v[index].joint_n;
+    assert(jnt_n > 0);
+
+    T_int *jnt_hier = calloc(gltf->nodes.n, sizeof *jnt_hier);
+    YF_joint *jnts = malloc(jnt_n * sizeof *jnts);
+    if (jnt_hier == NULL || jnts == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(jnt_hier);
+        free(jnts);
+        return -1;
+    }
+
+    for (size_t i = 0; i < jnt_n; i++) {
+        const T_int node = gltf->skins.v[index].joints[i];
+
+        /* joint transform */
+        const unsigned mask = gltf->nodes.v[node].xform_mask;
+        if (mask != YF_GLTF_XFORM_NONE) {
+            if (mask & YF_GLTF_XFORM_M) {
+                yf_mat4_copy(jnts[i].xform, gltf->nodes.v[node].matrix);
+            } else {
+                if (mask & YF_GLTF_XFORM_T) {
+                    const T_num *t = gltf->nodes.v[node].trs.t;
+                    yf_mat4_xlate(jnts[i].xform, t[0], t[1], t[2]);
+                } else {
+                    yf_mat4_iden(jnts[i].xform);
+                }
+                if (mask & YF_GLTF_XFORM_R) {
+                    const T_num *r = gltf->nodes.v[node].trs.r;
+                    YF_mat4 mr, rot;
+                    yf_mat4_rotq(mr, r);
+                    yf_mat4_mul(rot, jnts[i].xform, mr);
+                    yf_mat4_copy(jnts[i].xform, rot);
+                }
+                if (mask & YF_GLTF_XFORM_S) {
+                    const T_num *s = gltf->nodes.v[node].trs.s;
+                    YF_mat4 ms, scl;
+                    yf_mat4_scale(ms, s[0], s[1], s[2]);
+                    yf_mat4_mul(scl, jnts[i].xform, ms);
+                    yf_mat4_copy(jnts[i].xform, scl);
+                }
+            }
+        } else {
+            yf_mat4_iden(jnts[i].xform);
+        }
+
+        /* joint name */
+        if (gltf->nodes.v[node].name != NULL) {
+            const size_t len = sizeof jnts[0].name - 1;
+            strncpy(jnts[i].name, gltf->nodes.v[node].name, len);
+            jnts[i].name[len] = '\0';
+        } else {
+            jnts[i].name[0] = '\0';
+        }
+
+        /* joint hierarchy */
+        for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++)
+            jnt_hier[gltf->nodes.v[node].children[i]] = node;
+    }
+
     /* TODO */
-    return -1;
+
+    free(jnt_hier);
+    free(jnts);
+    return 0;
 }
 
 #define YF_NAMEOFTEX(gltf_p, tex_i, name) do { \
