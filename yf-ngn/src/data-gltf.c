@@ -3169,13 +3169,95 @@ static int load_skin(const T_gltf *gltf, const char *path, size_t index,
 
         /* joint hierarchy */
         for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++)
-            jnt_hier[gltf->nodes.v[node].children[i]] = node;
+            jnt_hier[gltf->nodes.v[node].children[i]] = node + 1;
     }
 
-    /* TODO */
+    for (size_t i = 0; i < jnt_n; i++) {
+        const T_int node = gltf->skins.v[index].joints[i];
+        /* negative 'pnt_i' means no parent */
+        jnts[i].pnt_i = jnt_hier[node] - 1;
+    }
 
+    /* ibm data */
+    const T_int acc = gltf->skins.v[index].inv_bind_matrices;
+    if (acc != YF_INT_MIN) {
+        const T_int view = gltf->accessors.v[acc].buffer_view;
+        const T_int buf = gltf->bufferviews.v[view].buffer;
+        const size_t off = gltf->accessors.v[acc].byte_off +
+            gltf->bufferviews.v[view].byte_off;
+
+        assert(gltf->accessors.v[acc].count == (T_int)jnt_n);
+        assert(gltf->accessors.v[acc].comp_type == YF_GLTF_COMP_FLOAT);
+        assert(gltf->accessors.v[acc].type == YF_GLTF_TYPE_MAT4);
+        assert(gltf->buffers.v[buf].byte_len - off >= sizeof(YF_mat4));
+
+        if (gltf->buffers.v[buf].uri == NULL) {
+            /* TODO: .glb */
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            free(jnt_hier);
+            free(jnts);
+            return -1;
+        }
+        char *pathname = NULL;
+        YF_PATHCAT(path, gltf->buffers.v[buf].uri, pathname);
+        if (pathname == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            free(jnt_hier);
+            free(jnts);
+            return -1;
+        }
+        FILE *file = fopen(pathname, "r");
+        free(pathname);
+        if (file == NULL) {
+            yf_seterr(YF_ERR_NOFILE, __func__);
+            free(jnt_hier);
+            free(jnts);
+            return -1;
+        }
+        if (fseek(file, off, SEEK_SET) != 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            free(jnt_hier);
+            free(jnts);
+            fclose(file);
+            return -1;
+        }
+
+        for (size_t i = 0; i < jnt_n; i++) {
+            if (fread(jnts[i].ibm, sizeof jnts[i].ibm, 1, file) != 1) {
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                free(jnt_hier);
+                free(jnts);
+                fclose(file);
+                return -1;
+            }
+        }
+        fclose(file);
+
+    } else {
+        for (size_t i = 0; i < jnt_n; i++)
+            yf_mat4_iden(jnts[i].ibm);
+    }
+
+    /* skin */
+    YF_skin tmp = yf_skin_init(jnts, jnt_n);
     free(jnt_hier);
     free(jnts);
+    if (tmp == NULL)
+        return -1;
+
+    if (coll != NULL) {
+        /* TODO: Name. */
+        const char *name = gltf->skins.v[index].name;
+        if (name == NULL)
+            name = "Skin";
+        if (yf_collection_manage(coll, YF_COLLRES_SKIN, name, tmp) != 0) {
+            yf_skin_deinit(tmp);
+            return -1;
+        }
+    } else {
+        *skin = tmp;
+    }
+
     return 0;
 }
 
