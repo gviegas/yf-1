@@ -3460,6 +3460,12 @@ static int load_contents(const T_gltf *gltf, const char *path,
         free(data.data);
     }
 
+    /* skins */
+    for (size_t i = 0; i < gltf->skins.n; i++) {
+        if (load_skin(gltf, path, i, NULL, coll) != 0)
+            return -1;
+    }
+
     /* materials */
     for (size_t i = 0; i < gltf->materials.n; i++) {
         if (load_material(gltf, path, i, NULL, coll) != 0)
@@ -3467,6 +3473,7 @@ static int load_contents(const T_gltf *gltf, const char *path,
     }
 
     /* nodes */
+    /* TODO: Filter joint nodes, since they must be instantiated from skin. */
     for (size_t i = 0; i < gltf->nodes.n; i++) {
         const char *name = gltf->nodes.v[i].name;
         if (name == NULL)
@@ -3592,7 +3599,7 @@ static int load_contents(const T_gltf *gltf, const char *path,
         }
     }
 
-    /* TODO: Skins, animations, ... */
+    /* TODO: Animations, ... */
 
     return 0;
 }
