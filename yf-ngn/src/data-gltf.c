@@ -14,6 +14,13 @@
 #include <errno.h>
 #include <assert.h>
 
+#ifdef _DEFAULT_SOURCE
+# include <endian.h>
+#else
+/* TODO */
+# error "Invalid platform"
+#endif
+
 #include "yf/com/yf-error.h"
 
 #include "data-gltf.h"
@@ -2748,7 +2755,7 @@ static int init_gltf(const char *pathname, T_gltf *gltf)
         return -1;
     }
 
-    if (magic == 0x46546c67) {
+    if (le32toh(magic) == 0x46546c67) {
         /* .glb */
         uint32_t version;
         if (fread(&version, sizeof version, 1, file) != 1) {
@@ -2756,7 +2763,7 @@ static int init_gltf(const char *pathname, T_gltf *gltf)
             fclose(file);
             return -1;
         }
-        if (version != 2) {
+        if (le32toh(version) != 2) {
             yf_seterr(YF_ERR_UNSUP, __func__);
             fclose(file);
             return -1;
