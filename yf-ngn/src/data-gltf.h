@@ -11,6 +11,7 @@
 #include "yf-collection.h"
 #include "mesh.h"
 #include "yf-skin.h"
+#include "yf-material.h"
 
 /* Loads contents from a glTF file. */
 int yf_loadgltf(const char *pathname, YF_collection coll);
@@ -20,5 +21,8 @@ int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data);
 
 /* Loads skin data from a glTF file. */
 int yf_loadgltf_skin(const char *pathname, size_t index, YF_skin *skin);
+
+/* Loads material data from a glTF file. */
+int yf_loadgltf_matl(const char *pathname, size_t index, YF_material *matl);
 
 #endif /* YF_DATA_GLTF_H */

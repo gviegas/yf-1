@@ -21,7 +21,6 @@
 #include "data-png.h"
 #include "yf-scene.h"
 #include "yf-node.h"
-#include "yf-material.h"
 #include "yf-model.h"
 
 /*
@@ -3670,6 +3669,28 @@ int yf_loadgltf_skin(const char *pathname, size_t index, YF_skin *skin)
     }
 
     int r = load_skin(&gltf, path, index, skin, NULL);
+    deinit_gltf(&gltf);
+    free(path);
+    return r;
+}
+
+int yf_loadgltf_matl(const char *pathname, size_t index, YF_material *matl)
+{
+    assert(matl != NULL);
+
+    T_gltf gltf = {0};
+    if (init_gltf(pathname, &gltf) != 0)
+        return -1;
+
+    char *path = NULL;
+    YF_PATHOF(pathname, path);
+    if (path == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        deinit_gltf(&gltf);
+        return -1;
+    }
+
+    int r = load_material(&gltf, path, index, matl, NULL);
     deinit_gltf(&gltf);
     free(path);
     return r;
