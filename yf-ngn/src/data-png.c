@@ -777,29 +777,18 @@ static int load_texdt(const T_png *png, YF_texdt *data)
     return 0;
 }
 
-int yf_loadpng(const char *pathname, YF_texdt *data)
+static int load_png(FILE *file, YF_texdt *data)
 {
-    assert(pathname != NULL);
-    assert(data != NULL);
-
-    FILE *file = fopen(pathname, "r");
-    if (file == NULL) {
-        yf_seterr(YF_ERR_NOFILE, __func__);
-        return -1;
-    }
-
     uint8_t sign[sizeof l_sign];
     if (fread(sign, sizeof sign, 1, file) < 1 ||
         memcmp(l_sign, sign, sizeof sign) != 0) {
         yf_seterr(YF_ERR_INVFILE, __func__);
-        fclose(file);
         return -1;
     }
 
     T_chunk *chunk = malloc(sizeof(T_chunk)+YF_PNG_VARSZ);
     if (chunk == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        fclose(file);
         return -1;
     }
     size_t var_sz = YF_PNG_VARSZ;
@@ -811,7 +800,6 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
     if (fread(chunk, sizeof(T_chunk), 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         free(chunk);
-        fclose(file);
         return -1;
     }
     len = be32toh(chunk->len);
@@ -823,14 +811,12 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
         fread(chunk->var, len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         free(chunk);
-        fclose(file);
         return -1;
     }
 
     if (fread(&crc, sizeof crc, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         free(chunk);
-        fclose(file);
         return -1;
     }
     crc = be32toh(crc);
@@ -838,7 +824,6 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
     if (crc != crc_res) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         free(chunk);
-        fclose(file);
         return -1;
     }
 
@@ -855,7 +840,6 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
         ihdr.compression != 0 || ihdr.filter != 0 || ihdr.interlace > 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         free(chunk);
-        fclose(file);
         return -1;
     }
 
@@ -863,7 +847,6 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
     if (ihdr.interlace != 0) {
         yf_seterr(YF_ERR_UNSUP, __func__);
         free(chunk);
-        fclose(file);
         return -1;
     }
 
@@ -877,7 +860,6 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
         if (fread(chunk, sizeof(T_chunk), 1, file) < 1) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             free(chunk);
-            fclose(file);
             return -1;
         }
         const int critical = !(chunk->type & 0x20);
@@ -895,14 +877,12 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
                 free(idat);
                 free(plte);
                 free(chunk);
-                fclose(file);
                 return -1;
             } else if (fseek(file, len+sizeof crc, SEEK_CUR) != 0) {
                 yf_seterr(YF_ERR_INVFILE, __func__);
                 free(idat);
                 free(plte);
                 free(chunk);
-                fclose(file);
                 return -1;
             } else {
                 continue;
@@ -924,20 +904,17 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
                 free(idat);
                 free(plte);
                 free(chunk);
-                fclose(file);
                 return -1;
             }
             if (fread(chunk->var, len, 1, file) < 1) {
                 yf_seterr(YF_ERR_INVFILE, __func__);
                 free(plte);
                 free(chunk);
-                fclose(file);
                 return -1;
             }
             plte = malloc(len);
             if (plte == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
-                fclose(file);
                 return -1;
             }
             memcpy(plte, chunk->var, len);
@@ -950,7 +927,6 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
                 free(idat);
                 free(plte);
                 free(chunk);
-                fclose(file);
                 return -1;
             }
             void *tmp = realloc(idat, idat_sz+len);
@@ -959,7 +935,6 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
                 free(idat);
                 free(plte);
                 free(chunk);
-                fclose(file);
                 return -1;
             }
             idat = tmp;
@@ -972,7 +947,6 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
             free(idat);
             free(plte);
             free(chunk);
-            fclose(file);
             return -1;
 
         } else {
@@ -982,7 +956,6 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
                 free(idat);
                 free(plte);
                 free(chunk);
-                fclose(file);
                 return -1;
             }
             continue;
@@ -993,7 +966,6 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
             free(idat);
             free(plte);
             free(chunk);
-            fclose(file);
             return -1;
         }
         crc = be32toh(crc);
@@ -1004,13 +976,11 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
             free(idat);
             free(plte);
             free(chunk);
-            fclose(file);
             return -1;
         }
     }
 
     free(chunk);
-    fclose(file);
 
     if (idat == NULL) {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -1031,6 +1001,30 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
     free(idat);
     free(plte);
     return r;
+}
+
+int yf_loadpng(const char *pathname, YF_texdt *data)
+{
+    assert(pathname != NULL);
+    assert(data != NULL);
+
+    FILE *file = fopen(pathname, "r");
+    if (file == NULL) {
+        yf_seterr(YF_ERR_NOFILE, __func__);
+        return -1;
+    }
+
+    int r = load_png(file, data);
+    fclose(file);
+    return r;
+}
+
+int yf_loadpng2(FILE *file, YF_texdt *data)
+{
+    assert(file != NULL && !feof(file));
+    assert(data != NULL);
+
+    return load_png(file, data);
 }
 
 /*
