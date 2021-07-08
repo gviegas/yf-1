@@ -1033,6 +1033,15 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
     return r;
 }
 
+int yf_loadpng2(FILE *file, YF_texdt *data)
+{
+    assert(file != NULL && !feof(file));
+    assert(data != NULL);
+
+    /* TODO */
+    return -1;
+}
+
 /*
  * DEVEL
  */
