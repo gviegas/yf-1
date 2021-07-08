@@ -2778,37 +2778,40 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
         return -1;
     }
 
-    if (gltf->accessors.n == 0 || gltf->bufferviews.n == 0 ||
-        gltf->buffers.n == 0 || gltf->meshes.v[0].primitives.n == 0) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
-    }
+    assert(gltf->accessors.n > 0);
+    assert(gltf->bufferviews.n > 0);
+    assert(gltf->buffers.n > 0);
+    assert(gltf->meshes.v[index].primitives.n > 0);
 
-    struct { T_int accessor, view, buffer; } idx, attrs[YF_GLTF_ATTR_N];
+    struct {
+        T_int acc;
+        T_int view;
+        T_int buf;
+    } idx, attrs[YF_GLTF_ATTR_N];
+
     /* TODO: Multiple primitives. */
-    const T_primitives *prim = &gltf->meshes.v[0].primitives;
+    const T_primitives *prim = &gltf->meshes.v[index].primitives;
 
     /* IDs */
-    idx.accessor = prim->v[0].indices;
-    if (idx.accessor != YF_INT_MIN) {
-        idx.view = gltf->accessors.v[idx.accessor].buffer_view;
-        idx.buffer = gltf->bufferviews.v[idx.view].buffer;
+    idx.acc = prim->v[0].indices;
+    if (idx.acc != YF_INT_MIN) {
+        idx.view = gltf->accessors.v[idx.acc].buffer_view;
+        idx.buf = gltf->bufferviews.v[idx.view].buffer;
     }
     for (size_t i = 0; i < YF_GLTF_ATTR_N; i++) {
-        attrs[i].accessor = prim->v[0].attributes[i];
-        if (attrs[i].accessor != YF_INT_MIN) {
-            attrs[i].view = gltf->accessors.v[attrs[i].accessor].buffer_view;
-            attrs[i].buffer = gltf->bufferviews.v[attrs[i].view].buffer;
+        attrs[i].acc = prim->v[0].attributes[i];
+        if (attrs[i].acc != YF_INT_MIN) {
+            attrs[i].view = gltf->accessors.v[attrs[i].acc].buffer_view;
+            attrs[i].buf = gltf->bufferviews.v[attrs[i].view].buffer;
         }
     }
-    if (attrs[YF_GLTF_ATTR_POS].accessor == YF_INT_MIN) {
+    if (attrs[YF_GLTF_ATTR_POS].acc == YF_INT_MIN) {
         yf_seterr(YF_ERR_UNSUP, __func__);
         return -1;
     }
 
     /* memory */
-    const size_t v_n =
-        gltf->accessors.v[attrs[YF_GLTF_ATTR_POS].accessor].count;
+    const size_t v_n = gltf->accessors.v[attrs[YF_GLTF_ATTR_POS].acc].count;
     YF_vmdl *verts = malloc(v_n*sizeof *verts);
     if (verts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
@@ -2817,8 +2820,8 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
     const size_t i_sz = v_n < UINT16_MAX ? 2 : 4;
     size_t i_n = 0;
     void *inds = NULL;
-    if (idx.accessor != YF_INT_MIN) {
-        i_n = gltf->accessors.v[idx.accessor].count;
+    if (idx.acc != YF_INT_MIN) {
+        i_n = gltf->accessors.v[idx.acc].count;
         inds = malloc(i_n*i_sz);
         if (inds == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
@@ -2834,13 +2837,13 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
 
     /* vertex data */
     for (size_t i = 0; i < YF_GLTF_ATTR_N; i++) {
-        if (attrs[i].accessor == YF_INT_MIN)
+        if (attrs[i].acc == YF_INT_MIN)
             continue;
 
-        if (buf_id != attrs[i].buffer) {
+        if (buf_id != attrs[i].buf) {
             if (file != NULL)
                 fclose(file);
-            buf_id = attrs[i].buffer;
+            buf_id = attrs[i].buf;
             /* TODO: Check if the URI refers to a relative pathname. */
             char *pathname = NULL;
             YF_PATHCAT(path, gltf->buffers.v[buf_id].uri, pathname);
@@ -2860,10 +2863,11 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
             }
         }
 
-        const T_int byte_off = gltf->bufferviews.v[attrs[i].view].byte_off;
+        const T_int byte_off = gltf->accessors.v[attrs[i].acc].byte_off +
+            gltf->bufferviews.v[attrs[i].view].byte_off;
         const T_int byte_strd = gltf->bufferviews.v[attrs[i].view].byte_strd;
-        const T_int comp_type = gltf->accessors.v[attrs[i].accessor].comp_type;
-        const int type = gltf->accessors.v[attrs[i].accessor].type;
+        const T_int comp_type = gltf->accessors.v[attrs[i].acc].comp_type;
+        const int type = gltf->accessors.v[attrs[i].acc].type;
 
         if (fseek(file, byte_off, SEEK_SET) != 0) {
             yf_seterr(YF_ERR_INVFILE, __func__);
@@ -2990,11 +2994,11 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
     if (inds != NULL) {
         assert(file != NULL);
 
-        if (buf_id != idx.buffer) {
+        if (buf_id != idx.buf) {
             fclose(file);
             /* TODO: Check if the URI refers to a relative pathname. */
             char *pathname = NULL;
-            YF_PATHCAT(path, gltf->buffers.v[idx.buffer].uri, pathname);
+            YF_PATHCAT(path, gltf->buffers.v[idx.buf].uri, pathname);
             if (pathname == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 free(verts);
@@ -3012,7 +3016,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
         }
 
         comp_sz = 0;
-        switch (gltf->accessors.v[idx.accessor].comp_type) {
+        switch (gltf->accessors.v[idx.acc].comp_type) {
         case YF_GLTF_COMP_USHORT:
             comp_sz = 2;
             break;
@@ -3020,7 +3024,7 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
             comp_sz = 4;
             break;
         }
-        comp_n = gltf->accessors.v[idx.accessor].type == YF_GLTF_TYPE_SCALAR;
+        comp_n = gltf->accessors.v[idx.acc].type == YF_GLTF_TYPE_SCALAR;
         if (comp_sz != i_sz || comp_n != 1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             free(verts);
@@ -3029,7 +3033,8 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
             return -1;
         }
 
-        const T_int byte_off = gltf->bufferviews.v[idx.view].byte_off;
+        const T_int byte_off = gltf->accessors.v[idx.acc].byte_off +
+            gltf->bufferviews.v[idx.view].byte_off;
         const T_int byte_strd = gltf->bufferviews.v[idx.view].byte_strd;
 
         if (byte_strd == 0) {
