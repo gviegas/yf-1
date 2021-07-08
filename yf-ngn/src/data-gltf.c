@@ -14,6 +14,13 @@
 #include <errno.h>
 #include <assert.h>
 
+#ifdef _DEFAULT_SOURCE
+# include <endian.h>
+#else
+/* TODO */
+# error "Invalid platform"
+#endif
+
 #include "yf/com/yf-error.h"
 
 #include "data-gltf.h"
@@ -2741,9 +2748,38 @@ static int init_gltf(const char *pathname, T_gltf *gltf)
         return -1;
     }
 
+    uint32_t magic;
+    if (fread(&magic, sizeof magic, 1, file) != 1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        fclose(file);
+        return -1;
+    }
+
+    if (le32toh(magic) == 0x46546c67) {
+        /* .glb */
+        uint32_t version;
+        if (fread(&version, sizeof version, 1, file) != 1) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            fclose(file);
+            return -1;
+        }
+        if (le32toh(version) != 2) {
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            fclose(file);
+            return -1;
+        }
+        if (fseek(file, sizeof(uint32_t) * 3, SEEK_CUR) != 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            fclose(file);
+            return -1;
+        }
+    } else {
+        /* .gltf */
+        rewind(file);
+    }
+
     T_token token = {0};
     next_token(file, &token);
-    /* TODO: .glb */
     if (token.token != YF_TOKEN_OP && token.data[0] != '{') {
         yf_seterr(YF_ERR_INVFILE, __func__);
         fclose(file);
@@ -2843,7 +2879,13 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
             if (file != NULL)
                 fclose(file);
             buf_id = attrs[i].buf;
-            /* TODO: Check if the URI refers to a relative pathname. */
+            if (gltf->buffers.v[buf_id].uri == NULL) {
+                /* TODO: .glb */
+                yf_seterr(YF_ERR_UNSUP, __func__);
+                free(verts);
+                free(inds);
+                return -1;
+            }
             char *pathname = NULL;
             YF_PATHCAT(path, gltf->buffers.v[buf_id].uri, pathname);
             if (pathname == NULL) {
@@ -2995,7 +3037,13 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
 
         if (buf_id != idx.buf) {
             fclose(file);
-            /* TODO: Check if the URI refers to a relative pathname. */
+            if (gltf->buffers.v[idx.buf].uri == NULL) {
+                /* TODO: .glb */
+                yf_seterr(YF_ERR_UNSUP, __func__);
+                free(verts);
+                free(inds);
+                return -1;
+            }
             char *pathname = NULL;
             YF_PATHCAT(path, gltf->buffers.v[idx.buf].uri, pathname);
             if (pathname == NULL) {
@@ -3087,6 +3135,12 @@ static int load_texdt(const T_gltf *gltf, const char *path, size_t index,
     const T_int img_i = gltf->textures.v[index].source;
     if (gltf->images.v[img_i].mime_type != NULL &&
         strcmp(gltf->images.v[img_i].mime_type, "image/png") != 0) {
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+    }
+
+    if (gltf->images.v[img_i].buffer_view != YF_INT_MIN) {
+        /* TODO: .glb/.bin */
         yf_seterr(YF_ERR_UNSUP, __func__);
         return -1;
     }
