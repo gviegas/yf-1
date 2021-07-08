@@ -3652,6 +3652,28 @@ int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data)
     return r;
 }
 
+int yf_loadgltf_tex(const char *pathname, size_t index, YF_texdt *data)
+{
+    assert(data != NULL);
+
+    T_gltf gltf = {0};
+    if (init_gltf(pathname, &gltf) != 0)
+        return -1;
+
+    char *path = NULL;
+    YF_PATHOF(pathname, path);
+    if (path == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        deinit_gltf(&gltf);
+        return -1;
+    }
+
+    int r = load_texdt(&gltf, path, index, data);
+    deinit_gltf(&gltf);
+    free(path);
+    return r;
+}
+
 int yf_loadgltf_skin(const char *pathname, size_t index, YF_skin *skin)
 {
     assert(skin != NULL);
