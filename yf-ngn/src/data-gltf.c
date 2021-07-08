@@ -2741,6 +2741,36 @@ static int init_gltf(const char *pathname, T_gltf *gltf)
         return -1;
     }
 
+    uint32_t magic;
+    if (fread(&magic, sizeof magic, 1, file) != 1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        fclose(file);
+        return -1;
+    }
+
+    if (magic == 0x46546c67) {
+        /* .glb */
+        uint32_t version;
+        if (fread(&version, sizeof version, 1, file) != 1) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            fclose(file);
+            return -1;
+        }
+        if (version != 2) {
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            fclose(file);
+            return -1;
+        }
+        if (fseek(file, sizeof(uint32_t) * 3, SEEK_CUR) != 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            fclose(file);
+            return -1;
+        }
+    } else {
+        /* .gltf */
+        rewind(file);
+    }
+
     T_token token = {0};
     next_token(file, &token);
     /* TODO: .glb */
