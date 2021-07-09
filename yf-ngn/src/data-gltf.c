@@ -3662,15 +3662,29 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
 {
     assert(dst != NULL);
 
-    T_gltf gltf = {0};
-    if (init_gltf(pathname, &gltf) != 0)
+    if (pathname == NULL) {
+        yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
+    }
+
+    FILE *file = fopen(pathname, "r");
+    if (file == NULL) {
+        yf_seterr(YF_ERR_NOFILE, __func__);
+        return -1;
+    }
+
+    T_gltf gltf = {0};
+    if (init_gltf(file, &gltf) != 0) {
+        fclose(file);
+        return -1;
+    }
 
     char *path = NULL;
     YF_PATHOF(pathname, path);
     if (path == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_gltf(&gltf);
+        fclose(file);
         return -1;
     }
 
@@ -3697,6 +3711,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     }
 
     deinit_gltf(&gltf);
+    fclose(file);
     free(path);
     return r;
 }
