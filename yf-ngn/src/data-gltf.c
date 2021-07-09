@@ -2743,10 +2743,11 @@ static void deinit_gltf(T_gltf *gltf)
 }
 
 /* Initializes glTF contents. */
-static int init_gltf(FILE *file, T_gltf *gltf)
+static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata)
 {
     assert(file != NULL);
     assert(gltf != NULL);
+    assert(fdata != NULL);
 
     uint32_t magic;
     if (fread(&magic, sizeof magic, 1, file) != 1) {
@@ -2765,10 +2766,16 @@ static int init_gltf(FILE *file, T_gltf *gltf)
             yf_seterr(YF_ERR_UNSUP, __func__);
             return -1;
         }
-        if (fseek(file, sizeof(uint32_t) * 3, SEEK_CUR) != 0) {
+        uint32_t jlen;
+        long pos;
+        if (fseek(file, sizeof(uint32_t), SEEK_CUR) != 0 ||
+            fread(&jlen, sizeof jlen, 1, file) != 1 ||
+            fseek(file, sizeof(uint32_t), SEEK_CUR) != 0 ||
+            (pos = ftell(file)) == -1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
         }
+        fdata->byte_off = pos + le32toh(jlen) + (sizeof(uint32_t) << 1);
     } else {
         /* .gltf */
         if (fseek(file, -(long)sizeof magic, SEEK_CUR) != 0) {
@@ -2787,6 +2794,17 @@ static int init_gltf(FILE *file, T_gltf *gltf)
     if (parse_gltf(file, &token, gltf) != 0) {
         deinit_gltf(gltf);
         return -1;
+    }
+
+    if (gltf->buffers.n > 0) {
+        fdata->files = calloc(gltf->buffers.n, sizeof *fdata->files);
+        if (fdata->files == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            deinit_gltf(gltf);
+            return -1;
+        }
+        if (gltf->buffers.v[0].uri == NULL)
+            fdata->files[0] = file;
     }
 
 #ifdef YF_DEVEL
