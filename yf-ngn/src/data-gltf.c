@@ -7,7 +7,6 @@
 
 #include <limits.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -2735,25 +2734,14 @@ static void deinit_gltf(T_gltf *gltf)
 }
 
 /* Initializes glTF contents. */
-static int init_gltf(const char *pathname, T_gltf *gltf)
+static int init_gltf(FILE *file, T_gltf *gltf)
 {
+    assert(file != NULL);
     assert(gltf != NULL);
-
-    if (pathname == NULL) {
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return -1;
-    }
-
-    FILE *file = fopen(pathname, "r");
-    if (file == NULL) {
-        yf_seterr(YF_ERR_NOFILE, __func__);
-        return -1;
-    }
 
     uint32_t magic;
     if (fread(&magic, sizeof magic, 1, file) != 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
-        fclose(file);
         return -1;
     }
 
@@ -2762,35 +2750,33 @@ static int init_gltf(const char *pathname, T_gltf *gltf)
         uint32_t version;
         if (fread(&version, sizeof version, 1, file) != 1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
-            fclose(file);
             return -1;
         }
         if (le32toh(version) != 2) {
             yf_seterr(YF_ERR_UNSUP, __func__);
-            fclose(file);
             return -1;
         }
         if (fseek(file, sizeof(uint32_t) * 3, SEEK_CUR) != 0) {
             yf_seterr(YF_ERR_INVFILE, __func__);
-            fclose(file);
             return -1;
         }
     } else {
         /* .gltf */
-        rewind(file);
+        if (fseek(file, -(long)sizeof magic, SEEK_CUR) != 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
     }
 
     T_token token = {0};
     next_token(file, &token);
     if (token.token != YF_TOKEN_OP && token.data[0] != '{') {
         yf_seterr(YF_ERR_INVFILE, __func__);
-        fclose(file);
         return -1;
     }
 
     if (parse_gltf(file, &token, gltf) != 0) {
         deinit_gltf(gltf);
-        fclose(file);
         return -1;
     }
 
@@ -2798,7 +2784,6 @@ static int init_gltf(const char *pathname, T_gltf *gltf)
     print_gltf(gltf);
 #endif
 
-    fclose(file);
     return 0;
 }
 
@@ -3677,15 +3662,29 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
 {
     assert(dst != NULL);
 
-    T_gltf gltf = {0};
-    if (init_gltf(pathname, &gltf) != 0)
+    if (pathname == NULL) {
+        yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
+    }
+
+    FILE *file = fopen(pathname, "r");
+    if (file == NULL) {
+        yf_seterr(YF_ERR_NOFILE, __func__);
+        return -1;
+    }
+
+    T_gltf gltf = {0};
+    if (init_gltf(file, &gltf) != 0) {
+        fclose(file);
+        return -1;
+    }
 
     char *path = NULL;
     YF_PATHOF(pathname, path);
     if (path == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_gltf(&gltf);
+        fclose(file);
         return -1;
     }
 
@@ -3712,7 +3711,46 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     }
 
     deinit_gltf(&gltf);
+    fclose(file);
     free(path);
+    return r;
+}
+
+int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
+{
+    assert(file != NULL && !feof(file));
+    assert(dst != NULL);
+
+    T_gltf gltf = {0};
+    if (init_gltf(file, &gltf) != 0)
+        return -1;
+
+    /* XXX: This assumes that 'path' is not used (whole data is embedded). */
+    const char *path = "";
+
+    int r;
+    switch (datac) {
+    case YF_DATAC_COLL:
+        r = load_contents(&gltf, path, dst->coll);
+        break;
+    case YF_DATAC_MESH:
+        r = load_mesh(&gltf, path, index, &dst->mesh, NULL);
+        break;
+    case YF_DATAC_TEX:
+        r = load_texture(&gltf, path, index, &dst->tex, NULL);
+        break;
+    case YF_DATAC_SKIN:
+        r = load_skin(&gltf, path, index, &dst->skin, NULL);
+        break;
+    case YF_DATAC_MATL:
+        r = load_material(&gltf, path, index, &dst->matl, NULL);
+        break;
+    default:
+        yf_seterr(YF_ERR_INVARG, __func__);
+        r = -1;
+    }
+
+    deinit_gltf(&gltf);
     return r;
 }
 
