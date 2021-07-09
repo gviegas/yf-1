@@ -221,27 +221,23 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
 
 YF_mesh yf_mesh_init(int filetype, const char *pathname, size_t index)
 {
-    YF_meshdt data = {0};
-
     switch (filetype) {
     case YF_FILETYPE_INTERNAL:
         /* TODO */
-        assert(0);
-        return NULL;
-    case YF_FILETYPE_GLTF:
-        if (yf_loadgltf_mesh(pathname, index, &data) != 0)
-            return NULL;
+        yf_seterr(YF_ERR_UNSUP, __func__);
         break;
+
+    case YF_FILETYPE_GLTF: {
+        YF_datac datac;
+        if (yf_loadgltf(pathname, index, YF_DATAC_MESH, &datac) == 0)
+            return datac.mesh;
+    } break;
+
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
-        return NULL;
     }
 
-    YF_mesh mesh = yf_mesh_initdt(&data);
-    free(data.v.data);
-    free(data.i.data);
-
-    return mesh;
+    return NULL;
 }
 
 void yf_mesh_deinit(YF_mesh mesh)

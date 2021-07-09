@@ -78,9 +78,12 @@ YF_collection yf_collection_init(const char *pathname)
         }
     }
 
-    if (pathname != NULL && yf_loadgltf(pathname, coll) != 0) {
-        yf_collection_deinit(coll);
-        return NULL;
+    if (pathname != NULL) {
+        YF_datac datac = {.coll = coll};
+        if (yf_loadgltf(pathname, 0, YF_DATAC_COLL, &datac) != 0) {
+            yf_collection_deinit(coll);
+            return NULL;
+        }
     }
 
     return coll;

@@ -9,24 +9,29 @@
 #define YF_DATA_GLTF_H
 
 #include "yf-collection.h"
-#include "mesh.h"
-#include "texture.h"
+#include "yf-mesh.h"
+#include "yf-texture.h"
 #include "yf-skin.h"
 #include "yf-material.h"
 
+/* Data content types. */
+/* TODO: scene, node, subgraph, ... */
+#define YF_DATAC_COLL 0
+#define YF_DATAC_MESH 1
+#define YF_DATAC_TEX  2
+#define YF_DATAC_SKIN 3
+#define YF_DATAC_MATL 4
+
+/* Type defining data contents that can be loaded. */
+typedef union {
+    YF_collection coll;
+    YF_mesh mesh;
+    YF_texture tex;
+    YF_skin skin;
+    YF_material matl;
+} YF_datac;
+
 /* Loads contents from a glTF file. */
-int yf_loadgltf(const char *pathname, YF_collection coll);
-
-/* Loads mesh data from a glTF file. */
-int yf_loadgltf_mesh(const char *pathname, size_t index, YF_meshdt *data);
-
-/* Loads texture data from a glTF file. */
-int yf_loadgltf_tex(const char *pathname, size_t index, YF_texdt *data);
-
-/* Loads skin object from a glTF file. */
-int yf_loadgltf_skin(const char *pathname, size_t index, YF_skin *skin);
-
-/* Loads material object from a glTF file. */
-int yf_loadgltf_matl(const char *pathname, size_t index, YF_material *matl);
+int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst);
 
 #endif /* YF_DATA_GLTF_H */
