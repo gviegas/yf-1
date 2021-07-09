@@ -7,7 +7,6 @@
 
 #include <limits.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -3714,6 +3713,15 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     deinit_gltf(&gltf);
     free(path);
     return r;
+}
+
+int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
+{
+    assert(file != NULL && !feof(file));
+    assert(dst != NULL);
+
+    /* TODO */
+    return -1;
 }
 
 /*
