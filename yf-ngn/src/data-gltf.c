@@ -2734,25 +2734,14 @@ static void deinit_gltf(T_gltf *gltf)
 }
 
 /* Initializes glTF contents. */
-static int init_gltf(const char *pathname, T_gltf *gltf)
+static int init_gltf(FILE *file, T_gltf *gltf)
 {
+    assert(file != NULL);
     assert(gltf != NULL);
-
-    if (pathname == NULL) {
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return -1;
-    }
-
-    FILE *file = fopen(pathname, "r");
-    if (file == NULL) {
-        yf_seterr(YF_ERR_NOFILE, __func__);
-        return -1;
-    }
 
     uint32_t magic;
     if (fread(&magic, sizeof magic, 1, file) != 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
-        fclose(file);
         return -1;
     }
 
@@ -2761,35 +2750,33 @@ static int init_gltf(const char *pathname, T_gltf *gltf)
         uint32_t version;
         if (fread(&version, sizeof version, 1, file) != 1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
-            fclose(file);
             return -1;
         }
         if (le32toh(version) != 2) {
             yf_seterr(YF_ERR_UNSUP, __func__);
-            fclose(file);
             return -1;
         }
         if (fseek(file, sizeof(uint32_t) * 3, SEEK_CUR) != 0) {
             yf_seterr(YF_ERR_INVFILE, __func__);
-            fclose(file);
             return -1;
         }
     } else {
         /* .gltf */
-        rewind(file);
+        if (fseek(file, -(long)sizeof magic, SEEK_CUR) != 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
     }
 
     T_token token = {0};
     next_token(file, &token);
     if (token.token != YF_TOKEN_OP && token.data[0] != '{') {
         yf_seterr(YF_ERR_INVFILE, __func__);
-        fclose(file);
         return -1;
     }
 
     if (parse_gltf(file, &token, gltf) != 0) {
         deinit_gltf(gltf);
-        fclose(file);
         return -1;
     }
 
@@ -2797,7 +2784,6 @@ static int init_gltf(const char *pathname, T_gltf *gltf)
     print_gltf(gltf);
 #endif
 
-    fclose(file);
     return 0;
 }
 
