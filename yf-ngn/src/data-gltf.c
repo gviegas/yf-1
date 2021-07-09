@@ -25,6 +25,8 @@
 
 #include "data-gltf.h"
 #include "vertex.h"
+#include "mesh.h"
+#include "texture.h"
 #include "data-png.h"
 #include "yf-scene.h"
 #include "yf-node.h"
@@ -3662,15 +3664,15 @@ static int load_contents(const T_gltf *gltf, const char *path,
     return 0;
 }
 
-int yf_loadgltf(const char *pathname, YF_collection coll)
+int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
 {
-    assert(coll != NULL);
+    assert(dst != NULL);
 
     T_gltf gltf = {0};
     if (init_gltf(pathname, &gltf) != 0)
         return -1;
 
-    char *path;
+    char *path = NULL;
     YF_PATHOF(pathname, path);
     if (path == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
@@ -3678,7 +3680,30 @@ int yf_loadgltf(const char *pathname, YF_collection coll)
         return -1;
     }
 
-    int r = load_contents(&gltf, path, coll);
+    int r;
+    switch (datac) {
+    case YF_DATAC_COLL:
+        r = load_contents(&gltf, path, dst->coll);
+        break;
+    case YF_DATAC_MESH:
+        /* TODO */
+        assert(0);
+        break;
+    case YF_DATAC_TEX:
+        /* TODO */
+        assert(0);
+        break;
+    case YF_DATAC_SKIN:
+        r = load_skin(&gltf, path, index, &dst->skin, NULL);
+        break;
+    case YF_DATAC_MATL:
+        r = load_material(&gltf, path, index, &dst->matl, NULL);
+        break;
+    default:
+        yf_seterr(YF_ERR_INVARG, __func__);
+        r = -1;
+    }
+
     deinit_gltf(&gltf);
     free(path);
     return r;
