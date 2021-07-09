@@ -2622,6 +2622,15 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
  * Data
  */
 
+/* Type defining data for binary buffer access. */
+typedef struct {
+    char *path;
+    /* offset into the embedded binary buffer (0), when applicable */
+    T_int byte_off;
+    /* open files, mapping to 'gltf.buffers' */
+    FILE **files;
+} T_fdata;
+
 #define YF_PATHOF(pathname, path) do { \
     const char *last = strrchr(pathname, '/'); \
     if (last != NULL) { \
