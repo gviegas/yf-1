@@ -3721,8 +3721,37 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
     assert(file != NULL && !feof(file));
     assert(dst != NULL);
 
-    /* TODO */
-    return -1;
+    T_gltf gltf = {0};
+    if (init_gltf(file, &gltf) != 0)
+        return -1;
+
+    /* XXX: This assumes that 'path' is not used (whole data is embedded). */
+    const char *path = "";
+
+    int r;
+    switch (datac) {
+    case YF_DATAC_COLL:
+        r = load_contents(&gltf, path, dst->coll);
+        break;
+    case YF_DATAC_MESH:
+        r = load_mesh(&gltf, path, index, &dst->mesh, NULL);
+        break;
+    case YF_DATAC_TEX:
+        r = load_texture(&gltf, path, index, &dst->tex, NULL);
+        break;
+    case YF_DATAC_SKIN:
+        r = load_skin(&gltf, path, index, &dst->skin, NULL);
+        break;
+    case YF_DATAC_MATL:
+        r = load_material(&gltf, path, index, &dst->matl, NULL);
+        break;
+    default:
+        yf_seterr(YF_ERR_INVARG, __func__);
+        r = -1;
+    }
+
+    deinit_gltf(&gltf);
+    return r;
 }
 
 /*

@@ -37,7 +37,8 @@ typedef union {
 int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst);
 
 /* Loads contents from a file containing glTF data.
-   Decoding begins at the file's current position. */
+   Decoding begins at the file's current position, and all data must be
+   embedded in the file, since its path is unknown. */
 int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst);
 
 #endif /* YF_DATA_GLTF_H */
