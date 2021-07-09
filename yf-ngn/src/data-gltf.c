@@ -2803,12 +2803,12 @@ static int init_gltf(const char *pathname, T_gltf *gltf)
 }
 
 /* Loads a single mesh from glTF contents. */
-static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
-                       YF_meshdt *data)
+static int load_mesh(const T_gltf *gltf, const char *path, size_t index,
+                     YF_mesh *mesh, YF_collection coll)
 {
     assert(gltf != NULL);
     assert(path != NULL);
-    assert(data != NULL);
+    assert(mesh != NULL || coll != NULL);
 
     if (gltf->meshes.n <= index) {
         yf_seterr(YF_ERR_INVARG, __func__);
@@ -3110,14 +3110,41 @@ static int load_meshdt(const T_gltf *gltf, const char *path, size_t index,
         }
     }
 
-    data->v.vtype = YF_VTYPE_MDL;
-    data->v.data = verts;
-    data->v.n = v_n;
-    data->i.data = inds;
-    data->i.stride = i_sz;
-    data->i.n = i_n;
-
     fclose(file);
+
+    /* mesh */
+    YF_meshdt data = {
+        .v = {
+            .vtype = YF_VTYPE_MDL,
+            .data = verts,
+            .n = v_n
+        },
+        .i = {
+            .data = inds,
+            .stride = i_sz,
+            .n = i_n
+        }
+    };
+
+    YF_mesh tmp = yf_mesh_initdt(&data);
+    free(data.v.data);
+    free(data.i.data);
+    if (tmp == NULL)
+        return -1;
+
+    if (coll != NULL) {
+        const char *name = gltf->meshes.v[index].name;
+        if (name == NULL)
+            /* TODO */
+            assert(0);
+        if (yf_collection_manage(coll, YF_COLLRES_MESH, name, tmp) != 0) {
+            yf_mesh_deinit(tmp);
+            return -1;
+        }
+    } else {
+        *mesh = tmp;
+    }
+
     return 0;
 }
 
@@ -3475,26 +3502,8 @@ static int load_contents(const T_gltf *gltf, const char *path,
 
     /* meshes */
     for (size_t i = 0; i < gltf->meshes.n; i++) {
-        const char *name = gltf->meshes.v[i].name;
-        if (name == NULL)
-            /* TODO */
-            assert(0);
-
-        YF_meshdt data = {0};
-        YF_mesh mesh = NULL;
-
-        if (load_meshdt(gltf, path, i, &data) != 0 ||
-            (mesh = yf_mesh_initdt(&data)) == NULL ||
-            yf_collection_manage(coll, YF_COLLRES_MESH, name, mesh) != 0) {
-
-            free(data.v.data);
-            free(data.i.data);
-            yf_mesh_deinit(mesh);
+        if (load_mesh(gltf, path, i, NULL, coll) != 0)
             return -1;
-        }
-
-        free(data.v.data);
-        free(data.i.data);
     }
 
     /* textures */
@@ -3686,8 +3695,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
         r = load_contents(&gltf, path, dst->coll);
         break;
     case YF_DATAC_MESH:
-        /* TODO */
-        assert(0);
+        r = load_mesh(&gltf, path, index, &dst->mesh, NULL);
         break;
     case YF_DATAC_TEX:
         /* TODO */
