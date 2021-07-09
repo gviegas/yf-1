@@ -4024,17 +4024,6 @@ static void print_gltf(const T_gltf *gltf)
         case YF_GLTF_TYPE_MAT4:
             comp_n = 16;
             break;
-            printf("  min: [%.9f, %.9f, %.9f, %.9f]\n",
-                   gltf->accessors.v[i].min.v4[0],
-                   gltf->accessors.v[i].min.v4[1],
-                   gltf->accessors.v[i].min.v4[2],
-                   gltf->accessors.v[i].min.v4[3]);
-            printf("  max: [%.9f, %.9f, %.9f, %.9f]\n",
-                   gltf->accessors.v[i].max.v4[0],
-                   gltf->accessors.v[i].max.v4[1],
-                   gltf->accessors.v[i].max.v4[2],
-                   gltf->accessors.v[i].max.v4[3]);
-            break;
         }
         if (comp_n > 1) {
             printf("  min: [ ");
