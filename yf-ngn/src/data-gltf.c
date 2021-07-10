@@ -3549,16 +3549,16 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, size_t index,
 }
 
 /* Loads glTF contents. */
-static int load_contents(const T_gltf *gltf, const char *path,
+static int load_contents(const T_gltf *gltf, T_fdata *fdata,
                          YF_collection coll)
 {
     assert(gltf != NULL);
-    assert(path != NULL);
+    assert(fdata != NULL);
     assert(coll != NULL);
 
     /* meshes */
     for (size_t i = 0; i < gltf->meshes.n; i++) {
-        if (load_mesh(gltf, path, i, NULL, coll) != 0)
+        if (load_mesh(gltf, fdata, i, NULL, coll) != 0)
             return -1;
     }
 
@@ -3570,19 +3570,19 @@ static int load_contents(const T_gltf *gltf, const char *path,
         if (yf_collection_contains(coll, YF_COLLRES_TEXTURE, name))
             continue;
 
-        if (load_texture(gltf, path, i, NULL, coll) != 0)
+        if (load_texture(gltf, fdata, i, NULL, coll) != 0)
             return -1;
     }
 
     /* skins */
     for (size_t i = 0; i < gltf->skins.n; i++) {
-        if (load_skin(gltf, path, i, NULL, coll) != 0)
+        if (load_skin(gltf, fdata, i, NULL, coll) != 0)
             return -1;
     }
 
     /* materials */
     for (size_t i = 0; i < gltf->materials.n; i++) {
-        if (load_material(gltf, path, i, NULL, coll) != 0)
+        if (load_material(gltf, fdata, i, NULL, coll) != 0)
             return -1;
     }
 
@@ -3751,7 +3751,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     int r;
     switch (datac) {
     case YF_DATAC_COLL:
-        r = load_contents(&gltf, fdata.path, dst->coll);
+        r = load_contents(&gltf, &fdata, dst->coll);
         break;
     case YF_DATAC_MESH:
         r = load_mesh(&gltf, &fdata, index, &dst->mesh, NULL);
@@ -3791,7 +3791,7 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
     int r;
     switch (datac) {
     case YF_DATAC_COLL:
-        r = load_contents(&gltf, fdata.path, dst->coll);
+        r = load_contents(&gltf, &fdata, dst->coll);
         break;
     case YF_DATAC_MESH:
         r = load_mesh(&gltf, &fdata, index, &dst->mesh, NULL);
