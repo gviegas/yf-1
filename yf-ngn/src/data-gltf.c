@@ -2662,10 +2662,32 @@ static void print_gltf(const T_gltf *gltf);
 #endif
 
 /* Deinitializes glTF contents. */
-static void deinit_gltf(T_gltf *gltf)
+static void deinit_gltf(T_gltf *gltf, T_fdata *fdata)
 {
-    if (gltf == NULL)
+    if (gltf == NULL) {
+        assert(fdata == NULL);
         return;
+    }
+
+    if (fdata != NULL) {
+        switch (gltf->buffers.n) {
+        case 0:
+            break;
+        case 1:
+            if (fdata->file != NULL && gltf->buffers.v[0].uri != NULL)
+                fclose(fdata->file);
+            break;
+        default:
+            if (fdata->files == NULL)
+                break;
+            if (gltf->buffers.v[0].uri != NULL)
+                fclose(fdata->files[0]);
+            for (size_t i = 1; i < gltf->buffers.n; i++)
+                fclose(fdata->files[i]);
+            free(fdata->files);
+        }
+        free(fdata->path);
+    }
 
     free(gltf->asset.copyright);
     free(gltf->asset.generator);
@@ -2795,7 +2817,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata)
     }
 
     if (parse_gltf(file, &token, gltf) != 0) {
-        deinit_gltf(gltf);
+        deinit_gltf(gltf, NULL);
         return -1;
     }
 
@@ -2810,7 +2832,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata)
         fdata->files = calloc(gltf->buffers.n, sizeof *fdata->files);
         if (fdata->files == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            deinit_gltf(gltf);
+            deinit_gltf(gltf, NULL);
             return -1;
         }
         if (gltf->buffers.v[0].uri == NULL)
