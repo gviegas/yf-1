@@ -3235,11 +3235,11 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
     } } while (0)
 
 /* Loads a single texture from glTF contents. */
-static int load_texture(const T_gltf *gltf, const char *path, size_t index,
+static int load_texture(const T_gltf *gltf, T_fdata *fdata, size_t index,
                         YF_texture *tex, YF_collection coll)
 {
     assert(gltf != NULL);
-    assert(path != NULL);
+    assert(fdata != NULL);
     assert(tex != NULL || coll != NULL);
 
     if (gltf->textures.n <= index) {
@@ -3254,24 +3254,24 @@ static int load_texture(const T_gltf *gltf, const char *path, size_t index,
         return -1;
     }
 
-    if (gltf->images.v[img_i].buffer_view != YF_INT_MIN) {
-        /* TODO: .glb/.bin */
-        yf_seterr(YF_ERR_UNSUP, __func__);
-        return -1;
-    }
-
-    char *pathname = NULL;
-    YF_PATHCAT(path, gltf->images.v[img_i].uri, pathname);
-    if (pathname == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-
+    const T_int view = gltf->images.v[img_i].buffer_view;
     YF_texdt data;
-    int r = yf_loadpng(pathname, &data);
-    free(pathname);
-    if (r != 0)
-        return -1;
+    if (view != YF_INT_MIN) {
+        FILE *file = seek_data(gltf, fdata, YF_INT_MIN, view);
+        if (file == NULL || yf_loadpng2(file, &data) != 0)
+            return -1;
+    } else {
+        char *pathname = NULL;
+        YF_PATHCAT(fdata->path, gltf->images.v[img_i].uri, pathname);
+        if (pathname == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+        int r = yf_loadpng(pathname, &data);
+        free(pathname);
+        if (r != 0)
+            return -1;
+    }
 
     YF_texture tmp = yf_texture_initdt(&data);
     free(data.data);
@@ -3283,13 +3283,13 @@ static int load_texture(const T_gltf *gltf, const char *path, size_t index,
         YF_NAMEOFTEX(gltf, index, name);
         if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name, tmp) != 0) {
             yf_texture_deinit(tmp);
-            r = -1;
+            return -1;
         }
     } else {
         *tex = tmp;
     }
 
-    return r;
+    return 0;
 }
 
 /* Loads a single skin from glTF contents. */
@@ -3783,7 +3783,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
         r = load_mesh(&gltf, &fdata, index, &dst->mesh, NULL);
         break;
     case YF_DATAC_TEX:
-        r = load_texture(&gltf, fdata.path, index, &dst->tex, NULL);
+        r = load_texture(&gltf, &fdata, index, &dst->tex, NULL);
         break;
     case YF_DATAC_SKIN:
         r = load_skin(&gltf, fdata.path, index, &dst->skin, NULL);
@@ -3823,7 +3823,7 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
         r = load_mesh(&gltf, &fdata, index, &dst->mesh, NULL);
         break;
     case YF_DATAC_TEX:
-        r = load_texture(&gltf, fdata.path, index, &dst->tex, NULL);
+        r = load_texture(&gltf, &fdata, index, &dst->tex, NULL);
         break;
     case YF_DATAC_SKIN:
         r = load_skin(&gltf, fdata.path, index, &dst->skin, NULL);
