@@ -2847,14 +2847,14 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata)
 }
 
 /* Seeks into data buffer as specified by an accessor. */
-static int seek_data(const T_gltf *gltf, T_fdata *fdata, T_int accessor)
+static FILE *seek_data(const T_gltf *gltf, T_fdata *fdata, T_int accessor)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
 
     if (accessor < 0 || accessor >= (T_int)gltf->accessors.n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
+        return NULL;
     }
 
     const T_int view = gltf->accessors.v[accessor].buffer_view;
@@ -2867,7 +2867,7 @@ static int seek_data(const T_gltf *gltf, T_fdata *fdata, T_int accessor)
     switch (gltf->buffers.n) {
     case 0:
         yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
+        return NULL;
     case 1:
         if (fdata->file == NULL) {
             file_p = &fdata->file;
@@ -2896,24 +2896,24 @@ static int seek_data(const T_gltf *gltf, T_fdata *fdata, T_int accessor)
         YF_PATHCAT(fdata->path, gltf->buffers.v[buf].uri, pathname);
         if (pathname == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            return -1;
+            return NULL;
         }
 
         *file_p = fopen(pathname, "r");
         free(pathname);
         if (*file_p == NULL) {
             yf_seterr(YF_ERR_NOFILE, __func__);
-            return -1;
+            return NULL;
         }
         file = *file_p;
     }
 
     if (fseek(file, off, SEEK_SET) != 0) {
         yf_seterr(YF_ERR_INVFILE, __func__);
-        return -1;
+        return NULL;
     }
 
-    return 0;
+    return file;
 }
 
 /* Loads a single mesh from glTF contents. */
