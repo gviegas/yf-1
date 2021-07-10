@@ -2622,6 +2622,18 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
  * Data
  */
 
+/* Type defining data for binary buffer access. */
+typedef struct {
+    char *path;
+    /* offset into the embedded binary buffer (0), when applicable */
+    T_int off_e;
+    /* open file(s), mapping to 'gltf.buffers' */
+    union {
+        FILE *file;
+        FILE **files;
+    };
+} T_fdata;
+
 #define YF_PATHOF(pathname, path) do { \
     const char *last = strrchr(pathname, '/'); \
     if (last != NULL) { \
@@ -2650,10 +2662,32 @@ static void print_gltf(const T_gltf *gltf);
 #endif
 
 /* Deinitializes glTF contents. */
-static void deinit_gltf(T_gltf *gltf)
+static void deinit_gltf(T_gltf *gltf, T_fdata *fdata)
 {
-    if (gltf == NULL)
+    if (gltf == NULL) {
+        assert(fdata == NULL);
         return;
+    }
+
+    if (fdata != NULL) {
+        switch (gltf->buffers.n) {
+        case 0:
+            break;
+        case 1:
+            if (fdata->file != NULL && gltf->buffers.v[0].uri != NULL)
+                fclose(fdata->file);
+            break;
+        default:
+            if (fdata->files == NULL)
+                break;
+            if (gltf->buffers.v[0].uri != NULL)
+                fclose(fdata->files[0]);
+            for (size_t i = 1; i < gltf->buffers.n; i++)
+                fclose(fdata->files[i]);
+            free(fdata->files);
+        }
+        free(fdata->path);
+    }
 
     free(gltf->asset.copyright);
     free(gltf->asset.generator);
@@ -2734,10 +2768,11 @@ static void deinit_gltf(T_gltf *gltf)
 }
 
 /* Initializes glTF contents. */
-static int init_gltf(FILE *file, T_gltf *gltf)
+static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata)
 {
     assert(file != NULL);
     assert(gltf != NULL);
+    assert(fdata != NULL);
 
     uint32_t magic;
     if (fread(&magic, sizeof magic, 1, file) != 1) {
@@ -2756,10 +2791,16 @@ static int init_gltf(FILE *file, T_gltf *gltf)
             yf_seterr(YF_ERR_UNSUP, __func__);
             return -1;
         }
-        if (fseek(file, sizeof(uint32_t) * 3, SEEK_CUR) != 0) {
+        uint32_t jlen;
+        long pos;
+        if (fseek(file, sizeof(uint32_t), SEEK_CUR) != 0 ||
+            fread(&jlen, sizeof jlen, 1, file) != 1 ||
+            fseek(file, sizeof(uint32_t), SEEK_CUR) != 0 ||
+            (pos = ftell(file)) == -1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
         }
+        fdata->off_e = pos + le32toh(jlen) + (sizeof(uint32_t) << 1);
     } else {
         /* .gltf */
         if (fseek(file, -(long)sizeof magic, SEEK_CUR) != 0) {
@@ -2776,8 +2817,26 @@ static int init_gltf(FILE *file, T_gltf *gltf)
     }
 
     if (parse_gltf(file, &token, gltf) != 0) {
-        deinit_gltf(gltf);
+        deinit_gltf(gltf, NULL);
         return -1;
+    }
+
+    switch (gltf->buffers.n) {
+    case 0:
+        break;
+    case 1:
+        if (gltf->buffers.v[0].uri == NULL)
+            fdata->file = file;
+        break;
+    default:
+        fdata->files = calloc(gltf->buffers.n, sizeof *fdata->files);
+        if (fdata->files == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            deinit_gltf(gltf, NULL);
+            return -1;
+        }
+        if (gltf->buffers.v[0].uri == NULL)
+            fdata->files[0] = file;
     }
 
 #ifdef YF_DEVEL
@@ -2787,12 +2846,86 @@ static int init_gltf(FILE *file, T_gltf *gltf)
     return 0;
 }
 
+/* Seeks into data buffer as specified by an accessor or buffer view. */
+static FILE *seek_data(const T_gltf *gltf, T_fdata *fdata,
+                       T_int accessor, T_int buffer_view)
+{
+    assert(gltf != NULL);
+    assert(fdata != NULL);
+    assert(accessor != YF_INT_MIN || buffer_view != YF_INT_MIN);
+
+    T_int buf, off;
+    if (accessor != YF_INT_MIN) {
+        T_int view = gltf->accessors.v[accessor].buffer_view;
+        buf = gltf->bufferviews.v[view].buffer;
+        off = gltf->accessors.v[accessor].byte_off +
+            gltf->bufferviews.v[view].byte_off;
+    } else {
+        buf = gltf->bufferviews.v[buffer_view].buffer;
+        off = gltf->bufferviews.v[buffer_view].byte_off;
+    }
+
+    FILE **file_p = NULL;
+    FILE *file = NULL;
+
+    switch (gltf->buffers.n) {
+    case 0:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return NULL;
+    case 1:
+        if (fdata->file == NULL) {
+            file_p = &fdata->file;
+        } else {
+            file = fdata->file;
+            if (gltf->buffers.v[buf].uri == NULL)
+                off += fdata->off_e;
+        }
+        break;
+    default:
+        if (fdata->files[buf] == NULL) {
+            file_p = fdata->files+buf;
+        } else {
+            file = fdata->files[buf];
+            if (buf == 0 && gltf->buffers.v[buf].uri == NULL)
+                off += fdata->off_e;
+        }
+    }
+
+    if (file_p != NULL) {
+        /* need to open file */
+        assert(fdata->path != NULL);
+        assert(gltf->buffers.v[buf].uri != NULL);
+
+        char *pathname = NULL;
+        YF_PATHCAT(fdata->path, gltf->buffers.v[buf].uri, pathname);
+        if (pathname == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return NULL;
+        }
+
+        *file_p = fopen(pathname, "r");
+        free(pathname);
+        if (*file_p == NULL) {
+            yf_seterr(YF_ERR_NOFILE, __func__);
+            return NULL;
+        }
+        file = *file_p;
+    }
+
+    if (fseek(file, off, SEEK_SET) != 0) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return NULL;
+    }
+
+    return file;
+}
+
 /* Loads a single mesh from glTF contents. */
-static int load_mesh(const T_gltf *gltf, const char *path, size_t index,
+static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
                      YF_mesh *mesh, YF_collection coll)
 {
     assert(gltf != NULL);
-    assert(path != NULL);
+    assert(fdata != NULL);
     assert(mesh != NULL || coll != NULL);
 
     if (gltf->meshes.n <= index) {
@@ -2852,58 +2985,21 @@ static int load_mesh(const T_gltf *gltf, const char *path, size_t index,
         }
     }
 
-    T_int buf_id = YF_INT_MIN;
-    FILE *file = NULL;
-    size_t comp_sz = 0;
-    size_t comp_n = 0;
-
     /* vertex data */
     for (size_t i = 0; i < YF_GLTF_ATTR_N; i++) {
         if (attrs[i].acc == YF_INT_MIN)
             continue;
 
-        if (buf_id != attrs[i].buf) {
-            if (file != NULL)
-                fclose(file);
-            buf_id = attrs[i].buf;
-            if (gltf->buffers.v[buf_id].uri == NULL) {
-                /* TODO: .glb */
-                yf_seterr(YF_ERR_UNSUP, __func__);
-                free(verts);
-                free(inds);
-                return -1;
-            }
-            char *pathname = NULL;
-            YF_PATHCAT(path, gltf->buffers.v[buf_id].uri, pathname);
-            if (pathname == NULL) {
-                yf_seterr(YF_ERR_NOMEM, __func__);
-                free(verts);
-                free(inds);
-                return -1;
-            }
-            file = fopen(pathname, "r");
-            free(pathname);
-            if (file == NULL) {
-                yf_seterr(YF_ERR_NOFILE, __func__);
-                free(verts);
-                free(inds);
-                return -1;
-            }
+        FILE *file = seek_data(gltf, fdata, attrs[i].acc, YF_INT_MIN);
+        if (file == NULL) {
+            free(verts);
+            free(inds);
+            return -1;
         }
 
-        const T_int byte_off = gltf->accessors.v[attrs[i].acc].byte_off +
-            gltf->bufferviews.v[attrs[i].view].byte_off;
         const T_int byte_strd = gltf->bufferviews.v[attrs[i].view].byte_strd;
         const T_int comp_type = gltf->accessors.v[attrs[i].acc].comp_type;
         const int type = gltf->accessors.v[attrs[i].acc].type;
-
-        if (fseek(file, byte_off, SEEK_SET) != 0) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            free(verts);
-            free(inds);
-            fclose(file);
-            return -1;
-        }
 
         switch (i) {
         case YF_GLTF_ATTR_POS:
@@ -2911,29 +3007,33 @@ static int load_mesh(const T_gltf *gltf, const char *path, size_t index,
                 yf_seterr(YF_ERR_INVFILE, __func__);
                 free(verts);
                 free(inds);
-                fclose(file);
                 return -1;
             }
-            comp_sz = 4;
-            comp_n = 3;
             if (byte_strd == 0) {
                 for (size_t j = 0; j < v_n; j++) {
-                    if (fread(verts[j].pos, comp_sz, comp_n, file) < comp_n) {
+                    if (fread(verts[j].pos, 4, 3, file) < 3) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
                         free(verts);
                         free(inds);
-                        fclose(file);
                         return -1;
                     }
                 }
             } else {
-                for (size_t j = 0; j < v_n; j++) {
-                    if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
-                        fread(verts[j].pos, comp_sz, comp_n, file) < comp_n) {
+                const size_t strd = byte_strd - 4 * 3;
+                size_t j = 0;
+                while (1) {
+                    if (fread(verts[j].pos, 4, 3, file) < 3) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
                         free(verts);
                         free(inds);
-                        fclose(file);
+                        return -1;
+                    }
+                    if (++j == v_n)
+                        break;
+                    if (fseek(file, strd, SEEK_CUR) != 0) {
+                        yf_seterr(YF_ERR_INVFILE, __func__);
+                        free(verts);
+                        free(inds);
                         return -1;
                     }
                 }
@@ -2945,29 +3045,33 @@ static int load_mesh(const T_gltf *gltf, const char *path, size_t index,
                 yf_seterr(YF_ERR_INVFILE, __func__);
                 free(verts);
                 free(inds);
-                fclose(file);
                 return -1;
             }
-            comp_sz = 4;
-            comp_n = 3;
             if (byte_strd == 0) {
                 for (size_t j = 0; j < v_n; j++) {
-                    if (fread(verts[j].norm, comp_sz, comp_n, file) < comp_n) {
+                    if (fread(verts[j].norm, 4, 3, file) < 3) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
                         free(verts);
                         free(inds);
-                        fclose(file);
                         return -1;
                     }
                 }
             } else {
-                for (size_t j = 0; j < v_n; j++) {
-                    if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
-                        fread(verts[j].norm, comp_sz, comp_n, file) < comp_n) {
+                const size_t strd = byte_strd - 4 * 3;
+                size_t j = 0;
+                while (1) {
+                    if (fread(verts[j].norm, 4, 3, file) < 3) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
                         free(verts);
                         free(inds);
-                        fclose(file);
+                        return -1;
+                    }
+                    if (++j == v_n)
+                        break;
+                    if (fseek(file, strd, SEEK_CUR) != 0) {
+                        yf_seterr(YF_ERR_INVFILE, __func__);
+                        free(verts);
+                        free(inds);
                         return -1;
                     }
                 }
@@ -2980,29 +3084,33 @@ static int load_mesh(const T_gltf *gltf, const char *path, size_t index,
                 yf_seterr(YF_ERR_INVFILE, __func__);
                 free(verts);
                 free(inds);
-                fclose(file);
                 return -1;
             }
-            comp_sz = 4;
-            comp_n = 2;
             if (byte_strd == 0) {
                 for (size_t j = 0; j < v_n; j++) {
-                    if (fread(verts[j].tc, comp_sz, comp_n, file) < comp_n) {
+                    if (fread(verts[j].tc, 4, 2, file) < 2) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
                         free(verts);
                         free(inds);
-                        fclose(file);
                         return -1;
                     }
                 }
             } else {
-                for (size_t j = 0; j < v_n; j++) {
-                    if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
-                        fread(verts[j].tc, comp_sz, comp_n, file) < comp_n) {
+                const size_t strd = byte_strd - 4 * 2;
+                size_t j = 0;
+                while (1) {
+                    if (fread(verts[j].tc, 4, 2, file) < 2) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
                         free(verts);
                         free(inds);
-                        fclose(file);
+                        return -1;
+                    }
+                    if (++j == v_n)
+                        break;
+                    if (fseek(file, strd, SEEK_CUR) != 0) {
+                        yf_seterr(YF_ERR_INVFILE, __func__);
+                        free(verts);
+                        free(inds);
                         return -1;
                     }
                 }
@@ -3020,36 +3128,14 @@ static int load_mesh(const T_gltf *gltf, const char *path, size_t index,
 
     /* index data */
     if (inds != NULL) {
-        assert(file != NULL);
-
-        if (buf_id != idx.buf) {
-            fclose(file);
-            if (gltf->buffers.v[idx.buf].uri == NULL) {
-                /* TODO: .glb */
-                yf_seterr(YF_ERR_UNSUP, __func__);
-                free(verts);
-                free(inds);
-                return -1;
-            }
-            char *pathname = NULL;
-            YF_PATHCAT(path, gltf->buffers.v[idx.buf].uri, pathname);
-            if (pathname == NULL) {
-                yf_seterr(YF_ERR_NOMEM, __func__);
-                free(verts);
-                free(inds);
-                return -1;
-            }
-            file = fopen(pathname, "r");
-            free(pathname);
-            if (file == NULL) {
-                yf_seterr(YF_ERR_NOFILE, __func__);
-                free(verts);
-                free(inds);
-                return -1;
-            }
+        FILE *file = seek_data(gltf, fdata, idx.acc, YF_INT_MIN);
+        if (file == NULL) {
+            free(verts);
+            free(inds);
+            return -1;
         }
 
-        comp_sz = 0;
+        size_t comp_sz = 0;
         switch (gltf->accessors.v[idx.acc].comp_type) {
         case YF_GLTF_COMP_USHORT:
             comp_sz = 2;
@@ -3058,44 +3144,44 @@ static int load_mesh(const T_gltf *gltf, const char *path, size_t index,
             comp_sz = 4;
             break;
         }
-        comp_n = gltf->accessors.v[idx.acc].type == YF_GLTF_TYPE_SCALAR;
+        size_t comp_n = gltf->accessors.v[idx.acc].type == YF_GLTF_TYPE_SCALAR;
         if (comp_sz != i_sz || comp_n != 1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             free(verts);
             free(inds);
-            fclose(file);
             return -1;
         }
 
-        const T_int byte_off = gltf->accessors.v[idx.acc].byte_off +
-            gltf->bufferviews.v[idx.view].byte_off;
         const T_int byte_strd = gltf->bufferviews.v[idx.view].byte_strd;
-
         if (byte_strd == 0) {
-            if (fseek(file, byte_off, SEEK_SET) != 0 ||
-                fread(inds, comp_sz, i_n, file) < i_n) {
+            if (fread(inds, comp_sz, i_n, file) < i_n) {
                 yf_seterr(YF_ERR_INVFILE, __func__);
                 free(verts);
                 free(inds);
-                fclose(file);
                 return -1;
             }
         } else {
-            for (size_t j = 0; j < i_n; j++) {
-                if (fseek(file, byte_off+byte_strd*j, SEEK_SET) != 0 ||
-                    fread((char *)inds+comp_sz*j, comp_sz, comp_n,
-                          file) < comp_n) {
+            const size_t strd = byte_strd - comp_sz * comp_n;
+            char *idt = inds;
+            size_t j = 0;
+            while (1) {
+                if (fread(idt+comp_sz*j, comp_sz, comp_n, file) < comp_n) {
                     yf_seterr(YF_ERR_INVFILE, __func__);
                     free(verts);
                     free(inds);
-                    fclose(file);
+                    return -1;
+                }
+                if (++j == i_n)
+                    break;
+                if (fseek(file, strd, SEEK_CUR) != 0) {
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    free(verts);
+                    free(inds);
                     return -1;
                 }
             }
         }
     }
-
-    fclose(file);
 
     /* mesh */
     YF_meshdt data = {
@@ -3149,11 +3235,11 @@ static int load_mesh(const T_gltf *gltf, const char *path, size_t index,
     } } while (0)
 
 /* Loads a single texture from glTF contents. */
-static int load_texture(const T_gltf *gltf, const char *path, size_t index,
+static int load_texture(const T_gltf *gltf, T_fdata *fdata, size_t index,
                         YF_texture *tex, YF_collection coll)
 {
     assert(gltf != NULL);
-    assert(path != NULL);
+    assert(fdata != NULL);
     assert(tex != NULL || coll != NULL);
 
     if (gltf->textures.n <= index) {
@@ -3168,24 +3254,24 @@ static int load_texture(const T_gltf *gltf, const char *path, size_t index,
         return -1;
     }
 
-    if (gltf->images.v[img_i].buffer_view != YF_INT_MIN) {
-        /* TODO: .glb/.bin */
-        yf_seterr(YF_ERR_UNSUP, __func__);
-        return -1;
-    }
-
-    char *pathname = NULL;
-    YF_PATHCAT(path, gltf->images.v[img_i].uri, pathname);
-    if (pathname == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
-    }
-
+    const T_int view = gltf->images.v[img_i].buffer_view;
     YF_texdt data;
-    int r = yf_loadpng(pathname, &data);
-    free(pathname);
-    if (r != 0)
-        return -1;
+    if (view != YF_INT_MIN) {
+        FILE *file = seek_data(gltf, fdata, YF_INT_MIN, view);
+        if (file == NULL || yf_loadpng2(file, &data) != 0)
+            return -1;
+    } else {
+        char *pathname = NULL;
+        YF_PATHCAT(fdata->path, gltf->images.v[img_i].uri, pathname);
+        if (pathname == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+        int r = yf_loadpng(pathname, &data);
+        free(pathname);
+        if (r != 0)
+            return -1;
+    }
 
     YF_texture tmp = yf_texture_initdt(&data);
     free(data.data);
@@ -3197,21 +3283,21 @@ static int load_texture(const T_gltf *gltf, const char *path, size_t index,
         YF_NAMEOFTEX(gltf, index, name);
         if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name, tmp) != 0) {
             yf_texture_deinit(tmp);
-            r = -1;
+            return -1;
         }
     } else {
         *tex = tmp;
     }
 
-    return r;
+    return 0;
 }
 
 /* Loads a single skin from glTF contents. */
-static int load_skin(const T_gltf *gltf, const char *path, size_t index,
+static int load_skin(const T_gltf *gltf, T_fdata *fdata, size_t index,
                      YF_skin *skin, YF_collection coll)
 {
     assert(gltf != NULL);
-    assert(path != NULL);
+    assert(fdata != NULL);
     assert(skin != NULL || coll != NULL);
 
     if (gltf->skins.n <= index) {
@@ -3298,37 +3384,12 @@ static int load_skin(const T_gltf *gltf, const char *path, size_t index,
         assert(gltf->accessors.v[acc].type == YF_GLTF_TYPE_MAT4);
         assert(gltf->buffers.v[buf].byte_len - off >= sizeof(YF_mat4));
 
-        if (gltf->buffers.v[buf].uri == NULL) {
-            /* TODO: .glb */
-            yf_seterr(YF_ERR_UNSUP, __func__);
-            free(jnt_hier);
-            free(jnts);
-            return -1;
-        }
-        char *pathname = NULL;
-        YF_PATHCAT(path, gltf->buffers.v[buf].uri, pathname);
-        if (pathname == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            free(jnt_hier);
-            free(jnts);
-            return -1;
-        }
-        FILE *file = fopen(pathname, "r");
-        free(pathname);
+        FILE *file = seek_data(gltf, fdata, acc, YF_INT_MIN);
         if (file == NULL) {
-            yf_seterr(YF_ERR_NOFILE, __func__);
             free(jnt_hier);
             free(jnts);
             return -1;
         }
-        if (fseek(file, off, SEEK_SET) != 0) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            free(jnt_hier);
-            free(jnts);
-            fclose(file);
-            return -1;
-        }
-
         for (size_t i = 0; i < jnt_n; i++) {
             if (fread(jnts[i].ibm, sizeof jnts[i].ibm, 1, file) != 1) {
                 yf_seterr(YF_ERR_INVFILE, __func__);
@@ -3338,7 +3399,6 @@ static int load_skin(const T_gltf *gltf, const char *path, size_t index,
                 return -1;
             }
         }
-        fclose(file);
 
     } else {
         for (size_t i = 0; i < jnt_n; i++)
@@ -3369,11 +3429,11 @@ static int load_skin(const T_gltf *gltf, const char *path, size_t index,
 }
 
 /* Loads a single material from glTF contents. */
-static int load_material(const T_gltf *gltf, const char *path, size_t index,
+static int load_material(const T_gltf *gltf, T_fdata *fdata, size_t index,
                          YF_material *matl, YF_collection coll)
 {
     assert(gltf != NULL);
-    assert(path != NULL);
+    assert(fdata != NULL);
     assert(matl != NULL || coll != NULL);
 
     if (gltf->materials.n <= index) {
@@ -3444,7 +3504,7 @@ static int load_material(const T_gltf *gltf, const char *path, size_t index,
                 continue;
 
             /* create and add to collection otherwise */
-            if (load_texture(gltf, path, tex_i[i], tex_p[i], NULL) != 0)
+            if (load_texture(gltf, fdata, tex_i[i], tex_p[i], NULL) != 0)
                 return -1;
             if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name,
                                      *tex_p[i]) != 0) {
@@ -3471,7 +3531,7 @@ static int load_material(const T_gltf *gltf, const char *path, size_t index,
             }
 
             /* create the texture object in the material prop. */
-            if (load_texture(gltf, path, tex_i[i], tex_p[i], NULL) != 0) {
+            if (load_texture(gltf, fdata, tex_i[i], tex_p[i], NULL) != 0) {
                 for (size_t j = 0; j < i; j++)
                     yf_texture_deinit(*tex_p[j]);
                 return -1;
@@ -3489,16 +3549,16 @@ static int load_material(const T_gltf *gltf, const char *path, size_t index,
 }
 
 /* Loads glTF contents. */
-static int load_contents(const T_gltf *gltf, const char *path,
+static int load_contents(const T_gltf *gltf, T_fdata *fdata,
                          YF_collection coll)
 {
     assert(gltf != NULL);
-    assert(path != NULL);
+    assert(fdata != NULL);
     assert(coll != NULL);
 
     /* meshes */
     for (size_t i = 0; i < gltf->meshes.n; i++) {
-        if (load_mesh(gltf, path, i, NULL, coll) != 0)
+        if (load_mesh(gltf, fdata, i, NULL, coll) != 0)
             return -1;
     }
 
@@ -3510,19 +3570,19 @@ static int load_contents(const T_gltf *gltf, const char *path,
         if (yf_collection_contains(coll, YF_COLLRES_TEXTURE, name))
             continue;
 
-        if (load_texture(gltf, path, i, NULL, coll) != 0)
+        if (load_texture(gltf, fdata, i, NULL, coll) != 0)
             return -1;
     }
 
     /* skins */
     for (size_t i = 0; i < gltf->skins.n; i++) {
-        if (load_skin(gltf, path, i, NULL, coll) != 0)
+        if (load_skin(gltf, fdata, i, NULL, coll) != 0)
             return -1;
     }
 
     /* materials */
     for (size_t i = 0; i < gltf->materials.n; i++) {
-        if (load_material(gltf, path, i, NULL, coll) != 0)
+        if (load_material(gltf, fdata, i, NULL, coll) != 0)
             return -1;
     }
 
@@ -3674,16 +3734,16 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     }
 
     T_gltf gltf = {0};
-    if (init_gltf(file, &gltf) != 0) {
+    T_fdata fdata = {0};
+    if (init_gltf(file, &gltf, &fdata) != 0) {
         fclose(file);
         return -1;
     }
 
-    char *path = NULL;
-    YF_PATHOF(pathname, path);
-    if (path == NULL) {
+    YF_PATHOF(pathname, fdata.path);
+    if (fdata.path == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        deinit_gltf(&gltf);
+        deinit_gltf(&gltf, &fdata);
         fclose(file);
         return -1;
     }
@@ -3691,28 +3751,27 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     int r;
     switch (datac) {
     case YF_DATAC_COLL:
-        r = load_contents(&gltf, path, dst->coll);
+        r = load_contents(&gltf, &fdata, dst->coll);
         break;
     case YF_DATAC_MESH:
-        r = load_mesh(&gltf, path, index, &dst->mesh, NULL);
+        r = load_mesh(&gltf, &fdata, index, &dst->mesh, NULL);
         break;
     case YF_DATAC_TEX:
-        r = load_texture(&gltf, path, index, &dst->tex, NULL);
+        r = load_texture(&gltf, &fdata, index, &dst->tex, NULL);
         break;
     case YF_DATAC_SKIN:
-        r = load_skin(&gltf, path, index, &dst->skin, NULL);
+        r = load_skin(&gltf, &fdata, index, &dst->skin, NULL);
         break;
     case YF_DATAC_MATL:
-        r = load_material(&gltf, path, index, &dst->matl, NULL);
+        r = load_material(&gltf, &fdata, index, &dst->matl, NULL);
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
         r = -1;
     }
 
-    deinit_gltf(&gltf);
+    deinit_gltf(&gltf, &fdata);
     fclose(file);
-    free(path);
     return r;
 }
 
@@ -3722,35 +3781,36 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
     assert(dst != NULL);
 
     T_gltf gltf = {0};
-    if (init_gltf(file, &gltf) != 0)
+    T_fdata fdata = {0};
+    if (init_gltf(file, &gltf, &fdata) != 0)
         return -1;
 
-    /* XXX: This assumes that 'path' is not used (whole data is embedded). */
-    const char *path = "";
+    /* XXX: This function assumes that 'fdata.path' is not used, i.e., the
+       whole data is embedded, thus it won't be set. */
 
     int r;
     switch (datac) {
     case YF_DATAC_COLL:
-        r = load_contents(&gltf, path, dst->coll);
+        r = load_contents(&gltf, &fdata, dst->coll);
         break;
     case YF_DATAC_MESH:
-        r = load_mesh(&gltf, path, index, &dst->mesh, NULL);
+        r = load_mesh(&gltf, &fdata, index, &dst->mesh, NULL);
         break;
     case YF_DATAC_TEX:
-        r = load_texture(&gltf, path, index, &dst->tex, NULL);
+        r = load_texture(&gltf, &fdata, index, &dst->tex, NULL);
         break;
     case YF_DATAC_SKIN:
-        r = load_skin(&gltf, path, index, &dst->skin, NULL);
+        r = load_skin(&gltf, &fdata, index, &dst->skin, NULL);
         break;
     case YF_DATAC_MATL:
-        r = load_material(&gltf, path, index, &dst->matl, NULL);
+        r = load_material(&gltf, &fdata, index, &dst->matl, NULL);
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
         r = -1;
     }
 
-    deinit_gltf(&gltf);
+    deinit_gltf(&gltf, &fdata);
     return r;
 }
 
