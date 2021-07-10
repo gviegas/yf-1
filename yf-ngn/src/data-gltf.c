@@ -3733,16 +3733,16 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     }
 
     T_gltf gltf = {0};
-    if (init_gltf(file, &gltf) != 0) {
+    T_fdata fdata = {0};
+    if (init_gltf(file, &gltf, &fdata) != 0) {
         fclose(file);
         return -1;
     }
 
-    char *path = NULL;
-    YF_PATHOF(pathname, path);
-    if (path == NULL) {
+    YF_PATHOF(pathname, fdata.path);
+    if (fdata.path == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        deinit_gltf(&gltf);
+        deinit_gltf(&gltf, &fdata);
         fclose(file);
         return -1;
     }
@@ -3750,28 +3750,27 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     int r;
     switch (datac) {
     case YF_DATAC_COLL:
-        r = load_contents(&gltf, path, dst->coll);
+        r = load_contents(&gltf, fdata.path, dst->coll);
         break;
     case YF_DATAC_MESH:
-        r = load_mesh(&gltf, path, index, &dst->mesh, NULL);
+        r = load_mesh(&gltf, fdata.path, index, &dst->mesh, NULL);
         break;
     case YF_DATAC_TEX:
-        r = load_texture(&gltf, path, index, &dst->tex, NULL);
+        r = load_texture(&gltf, fdata.path, index, &dst->tex, NULL);
         break;
     case YF_DATAC_SKIN:
-        r = load_skin(&gltf, path, index, &dst->skin, NULL);
+        r = load_skin(&gltf, fdata.path, index, &dst->skin, NULL);
         break;
     case YF_DATAC_MATL:
-        r = load_material(&gltf, path, index, &dst->matl, NULL);
+        r = load_material(&gltf, fdata.path, index, &dst->matl, NULL);
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
         r = -1;
     }
 
-    deinit_gltf(&gltf);
+    deinit_gltf(&gltf, &fdata);
     fclose(file);
-    free(path);
     return r;
 }
 
