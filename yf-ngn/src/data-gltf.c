@@ -3293,11 +3293,11 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, size_t index,
 }
 
 /* Loads a single skin from glTF contents. */
-static int load_skin(const T_gltf *gltf, const char *path, size_t index,
+static int load_skin(const T_gltf *gltf, T_fdata *fdata, size_t index,
                      YF_skin *skin, YF_collection coll)
 {
     assert(gltf != NULL);
-    assert(path != NULL);
+    assert(fdata != NULL);
     assert(skin != NULL || coll != NULL);
 
     if (gltf->skins.n <= index) {
@@ -3384,37 +3384,12 @@ static int load_skin(const T_gltf *gltf, const char *path, size_t index,
         assert(gltf->accessors.v[acc].type == YF_GLTF_TYPE_MAT4);
         assert(gltf->buffers.v[buf].byte_len - off >= sizeof(YF_mat4));
 
-        if (gltf->buffers.v[buf].uri == NULL) {
-            /* TODO: .glb */
-            yf_seterr(YF_ERR_UNSUP, __func__);
-            free(jnt_hier);
-            free(jnts);
-            return -1;
-        }
-        char *pathname = NULL;
-        YF_PATHCAT(path, gltf->buffers.v[buf].uri, pathname);
-        if (pathname == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            free(jnt_hier);
-            free(jnts);
-            return -1;
-        }
-        FILE *file = fopen(pathname, "r");
-        free(pathname);
+        FILE *file = seek_data(gltf, fdata, acc, YF_INT_MIN);
         if (file == NULL) {
-            yf_seterr(YF_ERR_NOFILE, __func__);
             free(jnt_hier);
             free(jnts);
             return -1;
         }
-        if (fseek(file, off, SEEK_SET) != 0) {
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            free(jnt_hier);
-            free(jnts);
-            fclose(file);
-            return -1;
-        }
-
         for (size_t i = 0; i < jnt_n; i++) {
             if (fread(jnts[i].ibm, sizeof jnts[i].ibm, 1, file) != 1) {
                 yf_seterr(YF_ERR_INVFILE, __func__);
@@ -3424,7 +3399,6 @@ static int load_skin(const T_gltf *gltf, const char *path, size_t index,
                 return -1;
             }
         }
-        fclose(file);
 
     } else {
         for (size_t i = 0; i < jnt_n; i++)
@@ -3786,7 +3760,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
         r = load_texture(&gltf, &fdata, index, &dst->tex, NULL);
         break;
     case YF_DATAC_SKIN:
-        r = load_skin(&gltf, fdata.path, index, &dst->skin, NULL);
+        r = load_skin(&gltf, &fdata, index, &dst->skin, NULL);
         break;
     case YF_DATAC_MATL:
         r = load_material(&gltf, fdata.path, index, &dst->matl, NULL);
@@ -3826,7 +3800,7 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
         r = load_texture(&gltf, &fdata, index, &dst->tex, NULL);
         break;
     case YF_DATAC_SKIN:
-        r = load_skin(&gltf, fdata.path, index, &dst->skin, NULL);
+        r = load_skin(&gltf, &fdata, index, &dst->skin, NULL);
         break;
     case YF_DATAC_MATL:
         r = load_material(&gltf, fdata.path, index, &dst->matl, NULL);
