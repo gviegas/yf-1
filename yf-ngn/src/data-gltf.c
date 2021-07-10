@@ -2626,9 +2626,12 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
 typedef struct {
     char *path;
     /* offset into the embedded binary buffer (0), when applicable */
-    T_int byte_off;
-    /* open files, mapping to 'gltf.buffers' */
-    FILE **files;
+    T_int off_e;
+    /* open file(s), mapping to 'gltf.buffers' */
+    union {
+        FILE *file;
+        FILE **files;
+    };
 } T_fdata;
 
 #define YF_PATHOF(pathname, path) do { \
@@ -2775,7 +2778,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata)
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
         }
-        fdata->byte_off = pos + le32toh(jlen) + (sizeof(uint32_t) << 1);
+        fdata->off_e = pos + le32toh(jlen) + (sizeof(uint32_t) << 1);
     } else {
         /* .gltf */
         if (fseek(file, -(long)sizeof magic, SEEK_CUR) != 0) {
@@ -2796,7 +2799,14 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata)
         return -1;
     }
 
-    if (gltf->buffers.n > 0) {
+    switch (gltf->buffers.n) {
+    case 0:
+        break;
+    case 1:
+        if (gltf->buffers.v[0].uri == NULL)
+            fdata->file = file;
+        break;
+    default:
         fdata->files = calloc(gltf->buffers.n, sizeof *fdata->files);
         if (fdata->files == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
