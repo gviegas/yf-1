@@ -3429,11 +3429,11 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, size_t index,
 }
 
 /* Loads a single material from glTF contents. */
-static int load_material(const T_gltf *gltf, const char *path, size_t index,
+static int load_material(const T_gltf *gltf, T_fdata *fdata, size_t index,
                          YF_material *matl, YF_collection coll)
 {
     assert(gltf != NULL);
-    assert(path != NULL);
+    assert(fdata != NULL);
     assert(matl != NULL || coll != NULL);
 
     if (gltf->materials.n <= index) {
@@ -3504,7 +3504,7 @@ static int load_material(const T_gltf *gltf, const char *path, size_t index,
                 continue;
 
             /* create and add to collection otherwise */
-            if (load_texture(gltf, path, tex_i[i], tex_p[i], NULL) != 0)
+            if (load_texture(gltf, fdata, tex_i[i], tex_p[i], NULL) != 0)
                 return -1;
             if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name,
                                      *tex_p[i]) != 0) {
@@ -3531,7 +3531,7 @@ static int load_material(const T_gltf *gltf, const char *path, size_t index,
             }
 
             /* create the texture object in the material prop. */
-            if (load_texture(gltf, path, tex_i[i], tex_p[i], NULL) != 0) {
+            if (load_texture(gltf, fdata, tex_i[i], tex_p[i], NULL) != 0) {
                 for (size_t j = 0; j < i; j++)
                     yf_texture_deinit(*tex_p[j]);
                 return -1;
@@ -3763,7 +3763,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
         r = load_skin(&gltf, &fdata, index, &dst->skin, NULL);
         break;
     case YF_DATAC_MATL:
-        r = load_material(&gltf, fdata.path, index, &dst->matl, NULL);
+        r = load_material(&gltf, &fdata, index, &dst->matl, NULL);
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
@@ -3803,7 +3803,7 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
         r = load_skin(&gltf, &fdata, index, &dst->skin, NULL);
         break;
     case YF_DATAC_MATL:
-        r = load_material(&gltf, fdata.path, index, &dst->matl, NULL);
+        r = load_material(&gltf, &fdata, index, &dst->matl, NULL);
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
