@@ -3780,7 +3780,8 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
     assert(dst != NULL);
 
     T_gltf gltf = {0};
-    if (init_gltf(file, &gltf) != 0)
+    T_fdata fdata = {0};
+    if (init_gltf(file, &gltf, &fdata) != 0)
         return -1;
 
     /* XXX: This assumes that 'path' is not used (whole data is embedded). */
@@ -3808,7 +3809,7 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
         r = -1;
     }
 
-    deinit_gltf(&gltf);
+    deinit_gltf(&gltf, &fdata);
     return r;
 }
 
