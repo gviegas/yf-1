@@ -2846,6 +2846,76 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata)
     return 0;
 }
 
+/* Seeks into data buffer as specified by an accessor. */
+static int seek_data(const T_gltf *gltf, T_fdata *fdata, T_int accessor)
+{
+    assert(gltf != NULL);
+    assert(fdata != NULL);
+
+    if (accessor < 0 || accessor >= (T_int)gltf->accessors.n) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    const T_int view = gltf->accessors.v[accessor].buffer_view;
+    const T_int buf = gltf->bufferviews.v[view].buffer;
+    FILE **file_p = NULL;
+    FILE *file = NULL;
+    T_int off = gltf->accessors.v[accessor].byte_off +
+        gltf->bufferviews.v[view].byte_off;
+
+    switch (gltf->buffers.n) {
+    case 0:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    case 1:
+        if (fdata->file == NULL) {
+            file_p = &fdata->file;
+        } else {
+            file = fdata->file;
+            if (gltf->buffers.v[buf].uri == NULL)
+                off += fdata->off_e;
+        }
+        break;
+    default:
+        if (fdata->files[buf] == NULL) {
+            file_p = fdata->files+buf;
+        } else {
+            file = fdata->files[buf];
+            if (buf == 0 && gltf->buffers.v[buf].uri == NULL)
+                off += fdata->off_e;
+        }
+    }
+
+    if (file_p != NULL) {
+        /* need to open file */
+        assert(fdata->path != NULL);
+        assert(gltf->buffers.v[buf].uri != NULL);
+
+        char *pathname = NULL;
+        YF_PATHCAT(fdata->path, gltf->buffers.v[buf].uri, pathname);
+        if (pathname == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+
+        *file_p = fopen(pathname, "r");
+        free(pathname);
+        if (*file_p == NULL) {
+            yf_seterr(YF_ERR_NOFILE, __func__);
+            return -1;
+        }
+        file = *file_p;
+    }
+
+    if (fseek(file, off, SEEK_SET) != 0) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    return 0;
+}
+
 /* Loads a single mesh from glTF contents. */
 static int load_mesh(const T_gltf *gltf, const char *path, size_t index,
                      YF_mesh *mesh, YF_collection coll)
