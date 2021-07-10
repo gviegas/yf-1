@@ -2846,23 +2846,27 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata)
     return 0;
 }
 
-/* Seeks into data buffer as specified by an accessor. */
-static FILE *seek_data(const T_gltf *gltf, T_fdata *fdata, T_int accessor)
+/* Seeks into data buffer as specified by an accessor or buffer view. */
+static FILE *seek_data(const T_gltf *gltf, T_fdata *fdata,
+                       T_int accessor, T_int buffer_view)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
+    assert(accessor != YF_INT_MIN || buffer_view != YF_INT_MIN);
 
-    if (accessor < 0 || accessor >= (T_int)gltf->accessors.n) {
-        yf_seterr(YF_ERR_INVFILE, __func__);
-        return NULL;
+    T_int buf, off;
+    if (accessor != YF_INT_MIN) {
+        T_int view = gltf->accessors.v[accessor].buffer_view;
+        buf = gltf->bufferviews.v[view].buffer;
+        off = gltf->accessors.v[accessor].byte_off +
+            gltf->bufferviews.v[view].byte_off;
+    } else {
+        buf = gltf->bufferviews.v[buffer_view].buffer;
+        off = gltf->bufferviews.v[buffer_view].byte_off;
     }
 
-    const T_int view = gltf->accessors.v[accessor].buffer_view;
-    const T_int buf = gltf->bufferviews.v[view].buffer;
     FILE **file_p = NULL;
     FILE *file = NULL;
-    T_int off = gltf->accessors.v[accessor].byte_off +
-        gltf->bufferviews.v[view].byte_off;
 
     switch (gltf->buffers.n) {
     case 0:
@@ -2986,7 +2990,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
         if (attrs[i].acc == YF_INT_MIN)
             continue;
 
-        FILE *file = seek_data(gltf, fdata, attrs[i].acc);
+        FILE *file = seek_data(gltf, fdata, attrs[i].acc, YF_INT_MIN);
         if (file == NULL) {
             free(verts);
             free(inds);
@@ -3124,7 +3128,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
 
     /* index data */
     if (inds != NULL) {
-        FILE *file = seek_data(gltf, fdata, idx.acc);
+        FILE *file = seek_data(gltf, fdata, idx.acc, YF_INT_MIN);
         if (file == NULL) {
             free(verts);
             free(inds);
