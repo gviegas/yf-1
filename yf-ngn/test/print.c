@@ -14,7 +14,7 @@
 #include "yf-particle.h"
 #include "yf-quad.h"
 #include "yf-label.h"
-#include "vertex.h"
+#include "mesh.h"
 
 #undef YF_PTITLE
 #define YF_PTITLE printf("\n[YF] OUTPUT (%s):", __func__);

@@ -23,7 +23,6 @@
 #include "yf/com/yf-error.h"
 
 #include "data-gltf.h"
-#include "vertex.h"
 #include "mesh.h"
 #include "texture.h"
 #include "data-png.h"
