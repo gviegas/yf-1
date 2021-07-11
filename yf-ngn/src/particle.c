@@ -69,7 +69,7 @@ static int init_points(YF_particle part)
 
     const YF_meshdt dt = {
         .v = {YF_VTYPE_PART, part->pts, part->count},
-        .i = {NULL, 0, 0}
+        .i = {0}
     };
     if ((part->mesh = yf_mesh_initdt(&dt)) == NULL)
         return -1;
