@@ -13,7 +13,6 @@
 #include "yf-terrain.h"
 #include "node.h"
 #include "mesh.h"
-#include "vertex.h"
 
 struct YF_terrain_o {
     YF_node node;

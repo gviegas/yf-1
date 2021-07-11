@@ -18,7 +18,6 @@
 #include "mesh.h"
 #include "texture.h"
 #include "font.h"
-#include "vertex.h"
 
 /* TODO: Consider taking this values from the font instead. */
 #define YF_FONTSZ_MIN 9

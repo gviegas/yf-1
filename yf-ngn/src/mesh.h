@@ -11,6 +11,51 @@
 #include "yf/core/yf-cmdbuf.h"
 
 #include "yf-mesh.h"
+#include "yf-vector.h"
+
+/* Type defining the vertex of model meshes. */
+#define YF_VTYPE_MDL 0
+typedef struct {
+    YF_vec3 pos;
+    YF_vec2 tc;
+    YF_vec3 norm;
+    /* TODO */
+} YF_vmdl;
+
+/* Type defining the vertex of terrain meshes. */
+#define YF_VTYPE_TERR 1
+typedef struct {
+    YF_vec3 pos;
+    YF_vec2 tc;
+    YF_vec3 norm;
+    /* TODO */
+} YF_vterr;
+
+/* Type defining the vertex of particle system meshes. */
+#define YF_VTYPE_PART 2
+typedef struct {
+    YF_vec3 pos;
+    YF_vec4 clr;
+    /* TODO */
+} YF_vpart;
+
+/* Type defining the vertex of quad meshes. */
+#define YF_VTYPE_QUAD 3
+typedef struct {
+    YF_vec3 pos;
+    YF_vec2 tc;
+    YF_vec4 clr;
+    /* TODO */
+} YF_vquad;
+
+/* Type defining the vertex of label meshes. */
+#define YF_VTYPE_LABL 4
+typedef struct {
+    YF_vec3 pos;
+    YF_vec2 tc;
+    YF_vec4 clr;
+    /* TODO */
+} YF_vlabl;
 
 /* Type defining the mesh data. */
 typedef struct {

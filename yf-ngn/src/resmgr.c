@@ -15,7 +15,7 @@
 #include "resmgr.h"
 #include "coreobj.h"
 #include "node.h"
-#include "vertex.h"
+#include "mesh.h"
 
 #ifndef YF_SHD_DIR
 # define YF_SHD_DIR "bin/"

@@ -17,7 +17,6 @@
 
 #include "mesh.h"
 #include "coreobj.h"
-#include "vertex.h"
 #include "data-gltf.h"
 
 #undef YF_BUFLEN

@@ -14,7 +14,6 @@
 #include "yf-particle.h"
 #include "node.h"
 #include "mesh.h"
-#include "vertex.h"
 
 #undef YF_NRND
 #define YF_NRND ((YF_float)rand() / (YF_float)RAND_MAX)

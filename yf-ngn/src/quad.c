@@ -14,7 +14,6 @@
 #include "yf-quad.h"
 #include "node.h"
 #include "mesh.h"
-#include "vertex.h"
 
 struct YF_quad_o {
     YF_node node;
