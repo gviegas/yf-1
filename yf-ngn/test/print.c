@@ -147,15 +147,24 @@ void yf_print_meshdt(const YF_meshdt *data)
         assert(0);
     }
 
-    printf("\ni.stride: %d", data->i.stride);
+    const char *itype;
+    if (data->i.itype == YF_ITYPE_USHORT)
+        itype = "USHORT";
+    else if (data->i.itype == YF_ITYPE_UINT)
+        itype = "UINT";
+    else
+        itype = "(invalid ITYPE)";
+    printf("\ni.itype: %s", itype);
     printf("\ni.n: %lu", data->i.n);
     for (size_t i = 0; i < data->i.n; i++) {
         if (i % 3 == 0)
             printf("\n");
-        if ((size_t)data->i.stride < sizeof(unsigned))
+        if (data->i.itype == YF_ITYPE_USHORT)
             printf(" %d", ((unsigned short *)data->i.data)[i]);
-        else
+        else if (data->i.itype == YF_ITYPE_UINT)
             printf(" %u", ((unsigned *)data->i.data)[i]);
+        else
+            break;
     }
 
     printf("\n\n");
