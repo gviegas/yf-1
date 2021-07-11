@@ -146,13 +146,24 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
         mesh->v.stride = sizeof(YF_vlabl);
         break;
     default:
-        assert(0);
-        yf_seterr(YF_ERR_OTHER, __func__);
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    switch (data->i.itype) {
+    case YF_ITYPE_USHORT:
+        mesh->i.stride = 2;
+        break;
+    case YF_ITYPE_UINT:
+        mesh->i.stride = 4;
+        break;
+    default:
+        yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }
 
     const size_t vtx_sz = data->v.n * mesh->v.stride;
-    const size_t idx_sz = data->i.n * data->i.stride;
+    const size_t idx_sz = data->i.n * mesh->i.stride;
     const size_t sz = vtx_sz + idx_sz;
     size_t blk_i = l_blk_n;
 
@@ -200,7 +211,6 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
     mesh->v.offset = off;
     mesh->v.n = data->v.n;
     mesh->i.offset = off + vtx_sz;
-    mesh->i.stride = data->i.stride;
     mesh->i.n = data->i.n;
 
     if (l_blks[blk_i].size > sz) {
