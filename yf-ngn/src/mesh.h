@@ -57,6 +57,10 @@ typedef struct {
     /* TODO */
 } YF_vlabl;
 
+/* Index types that can be used for mesh indices. */
+#define YF_ITYPE_USHORT 0
+#define YF_ITYPE_UINT   1
+
 /* Type defining the mesh data. */
 typedef struct {
     struct {
@@ -65,8 +69,8 @@ typedef struct {
         size_t n;
     } v;
     struct {
+        int itype;
         void *data;
-        short stride;
         size_t n;
     } i;
 } YF_meshdt;

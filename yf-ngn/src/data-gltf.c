@@ -3079,15 +3079,19 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
 
     /* index data */
     const T_int i_acc = prim->v[0].indices;
-    size_t i_sz, i_n;
+    size_t i_n;
     void *inds;
+    int itype;
 
     if (i_acc != YF_INT_MIN) {
+        size_t i_sz;
         switch (gltf->accessors.v[i_acc].comp_type) {
         case YF_GLTF_COMP_USHORT:
+            itype = YF_ITYPE_USHORT;
             i_sz = 2;
             break;
         case YF_GLTF_COMP_UINT:
+            itype = YF_ITYPE_UINT;
             i_sz = 4;
             break;
         default:
@@ -3148,7 +3152,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
             }
         }
     } else {
-        i_sz = i_n = 0;
+        itype = i_n = 0;
         inds = NULL;
     }
 
@@ -3160,8 +3164,8 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
             .n = v_n
         },
         .i = {
+            .itype = itype,
             .data = inds,
-            .stride = i_sz,
             .n = i_n
         }
     };

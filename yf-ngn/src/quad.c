@@ -65,7 +65,7 @@ static int init_rect(YF_quad quad)
 
     const YF_meshdt data = {
         .v = {YF_VTYPE_QUAD, (void *)verts, 4},
-        .i = {(void *)inds, sizeof(inds[0]), 6}
+        .i = {YF_ITYPE_USHORT, (void *)inds, 6}
     };
 
     quad->mesh = yf_mesh_initdt(&data);

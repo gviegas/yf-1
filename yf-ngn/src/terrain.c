@@ -37,14 +37,18 @@ static int init_grid(YF_terrain terr)
     YF_meshdt data = {0};
     data.v.vtype = YF_VTYPE_TERR;
     data.v.n = (wdt+1) * (dep+1);
+    size_t i_sz;
+    if (data.v.n < 65535) {
+        data.i.itype = YF_ITYPE_USHORT;
+        i_sz = 2;
+    } else {
+        data.i.itype = YF_ITYPE_UINT;
+        i_sz = 4;
+    }
     data.i.n = wdt * dep * 6;
-    if (data.v.n < 65535)
-        data.i.stride = sizeof(unsigned short);
-    else
-        data.i.stride = sizeof(unsigned);
 
     data.v.data = malloc(data.v.n * sizeof(YF_vterr));
-    data.i.data = malloc(data.i.n * data.i.stride);
+    data.i.data = malloc(data.i.n * i_sz);
     if (data.v.data == NULL || data.i.data == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         free(data.v.data);
@@ -67,7 +71,7 @@ static int init_grid(YF_terrain terr)
         } \
     } } while (0)
 
-    if (data.i.stride != sizeof(unsigned)) {
+    if (i_sz < sizeof(unsigned)) {
         unsigned short *inds = data.i.data;
         YF_GRID_CPYI();
     } else {
