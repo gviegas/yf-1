@@ -148,7 +148,7 @@ int yf_test_scene(void)
     l_vars.view = yf_view_init(l_vars.win);
     assert(l_vars.view != NULL);
 
-    l_vars.coll = yf_collection_init("tmp/scene.gltf");
+    l_vars.coll = yf_collection_init("tmp/scene.glb");
     assert(l_vars.coll != NULL);
 
     l_vars.scn = yf_collection_getres(l_vars.coll, YF_COLLRES_SCENE, "Scene");
