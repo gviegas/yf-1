@@ -87,6 +87,18 @@ void *yf_collection_release(YF_collection coll, int collres, const char *name);
 int yf_collection_contains(YF_collection coll, int collres, const char *name);
 
 /**
+ * Executes a given function for each entry of a given resource type.
+ *
+ * @param coll: The collection.
+ * @param collres: The 'YF_COLLRES' value indicating the type of the resource.
+ * @param callb: The callback to execute for each entry.
+ * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
+ */
+void yf_collection_each(YF_collection coll, int collres,
+                        int (*callb)(void *name, void *res, void *arg),
+                        void *arg);
+
+/**
  * Deinitializes a collection.
  *
  * This function implicitly calls 'deinit()' for every resource managed by
