@@ -3385,13 +3385,13 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, size_t index,
         return -1;
 
     if (coll != NULL) {
-        /* TODO: Name. */
         const char *name = gltf->skins.v[index].name;
-        if (name == NULL)
-            name = "Skin";
         if (yf_collection_manage(coll, YF_COLLRES_SKIN, name, tmp) != 0) {
-            yf_skin_deinit(tmp);
-            return -1;
+            if (yf_geterr() != YF_ERR_EXIST ||
+                yf_collection_manage(coll, YF_COLLRES_SKIN, NULL, tmp) != 0) {
+                yf_skin_deinit(tmp);
+                return -1;
+            }
         }
     } else {
         *skin = tmp;
