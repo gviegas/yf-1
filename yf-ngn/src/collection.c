@@ -5,6 +5,7 @@
  * Copyright © 2021 Gustavo C. Viegas.
  */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -25,6 +26,7 @@
 struct YF_collection_o {
     YF_dict res[YF_COLLRES_N];
     size_t n;
+    unsigned ids[YF_COLLRES_N];
 };
 
 /* Deinitializes a collection resource. */
@@ -103,16 +105,29 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
 {
     assert(coll != NULL);
     assert(collres >= 0 && collres < YF_COLLRES_N);
-    assert(name != NULL);
     assert(res != NULL);
 
-    char *key = malloc(1+strlen(name));
-    if (key == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return -1;
+    char *key;
+    if (name == NULL) {
+        /* generate name to use as key */
+        key = malloc(14);
+        if (key == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+        snprintf(key, 14, "unnamed-%05u", ++coll->ids[collres]);
+        key[13] = '\0';
+    } else {
+        /* use provided name as key */
+        key = malloc(1+strlen(name));
+        if (key == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            return -1;
+        }
+        strcpy(key, name);
     }
 
-    if (yf_dict_insert(coll->res[collres], strcpy(key, name), res) != 0) {
+    if (yf_dict_insert(coll->res[collres], key, res) != 0) {
         free(key);
         return -1;
     }
