@@ -3197,14 +3197,8 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
     if ((name) == NULL) { \
         const T_int img_i = (gltf_p)->textures.v[tex_i].source; \
         name = (gltf_p)->images.v[img_i].name; \
-        if ((name) == NULL) { \
+        if ((name) == NULL) \
             name = (gltf_p)->images.v[img_i].uri; \
-            if ((name) == NULL) { \
-                /* TODO */ \
-                assert(0); \
-                abort(); \
-            } \
-        } \
     } } while (0)
 
 /* Loads a single texture from glTF contents. */
@@ -3255,8 +3249,13 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, size_t index,
         const char *name = NULL;
         YF_NAMEOFTEX(gltf, index, name);
         if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name, tmp) != 0) {
-            yf_texture_deinit(tmp);
-            return -1;
+            /* XXX: This may prevent texture reuse. */
+            if (yf_geterr() != YF_ERR_EXIST ||
+                yf_collection_manage(coll, YF_COLLRES_TEXTURE, NULL,
+                                     tmp) != 0) {
+                yf_texture_deinit(tmp);
+                return -1;
+            }
         }
     } else {
         *tex = tmp;
