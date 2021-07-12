@@ -56,7 +56,7 @@ void *yf_collection_getres(YF_collection coll, int collres, const char *name);
  *
  * @param coll: The collection.
  * @param collres: The 'YF_COLLRES' value indicating the type of the resource.
- * @param name: The name to use as resource identifier.
+ * @param name: The name to use as resource identifier. Can be 'NULL'.
  * @param res: The resource to manage.
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
