@@ -3178,12 +3178,12 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
 
     if (coll != NULL) {
         const char *name = gltf->meshes.v[index].name;
-        if (name == NULL)
-            /* TODO */
-            assert(0);
         if (yf_collection_manage(coll, YF_COLLRES_MESH, name, tmp) != 0) {
-            yf_mesh_deinit(tmp);
-            return -1;
+            if (yf_geterr() != YF_ERR_EXIST ||
+                yf_collection_manage(coll, YF_COLLRES_MESH, NULL, tmp) != 0) {
+                yf_mesh_deinit(tmp);
+                return -1;
+            }
         }
     } else {
         *mesh = tmp;
@@ -3197,14 +3197,8 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
     if ((name) == NULL) { \
         const T_int img_i = (gltf_p)->textures.v[tex_i].source; \
         name = (gltf_p)->images.v[img_i].name; \
-        if ((name) == NULL) { \
+        if ((name) == NULL) \
             name = (gltf_p)->images.v[img_i].uri; \
-            if ((name) == NULL) { \
-                /* TODO */ \
-                assert(0); \
-                abort(); \
-            } \
-        } \
     } } while (0)
 
 /* Loads a single texture from glTF contents. */
@@ -3255,8 +3249,13 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, size_t index,
         const char *name = NULL;
         YF_NAMEOFTEX(gltf, index, name);
         if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name, tmp) != 0) {
-            yf_texture_deinit(tmp);
-            return -1;
+            /* XXX: This may prevent texture reuse. */
+            if (yf_geterr() != YF_ERR_EXIST ||
+                yf_collection_manage(coll, YF_COLLRES_TEXTURE, NULL,
+                                     tmp) != 0) {
+                yf_texture_deinit(tmp);
+                return -1;
+            }
         }
     } else {
         *tex = tmp;
@@ -3386,13 +3385,13 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, size_t index,
         return -1;
 
     if (coll != NULL) {
-        /* TODO: Name. */
         const char *name = gltf->skins.v[index].name;
-        if (name == NULL)
-            name = "Skin";
         if (yf_collection_manage(coll, YF_COLLRES_SKIN, name, tmp) != 0) {
-            yf_skin_deinit(tmp);
-            return -1;
+            if (yf_geterr() != YF_ERR_EXIST ||
+                yf_collection_manage(coll, YF_COLLRES_SKIN, NULL, tmp) != 0) {
+                yf_skin_deinit(tmp);
+                return -1;
+            }
         }
     } else {
         *skin = tmp;
@@ -3486,15 +3485,19 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, size_t index,
             }
         }
 
-        const char *name = gltf->materials.v[index].name;
-        if (name == NULL)
-            /* TODO */
-            assert(0);
-
         YF_material matl = yf_material_init(&prop);
-        if (matl == NULL || yf_collection_manage(coll, YF_COLLRES_MATERIAL,
-                                                 name, matl) != 0)
+        if (matl == NULL)
             return -1;
+
+        const char *name = gltf->materials.v[index].name;
+        if (yf_collection_manage(coll, YF_COLLRES_MATERIAL, name, matl) != 0) {
+            if (yf_geterr() != YF_ERR_EXIST ||
+                yf_collection_manage(coll, YF_COLLRES_MATERIAL, NULL,
+                                     matl) != 0) {
+                yf_material_deinit(matl);
+                return -1;
+            }
+        }
 
     } else {
         for (size_t i = 0; i < (sizeof tex_i / sizeof *tex_i); i++) {
@@ -3540,7 +3543,8 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata,
         const char *name = NULL;
         YF_NAMEOFTEX(gltf, i, name);
 
-        if (yf_collection_contains(coll, YF_COLLRES_TEXTURE, name))
+        if (name != NULL && yf_collection_contains(coll, YF_COLLRES_TEXTURE,
+                                                   name))
             continue;
 
         if (load_texture(gltf, fdata, i, NULL, coll) != 0)
@@ -3562,11 +3566,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata,
     /* nodes */
     /* TODO: Filter joint nodes, since they must be instantiated from skin. */
     for (size_t i = 0; i < gltf->nodes.n; i++) {
-        const char *name = gltf->nodes.v[i].name;
-        if (name == NULL)
-            /* TODO */
-            assert(0);
-
         YF_node node = NULL;
         const T_int mesh_i = gltf->nodes.v[i].mesh;
 
@@ -3600,12 +3599,17 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata,
             node = yf_node_init();
         }
 
-        if (node == NULL ||
-            yf_collection_manage(coll, YF_COLLRES_NODE, name, node) != 0) {
-
+        const char *name = gltf->nodes.v[i].name;
+        /* FIXME: Node name must be provided currently because it is used to
+           create the node hierarchy. */
+        if (name == NULL)
+            assert(0);
+        if (node == NULL || yf_collection_manage(coll, YF_COLLRES_NODE, name,
+                                                 node) != 0) {
             yf_node_deinit(node);
             return -1;
         }
+        yf_node_setname(node, name);
 
         const unsigned mask = gltf->nodes.v[i].xform_mask;
         if (mask != YF_GLTF_XFORM_NONE) {
@@ -3633,8 +3637,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata,
                 }
             }
         }
-
-        yf_node_setname(node, name);
     }
     for (size_t i = 0; i < gltf->nodes.n; i++) {
         if (gltf->nodes.v[i].child_n == 0)
@@ -3655,17 +3657,17 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata,
 
     /* scenes */
     for (size_t i = 0; i < gltf->scenes.n; i++) {
-        const char *name = gltf->scenes.v[i].name;
-        if (name == NULL)
-            /* TODO */
-            assert(0);
-
         YF_scene scn = yf_scene_init();
-        if (scn == NULL ||
-            yf_collection_manage(coll, YF_COLLRES_SCENE, name, scn) != 0) {
-
-            yf_scene_deinit(scn);
+        if (scn == NULL)
             return -1;
+
+        const char *name = gltf->scenes.v[i].name;
+        if (yf_collection_manage(coll, YF_COLLRES_SCENE, name, scn) != 0) {
+            if (yf_geterr() != YF_ERR_EXIST ||
+                yf_collection_manage(coll, YF_COLLRES_SCENE, NULL, scn) != 0) {
+                yf_scene_deinit(scn);
+                return -1;
+            }
         }
         yf_node_setname(yf_scene_getnode(scn), name);
     }
