@@ -3485,15 +3485,19 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, size_t index,
             }
         }
 
-        const char *name = gltf->materials.v[index].name;
-        if (name == NULL)
-            /* TODO */
-            assert(0);
-
         YF_material matl = yf_material_init(&prop);
-        if (matl == NULL || yf_collection_manage(coll, YF_COLLRES_MATERIAL,
-                                                 name, matl) != 0)
+        if (matl == NULL)
             return -1;
+
+        const char *name = gltf->materials.v[index].name;
+        if (yf_collection_manage(coll, YF_COLLRES_MATERIAL, name, matl) != 0) {
+            if (yf_geterr() != YF_ERR_EXIST ||
+                yf_collection_manage(coll, YF_COLLRES_MATERIAL, NULL,
+                                     matl) != 0) {
+                yf_material_deinit(matl);
+                return -1;
+            }
+        }
 
     } else {
         for (size_t i = 0; i < (sizeof tex_i / sizeof *tex_i); i++) {
