@@ -3178,12 +3178,12 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
 
     if (coll != NULL) {
         const char *name = gltf->meshes.v[index].name;
-        if (name == NULL)
-            /* TODO */
-            assert(0);
         if (yf_collection_manage(coll, YF_COLLRES_MESH, name, tmp) != 0) {
-            yf_mesh_deinit(tmp);
-            return -1;
+            if (yf_geterr() != YF_ERR_EXIST ||
+                yf_collection_manage(coll, YF_COLLRES_MESH, NULL, tmp) != 0) {
+                yf_mesh_deinit(tmp);
+                return -1;
+            }
         }
     } else {
         *mesh = tmp;
