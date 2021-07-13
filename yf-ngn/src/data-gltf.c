@@ -3654,6 +3654,30 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     return 0;
 }
 
+/* Manages created contents. */
+static int manage_contents(const T_gltf *gltf, T_cont *cont,
+                           YF_collection coll)
+{
+    assert(gltf != NULL);
+    assert(cont != NULL);
+    assert(coll != NULL);
+
+    /* created scenes */
+    if (cont->scns != NULL) {
+        for (size_t i = 0; i < gltf->scenes.n; i++) {
+            YF_scene scn = cont->scns[i];
+            if (scn == NULL)
+                continue;
+
+            /* TODO: Scene name. */
+            if (yf_collection_manage(coll, YF_COLLRES_SCENE, NULL, scn) != 0)
+                return -1;
+        }
+    }
+
+    return 0;
+}
+
 int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
 {
     assert(dst != NULL);
