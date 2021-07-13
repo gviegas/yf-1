@@ -3727,6 +3727,20 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
         }
     }
 
+    /* created materials */
+    if (cont->matls != NULL) {
+        for (size_t i = 0; i < gltf->materials.n; i++) {
+            YF_material matl = cont->matls[i];
+            if (matl == NULL)
+                continue;
+
+            /* TODO: Material name. */
+            if (yf_collection_manage(coll, YF_COLLRES_MATERIAL, NULL,
+                                     matl) != 0)
+                return -1;
+        }
+    }
+
     return 0;
 }
 
