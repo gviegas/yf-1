@@ -3519,13 +3519,15 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     assert(fdata != NULL);
     assert(cont != NULL);
 
-#if 0
-    /* meshes */
+    /* mesh creation */
+    assert(gltf->meshes.n == 0 || cont->meshes != NULL);
     for (size_t i = 0; i < gltf->meshes.n; i++) {
-        if (load_mesh(gltf, fdata, i, NULL, coll) != 0)
+        assert(cont->meshes[i] == NULL);
+        if (load_mesh(gltf, fdata, cont, i) != 0)
             return -1;
     }
 
+#if 0
     /* textures */
     for (size_t i = 0; i < gltf->textures.n; i++) {
         const char *name = NULL;
