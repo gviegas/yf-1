@@ -3513,13 +3513,13 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 }
 
 /* Loads glTF contents. */
-static int load_contents(const T_gltf *gltf, T_fdata *fdata,
-                         YF_collection coll)
+static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
-    assert(coll != NULL);
+    assert(cont != NULL);
 
+#if 0
     /* meshes */
     for (size_t i = 0; i < gltf->meshes.n; i++) {
         if (load_mesh(gltf, fdata, i, NULL, coll) != 0)
@@ -3677,7 +3677,7 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata,
     }
 
     /* TODO: Animations, ... */
-
+#endif
     return 0;
 }
 
