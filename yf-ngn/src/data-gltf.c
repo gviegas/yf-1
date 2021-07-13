@@ -2981,25 +2981,34 @@ static FILE *seek_data(const T_gltf *gltf, T_fdata *fdata,
 }
 
 /* Loads a single mesh from glTF contents. */
-static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
-                     YF_mesh *mesh, YF_collection coll)
+static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                     T_int mesh)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
-    assert(mesh != NULL || coll != NULL);
+    assert(cont != NULL);
+    assert(mesh >= 0);
 
-    if (gltf->meshes.n <= index) {
+    if (gltf->meshes.n <= (size_t)mesh) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }
 
-    assert(gltf->accessors.n > 0);
-    assert(gltf->bufferviews.n > 0);
-    assert(gltf->buffers.n > 0);
-    assert(gltf->meshes.v[index].primitives.n > 0);
+    assert(cont->meshes != NULL);
+    assert(cont->meshes[mesh] == NULL);
 
-    /* TODO: Multiple primitives. */
-    const T_primitives *prim = &gltf->meshes.v[index].primitives;
+    const T_primitives *prim = &gltf->meshes.v[mesh].primitives;
+    switch (prim->n) {
+    case 0:
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    case 1:
+        break;
+    default:
+        /* TODO: Support for multiple primitives. */
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+    }
 
     /* vertex data */
     struct { T_int acc, view, buf; } attrs[YF_GLTF_ATTR_N];
@@ -3230,27 +3239,10 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, size_t index,
             .n = i_n
         }
     };
-
-    YF_mesh tmp = yf_mesh_initdt(&data);
+    cont->meshes[mesh] = yf_mesh_initdt(&data);
     free(data.v.data);
     free(data.i.data);
-    if (tmp == NULL)
-        return -1;
-
-    if (coll != NULL) {
-        const char *name = gltf->meshes.v[index].name;
-        if (yf_collection_manage(coll, YF_COLLRES_MESH, name, tmp) != 0) {
-            if (yf_geterr() != YF_ERR_EXIST ||
-                yf_collection_manage(coll, YF_COLLRES_MESH, NULL, tmp) != 0) {
-                yf_mesh_deinit(tmp);
-                return -1;
-            }
-        }
-    } else {
-        *mesh = tmp;
-    }
-
-    return 0;
+    return cont->meshes[mesh] == NULL ? -1 : 0;
 }
 
 #define YF_NAMEOFTEX(gltf_p, tex_i, name) do { \
