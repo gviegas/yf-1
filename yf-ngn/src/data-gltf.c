@@ -3527,20 +3527,15 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             return -1;
     }
 
-#if 0
-    /* textures */
+    /* texture creation */
+    assert(gltf->textures.n == 0 || cont->texs != NULL);
     for (size_t i = 0; i < gltf->textures.n; i++) {
-        const char *name = NULL;
-        YF_NAMEOFTEX(gltf, i, name);
-
-        if (name != NULL && yf_collection_contains(coll, YF_COLLRES_TEXTURE,
-                                                   name))
-            continue;
-
-        if (load_texture(gltf, fdata, i, NULL, coll) != 0)
+        assert(cont->texs[i] == NULL);
+        if (load_texture(gltf, fdata, cont, i) != 0)
             return -1;
     }
 
+#if 0
     /* skins */
     for (size_t i = 0; i < gltf->skins.n; i++) {
         if (load_skin(gltf, fdata, i, NULL, coll) != 0)
