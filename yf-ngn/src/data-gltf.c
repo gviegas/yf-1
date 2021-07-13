@@ -3551,61 +3551,50 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             return -1;
     }
 
-#if 0
-    /* nodes */
+    /* node creation */
     /* TODO: Filter joint nodes, since they must be instantiated from skin. */
+    assert(gltf->nodes.n == 0 || cont->nodes != NULL);
     for (size_t i = 0; i < gltf->nodes.n; i++) {
-        YF_node node = NULL;
-        const T_int mesh_i = gltf->nodes.v[i].mesh;
+        assert(cont->nodes[i] == NULL);
 
-        if (mesh_i != YF_INT_MIN) {
+        /* node object */
+        const T_int mesh = gltf->nodes.v[i].mesh;
+        if (mesh != YF_INT_MIN) {
             /* model */
             YF_model mdl = yf_model_init();
-            if (mdl != NULL) {
-                node = yf_model_getnode(mdl);
+            if (mdl == NULL)
+                return -1;
 
-                const char *mesh_name = gltf->meshes.v[mesh_i].name;
-                YF_mesh mesh = yf_collection_getres(coll, YF_COLLRES_MESH,
-                                                    mesh_name);
-                assert(mesh != NULL);
-                yf_model_setmesh(mdl, mesh);
+            assert(cont->meshes[mesh] != NULL);
+            yf_model_setmesh(mdl, cont->meshes[mesh]);
 
-                /* TODO: Support for multiple primitives. */
-                const T_int matl_i =
-                    gltf->meshes.v[mesh_i].primitives.v[0].material;
-
-                if (matl_i != YF_INT_MIN) {
-                    const char *matl_name = gltf->materials.v[matl_i].name;
-                    YF_material matl =
-                        yf_collection_getres(coll, YF_COLLRES_MATERIAL,
-                                             matl_name);
-                    assert(matl != NULL);
-                    yf_model_setmatl(mdl, matl);
-                }
+            /* TODO: Support for multiple primitives. */
+            const T_int material =
+                gltf->meshes.v[mesh].primitives.v[0].material;
+            if (material != YF_INT_MIN) {
+                assert(cont->matls[material] != NULL);
+                yf_model_setmatl(mdl, cont->matls[material]);
             }
+
+            /* TODO: Set skin and instantiate skeleton. */
+
+            cont->nodes[i] = yf_model_getnode(mdl);
+
         } else {
-            /* node */
-            node = yf_node_init();
+            /* none */
+            cont->nodes[i] = yf_node_init();
+            if (cont->nodes[i] == NULL)
+                return -1;
         }
 
-        const char *name = gltf->nodes.v[i].name;
-        /* FIXME: Node name must be provided currently because it is used to
-           create the node hierarchy. */
-        if (name == NULL)
-            assert(0);
-        if (node == NULL || yf_collection_manage(coll, YF_COLLRES_NODE, name,
-                                                 node) != 0) {
-            yf_node_deinit(node);
-            return -1;
-        }
-        yf_node_setname(node, name);
-
+        /* node transform */
         const unsigned mask = gltf->nodes.v[i].xform_mask;
         if (mask != YF_GLTF_XFORM_NONE) {
             if (mask & YF_GLTF_XFORM_M) {
-                yf_mat4_copy(*yf_node_getxform(node), gltf->nodes.v[i].matrix);
+                yf_mat4_copy(*yf_node_getxform(cont->nodes[i]),
+                             gltf->nodes.v[i].matrix);
             } else {
-                YF_mat4 *m = yf_node_getxform(node);
+                YF_mat4 *m = yf_node_getxform(cont->nodes[i]);
                 if (mask & YF_GLTF_XFORM_T) {
                     const T_num *t = gltf->nodes.v[i].trs.t;
                     yf_mat4_xlate(*m, t[0], t[1], t[2]);
@@ -3626,7 +3615,12 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
                 }
             }
         }
+
+        /* node name */
+        yf_node_setname(cont->nodes[i], gltf->nodes.v[i].name);
     }
+
+#if 0
     for (size_t i = 0; i < gltf->nodes.n; i++) {
         if (gltf->nodes.v[i].child_n == 0)
             continue;
