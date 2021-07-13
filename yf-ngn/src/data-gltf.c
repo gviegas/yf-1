@@ -3715,7 +3715,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     int r;
     switch (datac) {
     case YF_DATAC_COLL:
-        r = load_contents(&gltf, &fdata, dst->coll);
+        r = load_contents(&gltf, &fdata, &cont);
         break;
     case YF_DATAC_MESH:
         r = load_mesh(&gltf, &fdata, &cont, index);
