@@ -2670,10 +2670,11 @@ static void print_gltf(const T_gltf *gltf);
 #endif
 
 /* Deinitializes glTF contents. */
-static void deinit_gltf(T_gltf *gltf, T_fdata *fdata)
+static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
 {
     if (gltf == NULL) {
         assert(fdata == NULL);
+        assert(cont == NULL);
         return;
     }
 
@@ -2695,6 +2696,14 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata)
             free(fdata->files);
         }
         free(fdata->path);
+    }
+
+    if (cont != NULL) {
+        free(cont->nodes);
+        free(cont->meshes);
+        free(cont->texs);
+        free(cont->skins);
+        free(cont->matls);
     }
 
     free(gltf->asset.copyright);
