@@ -3543,13 +3543,15 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             return -1;
     }
 
-#if 0
-    /* materials */
+    /* material creation */
+    assert(gltf->materials.n == 0 || cont->matls != NULL);
     for (size_t i = 0; i < gltf->materials.n; i++) {
-        if (load_material(gltf, fdata, i, NULL, coll) != 0)
+        assert(cont->matls[i] == NULL);
+        if (load_material(gltf, fdata, cont, i) != 0)
             return -1;
     }
 
+#if 0
     /* nodes */
     /* TODO: Filter joint nodes, since they must be instantiated from skin. */
     for (size_t i = 0; i < gltf->nodes.n; i++) {
