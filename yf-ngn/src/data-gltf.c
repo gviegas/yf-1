@@ -3727,7 +3727,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
         r = load_skin(&gltf, &fdata, &cont, index);
         break;
     case YF_DATAC_MATL:
-        r = load_material(&gltf, &fdata, index, &dst->matl, NULL);
+        r = load_material(&gltf, &fdata, &cont, index);
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
