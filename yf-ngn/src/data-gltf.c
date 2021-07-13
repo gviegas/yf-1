@@ -2700,6 +2700,7 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     }
 
     if (cont != NULL) {
+        free(cont->scns);
         free(cont->nodes);
         free(cont->meshes);
         free(cont->texs);
@@ -2859,11 +2860,19 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     }
 
     *cont = (T_cont){0};
+    if (gltf->scenes.n > 0) {
+        cont->scns = calloc(gltf->scenes.n, sizeof *cont->scns);
+        if (cont->scns == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            deinit_gltf(gltf, fdata, NULL);
+            return -1;
+        }
+    }
     if (gltf->nodes.n > 0) {
         cont->nodes = calloc(gltf->nodes.n, sizeof *cont->nodes);
         if (cont->nodes == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            deinit_gltf(gltf, fdata, NULL);
+            deinit_gltf(gltf, fdata, cont);
             return -1;
         }
     }
