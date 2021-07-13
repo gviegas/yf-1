@@ -3429,34 +3429,42 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 }
 
 /* Loads a single material from glTF contents. */
-static int load_material(const T_gltf *gltf, T_fdata *fdata, size_t index,
-                         YF_material *matl, YF_collection coll)
+static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                         T_int material)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
-    assert(matl != NULL || coll != NULL);
+    assert(cont != NULL);
+    assert(material >= 0);
 
-    if (gltf->materials.n <= index) {
+    if (gltf->materials.n <= (size_t)material) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }
+
+    assert(cont->matls != NULL);
+    assert(cont->matls[material] == NULL);
 
     /* TODO: Specular-Glossiness and Unlit exts. */
 
     YF_matlprop prop;
 
     prop.pbr = YF_PBR_METALROUGH;
-    memcpy(prop.pbrmr.color_fac, gltf->materials.v[index].pbrmr.base_clr_fac,
+    memcpy(prop.pbrmr.color_fac,
+           gltf->materials.v[material].pbrmr.base_clr_fac,
            sizeof prop.pbrmr.color_fac);
-    prop.pbrmr.metallic_fac = gltf->materials.v[index].pbrmr.metallic_fac;
-    prop.pbrmr.roughness_fac = gltf->materials.v[index].pbrmr.roughness_fac;
+    prop.pbrmr.metallic_fac = gltf->materials.v[material].pbrmr.metallic_fac;
+    prop.pbrmr.roughness_fac = gltf->materials.v[material].pbrmr.roughness_fac;
 
-    prop.normal.scale = gltf->materials.v[index].normal_tex.scale;
-    prop.occlusion.strength = gltf->materials.v[index].occlusion_tex.strength;
-    memcpy(prop.emissive.factor, gltf->materials.v[index].emissive_fac,
+    prop.normal.scale = gltf->materials.v[material].normal_tex.scale;
+
+    prop.occlusion.strength =
+        gltf->materials.v[material].occlusion_tex.strength;
+
+    memcpy(prop.emissive.factor, gltf->materials.v[material].emissive_fac,
            sizeof prop.emissive.factor);
 
-    switch (gltf->materials.v[index].alpha_mode) {
+    switch (gltf->materials.v[material].alpha_mode) {
     case YF_GLTF_ALPHA_OPAQUE:
         prop.alphamode = YF_ALPHAMODE_OPAQUE;
         break;
@@ -3468,16 +3476,16 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, size_t index,
         prop.alphamode = YF_ALPHAMODE_BLEND;
         break;
     default:
-        assert(0);
-        abort();
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
     }
 
     const T_int tex_i[] = {
-        gltf->materials.v[index].pbrmr.base_clr_tex.index,
-        gltf->materials.v[index].pbrmr.metal_rough_tex.index,
-        gltf->materials.v[index].normal_tex.index,
-        gltf->materials.v[index].occlusion_tex.index,
-        gltf->materials.v[index].emissive_tex.index
+        gltf->materials.v[material].pbrmr.base_clr_tex.index,
+        gltf->materials.v[material].pbrmr.metal_rough_tex.index,
+        gltf->materials.v[material].normal_tex.index,
+        gltf->materials.v[material].occlusion_tex.index,
+        gltf->materials.v[material].emissive_tex.index
     };
 
     YF_texture *const tex_p[] = {
@@ -3488,68 +3496,20 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, size_t index,
         &prop.emissive.tex
     };
 
-    if (coll != NULL) {
-        for (size_t i = 0; i < (sizeof tex_i / sizeof *tex_i); i++) {
-            if (tex_i[i] == YF_INT_MIN) {
-                *tex_p[i] = NULL;
-                continue;
-            }
-
-            const char *name = NULL;
-            YF_NAMEOFTEX(gltf, tex_i[i], name);
-
-            /* texture may have been created already */
-            if ((*tex_p[i] = yf_collection_getres(coll, YF_COLLRES_TEXTURE,
-                                                  name)) != NULL)
-                continue;
-
-            /* create and add to collection otherwise */
-            if (load_texture(gltf, fdata, tex_i[i], tex_p[i], NULL) != 0)
-                return -1;
-            if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name,
-                                     *tex_p[i]) != 0) {
-                yf_texture_deinit(*tex_p[i]);
-                return -1;
-            }
+    for (size_t i = 0; i < (sizeof tex_i / sizeof *tex_i); i++) {
+        if (tex_i[i] == YF_INT_MIN) {
+            *tex_p[i] = NULL;
+            continue;
         }
-
-        YF_material matl = yf_material_init(&prop);
-        if (matl == NULL)
-            return -1;
-
-        const char *name = gltf->materials.v[index].name;
-        if (yf_collection_manage(coll, YF_COLLRES_MATERIAL, name, matl) != 0) {
-            if (yf_geterr() != YF_ERR_EXIST ||
-                yf_collection_manage(coll, YF_COLLRES_MATERIAL, NULL,
-                                     matl) != 0) {
-                yf_material_deinit(matl);
+        if (cont->texs[tex_i[i]] == NULL) {
+            if (load_texture(gltf, fdata, cont, tex_i[i]) != 0)
                 return -1;
-            }
         }
-
-    } else {
-        for (size_t i = 0; i < (sizeof tex_i / sizeof *tex_i); i++) {
-            if (tex_i[i] == YF_INT_MIN) {
-                *tex_p[i] = NULL;
-                continue;
-            }
-
-            /* create the texture object in the material prop. */
-            if (load_texture(gltf, fdata, tex_i[i], tex_p[i], NULL) != 0) {
-                for (size_t j = 0; j < i; j++)
-                    yf_texture_deinit(*tex_p[j]);
-                return -1;
-            }
-        }
-
-        if ((*matl = yf_material_init(&prop)) == NULL) {
-            for (size_t i = 0; i < (sizeof tex_p / sizeof *tex_p); i++)
-                yf_texture_deinit(*tex_p[i]);
-            return -1;
-        }
+        *tex_p[i] = cont->texs[tex_i[i]];
     }
 
-    return 0;
+    cont->matls[material] = yf_material_init(&prop);
+    return cont->matls[material] == NULL ? -1 : 0;
 }
 
 /* Loads glTF contents. */
