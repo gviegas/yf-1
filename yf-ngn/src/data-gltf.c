@@ -2835,7 +2835,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     }
 
     if (parse_gltf(file, &token, gltf) != 0) {
-        deinit_gltf(gltf, NULL);
+        deinit_gltf(gltf, NULL, NULL);
         return -1;
     }
 
@@ -2850,7 +2850,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         fdata->files = calloc(gltf->buffers.n, sizeof *fdata->files);
         if (fdata->files == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            deinit_gltf(gltf, NULL);
+            deinit_gltf(gltf, NULL, NULL);
             return -1;
         }
         if (gltf->buffers.v[0].uri == NULL)
@@ -2862,7 +2862,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         cont->nodes = calloc(gltf->nodes.n, sizeof *cont->nodes);
         if (cont->nodes == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            deinit_gltf(gltf, fdata);
+            deinit_gltf(gltf, fdata, NULL);
             return -1;
         }
     }
@@ -2870,7 +2870,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         cont->meshes = calloc(gltf->meshes.n, sizeof *cont->meshes);
         if (cont->meshes == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            deinit_gltf(gltf, fdata);
+            deinit_gltf(gltf, fdata, cont);
             return -1;
         }
     }
@@ -2878,7 +2878,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         cont->texs = calloc(gltf->textures.n, sizeof *cont->texs);
         if (cont->texs == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            deinit_gltf(gltf, fdata);
+            deinit_gltf(gltf, fdata, cont);
             return -1;
         }
     }
@@ -2886,7 +2886,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         cont->skins = calloc(gltf->skins.n, sizeof *cont->skins);
         if (cont->skins == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            deinit_gltf(gltf, fdata);
+            deinit_gltf(gltf, fdata, cont);
             return -1;
         }
     }
@@ -2894,7 +2894,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         cont->matls = calloc(gltf->materials.n, sizeof *cont->matls);
         if (cont->matls == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            deinit_gltf(gltf, fdata);
+            deinit_gltf(gltf, fdata, cont);
             return -1;
         }
     }
@@ -3780,7 +3780,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     YF_PATHOF(pathname, fdata.path);
     if (fdata.path == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        deinit_gltf(&gltf, &fdata);
+        deinit_gltf(&gltf, &fdata, &cont);
         fclose(file);
         return -1;
     }
@@ -3807,7 +3807,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
         r = -1;
     }
 
-    deinit_gltf(&gltf, &fdata);
+    deinit_gltf(&gltf, &fdata, &cont);
     fclose(file);
     return r;
 }
@@ -3848,7 +3848,7 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
         r = -1;
     }
 
-    deinit_gltf(&gltf, &fdata);
+    deinit_gltf(&gltf, &fdata, &cont);
     return r;
 }
 
