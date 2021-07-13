@@ -3773,7 +3773,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
         r = load_mesh(&gltf, &fdata, &cont, index);
         break;
     case YF_DATAC_TEX:
-        r = load_texture(&gltf, &fdata, index, &dst->tex, NULL);
+        r = load_texture(&gltf, &fdata, &cont, index);
         break;
     case YF_DATAC_SKIN:
         r = load_skin(&gltf, &fdata, index, &dst->skin, NULL);
