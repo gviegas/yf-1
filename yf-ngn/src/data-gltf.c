@@ -3637,6 +3637,20 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
                            cont->nodes[gltf->nodes.v[i].children[j]]);
     }
 
+    /* scene creation */
+    assert(gltf->scenes.n == 0 || cont->scns != NULL);
+    for (size_t i = 0; i < gltf->scenes.n; i++) {
+        assert(cont->scns[i] == NULL);
+
+        cont->scns[i] = yf_scene_init();
+        if (cont->scns[i] == NULL)
+            return -1;
+
+        YF_node node = yf_scene_getnode(cont->scns[i]);
+        for (size_t j = 0; j < gltf->scenes.v[i].node_n; j++)
+            yf_node_insert(node, cont->nodes[gltf->scenes.v[i].nodes[j]]);
+    }
+
     return 0;
 }
 
