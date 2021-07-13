@@ -3762,7 +3762,8 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
 
     T_gltf gltf = {0};
     T_fdata fdata = {0};
-    if (init_gltf(file, &gltf, &fdata) != 0) {
+    T_cont cont = {0};
+    if (init_gltf(file, &gltf, &fdata, &cont) != 0) {
         fclose(file);
         return -1;
     }
@@ -3809,7 +3810,8 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
 
     T_gltf gltf = {0};
     T_fdata fdata = {0};
-    if (init_gltf(file, &gltf, &fdata) != 0)
+    T_cont cont = {0};
+    if (init_gltf(file, &gltf, &fdata, &cont) != 0)
         return -1;
 
     /* XXX: This function assumes that 'fdata.path' is not used, i.e., the
