@@ -3701,6 +3701,19 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
         }
     }
 
+    /* created textures */
+    if (cont->texs != NULL) {
+        for (size_t i = 0; i < gltf->textures.n; i++) {
+            YF_texture tex = cont->texs[i];
+            if (tex == NULL)
+                continue;
+
+            /* TODO: Texture name. */
+            if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, NULL, tex) != 0)
+                return -1;
+        }
+    }
+
     return 0;
 }
 
