@@ -3675,6 +3675,19 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
         }
     }
 
+    /* created nodes */
+    if (cont->nodes != NULL) {
+        for (size_t i = 0; i < gltf->nodes.n; i++) {
+            YF_node node = cont->nodes[i];
+            if (node == NULL)
+                continue;
+
+            /* TODO: Node name. */
+            if (yf_collection_manage(coll, YF_COLLRES_NODE, NULL, node) != 0)
+                return -1;
+        }
+    }
+
     return 0;
 }
 
