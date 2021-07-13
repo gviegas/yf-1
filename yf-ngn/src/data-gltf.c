@@ -3305,19 +3305,23 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 }
 
 /* Loads a single skin from glTF contents. */
-static int load_skin(const T_gltf *gltf, T_fdata *fdata, size_t index,
-                     YF_skin *skin, YF_collection coll)
+static int load_skin(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                     T_int skin)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
-    assert(skin != NULL || coll != NULL);
+    assert(cont != NULL);
+    assert(skin >= 0);
 
-    if (gltf->skins.n <= index) {
+    if (gltf->skins.n <= (size_t)skin) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }
 
-    const size_t jnt_n = gltf->skins.v[index].joint_n;
+    assert(cont->skins != NULL);
+    assert(cont->skins[skin] == NULL);
+
+    const size_t jnt_n = gltf->skins.v[skin].joint_n;
     assert(jnt_n > 0);
 
     T_int *jnt_hier = calloc(gltf->nodes.n, sizeof *jnt_hier);
@@ -3330,7 +3334,7 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, size_t index,
     }
 
     for (size_t i = 0; i < jnt_n; i++) {
-        const T_int node = gltf->skins.v[index].joints[i];
+        const T_int node = gltf->skins.v[skin].joints[i];
 
         /* joint transform */
         const unsigned mask = gltf->nodes.v[node].xform_mask;
@@ -3378,13 +3382,13 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, size_t index,
     }
 
     for (size_t i = 0; i < jnt_n; i++) {
-        const T_int node = gltf->skins.v[index].joints[i];
+        const T_int node = gltf->skins.v[skin].joints[i];
         /* negative 'pnt_i' means no parent */
         jnts[i].pnt_i = jnt_hier[node] - 1;
     }
 
     /* ibm data */
-    const T_int acc = gltf->skins.v[index].inv_bind_matrices;
+    const T_int acc = gltf->skins.v[skin].inv_bind_matrices;
     if (acc != YF_INT_MIN) {
         const T_int view = gltf->accessors.v[acc].buffer_view;
         const T_int buf = gltf->bufferviews.v[view].buffer;
@@ -3418,26 +3422,10 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, size_t index,
     }
 
     /* skin */
-    YF_skin tmp = yf_skin_init(jnts, jnt_n);
+    cont->skins[skin] = yf_skin_init(jnts, jnt_n);
     free(jnt_hier);
     free(jnts);
-    if (tmp == NULL)
-        return -1;
-
-    if (coll != NULL) {
-        const char *name = gltf->skins.v[index].name;
-        if (yf_collection_manage(coll, YF_COLLRES_SKIN, name, tmp) != 0) {
-            if (yf_geterr() != YF_ERR_EXIST ||
-                yf_collection_manage(coll, YF_COLLRES_SKIN, NULL, tmp) != 0) {
-                yf_skin_deinit(tmp);
-                return -1;
-            }
-        }
-    } else {
-        *skin = tmp;
-    }
-
-    return 0;
+    return cont->skins[skin] == NULL ? -1 : 0;
 }
 
 /* Loads a single material from glTF contents. */
