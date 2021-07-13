@@ -2635,6 +2635,7 @@ typedef struct {
 
 /* Type defining lists of contents mapping to a gltf object. */
 typedef struct {
+    YF_scene *scns;
     YF_node *nodes;
     YF_mesh *meshes;
     YF_texture *texs;
