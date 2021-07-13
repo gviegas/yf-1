@@ -3255,34 +3255,40 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     } } while (0)
 
 /* Loads a single texture from glTF contents. */
-static int load_texture(const T_gltf *gltf, T_fdata *fdata, size_t index,
-                        YF_texture *tex, YF_collection coll)
+static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                        T_int texture)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
-    assert(tex != NULL || coll != NULL);
+    assert(cont != NULL);
+    assert(texture >= 0);
 
-    if (gltf->textures.n <= index) {
+    if (gltf->textures.n <= (size_t)texture) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }
 
-    const T_int img_i = gltf->textures.v[index].source;
-    if (gltf->images.v[img_i].mime_type != NULL &&
-        strcmp(gltf->images.v[img_i].mime_type, "image/png") != 0) {
+    assert(cont->texs != NULL);
+    assert(cont->texs[texture] == NULL);
+
+    const T_int image = gltf->textures.v[texture].source;
+    if (gltf->images.v[image].mime_type != NULL &&
+        strcmp(gltf->images.v[image].mime_type, "image/png") != 0) {
         yf_seterr(YF_ERR_UNSUP, __func__);
         return -1;
     }
 
-    const T_int view = gltf->images.v[img_i].buffer_view;
+    const T_int view = gltf->images.v[image].buffer_view;
     YF_texdt data;
     if (view != YF_INT_MIN) {
+        /* image provided through binary buffer */
         FILE *file = seek_data(gltf, fdata, YF_INT_MIN, view);
         if (file == NULL || yf_loadpng2(file, &data) != 0)
             return -1;
     } else {
+        /* image provided through external file */
         char *pathname = NULL;
-        YF_PATHCAT(fdata->path, gltf->images.v[img_i].uri, pathname);
+        YF_PATHCAT(fdata->path, gltf->images.v[image].uri, pathname);
         if (pathname == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
@@ -3293,28 +3299,9 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, size_t index,
             return -1;
     }
 
-    YF_texture tmp = yf_texture_initdt(&data);
+    cont->texs[texture] = yf_texture_initdt(&data);
     free(data.data);
-    if (tmp == NULL)
-        return -1;
-
-    if (coll != NULL) {
-        const char *name = NULL;
-        YF_NAMEOFTEX(gltf, index, name);
-        if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name, tmp) != 0) {
-            /* XXX: This may prevent texture reuse. */
-            if (yf_geterr() != YF_ERR_EXIST ||
-                yf_collection_manage(coll, YF_COLLRES_TEXTURE, NULL,
-                                     tmp) != 0) {
-                yf_texture_deinit(tmp);
-                return -1;
-            }
-        }
-    } else {
-        *tex = tmp;
-    }
-
-    return 0;
+    return cont->texs[texture] == NULL ? -1 : 0;
 }
 
 /* Loads a single skin from glTF contents. */
