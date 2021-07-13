@@ -2633,6 +2633,15 @@ typedef struct {
     };
 } T_fdata;
 
+/* Type defining lists of contents mapping to a gltf object. */
+typedef struct {
+    YF_node *nodes;
+    YF_mesh *meshes;
+    YF_texture *texs;
+    YF_skin *skins;
+    YF_material *matls;
+} T_cont;
+
 #define YF_PATHOF(pathname, path) do { \
     const char *last = strrchr(pathname, '/'); \
     if (last != NULL) { \
