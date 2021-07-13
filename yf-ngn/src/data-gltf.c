@@ -3805,7 +3805,7 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
         r = load_texture(&gltf, &fdata, &cont, index);
         break;
     case YF_DATAC_SKIN:
-        r = load_skin(&gltf, &fdata, index, &dst->skin, NULL);
+        r = load_skin(&gltf, &fdata, &cont, index);
         break;
     case YF_DATAC_MATL:
         r = load_material(&gltf, &fdata, index, &dst->matl, NULL);
