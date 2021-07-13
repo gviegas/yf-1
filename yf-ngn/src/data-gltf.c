@@ -3688,6 +3688,19 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
         }
     }
 
+    /* created meshes */
+    if (cont->meshes != NULL) {
+        for (size_t i = 0; i < gltf->meshes.n; i++) {
+            YF_mesh mesh = cont->meshes[i];
+            if (mesh == NULL)
+                continue;
+
+            /* TODO: Mesh name. */
+            if (yf_collection_manage(coll, YF_COLLRES_MESH, NULL, mesh) != 0)
+                return -1;
+        }
+    }
+
     return 0;
 }
 
