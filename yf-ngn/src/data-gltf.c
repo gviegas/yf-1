@@ -3535,13 +3535,15 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             return -1;
     }
 
-#if 0
-    /* skins */
+    /* skin creation */
+    assert(gltf->skins.n == 0 || cont->skins != NULL);
     for (size_t i = 0; i < gltf->skins.n; i++) {
-        if (load_skin(gltf, fdata, i, NULL, coll) != 0)
+        assert(cont->skins[i] == NULL);
+        if (load_skin(gltf, fdata, cont, i) != 0)
             return -1;
     }
 
+#if 0
     /* materials */
     for (size_t i = 0; i < gltf->materials.n; i++) {
         if (load_material(gltf, fdata, i, NULL, coll) != 0)
