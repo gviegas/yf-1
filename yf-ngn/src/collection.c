@@ -24,7 +24,7 @@
 #include "data-gltf.h"
 
 struct YF_collection_o {
-    YF_dict res[YF_CITEM_N];
+    YF_dict items[YF_CITEM_N];
     size_t n;
     unsigned ids[YF_CITEM_N];
 };
@@ -73,8 +73,8 @@ YF_collection yf_collection_init(const char *pathname)
     }
 
     for (size_t i = 0; i < YF_CITEM_N; i++) {
-        coll->res[i] = yf_dict_init(yf_hashstr, yf_cmpstr);
-        if (coll->res[i] == NULL) {
+        coll->items[i] = yf_dict_init(yf_hashstr, yf_cmpstr);
+        if (coll->items[i] == NULL) {
             yf_collection_deinit(coll);
             return NULL;
         }
@@ -97,7 +97,7 @@ void *yf_collection_getitem(YF_collection coll, int citem, const char *name)
     assert(citem >= 0 && citem < YF_CITEM_N);
     assert(name != NULL);
 
-    return yf_dict_search(coll->res[citem], name);
+    return yf_dict_search(coll->items[citem], name);
 }
 
 int yf_collection_manage(YF_collection coll, int citem, const char *name,
@@ -127,7 +127,7 @@ int yf_collection_manage(YF_collection coll, int citem, const char *name,
         strcpy(key, name);
     }
 
-    if (yf_dict_insert(coll->res[citem], key, item) != 0) {
+    if (yf_dict_insert(coll->items[citem], key, item) != 0) {
         free(key);
         return -1;
     }
@@ -143,7 +143,7 @@ void *yf_collection_release(YF_collection coll, int citem, const char *name)
     assert(name != NULL);
 
     void *key = (void *)name;
-    void *val = yf_dict_delete(coll->res[citem], &key);
+    void *val = yf_dict_delete(coll->items[citem], &key);
 
     if (val != NULL) {
         assert(key != name);
@@ -161,7 +161,7 @@ int yf_collection_contains(YF_collection coll, int citem, const char *name)
     assert(citem >= 0 && citem < YF_CITEM_N);
     assert(name != NULL);
 
-    return yf_dict_contains(coll->res[citem], name);
+    return yf_dict_contains(coll->items[citem], name);
 }
 
 void yf_collection_each(YF_collection coll, int citem,
@@ -172,7 +172,7 @@ void yf_collection_each(YF_collection coll, int citem,
     assert(citem >= 0 && citem < YF_CITEM_N);
     assert(callb != NULL);
 
-    yf_dict_each(coll->res[citem], callb, arg);
+    yf_dict_each(coll->items[citem], callb, arg);
 }
 
 void yf_collection_deinit(YF_collection coll)
@@ -181,11 +181,11 @@ void yf_collection_deinit(YF_collection coll)
         return;
 
     for (size_t i = 0; i < YF_CITEM_N; i++) {
-        if (coll->res[i] == NULL)
+        if (coll->items[i] == NULL)
             continue;
 
-        yf_dict_each(coll->res[i], deinit_res, (void *)i);
-        yf_dict_deinit(coll->res[i]);
+        yf_dict_each(coll->items[i], deinit_res, (void *)i);
+        yf_dict_deinit(coll->items[i]);
     }
 
     free(coll);
