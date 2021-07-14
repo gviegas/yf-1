@@ -3810,6 +3810,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     YF_PATHOF(pathname, fdata.path);
     if (fdata.path == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
+        cont.deinit = 1;
         deinit_gltf(&gltf, &fdata, &cont);
         fclose(file);
         return -1;
@@ -3842,6 +3843,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
         r = -1;
     }
 
+    cont.deinit = r;
     deinit_gltf(&gltf, &fdata, &cont);
     fclose(file);
     return r;
@@ -3888,6 +3890,7 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
         r = -1;
     }
 
+    cont.deinit = r;
     deinit_gltf(&gltf, &fdata, &cont);
     return r;
 }
