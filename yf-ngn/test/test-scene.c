@@ -151,7 +151,7 @@ int yf_test_scene(void)
     l_vars.coll = yf_collection_init("tmp/scene.glb");
     assert(l_vars.coll != NULL);
 
-    l_vars.scn = yf_collection_getres(l_vars.coll, YF_COLLRES_SCENE, "Scene");
+    l_vars.scn = yf_collection_getres(l_vars.coll, YF_CITEM_SCENE, "Scene");
     assert(l_vars.scn != NULL);
 
     yf_node_traverse(yf_scene_getnode(l_vars.scn), traverse, NULL);
