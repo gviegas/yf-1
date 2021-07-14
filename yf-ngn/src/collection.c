@@ -164,15 +164,15 @@ int yf_collection_contains(YF_collection coll, int citem, const char *name)
     return yf_dict_contains(coll->res[citem], name);
 }
 
-void yf_collection_each(YF_collection coll, int collres,
-                        int (*callb)(void *name, void *res, void *arg),
+void yf_collection_each(YF_collection coll, int citem,
+                        int (*callb)(void *name, void *item, void *arg),
                         void *arg)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_CITEM_N);
+    assert(citem >= 0 && citem < YF_CITEM_N);
     assert(callb != NULL);
 
-    yf_dict_each(coll->res[collres], callb, arg);
+    yf_dict_each(coll->res[citem], callb, arg);
 }
 
 void yf_collection_deinit(YF_collection coll)

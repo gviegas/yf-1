@@ -87,15 +87,15 @@ void *yf_collection_release(YF_collection coll, int citem, const char *name);
 int yf_collection_contains(YF_collection coll, int citem, const char *name);
 
 /**
- * Executes a given function for each entry of a given resource type.
+ * Executes a given function for each entry of a given item type.
  *
  * @param coll: The collection.
- * @param collres: The 'YF_COLLRES' value indicating the type of the resource.
+ * @param citem: The 'YF_CITEM' value indicating the item type.
  * @param callb: The callback to execute for each entry.
  * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
  */
-void yf_collection_each(YF_collection coll, int collres,
-                        int (*callb)(void *name, void *res, void *arg),
+void yf_collection_each(YF_collection coll, int citem,
+                        int (*callb)(void *name, void *item, void *arg),
                         void *arg);
 
 /**
