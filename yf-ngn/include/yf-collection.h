@@ -65,15 +65,15 @@ int yf_collection_manage(YF_collection coll, int citem, const char *name,
                          void *item);
 
 /**
- * Releases a resource from a collection.
+ * Releases an item from a collection.
  *
  * @param coll: The collection.
- * @param collres: The 'YF_COLLRES' value indicating the type of the resource.
- * @param name: The name of the resource to release.
- * @return: On success, returns the resource. Otherwise, 'NULL' is returned
- *  and the global error is set to indicate the cause.
+ * @param citem: The 'YF_CITEM' value indicating the item type.
+ * @param name: The name of the item to release.
+ * @return: On success, returns the item. Otherwise, 'NULL' is returned and
+ *  the global error is set to indicate the cause.
  */
-void *yf_collection_release(YF_collection coll, int collres, const char *name);
+void *yf_collection_release(YF_collection coll, int citem, const char *name);
 
 /**
  * Checks whether or not a collection contains a given resource.

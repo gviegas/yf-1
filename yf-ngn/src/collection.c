@@ -136,23 +136,23 @@ int yf_collection_manage(YF_collection coll, int citem, const char *name,
     return 0;
 }
 
-void *yf_collection_release(YF_collection coll, int collres, const char *name)
+void *yf_collection_release(YF_collection coll, int citem, const char *name)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_CITEM_N);
+    assert(citem >= 0 && citem < YF_CITEM_N);
     assert(name != NULL);
 
     void *key = (void *)name;
-    void *res = yf_dict_delete(coll->res[collres], &key);
+    void *val = yf_dict_delete(coll->res[citem], &key);
 
-    if (res != NULL) {
+    if (val != NULL) {
         assert(key != name);
 
         free(key);
         coll->n--;
     }
 
-    return res;
+    return val;
 }
 
 int yf_collection_contains(YF_collection coll, int collres, const char *name)
