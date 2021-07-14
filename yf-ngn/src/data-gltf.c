@@ -3295,15 +3295,6 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return cont->meshes[mesh] == NULL ? -1 : 0;
 }
 
-#define YF_NAMEOFTEX(gltf_p, tex_i, name) do { \
-    name = (gltf_p)->textures.v[tex_i].name; \
-    if ((name) == NULL) { \
-        const T_int img_i = (gltf_p)->textures.v[tex_i].source; \
-        name = (gltf_p)->images.v[img_i].name; \
-        if ((name) == NULL) \
-            name = (gltf_p)->images.v[img_i].uri; \
-    } } while (0)
-
 /* Loads a single texture from glTF contents. */
 static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                         T_int texture)
