@@ -91,13 +91,13 @@ YF_collection yf_collection_init(const char *pathname)
     return coll;
 }
 
-void *yf_collection_getres(YF_collection coll, int collres, const char *name)
+void *yf_collection_getitem(YF_collection coll, int citem, const char *name)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_CITEM_N);
+    assert(citem >= 0 && citem < YF_CITEM_N);
     assert(name != NULL);
 
-    return yf_dict_search(coll->res[collres], name);
+    return yf_dict_search(coll->res[citem], name);
 }
 
 int yf_collection_manage(YF_collection coll, int collres, const char *name,

@@ -41,15 +41,15 @@ typedef struct YF_collection_o *YF_collection;
 YF_collection yf_collection_init(const char *pathname);
 
 /**
- * Gets a resource stored in a collection.
+ * Gets an item stored in a collection.
  *
  * @param coll: The collection.
- * @param collres: The 'YF_COLLRES' value indicating the type of the resource.
- * @param name: The name of the resource.
- * @return: On success, returns the resource. Otherwise, 'NULL' is returned
- *  and the global error is set to indicate the cause.
+ * @param citem: The 'YF_CITEM' value indicating the item type.
+ * @param name: The name of the item.
+ * @return: On success, returns the item. Otherwise, 'NULL' is returned and
+ *  the global error is set to indicate the cause.
  */
-void *yf_collection_getres(YF_collection coll, int collres, const char *name);
+void *yf_collection_getitem(YF_collection coll, int citem, const char *name);
 
 /**
  * Manages a resource using a collection.
