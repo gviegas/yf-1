@@ -5,11 +5,12 @@
  * Copyright © 2021 Gustavo C. Viegas.
  */
 
-#include <limits.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 #include <errno.h>
 #include <assert.h>
 
