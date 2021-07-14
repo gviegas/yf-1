@@ -24,35 +24,35 @@
 #include "data-gltf.h"
 
 struct YF_collection_o {
-    YF_dict res[YF_COLLRES_N];
+    YF_dict items[YF_CITEM_N];
     size_t n;
-    unsigned ids[YF_COLLRES_N];
+    unsigned ids[YF_CITEM_N];
 };
 
-/* Deinitializes a collection resource. */
-static int deinit_res(void *key, void *val, void *arg)
+/* Deinitializes a collection's item. */
+static int deinit_item(void *key, void *val, void *arg)
 {
     switch ((size_t)arg) {
-    case YF_COLLRES_SCENE:
+    case YF_CITEM_SCENE:
         yf_scene_deinit(val);
         break;
-    case YF_COLLRES_NODE:
+    case YF_CITEM_NODE:
         yf_node_deinit(val);
         break;
-    case YF_COLLRES_MESH:
+    case YF_CITEM_MESH:
         yf_mesh_deinit(val);
         break;
-    case YF_COLLRES_SKIN:
+    case YF_CITEM_SKIN:
         /* XXX: Skeletons. */
         yf_skin_deinit(val);
         break;
-    case YF_COLLRES_MATERIAL:
+    case YF_CITEM_MATERIAL:
         yf_material_deinit(val);
         break;
-    case YF_COLLRES_TEXTURE:
+    case YF_CITEM_TEXTURE:
         yf_texture_deinit(val);
         break;
-    case YF_COLLRES_FONT:
+    case YF_CITEM_FONT:
         yf_font_deinit(val);
         break;
     default:
@@ -72,9 +72,9 @@ YF_collection yf_collection_init(const char *pathname)
         return NULL;
     }
 
-    for (size_t i = 0; i < YF_COLLRES_N; i++) {
-        coll->res[i] = yf_dict_init(yf_hashstr, yf_cmpstr);
-        if (coll->res[i] == NULL) {
+    for (size_t i = 0; i < YF_CITEM_N; i++) {
+        coll->items[i] = yf_dict_init(yf_hashstr, yf_cmpstr);
+        if (coll->items[i] == NULL) {
             yf_collection_deinit(coll);
             return NULL;
         }
@@ -91,21 +91,21 @@ YF_collection yf_collection_init(const char *pathname)
     return coll;
 }
 
-void *yf_collection_getres(YF_collection coll, int collres, const char *name)
+void *yf_collection_getitem(YF_collection coll, int citem, const char *name)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_COLLRES_N);
+    assert(citem >= 0 && citem < YF_CITEM_N);
     assert(name != NULL);
 
-    return yf_dict_search(coll->res[collres], name);
+    return yf_dict_search(coll->items[citem], name);
 }
 
-int yf_collection_manage(YF_collection coll, int collres, const char *name,
-                         void *res)
+int yf_collection_manage(YF_collection coll, int citem, const char *name,
+                         void *item)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_COLLRES_N);
-    assert(res != NULL);
+    assert(citem >= 0 && citem < YF_CITEM_N);
+    assert(item != NULL);
 
     char *key;
     if (name == NULL) {
@@ -115,7 +115,7 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
-        snprintf(key, 14, "unnamed-%05u", ++coll->ids[collres]);
+        snprintf(key, 14, "unnamed-%05u", ++coll->ids[citem]);
         key[13] = '\0';
     } else {
         /* use provided name as key */
@@ -127,7 +127,7 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
         strcpy(key, name);
     }
 
-    if (yf_dict_insert(coll->res[collres], key, res) != 0) {
+    if (yf_dict_insert(coll->items[citem], key, item) != 0) {
         free(key);
         return -1;
     }
@@ -136,43 +136,43 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
     return 0;
 }
 
-void *yf_collection_release(YF_collection coll, int collres, const char *name)
+void *yf_collection_release(YF_collection coll, int citem, const char *name)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_COLLRES_N);
+    assert(citem >= 0 && citem < YF_CITEM_N);
     assert(name != NULL);
 
     void *key = (void *)name;
-    void *res = yf_dict_delete(coll->res[collres], &key);
+    void *val = yf_dict_delete(coll->items[citem], &key);
 
-    if (res != NULL) {
+    if (val != NULL) {
         assert(key != name);
 
         free(key);
         coll->n--;
     }
 
-    return res;
+    return val;
 }
 
-int yf_collection_contains(YF_collection coll, int collres, const char *name)
+int yf_collection_contains(YF_collection coll, int citem, const char *name)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_COLLRES_N);
+    assert(citem >= 0 && citem < YF_CITEM_N);
     assert(name != NULL);
 
-    return yf_dict_contains(coll->res[collres], name);
+    return yf_dict_contains(coll->items[citem], name);
 }
 
-void yf_collection_each(YF_collection coll, int collres,
-                        int (*callb)(void *name, void *res, void *arg),
+void yf_collection_each(YF_collection coll, int citem,
+                        int (*callb)(void *name, void *item, void *arg),
                         void *arg)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_COLLRES_N);
+    assert(citem >= 0 && citem < YF_CITEM_N);
     assert(callb != NULL);
 
-    yf_dict_each(coll->res[collres], callb, arg);
+    yf_dict_each(coll->items[citem], callb, arg);
 }
 
 void yf_collection_deinit(YF_collection coll)
@@ -180,12 +180,12 @@ void yf_collection_deinit(YF_collection coll)
     if (coll == NULL)
         return;
 
-    for (size_t i = 0; i < YF_COLLRES_N; i++) {
-        if (coll->res[i] == NULL)
+    for (size_t i = 0; i < YF_CITEM_N; i++) {
+        if (coll->items[i] == NULL)
             continue;
 
-        yf_dict_each(coll->res[i], deinit_res, (void *)i);
-        yf_dict_deinit(coll->res[i]);
+        yf_dict_each(coll->items[i], deinit_item, (void *)i);
+        yf_dict_deinit(coll->items[i]);
     }
 
     free(coll);

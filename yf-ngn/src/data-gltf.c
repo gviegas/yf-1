@@ -3701,10 +3701,9 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
                 continue;
 
             const char *name = gltf->scenes.v[i].name;
-            if (yf_collection_manage(coll, YF_COLLRES_SCENE, name, scn) != 0) {
+            if (yf_collection_manage(coll, YF_CITEM_SCENE, name, scn) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_COLLRES_SCENE, NULL,
-                                         scn) != 0)
+                    yf_collection_manage(coll, YF_CITEM_SCENE, NULL, scn) != 0)
                     return -1;
             }
         }
@@ -3718,10 +3717,9 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
                 continue;
 
             const char *name = gltf->nodes.v[i].name;
-            if (yf_collection_manage(coll, YF_COLLRES_NODE, name, node) != 0) {
+            if (yf_collection_manage(coll, YF_CITEM_NODE, name, node) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_COLLRES_NODE, NULL,
-                                         node) != 0)
+                    yf_collection_manage(coll, YF_CITEM_NODE, NULL, node) != 0)
                     return -1;
             }
         }
@@ -3735,10 +3733,9 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
                 continue;
 
             const char *name = gltf->meshes.v[i].name;
-            if (yf_collection_manage(coll, YF_COLLRES_MESH, name, mesh) != 0) {
+            if (yf_collection_manage(coll, YF_CITEM_MESH, name, mesh) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_COLLRES_MESH, NULL,
-                                         mesh) != 0)
+                    yf_collection_manage(coll, YF_CITEM_MESH, NULL, mesh) != 0)
                     return -1;
             }
         }
@@ -3759,10 +3756,9 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
                     name = gltf->images.v[image].uri;
             }
 
-            if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name,
-                                     tex) != 0) {
+            if (yf_collection_manage(coll, YF_CITEM_TEXTURE, name, tex) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_COLLRES_TEXTURE, NULL,
+                    yf_collection_manage(coll, YF_CITEM_TEXTURE, NULL,
                                          tex) != 0)
                     return -1;
             }
@@ -3777,10 +3773,9 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
                 continue;
 
             const char *name = gltf->skins.v[i].name;
-            if (yf_collection_manage(coll, YF_COLLRES_SKIN, name, skin) != 0) {
+            if (yf_collection_manage(coll, YF_CITEM_SKIN, name, skin) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_COLLRES_SKIN, NULL,
-                                         skin) != 0)
+                    yf_collection_manage(coll, YF_CITEM_SKIN, NULL, skin) != 0)
                     return -1;
             }
         }
@@ -3794,10 +3789,10 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
                 continue;
 
             const char *name = gltf->materials.v[i].name;
-            if (yf_collection_manage(coll, YF_COLLRES_MATERIAL, name,
+            if (yf_collection_manage(coll, YF_CITEM_MATERIAL, name,
                                      matl) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_COLLRES_MATERIAL, NULL,
+                    yf_collection_manage(coll, YF_CITEM_MATERIAL, NULL,
                                          matl) != 0)
                     return -1;
             }
