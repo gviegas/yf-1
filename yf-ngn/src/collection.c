@@ -155,13 +155,13 @@ void *yf_collection_release(YF_collection coll, int citem, const char *name)
     return val;
 }
 
-int yf_collection_contains(YF_collection coll, int collres, const char *name)
+int yf_collection_contains(YF_collection coll, int citem, const char *name)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_CITEM_N);
+    assert(citem >= 0 && citem < YF_CITEM_N);
     assert(name != NULL);
 
-    return yf_dict_contains(coll->res[collres], name);
+    return yf_dict_contains(coll->res[citem], name);
 }
 
 void yf_collection_each(YF_collection coll, int collres,

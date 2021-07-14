@@ -76,15 +76,15 @@ int yf_collection_manage(YF_collection coll, int citem, const char *name,
 void *yf_collection_release(YF_collection coll, int citem, const char *name);
 
 /**
- * Checks whether or not a collection contains a given resource.
+ * Checks whether or not a collection contains a given item.
  *
  * @param coll: The collection.
- * @param collres: The 'YF_COLLRES' value indicating the type of the resource.
- * @param name: The name of the resource.
- * @return: If 'coll' contains a resource of type 'collres' named 'name',
- *  returns a non-zero value. Otherwise, zero is returned.
+ * @param citem: The 'YF_CITEM' value indicating the item type.
+ * @param name: The name of the item to check.
+ * @return: If 'coll' contains an item of type 'citem' named 'name', returns
+ *  a non-zero value. Otherwise, zero is returned.
  */
-int yf_collection_contains(YF_collection coll, int collres, const char *name);
+int yf_collection_contains(YF_collection coll, int citem, const char *name);
 
 /**
  * Executes a given function for each entry of a given resource type.
