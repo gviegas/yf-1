@@ -3760,9 +3760,21 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (tex == NULL)
                 continue;
 
-            /* TODO: Texture name. */
-            if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, NULL, tex) != 0)
-                return -1;
+            const char *name = gltf->textures.v[i].name;
+            if (name == NULL) {
+                const T_int image = gltf->textures.v[i].source;
+                name = gltf->images.v[image].name;
+                if (name == NULL)
+                    name = gltf->images.v[image].uri;
+            }
+
+            if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name,
+                                     tex) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_COLLRES_TEXTURE, NULL,
+                                         tex) != 0)
+                    return -1;
+            }
         }
     }
 
