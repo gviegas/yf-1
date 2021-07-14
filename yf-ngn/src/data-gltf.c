@@ -3778,21 +3778,24 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
     int r;
     switch (datac) {
     case YF_DATAC_COLL:
-        r = load_contents(&gltf, &fdata, &cont);
-        if (r == 0)
+        if ((r = load_contents(&gltf, &fdata, &cont)) == 0)
             r = manage_contents(&gltf, &cont, dst->coll);
         break;
     case YF_DATAC_MESH:
-        r = load_mesh(&gltf, &fdata, &cont, index);
+        if ((r = load_mesh(&gltf, &fdata, &cont, index)) == 0)
+            dst->mesh = cont.meshes[index];
         break;
     case YF_DATAC_TEX:
-        r = load_texture(&gltf, &fdata, &cont, index);
+        if ((r = load_texture(&gltf, &fdata, &cont, index)) == 0)
+            dst->tex = cont.texs[index];
         break;
     case YF_DATAC_SKIN:
-        r = load_skin(&gltf, &fdata, &cont, index);
+        if ((r = load_skin(&gltf, &fdata, &cont, index)) == 0)
+            dst->skin = cont.skins[index];
         break;
     case YF_DATAC_MATL:
-        r = load_material(&gltf, &fdata, &cont, index);
+        if ((r = load_material(&gltf, &fdata, &cont, index)) == 0)
+            dst->matl = cont.matls[index];
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
