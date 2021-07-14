@@ -3776,9 +3776,13 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (skin == NULL)
                 continue;
 
-            /* TODO: Skin name. */
-            if (yf_collection_manage(coll, YF_COLLRES_SKIN, NULL, skin) != 0)
-                return -1;
+            const char *name = gltf->skins.v[i].name;
+            if (yf_collection_manage(coll, YF_COLLRES_SKIN, name, skin) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_COLLRES_SKIN, NULL,
+                                         skin) != 0)
+                    return -1;
+            }
         }
     }
 
