@@ -2704,12 +2704,48 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     }
 
     if (cont != NULL) {
-        free(cont->scns);
-        free(cont->nodes);
-        free(cont->meshes);
-        free(cont->texs);
-        free(cont->skins);
-        free(cont->matls);
+        if (cont->scns != NULL) {
+            if (cont->deinit) {
+                for (size_t i = 0; i < gltf->scenes.n; i++)
+                    yf_scene_deinit(cont->scns[i]);
+            }
+            free(cont->scns);
+        }
+        if (cont->nodes != NULL) {
+            if (cont->deinit) {
+                for (size_t i = 0; i < gltf->nodes.n; i++)
+                    yf_node_deinit(cont->nodes[i]);
+            }
+            free(cont->nodes);
+        }
+        if (cont->meshes != NULL) {
+            if (cont->deinit) {
+                for (size_t i = 0; i < gltf->meshes.n; i++)
+                    yf_mesh_deinit(cont->meshes[i]);
+            }
+            free(cont->meshes);
+        }
+        if (cont->texs != NULL) {
+            if (cont->deinit) {
+                for (size_t i = 0; i < gltf->textures.n; i++)
+                    yf_texture_deinit(cont->texs[i]);
+            }
+            free(cont->texs);
+        }
+        if (cont->skins != NULL) {
+            if (cont->deinit) {
+                for (size_t i = 0; i < gltf->skins.n; i++)
+                    yf_skin_deinit(cont->skins[i]);
+            }
+            free(cont->skins);
+        }
+        if (cont->matls != NULL) {
+            if (cont->deinit) {
+                for (size_t i = 0; i < gltf->materials.n; i++)
+                    yf_material_deinit(cont->matls[i]);
+            }
+            free(cont->matls);
+        }
     }
 
     free(gltf->asset.copyright);
