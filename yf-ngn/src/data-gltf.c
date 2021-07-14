@@ -3295,15 +3295,6 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return cont->meshes[mesh] == NULL ? -1 : 0;
 }
 
-#define YF_NAMEOFTEX(gltf_p, tex_i, name) do { \
-    name = (gltf_p)->textures.v[tex_i].name; \
-    if ((name) == NULL) { \
-        const T_int img_i = (gltf_p)->textures.v[tex_i].source; \
-        name = (gltf_p)->images.v[img_i].name; \
-        if ((name) == NULL) \
-            name = (gltf_p)->images.v[img_i].uri; \
-    } } while (0)
-
 /* Loads a single texture from glTF contents. */
 static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                         T_int texture)
@@ -3709,9 +3700,13 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (scn == NULL)
                 continue;
 
-            /* TODO: Scene name. */
-            if (yf_collection_manage(coll, YF_COLLRES_SCENE, NULL, scn) != 0)
-                return -1;
+            const char *name = gltf->scenes.v[i].name;
+            if (yf_collection_manage(coll, YF_COLLRES_SCENE, name, scn) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_COLLRES_SCENE, NULL,
+                                         scn) != 0)
+                    return -1;
+            }
         }
     }
 
@@ -3722,9 +3717,13 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (node == NULL)
                 continue;
 
-            /* TODO: Node name. */
-            if (yf_collection_manage(coll, YF_COLLRES_NODE, NULL, node) != 0)
-                return -1;
+            const char *name = gltf->nodes.v[i].name;
+            if (yf_collection_manage(coll, YF_COLLRES_NODE, name, node) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_COLLRES_NODE, NULL,
+                                         node) != 0)
+                    return -1;
+            }
         }
     }
 
@@ -3735,9 +3734,13 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (mesh == NULL)
                 continue;
 
-            /* TODO: Mesh name. */
-            if (yf_collection_manage(coll, YF_COLLRES_MESH, NULL, mesh) != 0)
-                return -1;
+            const char *name = gltf->meshes.v[i].name;
+            if (yf_collection_manage(coll, YF_COLLRES_MESH, name, mesh) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_COLLRES_MESH, NULL,
+                                         mesh) != 0)
+                    return -1;
+            }
         }
     }
 
@@ -3748,9 +3751,21 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (tex == NULL)
                 continue;
 
-            /* TODO: Texture name. */
-            if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, NULL, tex) != 0)
-                return -1;
+            const char *name = gltf->textures.v[i].name;
+            if (name == NULL) {
+                const T_int image = gltf->textures.v[i].source;
+                name = gltf->images.v[image].name;
+                if (name == NULL)
+                    name = gltf->images.v[image].uri;
+            }
+
+            if (yf_collection_manage(coll, YF_COLLRES_TEXTURE, name,
+                                     tex) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_COLLRES_TEXTURE, NULL,
+                                         tex) != 0)
+                    return -1;
+            }
         }
     }
 
@@ -3761,9 +3776,13 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (skin == NULL)
                 continue;
 
-            /* TODO: Skin name. */
-            if (yf_collection_manage(coll, YF_COLLRES_SKIN, NULL, skin) != 0)
-                return -1;
+            const char *name = gltf->skins.v[i].name;
+            if (yf_collection_manage(coll, YF_COLLRES_SKIN, name, skin) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_COLLRES_SKIN, NULL,
+                                         skin) != 0)
+                    return -1;
+            }
         }
     }
 
@@ -3774,10 +3793,14 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (matl == NULL)
                 continue;
 
-            /* TODO: Material name. */
-            if (yf_collection_manage(coll, YF_COLLRES_MATERIAL, NULL,
-                                     matl) != 0)
-                return -1;
+            const char *name = gltf->materials.v[i].name;
+            if (yf_collection_manage(coll, YF_COLLRES_MATERIAL, name,
+                                     matl) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_COLLRES_MATERIAL, NULL,
+                                         matl) != 0)
+                    return -1;
+            }
         }
     }
 
