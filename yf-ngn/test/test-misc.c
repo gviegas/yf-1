@@ -304,12 +304,12 @@ int yf_test_misc(void)
     YF_matlprop *mprop;
     mprop = yf_material_getprop(matl1);
     mprop->pbr = YF_PBR_METALROUGH;
-    mprop->pbrmr.color_tex = yf_collection_getres(l_vars.coll,
-                                                  YF_CITEM_TEXTURE, "t1");
+    mprop->pbrmr.color_tex = yf_collection_getitem(l_vars.coll,
+                                                   YF_CITEM_TEXTURE, "t1");
     mprop = yf_material_getprop(matl2);
     mprop->pbr = YF_PBR_METALROUGH;
-    mprop->pbrmr.color_tex = yf_collection_getres(l_vars.coll,
-                                                  YF_CITEM_TEXTURE, "t2");
+    mprop->pbrmr.color_tex = yf_collection_getitem(l_vars.coll,
+                                                   YF_CITEM_TEXTURE, "t2");
 
     if (yf_collection_manage(l_vars.coll, YF_CITEM_MATERIAL, "m1",
                              matl1) != 0 ||
@@ -322,11 +322,11 @@ int yf_test_misc(void)
 
     const int mdl_num = rand()&1 ? 1 : 2;
     yf_model_setmesh(l_vars.mdl,
-                     yf_collection_getres(l_vars.coll, YF_CITEM_MESH,
-                                          mdl_num == 1 ? "m1" : "m2"));
+                     yf_collection_getitem(l_vars.coll, YF_CITEM_MESH,
+                                           mdl_num == 1 ? "m1" : "m2"));
     yf_model_setmatl(l_vars.mdl,
-                     yf_collection_getres(l_vars.coll, YF_CITEM_MATERIAL,
-                                          mdl_num == 1 ? "m1" : "m2"));
+                     yf_collection_getitem(l_vars.coll, YF_CITEM_MATERIAL,
+                                           mdl_num == 1 ? "m1" : "m2"));
 
     yf_node_insert(yf_scene_getnode(l_vars.scn), yf_model_getnode(l_vars.mdl));
 
@@ -336,8 +336,8 @@ int yf_test_misc(void)
         assert(l_vars.labls[i] != NULL);
 
         yf_label_setfont(l_vars.labls[i],
-                         yf_collection_getres(l_vars.coll, YF_CITEM_FONT,
-                                              i == 0 ? "f1" : "f2"));
+                         yf_collection_getitem(l_vars.coll, YF_CITEM_FONT,
+                                               i == 0 ? "f1" : "f2"));
         YF_mat4 *m = yf_node_getxform(yf_label_getnode(l_vars.labls[i]));
 
         switch (i) {
@@ -363,15 +363,15 @@ int yf_test_misc(void)
             (*m)[13] = i*-0.15;
         }
 
-        if (yf_collection_getres(l_vars.coll, YF_CITEM_NODE,
-                                 "labl") != l_vars.labl_node)
+        if (yf_collection_getitem(l_vars.coll, YF_CITEM_NODE,
+                                  "labl") != l_vars.labl_node)
             assert(0);
 
         yf_node_insert(l_vars.labl_node, yf_label_getnode(l_vars.labls[i]));
     }
 
-    if (yf_collection_getres(l_vars.coll, YF_CITEM_SCENE,
-                             "scn") != l_vars.scn)
+    if (yf_collection_getitem(l_vars.coll, YF_CITEM_SCENE,
+                              "scn") != l_vars.scn)
         assert(0);
 
     yf_node_insert(yf_scene_getnode(l_vars.scn), l_vars.labl_node);
