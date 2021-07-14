@@ -7,7 +7,6 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 #include <assert.h>
@@ -1603,6 +1602,15 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     fclose(file);
 
     return 0;
+}
+
+int yf_loadsfnt2(FILE *file, YF_fontdt *data)
+{
+    assert(file != NULL && !feof(file));
+    assert(data != NULL);
+
+    /* TODO */
+    return -1;
 }
 
 /*
