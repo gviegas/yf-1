@@ -115,7 +115,7 @@ int yf_collection_manage(YF_collection coll, int citem, const char *name,
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
-        snprintf(key, 14, "unnamed-%05u", ++coll->ids[citem]);
+        snprintf(key, 14, "unnamed-%05x", ++coll->ids[citem] & 1048575);
         key[13] = '\0';
     } else {
         /* use provided name as key */
