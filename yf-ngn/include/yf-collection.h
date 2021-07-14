@@ -13,27 +13,27 @@
 YF_DECLS_BEGIN
 
 /**
- * Opaque type defining a collection of resources.
+ * Opaque type defining a collection of objects.
  */
 typedef struct YF_collection_o *YF_collection;
 
 /**
- * Types of resources that a collection can store.
+ * Item types indicating what can be stored in a collection.
  */
-#define YF_COLLRES_SCENE    0
-#define YF_COLLRES_NODE     1
-#define YF_COLLRES_MESH     2
-#define YF_COLLRES_SKIN     3
-#define YF_COLLRES_MATERIAL 4
-#define YF_COLLRES_TEXTURE  5
-#define YF_COLLRES_FONT     6
+#define YF_CITEM_SCENE    0
+#define YF_CITEM_NODE     1
+#define YF_CITEM_MESH     2
+#define YF_CITEM_SKIN     3
+#define YF_CITEM_MATERIAL 4
+#define YF_CITEM_TEXTURE  5
+#define YF_CITEM_FONT     6
 
-#define YF_COLLRES_N 7
+#define YF_CITEM_N 7
 
 /**
  * Initializes a new collection.
  *
- * @param pathname: The pathname of a file containing resources to load
+ * @param pathname: The pathname of a file containing assets to load
  *  during initialization. Can be 'NULL'.
  * @return: On success, returns a new collection. Otherwise, 'NULL' is
  *  returned and the global error is set to indicate the cause.
@@ -101,7 +101,7 @@ void yf_collection_each(YF_collection coll, int collres,
 /**
  * Deinitializes a collection.
  *
- * This function implicitly calls 'deinit()' for every resource managed by
+ * This function implicitly calls 'deinit()' for every object managed by
  * the collection.
  *
  * @param coll: The collection to deinitialize. Can be 'NULL'.
