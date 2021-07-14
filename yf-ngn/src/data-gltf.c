@@ -3743,9 +3743,13 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (mesh == NULL)
                 continue;
 
-            /* TODO: Mesh name. */
-            if (yf_collection_manage(coll, YF_COLLRES_MESH, NULL, mesh) != 0)
-                return -1;
+            const char *name = gltf->meshes.v[i].name;
+            if (yf_collection_manage(coll, YF_COLLRES_MESH, name, mesh) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_COLLRES_MESH, NULL,
+                                         mesh) != 0)
+                    return -1;
+            }
         }
     }
 
