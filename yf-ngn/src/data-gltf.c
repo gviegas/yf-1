@@ -3726,9 +3726,13 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (node == NULL)
                 continue;
 
-            /* TODO: Node name. */
-            if (yf_collection_manage(coll, YF_COLLRES_NODE, NULL, node) != 0)
-                return -1;
+            const char *name = gltf->nodes.v[i].name;
+            if (yf_collection_manage(coll, YF_COLLRES_NODE, name, node) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_COLLRES_NODE, NULL,
+                                         node) != 0)
+                    return -1;
+            }
         }
     }
 
