@@ -52,17 +52,17 @@ YF_collection yf_collection_init(const char *pathname);
 void *yf_collection_getitem(YF_collection coll, int citem, const char *name);
 
 /**
- * Manages a resource using a collection.
+ * Manages an item using a collection.
  *
  * @param coll: The collection.
- * @param collres: The 'YF_COLLRES' value indicating the type of the resource.
- * @param name: The name to use as resource identifier. Can be 'NULL'.
- * @param res: The resource to manage.
+ * @param citem: The 'YF_CITEM' value indicating the item type.
+ * @param name: The name to use as identifier for the item. Can be 'NULL'.
+ * @param item: The item to manage.
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_collection_manage(YF_collection coll, int collres, const char *name,
-                         void *res);
+int yf_collection_manage(YF_collection coll, int citem, const char *name,
+                         void *item);
 
 /**
  * Releases a resource from a collection.

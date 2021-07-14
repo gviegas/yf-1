@@ -100,12 +100,12 @@ void *yf_collection_getitem(YF_collection coll, int citem, const char *name)
     return yf_dict_search(coll->res[citem], name);
 }
 
-int yf_collection_manage(YF_collection coll, int collres, const char *name,
-                         void *res)
+int yf_collection_manage(YF_collection coll, int citem, const char *name,
+                         void *item)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_CITEM_N);
-    assert(res != NULL);
+    assert(citem >= 0 && citem < YF_CITEM_N);
+    assert(item != NULL);
 
     char *key;
     if (name == NULL) {
@@ -115,7 +115,7 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
-        snprintf(key, 14, "unnamed-%05u", ++coll->ids[collres]);
+        snprintf(key, 14, "unnamed-%05u", ++coll->ids[citem]);
         key[13] = '\0';
     } else {
         /* use provided name as key */
@@ -127,7 +127,7 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
         strcpy(key, name);
     }
 
-    if (yf_dict_insert(coll->res[collres], key, res) != 0) {
+    if (yf_dict_insert(coll->res[citem], key, item) != 0) {
         free(key);
         return -1;
     }
