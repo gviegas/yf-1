@@ -3709,9 +3709,13 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (scn == NULL)
                 continue;
 
-            /* TODO: Scene name. */
-            if (yf_collection_manage(coll, YF_COLLRES_SCENE, NULL, scn) != 0)
-                return -1;
+            const char *name = gltf->scenes.v[i].name;
+            if (yf_collection_manage(coll, YF_COLLRES_SCENE, name, scn) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_COLLRES_SCENE, NULL,
+                                         scn) != 0)
+                    return -1;
+            }
         }
     }
 
