@@ -24,35 +24,35 @@
 #include "data-gltf.h"
 
 struct YF_collection_o {
-    YF_dict res[YF_COLLRES_N];
+    YF_dict res[YF_CITEM_N];
     size_t n;
-    unsigned ids[YF_COLLRES_N];
+    unsigned ids[YF_CITEM_N];
 };
 
 /* Deinitializes a collection resource. */
 static int deinit_res(void *key, void *val, void *arg)
 {
     switch ((size_t)arg) {
-    case YF_COLLRES_SCENE:
+    case YF_CITEM_SCENE:
         yf_scene_deinit(val);
         break;
-    case YF_COLLRES_NODE:
+    case YF_CITEM_NODE:
         yf_node_deinit(val);
         break;
-    case YF_COLLRES_MESH:
+    case YF_CITEM_MESH:
         yf_mesh_deinit(val);
         break;
-    case YF_COLLRES_SKIN:
+    case YF_CITEM_SKIN:
         /* XXX: Skeletons. */
         yf_skin_deinit(val);
         break;
-    case YF_COLLRES_MATERIAL:
+    case YF_CITEM_MATERIAL:
         yf_material_deinit(val);
         break;
-    case YF_COLLRES_TEXTURE:
+    case YF_CITEM_TEXTURE:
         yf_texture_deinit(val);
         break;
-    case YF_COLLRES_FONT:
+    case YF_CITEM_FONT:
         yf_font_deinit(val);
         break;
     default:
@@ -72,7 +72,7 @@ YF_collection yf_collection_init(const char *pathname)
         return NULL;
     }
 
-    for (size_t i = 0; i < YF_COLLRES_N; i++) {
+    for (size_t i = 0; i < YF_CITEM_N; i++) {
         coll->res[i] = yf_dict_init(yf_hashstr, yf_cmpstr);
         if (coll->res[i] == NULL) {
             yf_collection_deinit(coll);
@@ -94,7 +94,7 @@ YF_collection yf_collection_init(const char *pathname)
 void *yf_collection_getres(YF_collection coll, int collres, const char *name)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_COLLRES_N);
+    assert(collres >= 0 && collres < YF_CITEM_N);
     assert(name != NULL);
 
     return yf_dict_search(coll->res[collres], name);
@@ -104,7 +104,7 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
                          void *res)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_COLLRES_N);
+    assert(collres >= 0 && collres < YF_CITEM_N);
     assert(res != NULL);
 
     char *key;
@@ -139,7 +139,7 @@ int yf_collection_manage(YF_collection coll, int collres, const char *name,
 void *yf_collection_release(YF_collection coll, int collres, const char *name)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_COLLRES_N);
+    assert(collres >= 0 && collres < YF_CITEM_N);
     assert(name != NULL);
 
     void *key = (void *)name;
@@ -158,7 +158,7 @@ void *yf_collection_release(YF_collection coll, int collres, const char *name)
 int yf_collection_contains(YF_collection coll, int collres, const char *name)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_COLLRES_N);
+    assert(collres >= 0 && collres < YF_CITEM_N);
     assert(name != NULL);
 
     return yf_dict_contains(coll->res[collres], name);
@@ -169,7 +169,7 @@ void yf_collection_each(YF_collection coll, int collres,
                         void *arg)
 {
     assert(coll != NULL);
-    assert(collres >= 0 && collres < YF_COLLRES_N);
+    assert(collres >= 0 && collres < YF_CITEM_N);
     assert(callb != NULL);
 
     yf_dict_each(coll->res[collres], callb, arg);
@@ -180,7 +180,7 @@ void yf_collection_deinit(YF_collection coll)
     if (coll == NULL)
         return;
 
-    for (size_t i = 0; i < YF_COLLRES_N; i++) {
+    for (size_t i = 0; i < YF_CITEM_N; i++) {
         if (coll->res[i] == NULL)
             continue;
 
