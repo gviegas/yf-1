@@ -101,8 +101,9 @@ void yf_collection_each(YF_collection coll, int citem,
 /**
  * Deinitializes a collection.
  *
- * This function implicitly calls 'deinit()' for every object managed by
- * the collection.
+ * The object-specific 'deinit()' function is called for each managed item.
+ * If a managed item is meant to outlive the collection, one must call
+ * 'collection_release()' before calling this function.
  *
  * @param coll: The collection to deinitialize. Can be 'NULL'.
  */
