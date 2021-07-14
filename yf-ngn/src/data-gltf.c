@@ -2641,6 +2641,10 @@ typedef struct {
     YF_texture *texs;
     YF_skin *skins;
     YF_material *matls;
+
+    /* flag indicating that the contents must be destroyed
+       when not set, only the allocated lists are freed */
+    int deinit;
 } T_cont;
 
 #define YF_PATHOF(pathname, path) do { \
