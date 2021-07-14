@@ -29,8 +29,8 @@ struct YF_collection_o {
     unsigned ids[YF_CITEM_N];
 };
 
-/* Deinitializes a collection resource. */
-static int deinit_res(void *key, void *val, void *arg)
+/* Deinitializes a collection's item. */
+static int deinit_item(void *key, void *val, void *arg)
 {
     switch ((size_t)arg) {
     case YF_CITEM_SCENE:
@@ -184,7 +184,7 @@ void yf_collection_deinit(YF_collection coll)
         if (coll->items[i] == NULL)
             continue;
 
-        yf_dict_each(coll->items[i], deinit_res, (void *)i);
+        yf_dict_each(coll->items[i], deinit_item, (void *)i);
         yf_dict_deinit(coll->items[i]);
     }
 
