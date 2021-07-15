@@ -469,14 +469,18 @@ typedef struct {
     } ttf;
 } T_font;
 
-/* Verifies whether file is valid. */
+/* Verifies the integrity of a SFNT file. */
 static int verify_file(FILE *file)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
 
-    rewind(file);
+    const long off_f = ftell(file);
+    if (off_f == -1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
     T_diro diro;
-
     if (fread(&diro, YF_SFNT_DIROSZ, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
@@ -484,23 +488,20 @@ static int verify_file(FILE *file)
 
     const uint16_t tab_n = be16toh(diro.tab_n);
     T_dire dires[tab_n];
-
     if (fread(dires, YF_SFNT_DIRESZ, tab_n, file) < tab_n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
 
-    uint32_t chsum, off, dw_n, *buf = NULL;
-
     for (uint16_t i = 0; i < tab_n; i++) {
-        off = be32toh(dires[i].off);
-        if (fseek(file, off, SEEK_SET) != 0) {
+        if (fseek(file, off_f + be32toh(dires[i].off), SEEK_SET) != 0) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
         }
 
-        dw_n = (be32toh(dires[i].len) + 3) >> 2;
-        if ((buf = malloc(dw_n << 2)) == NULL) {
+        const uint32_t dw_n = (be32toh(dires[i].len) + 3) >> 2;
+        uint32_t *buf = malloc(dw_n << 2);
+        if (buf == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
@@ -511,7 +512,7 @@ static int verify_file(FILE *file)
             return -1;
         }
 
-        chsum = 0;
+        uint32_t chsum = 0;
         for (uint32_t j = 0; j < dw_n; j++)
             chsum += be32toh(buf[j]);
 
