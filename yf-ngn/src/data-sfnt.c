@@ -1581,8 +1581,7 @@ int yf_loadsfnt2(FILE *file, YF_fontdt *data)
     assert(file != NULL && !feof(file));
     assert(data != NULL);
 
-    /* TODO */
-    return -1;
+    return load_sfnt(file, data);
 }
 
 /*
