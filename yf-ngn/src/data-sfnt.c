@@ -1556,6 +1556,26 @@ static int load_sfnt(FILE *file, YF_fontdt *data)
     return 0;
 }
 
+int yf_loadsfnt(const char *pathname, YF_fontdt *data)
+{
+    assert(data != NULL);
+
+    if (pathname == NULL) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    FILE *file = fopen(pathname, "r");
+    if (file == NULL) {
+        yf_seterr(YF_ERR_NOFILE, __func__);
+        return -1;
+    }
+
+    int r = load_sfnt(file, data);
+    fclose(file);
+    return r;
+}
+
 int yf_loadsfnt2(FILE *file, YF_fontdt *data)
 {
     assert(file != NULL && !feof(file));
