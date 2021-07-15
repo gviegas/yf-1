@@ -209,19 +209,29 @@ YF_mat4 *yf_node_getxform(YF_node node)
     return &node->xform;
 }
 
-char *yf_node_getname(YF_node node, char *dst, size_t n)
+char *yf_node_getname(YF_node node, char *dst, size_t *n)
 {
     assert(node != NULL);
-    assert(dst != NULL);
-    assert(n > 0);
+    assert(n != NULL);
+
+    if (dst == NULL) {
+        *n = node->name == NULL ? 1 : strlen(node->name) + 1;
+        return NULL;
+    }
 
     if (node->name == NULL) {
         dst[0] = '\0';
+        *n = 1;
         return dst;
     }
 
-    if (strlen(node->name) < n)
+    const size_t name_n = strlen(node->name) + 1;
+    if (name_n <= *n) {
+        *n = name_n;
         return strcpy(dst, node->name);
+    }
+
+    *n = name_n;
     return NULL;
 }
 
