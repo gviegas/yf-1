@@ -129,9 +129,10 @@ static void update(double elapsed_time)
 static int traverse(YF_node node, YF_UNUSED void *arg)
 {
     char name[2][256];
+    size_t n[2] = {256, 256};
     printf("> node '%s' is child of '%s'\n",
-           yf_node_getname(node, name[0], 256),
-           yf_node_getname(yf_node_getparent(node), name[1], 256));
+           yf_node_getname(node, name[0], n),
+           yf_node_getname(yf_node_getparent(node), name[1], n+1));
 
     return 0;
 }
