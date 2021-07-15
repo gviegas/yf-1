@@ -1177,26 +1177,17 @@ static void scale_metrics(void *font, uint16_t pt, uint16_t dpi,
 static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
                      YF_glyph *glyph);
 
-int yf_loadsfnt(const char *pathname, YF_fontdt *data)
+/* Loads SFNT font data. */
+static int load_sfnt(FILE *file, YF_fontdt *data)
 {
+    assert(file != NULL);
     assert(data != NULL);
-
-    if (pathname == NULL) {
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return -1;
-    }
 
     T_sfnt sfnt = {0};
 
-    FILE *file = fopen(pathname, "r");
-    if (file == NULL) {
-        yf_seterr(YF_ERR_NOFILE, __func__);
+    if (verify_file(file) != 0)
         return -1;
-    }
-    if (verify_file(file) != 0) {
-        fclose(file);
-        return -1;
-    }
+
     rewind(file);
 
     /* font directory */
@@ -1204,7 +1195,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.dir == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 
@@ -1212,13 +1202,11 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (fread(&sfnt.dir->diro, YF_SFNT_DIROSZ, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (sfnt.dir->diro.version != YF_SFNT_TTF) {
         yf_seterr(YF_ERR_UNSUP, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     const uint16_t tab_n = be16toh(sfnt.dir->diro.tab_n);
@@ -1228,13 +1216,11 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.dir->dires == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (fread(sfnt.dir->dires, sizeof(T_dire), tab_n, file) < tab_n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 
@@ -1303,7 +1289,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
 
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 
@@ -1311,7 +1296,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (name_off == 0 || name_len < YF_SFNT_NAMEHSZ) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 #endif /* YF_SFNT_NEED_NAME */
@@ -1320,7 +1304,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (os2_off == 0 || os2_len < YF_SFNT_OS2V0) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 #endif /* YF_SFNT_NEED_OS2 */
@@ -1330,14 +1313,12 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.head == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (fseek(file, head_off, SEEK_SET) != 0 ||
         fread(sfnt.head, head_len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 
@@ -1346,14 +1327,12 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.hhea == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (fseek(file, hhea_off, SEEK_SET) != 0 ||
         fread(sfnt.hhea, hhea_len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     const uint16_t hmetric_n = be16toh(sfnt.hhea->hmetric_n);
@@ -1363,14 +1342,12 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.maxp == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (fseek(file, maxp_off, SEEK_SET) != 0 ||
         fread(sfnt.maxp, maxp_len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     const uint16_t glyph_n = be16toh(sfnt.maxp->glyph_n);
@@ -1380,7 +1357,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.hmtx == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 
@@ -1389,7 +1365,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.hmtx->hmtxes == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (fseek(file, hmtx_off, SEEK_SET) != 0 ||
@@ -1397,7 +1372,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
               file) < hmetric_n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (hmetric_n < glyph_n) {
@@ -1406,13 +1380,11 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
         if (sfnt.hmtx->lsbs == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             deinit_tables(&sfnt);
-            fclose(file);
             return -1;
         }
         if (fread(sfnt.hmtx->lsbs, sizeof(int16_t), n, file) < n) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             deinit_tables(&sfnt);
-            fclose(file);
             return -1;
         }
     }
@@ -1423,14 +1395,12 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.os2 == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (fseek(file, os2_off, SEEK_SET) != 0 ||
         fread(sfnt.os2, os2_len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 #endif /* YF_SFNT_NEED_OS2 */
@@ -1440,14 +1410,12 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.cmap == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (fseek(file, cmap_off, SEEK_SET) != 0 ||
         fread(&sfnt.cmap->cmaph, YF_SFNT_CMAPHSZ, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     const uint16_t cmap_n = be16toh(sfnt.cmap->cmaph.tab_n);
@@ -1457,13 +1425,11 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.cmap->cmapes == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (fread(sfnt.cmap->cmapes, sizeof(T_cmape), cmap_n, file) < cmap_n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 
@@ -1473,14 +1439,12 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.name == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (fseek(file, name_off, SEEK_SET) != 0 ||
         fread(&sfnt.name->nameh, YF_SFNT_NAMEHSZ, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     const uint16_t name_n = be16toh(sfnt.name->nameh.count);
@@ -1490,20 +1454,17 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     if (sfnt.name->namees == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (fread(sfnt.name->namees, sizeof(T_namee), name_n, file) < name_n) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
     if (sfnt.name->nameh.format != 0) {
         if (fread(&sfnt.name->lang_n, sizeof(uint16_t), 1, file) < 1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             deinit_tables(&sfnt);
-            fclose(file);
             return -1;
         }
         const uint16_t n = be16toh(sfnt.name->lang_n);
@@ -1511,13 +1472,11 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
         if (sfnt.name->namels == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             deinit_tables(&sfnt);
-            fclose(file);
             return -1;
         }
         if (fread(sfnt.name->namels, sizeof(T_namel), n, file) < n) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             deinit_tables(&sfnt);
-            fclose(file);
             return -1;
         }
     }
@@ -1525,14 +1484,12 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
 
     if (load_ttf(&sfnt, file) != 0) {
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 
     T_font *font = calloc(1, sizeof *font);
     if (font == NULL) {
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 
@@ -1547,7 +1504,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
         set_mapping(sfnt.cmap, file, cmap_off, &font->map) != 0) {
         deinit_tables(&sfnt);
         free(font);
-        fclose(file);
         return -1;
     }
 
@@ -1564,7 +1520,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 deinit_font(font);
                 deinit_tables(&sfnt);
-                fclose(file);
                 return -1;
             }
 
@@ -1589,7 +1544,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
         yf_seterr(YF_ERR_UNSUP, __func__);
         deinit_font(font);
         deinit_tables(&sfnt);
-        fclose(file);
         return -1;
     }
 
@@ -1599,8 +1553,6 @@ int yf_loadsfnt(const char *pathname, YF_fontdt *data)
     data->deinit = deinit_font;
 
     deinit_tables(&sfnt);
-    fclose(file);
-
     return 0;
 }
 
