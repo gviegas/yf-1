@@ -849,7 +849,7 @@ static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
                        T_fontmap *fmap)
 {
     assert(cmap != NULL);
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(fmap != NULL);
 
     /* encodings */
@@ -1523,7 +1523,7 @@ static int load_sfnt(FILE *file, YF_fontdt *data)
     font->comp_elem_max = be16toh(sfnt.maxp->comp_elem_max);
 
     if (get_metrics(&sfnt, &font->met) != 0 ||
-        set_mapping(sfnt.cmap, file, cmap_off, &font->map) != 0) {
+        set_mapping(sfnt.cmap, file, off_f + cmap_off, &font->map) != 0) {
         deinit_tables(&sfnt);
         free(font);
         return -1;
