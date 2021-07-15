@@ -1180,15 +1180,24 @@ static int get_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
 /* Loads SFNT font data. */
 static int load_sfnt(FILE *file, YF_fontdt *data)
 {
-    assert(file != NULL);
+    assert(file != NULL && !feof(file));
     assert(data != NULL);
 
-    T_sfnt sfnt = {0};
+    const long off_f = ftell(file);
+    if (off_f == -1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
 
     if (verify_file(file) != 0)
         return -1;
 
-    rewind(file);
+    if (fseek(file, off_f, SEEK_SET) != 0) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
+
+    T_sfnt sfnt = {0};
 
     /* font directory */
     sfnt.dir = calloc(1, sizeof(T_dir));
@@ -1315,7 +1324,7 @@ static int load_sfnt(FILE *file, YF_fontdt *data)
         deinit_tables(&sfnt);
         return -1;
     }
-    if (fseek(file, head_off, SEEK_SET) != 0 ||
+    if (fseek(file, off_f + head_off, SEEK_SET) != 0 ||
         fread(sfnt.head, head_len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
@@ -1329,7 +1338,7 @@ static int load_sfnt(FILE *file, YF_fontdt *data)
         deinit_tables(&sfnt);
         return -1;
     }
-    if (fseek(file, hhea_off, SEEK_SET) != 0 ||
+    if (fseek(file, off_f + hhea_off, SEEK_SET) != 0 ||
         fread(sfnt.hhea, hhea_len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
@@ -1344,7 +1353,7 @@ static int load_sfnt(FILE *file, YF_fontdt *data)
         deinit_tables(&sfnt);
         return -1;
     }
-    if (fseek(file, maxp_off, SEEK_SET) != 0 ||
+    if (fseek(file, off_f + maxp_off, SEEK_SET) != 0 ||
         fread(sfnt.maxp, maxp_len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
@@ -1367,7 +1376,7 @@ static int load_sfnt(FILE *file, YF_fontdt *data)
         deinit_tables(&sfnt);
         return -1;
     }
-    if (fseek(file, hmtx_off, SEEK_SET) != 0 ||
+    if (fseek(file, off_f + hmtx_off, SEEK_SET) != 0 ||
         fread(sfnt.hmtx->hmtxes, sizeof(T_hmtxe), hmetric_n,
               file) < hmetric_n) {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -1397,7 +1406,7 @@ static int load_sfnt(FILE *file, YF_fontdt *data)
         deinit_tables(&sfnt);
         return -1;
     }
-    if (fseek(file, os2_off, SEEK_SET) != 0 ||
+    if (fseek(file, off_f + os2_off, SEEK_SET) != 0 ||
         fread(sfnt.os2, os2_len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
@@ -1412,7 +1421,7 @@ static int load_sfnt(FILE *file, YF_fontdt *data)
         deinit_tables(&sfnt);
         return -1;
     }
-    if (fseek(file, cmap_off, SEEK_SET) != 0 ||
+    if (fseek(file, off_f + cmap_off, SEEK_SET) != 0 ||
         fread(&sfnt.cmap->cmaph, YF_SFNT_CMAPHSZ, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
@@ -1441,7 +1450,7 @@ static int load_sfnt(FILE *file, YF_fontdt *data)
         deinit_tables(&sfnt);
         return -1;
     }
-    if (fseek(file, name_off, SEEK_SET) != 0 ||
+    if (fseek(file, off_f + name_off, SEEK_SET) != 0 ||
         fread(&sfnt.name->nameh, YF_SFNT_NAMEHSZ, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         deinit_tables(&sfnt);
