@@ -1492,6 +1492,12 @@ static int load_sfnt(FILE *file, YF_fontdt *data)
     }
 #endif /* YF_SFNT_NEED_NAME */
 
+    if (fseek(file, off_f, SEEK_SET) != 0) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        deinit_tables(&sfnt);
+        return -1;
+    }
+
     if (load_ttf(&sfnt, file) != 0) {
         deinit_tables(&sfnt);
         return -1;
