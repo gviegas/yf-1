@@ -1007,11 +1007,11 @@ static int set_mapping(const T_cmap *cmap, FILE *file, uint32_t off,
 }
 
 #ifdef YF_SFNT_NEED_NAME
-static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
+static int fill_str(const T_name *name, FILE *file, uint32_t off,
                     T_fontstr *fstr)
 {
     assert(name != NULL);
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(fstr != NULL);
 
     /* TODO: Select correct platform-encoding-language combination. */
@@ -1040,19 +1040,17 @@ static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
         return -1;
     }
 
-    uint16_t nm, len, off;
-    char **str_p;
-
     for (; name_i < name_n; name_i++) {
         if (name->namees[name_i].platform != plat ||
             name->namees[name_i].encoding != encd ||
             name->namees[name_i].language != lang)
             break;
 
-        nm = be16toh(name->namees[name_i].name);
-        len = be16toh(name->namees[name_i].len);
-        off = be16toh(name->namees[name_i].off);
+        const uint16_t nm = be16toh(name->namees[name_i].name);
+        const uint16_t nm_len = be16toh(name->namees[name_i].len);
+        const uint16_t nm_off = be16toh(name->namees[name_i].off);
 
+        char **str_p;
         switch (nm) {
         case 0:
             str_p = &fstr->copyright;
@@ -1100,15 +1098,15 @@ static int fill_str(const T_name *name, FILE *file, uint32_t str_off,
             continue;
         }
 
-        *str_p = malloc(len+1);
+        *str_p = malloc(nm_len+1);
         if (*str_p == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
-        (*str_p)[len] = '\0';
+        (*str_p)[nm_len] = '\0';
 
-        if (fseek(file, str_off+off, SEEK_SET) != 0 ||
-            fread(*str_p, len, 1, file) < 1) {
+        if (fseek(file, off + nm_off, SEEK_SET) != 0 ||
+            fread(*str_p, nm_len, 1, file) < 1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
         }
