@@ -1531,7 +1531,7 @@ static int load_sfnt(FILE *file, YF_fontdt *data)
 
 #ifdef YF_SFNT_NEED_NAME
     const uint32_t str_off = name_off + be16toh(sfnt.name->nameh.str_off);
-    fill_str(sfnt.name, file, str_off, &font->str);
+    fill_str(sfnt.name, file, off_f + str_off, &font->str);
 #endif
 
     if (sfnt.ttf.glyf != NULL && sfnt.ttf.loca != NULL) {
