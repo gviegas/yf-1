@@ -532,7 +532,13 @@ static int verify_file(FILE *file)
 static int load_ttf(T_sfnt *sfnt, FILE *file)
 {
     assert(sfnt != NULL);
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
+
+    const long off_f = ftell(file);
+    if (off_f == -1) {
+        yf_seterr(YF_ERR_INVFILE, __func__);
+        return -1;
+    }
 
     const uint16_t tab_n = be16toh(sfnt->dir->diro.tab_n);
 
@@ -598,7 +604,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
             return -1;
         }
 
-        if (fseek(file, cvt_off, SEEK_SET) != 0 ||
+        if (fseek(file, off_f + cvt_off, SEEK_SET) != 0 ||
             fread(sfnt->ttf.cvt->ctrl_vals, cvt_len, 1, file) < 1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
@@ -619,7 +625,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
             return -1;
         }
 
-        if (fseek(file, fpgm_off, SEEK_SET) != 0 ||
+        if (fseek(file, off_f + fpgm_off, SEEK_SET) != 0 ||
             fread(sfnt->ttf.fpgm->instrs, fpgm_len, 1, file) < 1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
@@ -640,7 +646,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
             return -1;
         }
 
-        if (fseek(file, prep_off, SEEK_SET) != 0 ||
+        if (fseek(file, off_f + prep_off, SEEK_SET) != 0 ||
             fread(sfnt->ttf.prep->program, prep_len, 1, file) < 1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
@@ -655,7 +661,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
             return -1;
         }
 
-        if (fseek(file, gasp_off, SEEK_SET) != 0 ||
+        if (fseek(file, off_f + gasp_off, SEEK_SET) != 0 ||
             fread(&sfnt->ttf.gasp->gasph, YF_SFNT_GASPHSZ, 1, file) < 1) {
             yf_seterr(YF_ERR_INVFILE, __func__);
             return -1;
@@ -691,7 +697,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
         return -1;
     }
 
-    if (fseek(file, loca_off, SEEK_SET) != 0 ||
+    if (fseek(file, off_f + loca_off, SEEK_SET) != 0 ||
         fread(loca_data, loca_len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         free(loca_data);
@@ -716,7 +722,7 @@ static int load_ttf(T_sfnt *sfnt, FILE *file)
         return -1;
     }
 
-    if (fseek(file, glyf_off, SEEK_SET) != 0 ||
+    if (fseek(file, off_f + glyf_off, SEEK_SET) != 0 ||
         fread(sfnt->ttf.glyf->glyphs, glyf_len, 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
