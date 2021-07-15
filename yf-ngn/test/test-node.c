@@ -13,9 +13,10 @@
 static int do_each_node(YF_node node, void *arg)
 {
     char name[16];
-    yf_node_getname(node, name, sizeof name);
+    size_t n = sizeof name;
+    yf_node_getname(node, name, &n);
     int r = (long)arg;
-    printf("%p, '%s', %d\n", (void *)node, name, r);
+    printf("%p, '%s' (%zu), %d\n", (void *)node, name, n,  r);
     return r;
 }
 
