@@ -123,13 +123,14 @@ YF_mat4 *yf_node_getxform(YF_node node);
  * Gets the name of a node.
  *
  * @param node: The node.
- * @param dst: The destination for the name.
- * @param n: The number of characters that the destination buffer can contain.
- *  Must be at least one.
+ * @param dst: The destination for the name. Can be 'NULL'.
+ * @param n: The number of characters that 'dst' can contain. When 'dst' is
+ *  not 'NULL', '*n' must be greater than zero. This location is updated to
+ *  contain the name size, including the terminating null byte.
  * @return: If the length of the name exceeds 'n', returns 'NULL'.
  *  Otherwise, returns 'dst'.
  */
-char *yf_node_getname(YF_node node, char *dst, size_t n);
+char *yf_node_getname(YF_node node, char *dst, size_t *n);
 
 /**
  * Sets the name for a node.
