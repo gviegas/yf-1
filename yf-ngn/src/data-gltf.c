@@ -57,6 +57,8 @@ typedef struct {
 static int next_token(FILE *file, T_token *token)
 {
     static_assert(YF_TOKENMAX > 1);
+    assert(file != NULL);
+    assert(token != NULL);
 
     int c;
     do c = getc(file); while (isspace(c));
