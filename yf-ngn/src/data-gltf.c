@@ -216,7 +216,7 @@ static int parse_array(FILE *file, T_token *token,
                        void **array, size_t *n, size_t elem_sz,
                        int (*fn)(FILE *, T_token *, size_t, void *), void *arg)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(n != NULL && *n == 0);
     assert(elem_sz > 0);
@@ -263,7 +263,7 @@ static int parse_array(FILE *file, T_token *token,
 /* Parses a string. */
 static int parse_str(FILE *file, T_token *token, T_str *str)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(str != NULL);
 
@@ -290,7 +290,7 @@ static int parse_str(FILE *file, T_token *token, T_str *str)
 /* Parses a floating-point number. */
 static int parse_num(FILE *file, T_token *token, T_num *num)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(num != NULL);
 
@@ -323,7 +323,7 @@ static int parse_num(FILE *file, T_token *token, T_num *num)
 static int parse_num_array(FILE *file, T_token *token,
                            size_t index, void *num_pp)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(num_pp != NULL);
 
@@ -336,7 +336,7 @@ static int parse_num_array(FILE *file, T_token *token,
 /* Parses an integer number. */
 static int parse_int(FILE *file, T_token *token, T_int *intr)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(intr != NULL);
 
@@ -365,7 +365,7 @@ static int parse_int(FILE *file, T_token *token, T_int *intr)
 static int parse_int_array(FILE *file, T_token *token,
                            size_t index, void *int_pp)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(int_pp != NULL);
 
@@ -378,7 +378,7 @@ static int parse_int_array(FILE *file, T_token *token,
 /* Parses a boolean value. */
 static int parse_bool(FILE *file, T_token *token, T_bool *booln)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(booln != NULL);
 
@@ -408,7 +408,7 @@ static int parse_bool(FILE *file, T_token *token, T_bool *booln)
    This allows unknown/unimplemented properties to be ignored. */
 static int consume_prop(FILE *file, T_token *token)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(token->token == YF_TOKEN_STR);
 
@@ -830,7 +830,7 @@ typedef struct {
 /* Parses the 'glTF.asset' property. */
 static int parse_asset(FILE *file, T_token *token, T_asset *asset)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(asset != NULL);
     assert(token->token == YF_TOKEN_STR);
@@ -886,7 +886,7 @@ static int parse_asset(FILE *file, T_token *token, T_asset *asset)
 /* Parses the 'glTF.scene' property. */
 static int parse_scene(FILE *file, T_token *token, T_int *scene)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(scene != NULL);
     assert(token->token == YF_TOKEN_STR);
@@ -901,7 +901,7 @@ static int parse_scenes(FILE *file, T_token *token,
 {
     T_scenes *scenes = scenes_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(scenes != NULL);
     assert(index < scenes->n);
@@ -948,7 +948,7 @@ static int parse_nodes(FILE *file, T_token *token,
 {
     T_nodes *nodes = nodes_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(nodes != NULL);
     assert(index < nodes->n);
@@ -1068,7 +1068,7 @@ static int parse_nodes(FILE *file, T_token *token,
 static int parse_perspective(FILE *file, T_token *token,
                              T_perspective *perspective)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(perspective != NULL);
     assert(token->token == YF_TOKEN_STR);
@@ -1120,7 +1120,7 @@ static int parse_perspective(FILE *file, T_token *token,
 static int parse_orthographic(FILE *file, T_token *token,
                               T_orthographic *orthographic)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(orthographic != NULL);
     assert(token->token == YF_TOKEN_STR);
@@ -1174,7 +1174,7 @@ static int parse_cameras(FILE *file, T_token *token,
 {
     T_cameras *cameras = cameras_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(cameras != NULL);
     assert(index < cameras->n);
@@ -1233,7 +1233,7 @@ static int parse_cameras(FILE *file, T_token *token,
 /* Parses the 'glTF.meshes.primitives.attributes' property. */
 static int parse_attributes(FILE *file, T_token *token, T_int *attributes)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(attributes != NULL);
     assert(token->token == YF_TOKEN_STR);
@@ -1303,7 +1303,7 @@ static int parse_targets(FILE *file, T_token *token,
 {
     T_targets *targets = targets_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(targets != NULL);
     assert(index < targets->n);
@@ -1355,7 +1355,7 @@ static int parse_primitives(FILE *file, T_token *token,
 {
     T_primitives *primitives = primitives_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(primitives != NULL);
     assert(index < primitives->n);
@@ -1426,7 +1426,7 @@ static int parse_meshes(FILE *file, T_token *token,
 {
     T_meshes *meshes = meshes_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(meshes != NULL);
     assert(index < meshes->n);
@@ -1483,7 +1483,7 @@ static int parse_skins(FILE *file, T_token *token,
 {
     T_skins *skins = skins_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(skins != NULL);
     assert(index < skins->n);
@@ -1540,7 +1540,7 @@ static int parse_skins(FILE *file, T_token *token,
 static int parse_textureinfo(FILE *file, T_token *token,
                              T_textureinfo *textureinfo)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(textureinfo != NULL);
     assert(textureinfo->tex_coord == 0);
@@ -1588,7 +1588,7 @@ static int parse_textureinfo(FILE *file, T_token *token,
 static int parse_pbrmetalrough(FILE *file, T_token *token,
                                T_pbrmetalrough *pbrmetalrough)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(token->token == YF_TOKEN_STR);
     assert(strcmp(token->data, "pbrMetallicRoughness") == 0);
@@ -1655,7 +1655,7 @@ static int parse_materials(FILE *file, T_token *token,
 {
     T_materials *materials = materials_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(materials != NULL);
     assert(index < materials->n);
@@ -1761,7 +1761,7 @@ static int parse_materials(FILE *file, T_token *token,
 /* Parses the 'glTF.animations.channels.target' property. */
 static int parse_ctarget(FILE *file, T_token *token, T_ctarget *ctarget)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(ctarget != NULL);
     assert(token->token == YF_TOKEN_STR);
@@ -1819,7 +1819,7 @@ static int parse_channels(FILE *file, T_token *token,
 {
     T_channels *channels = channels_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(channels != NULL);
     assert(index < channels->n);
@@ -1863,7 +1863,7 @@ static int parse_asamplers(FILE *file, T_token *token,
 {
     T_asamplers *asamplers = asamplers_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(asamplers != NULL);
     assert(index < asamplers->n);
@@ -1921,7 +1921,7 @@ static int parse_animations(FILE *file, T_token *token,
 {
     T_animations *animations = animations_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(animations != NULL);
     assert(index < animations->n);
@@ -1976,7 +1976,7 @@ static int parse_animations(FILE *file, T_token *token,
 /* Parses the 'glTF.accessors.sparse.indices' property. */
 static int parse_sindices(FILE *file, T_token *token, T_sindices *sindices)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(sindices != NULL);
     assert(token->token == YF_TOKEN_STR);
@@ -2023,7 +2023,7 @@ static int parse_sindices(FILE *file, T_token *token, T_sindices *sindices)
 /* Parses the 'glTF.accessors.sparse.values' property. */
 static int parse_svalues(FILE *file, T_token *token, T_svalues *svalues)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(svalues != NULL);
     assert(token->token == YF_TOKEN_STR);
@@ -2066,7 +2066,7 @@ static int parse_svalues(FILE *file, T_token *token, T_svalues *svalues)
 /* Parses the 'glTF.accessors.sparse' property. */
 static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(sparse != NULL);
 
@@ -2111,7 +2111,7 @@ static int parse_accessors(FILE *file, T_token *token,
 {
     T_accessors *accessors = accessors_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(accessors != NULL);
     assert(index < accessors->n);
@@ -2229,7 +2229,7 @@ static int parse_bufferviews(FILE *file, T_token *token,
 {
     T_bufferviews *bufferviews = bufferviews_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(bufferviews != NULL);
     assert(index < bufferviews->n);
@@ -2292,7 +2292,7 @@ static int parse_buffers(FILE *file, T_token *token,
 {
     T_buffers *buffers = buffers_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(buffers != NULL);
     assert(index < buffers->n);
@@ -2340,7 +2340,7 @@ static int parse_textures(FILE *file, T_token *token,
 {
     T_textures *textures = textures_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(textures != NULL);
     assert(token->token == YF_TOKEN_OP);
@@ -2390,7 +2390,7 @@ static int parse_images(FILE *file, T_token *token,
 {
     T_images *images = images_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(images != NULL);
     assert(index < images->n);
@@ -2444,7 +2444,7 @@ static int parse_samplers(FILE *file, T_token *token,
 {
     T_samplers *samplers = samplers_p;
 
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(samplers != NULL);
     assert(index < samplers->n);
@@ -2500,7 +2500,7 @@ static int parse_samplers(FILE *file, T_token *token,
 /* Parses the root glTF object. */
 static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
 {
-    assert(!feof(file));
+    assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(gltf != NULL);
     assert(token->token == YF_TOKEN_OP);
