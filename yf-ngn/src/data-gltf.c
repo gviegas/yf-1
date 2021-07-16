@@ -3554,6 +3554,108 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return cont->matls[material] == NULL ? -1 : 0;
 }
 
+/* Loads a node subgraph from glTF contents. */
+static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                     T_int node)
+{
+    assert(gltf != NULL);
+    assert(fdata != NULL);
+    assert(cont != NULL);
+    assert(node >= 0);
+
+    if (gltf->nodes.n <= (size_t)node) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    /* subgraphs can be created in any order */
+    assert(cont->nodes != NULL);
+    if (cont->nodes[node] != NULL)
+        return 0;
+
+    for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++) {
+        if (load_node(gltf, fdata, cont, i) != 0)
+            return -1;
+    }
+
+    /* node object */
+    /* TODO: Filter joint nodes, since they must be instantiated from skin. */
+    const T_int mesh = gltf->nodes.v[node].mesh;
+    if (mesh != YF_INT_MIN) {
+        /* model */
+        YF_model mdl = yf_model_init();
+        if (mdl == NULL)
+            return -1;
+
+        if (cont->meshes[mesh] == NULL &&
+            load_mesh(gltf, fdata, cont, mesh) != 0) {
+            yf_model_deinit(mdl);
+            return -1;
+        }
+        yf_model_setmesh(mdl, cont->meshes[mesh]);
+
+        /* TODO: Support for multiple primitives. */
+        const T_int material = gltf->meshes.v[mesh].primitives.v[0].material;
+        if (material != YF_INT_MIN) {
+            if (cont->matls[material] == NULL &&
+                load_material(gltf, fdata, cont, material) != 0) {
+                yf_model_deinit(mdl);
+                return -1;
+            }
+            yf_model_setmatl(mdl, cont->matls[material]);
+        }
+
+        /* TODO: Set skin and instantiate skeleton. */
+
+        cont->nodes[node] = yf_model_getnode(mdl);
+
+    } else {
+        /* none */
+        cont->nodes[node] = yf_node_init();
+        if (cont->nodes[node] == NULL)
+            return -1;
+    }
+
+    /* node transform */
+    const unsigned mask = gltf->nodes.v[node].xform_mask;
+    if (mask != YF_GLTF_XFORM_NONE) {
+        if (mask & YF_GLTF_XFORM_M) {
+            yf_mat4_copy(*yf_node_getxform(cont->nodes[node]),
+                         gltf->nodes.v[node].matrix);
+        } else {
+            YF_mat4 *m = yf_node_getxform(cont->nodes[node]);
+            if (mask & YF_GLTF_XFORM_T) {
+                const T_num *t = gltf->nodes.v[node].trs.t;
+                yf_mat4_xlate(*m, t[0], t[1], t[2]);
+            }
+            if (mask & YF_GLTF_XFORM_R) {
+                const T_num *r = gltf->nodes.v[node].trs.r;
+                YF_mat4 mr, rot;
+                yf_mat4_rotq(rot, r);
+                yf_mat4_mul(mr, *m, rot);
+                yf_mat4_copy(*m, mr);
+            }
+            if (mask & YF_GLTF_XFORM_S) {
+                const T_num *s = gltf->nodes.v[node].trs.s;
+                YF_mat4 ms, scl;
+                yf_mat4_scale(scl, s[0], s[1], s[2]);
+                yf_mat4_mul(ms, *m, scl);
+                yf_mat4_copy(*m, ms);
+            }
+        }
+    }
+
+    /* node name */
+    yf_node_setname(cont->nodes[node], gltf->nodes.v[node].name);
+
+    /* node hierarchy */
+    for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++)
+        yf_node_insert(cont->nodes[node],
+                       cont->nodes[gltf->nodes.v[node].children[i]]);
+
+    return 0;
+}
+
 /* Loads glTF contents. */
 static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
 {
