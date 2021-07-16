@@ -127,8 +127,9 @@ YF_mat4 *yf_node_getxform(YF_node node);
  * @param n: The number of characters that 'dst' can contain. When 'dst' is
  *  not 'NULL', '*n' must be greater than zero. This location is updated to
  *  contain the name size, including the terminating null byte.
- * @return: If the length of the name exceeds 'n', returns 'NULL'.
- *  Otherwise, returns 'dst'.
+ * @return: If 'dst' is not 'NULL' and the length of the name (including the
+ *  terminating null byte) is less than or equal '*n', returns 'dst'.
+ *  Otherwise, 'NULL' is returned and no copy is performed.
  */
 char *yf_node_getname(YF_node node, char *dst, size_t *n);
 
