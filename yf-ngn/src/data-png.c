@@ -778,6 +778,9 @@ static int load_texdt(const T_png *png, YF_texdt *data)
 
 static int load_png(FILE *file, YF_texdt *data)
 {
+    assert(file != NULL && !feof(file));
+    assert(data != NULL);
+
     uint8_t sign[sizeof l_sign];
     if (fread(sign, sizeof sign, 1, file) < 1 ||
         memcmp(l_sign, sign, sizeof sign) != 0) {
