@@ -231,19 +231,29 @@ void yf_label_setfont(YF_label labl, YF_font font)
     labl->pend_mask |= YF_PEND_RZ;
 }
 
-wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n)
+wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t *n)
 {
     assert(labl != NULL);
-    assert(dst != NULL);
-    assert(n > 0);
+    assert(n != NULL);
+    assert(dst == NULL || *n > 0);
+
+    if (dst == NULL) {
+        *n = labl->str == NULL ? 1 : wcslen(labl->str) + 1;
+        return NULL;
+    }
 
     if (labl->str == NULL) {
         dst[0] = L'\0';
+        *n = 1;
         return dst;
     }
 
-    if (wcslen(labl->str) < n)
+    const size_t str_n = wcslen(labl->str) + 1;
+    if (str_n <= *n) {
+        *n = str_n;
         return wcscpy(dst, labl->str);
+    }
+    *n = str_n;
     return NULL;
 }
 
