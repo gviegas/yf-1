@@ -3656,6 +3656,38 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return 0;
 }
 
+/* Loads an entire scene from glTF contents. */
+static int load_scene(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                      T_int scene)
+{
+    assert(gltf != NULL);
+    assert(fdata != NULL);
+    assert(cont != NULL);
+    assert(scene >= 0);
+
+    if (gltf->scenes.n <= (size_t)scene) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    assert(cont->scns != NULL);
+    assert(cont->scns[scene] == NULL);
+
+    cont->scns[scene] = yf_scene_init();
+    if (cont->scns[scene] == NULL)
+        return -1;
+
+    YF_node node = yf_scene_getnode(cont->scns[scene]);
+    yf_node_setname(node, gltf->scenes.v[scene].name);
+    for (size_t i = 0; i < gltf->scenes.v[scene].node_n; i++) {
+        if (load_node(gltf, fdata, cont, i) != 0)
+            return -1;
+        yf_node_insert(node, cont->nodes[gltf->scenes.v[scene].nodes[i]]);
+    }
+
+    return 0;
+}
+
 /* Loads glTF contents. */
 static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
 {
@@ -3708,15 +3740,8 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     assert(gltf->scenes.n == 0 || cont->scns != NULL);
     for (size_t i = 0; i < gltf->scenes.n; i++) {
         assert(cont->scns[i] == NULL);
-
-        cont->scns[i] = yf_scene_init();
-        if (cont->scns[i] == NULL)
+        if (load_scene(gltf, fdata, cont, i) != 0)
             return -1;
-
-        YF_node node = yf_scene_getnode(cont->scns[i]);
-        yf_node_setname(node, gltf->scenes.v[i].name);
-        for (size_t j = 0; j < gltf->scenes.v[i].node_n; j++)
-            yf_node_insert(node, cont->nodes[gltf->scenes.v[i].nodes[j]]);
     }
 
     return 0;
