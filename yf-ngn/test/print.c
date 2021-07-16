@@ -57,10 +57,11 @@ void yf_print_nodeobj(YF_node node)
         printf("\n font: %p", (void *)yf_label_getfont((YF_label)obj));
         printf("\n pt:   %hu", yf_label_getpt((YF_label)obj));
         {
-            wchar_t str[256];
-            size_t n = sizeof str / sizeof *str;
-            printf("\n str:  '%ls'", yf_label_getstr((YF_label)obj, str, &n));
-            printf(" (%zu)", n);
+            size_t n;
+            yf_label_getstr((YF_label)obj, NULL, &n);
+            wchar_t str[n];
+            yf_label_getstr((YF_label)obj, str, &n);
+            printf("\n str:\n  '%ls' (%zu)", str, n);
             YF_dim2 dim = yf_label_getdim((YF_label)obj);
             printf("\n dim:  %ux%u", dim.width, dim.height);
         }
