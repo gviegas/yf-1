@@ -76,13 +76,15 @@ void yf_label_setfont(YF_label labl, YF_font font);
  * Gets the string of a label.
  *
  * @param labl: The label.
- * @param dst: The destination for the string.
- * @param n: The number of wide characters that the destination buffer can
- *  contain. Must be at least one.
- * @return: If the length of the string exceeds 'n', returns 'NULL'.
- *  Otherwise, returns 'dst'.
+ * @param dst: The destination for the string. Can be 'NULL'.
+ * @param n: The number of wide characters that 'dst' can contain. When 'dst'
+ *  is not 'NULL', '*n' must be greater than zero. This location is updated
+ *  to contain the string size, including the terminating null wide character.
+ * @return: If 'dst' is not 'NULL' and the length of the string (including the
+ *  terminating null wide character) is less than or equal '*n', returns 'dst'.
+ *  Otherwise, 'NULL' is returned and no copy is performed.
  */
-wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t n);
+wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t *n);
 
 /**
  * Sets the string for a label.
