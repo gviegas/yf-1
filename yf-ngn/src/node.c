@@ -213,6 +213,7 @@ char *yf_node_getname(YF_node node, char *dst, size_t *n)
 {
     assert(node != NULL);
     assert(n != NULL);
+    assert(dst == NULL || *n > 0);
 
     if (dst == NULL) {
         *n = node->name == NULL ? 1 : strlen(node->name) + 1;
@@ -230,7 +231,6 @@ char *yf_node_getname(YF_node node, char *dst, size_t *n)
         *n = name_n;
         return strcpy(dst, node->name);
     }
-
     *n = name_n;
     return NULL;
 }
