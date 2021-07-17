@@ -133,8 +133,10 @@ void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel)
     if (skel == NULL)
         return;
 
-    for (unsigned i = 0; i < skel->node_n; i++)
-        yf_node_deinit(skel->nodes[i]);
+    if (skel->managed) {
+        for (unsigned i = 0; i < skel->node_n; i++)
+            yf_node_deinit(skel->nodes[i]);
+    }
     free(skel->nodes);
     free(skel);
 }
