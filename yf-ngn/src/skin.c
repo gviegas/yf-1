@@ -57,6 +57,15 @@ YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n)
     return skin;
 }
 
+const YF_joint *yf_skin_getjnts(YF_skin skin, unsigned *jnt_n)
+{
+    assert(skin != NULL);
+    assert(jnt_n != NULL);
+
+    *jnt_n = skin->jnt_n;
+    return skin->jnts;
+}
+
 YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes)
 {
     assert(skin != NULL);
