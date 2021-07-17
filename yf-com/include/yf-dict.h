@@ -33,6 +33,8 @@ YF_dict yf_dict_init(YF_hashfn hash, YF_cmpfn cmp);
 /**
  * Inserts a key/value pair in a dictionary.
  *
+ * Non-nil iterators that refer to 'dict' become invalid.
+ *
  * @param dict: The dictionary.
  * @param key: The key.
  * @param val: The value.
@@ -44,6 +46,8 @@ int yf_dict_insert(YF_dict dict, const void *key, const void *val);
 /**
  * Removes a key/value pair from a dictionary.
  *
+ * Non-nil iterators that refer to 'dict' become invalid.
+ *
  * @param dict: The dictionary.
  * @param key: The key.
  * @return: If 'dict' does not contain 'key', returns 'NULL' and sets the
@@ -53,6 +57,8 @@ void *yf_dict_remove(YF_dict dict, const void *key);
 
 /**
  * Removes a key/value pair from a dictionary.
+ *
+ * Non-nil iterators that refer to 'dict' become invalid.
  *
  * @param dict: The dictionary.
  * @param key: The key location, whose value will be set to the stored key.
@@ -132,6 +138,8 @@ size_t yf_dict_getlen(YF_dict dict);
 
 /**
  * Removes all key/value pairs from a dictionary.
+ *
+ * Non-nil iterators that refer to 'dict' become invalid.
  *
  * @param dict: The dictionary.
  */
