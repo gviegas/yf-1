@@ -48,6 +48,15 @@ typedef struct {
 YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n);
 
 /**
+ * Gets the joint descriptions of a skin.
+ *
+ * @param skin: The skin.
+ * @param jnt_n: The destination for the size of the 'YF_joint' array.
+ * @return: The skin's 'YF_joint' array.
+ */
+const YF_joint *yf_skin_getjnts(YF_skin skin, unsigned *jnt_n);
+
+/**
  * Makes a new skeleton from a given skin.
  *
  * @param skin: The skin.
