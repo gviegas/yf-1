@@ -133,6 +133,10 @@ YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes)
         memcpy(skel->nodes, nodes, skel->node_n * sizeof *skel->nodes);
     }
 
+    if (yf_list_insert(skin->skels, skel) != 0) {
+        yf_skin_unmkskel(skin, skel);
+        return NULL;
+    }
     return skel;
 }
 
