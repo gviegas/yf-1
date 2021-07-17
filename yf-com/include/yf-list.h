@@ -100,14 +100,14 @@ void *yf_list_removeat(YF_list list, YF_iter *it);
 int yf_list_contains(YF_list list, const void *val);
 
 /**
- * Retrieves the next value for a given linked list iterator.
+ * Gets the next value in a linked list.
  *
  * When the end of the list is reached, 'it' is set to the nil iterator.
  * One can check that there are no more elements to retrieve using the macro
  * 'YF_IT_ISNIL' - this is especially useful for lists that can contain the
- * 'NULL' value as a valid element (checking the return value would suffice
+ * 'NULL' value as a valid element (checking the returned value would suffice
  * otherwise).
-
+ *
  * @param list: The list.
  * @param it: The iterator. Can be 'NULL'.
  * @return: If 'list' is empty, returns 'NULL'. If not, and 'it' is either
