@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "yf/com/yf-list.h"
 #include "yf/com/yf-error.h"
 
 #include "yf-skin.h"
@@ -16,6 +17,7 @@
 struct YF_skin_o {
     YF_joint *jnts;
     unsigned jnt_n;
+    YF_list skels;
 };
 
 struct YF_skeleton_o {
@@ -53,6 +55,13 @@ YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n)
     }
     memcpy(skin->jnts, jnts, jnt_n * sizeof *jnts);
     skin->jnt_n = jnt_n;
+
+    skin->skels = yf_list_init(NULL);
+    if (skin->skels == NULL) {
+        free(skin->jnts);
+        free(skin);
+        return NULL;
+    }
 
     return skin;
 }
