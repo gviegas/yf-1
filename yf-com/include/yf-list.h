@@ -68,8 +68,8 @@ int yf_list_insertat(YF_list list, YF_iter *it, const void *val);
  *
  * @param list: The list.
  * @param val: The value to remove.
- * @return: On success, returns zero. Otherwise, a non-zero value is returned
- *  and the global error is set to indicate the cause.
+ * @return: If 'list' does not contain 'val', returns a non-zero value and
+ *  sets the global error to 'YF_ERR_NOTFND'. Otherwise, zero is returned.
  */
 int yf_list_remove(YF_list list, const void *val);
 
