@@ -51,10 +51,15 @@ YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n);
  * Makes a new skeleton from a given skin.
  *
  * @param skin: The skin.
+ * @param nodes: Optional array of nodes for the skeleton. When provided,
+ *  this array must contain all joint nodes plus one additional node in the
+ *  last position, which will be used as skeleton root. The caller is then
+ *  responsible for constructing the skeleton hierarchy, for setting its
+ *  properties and for managing the nodes' lifetime.
  * @return: On success, returns a new skeleton. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_skeleton yf_skin_makeskel(YF_skin skin);
+YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes);
 
 /**
  * Gets the root node of a skin's skeleton.

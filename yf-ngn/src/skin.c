@@ -21,6 +21,7 @@ struct YF_skin_o {
 struct YF_skeleton_o {
     YF_node *nodes;
     unsigned node_n;
+    int managed;
 };
 
 YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n)
@@ -56,7 +57,7 @@ YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n)
     return skin;
 }
 
-YF_skeleton yf_skin_makeskel(YF_skin skin)
+YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes)
 {
     assert(skin != NULL);
 
@@ -74,35 +75,45 @@ YF_skeleton yf_skin_makeskel(YF_skin skin)
         return NULL;
     }
 
-    for (unsigned i = 0; i < skel->node_n; i++) {
-        if ((skel->nodes[i] = yf_node_init()) == NULL) {
-            for (unsigned j = 0; j < i; j++)
-                yf_node_deinit(skel->nodes[j]);
-            free(skel->nodes);
-            free(skel);
-            return NULL;
-        }
-    }
+    if (nodes == NULL) {
+        /* nodes are managed by the skeleton */
+        skel->managed = 1;
 
-    for (unsigned i = 0; i < skin->jnt_n; i++) {
-        YF_node node = skel->nodes[i];
-        YF_joint *jnt = skin->jnts+i;
-
-        yf_mat4_copy(*yf_node_getxform(node), jnt->xform);
-
-        if (yf_node_setname(node, jnt->name) != 0) {
-            yf_skin_unmkskel(skin, skel);
-            return NULL;
+        for (unsigned i = 0; i < skel->node_n; i++) {
+            if ((skel->nodes[i] = yf_node_init()) == NULL) {
+                for (unsigned j = 0; j < i; j++)
+                    yf_node_deinit(skel->nodes[j]);
+                free(skel->nodes);
+                free(skel);
+                return NULL;
+            }
         }
 
-        if (jnt->pnt_i < 0)
-            yf_node_insert(skel->nodes[skin->jnt_n], node);
-        else
-            yf_node_insert(skel->nodes[jnt->pnt_i], node);
-    }
+        for (unsigned i = 0; i < skin->jnt_n; i++) {
+            YF_node node = skel->nodes[i];
+            YF_joint *jnt = skin->jnts+i;
 
-    /* XXX */
-    assert(!yf_node_isleaf(skel->nodes[skin->jnt_n]));
+            yf_mat4_copy(*yf_node_getxform(node), jnt->xform);
+
+            if (yf_node_setname(node, jnt->name) != 0) {
+                yf_skin_unmkskel(skin, skel);
+                return NULL;
+            }
+
+            if (jnt->pnt_i < 0)
+                yf_node_insert(skel->nodes[skin->jnt_n], node);
+            else
+                yf_node_insert(skel->nodes[jnt->pnt_i], node);
+        }
+
+        /* XXX */
+        assert(!yf_node_isleaf(skel->nodes[skin->jnt_n]));
+
+    } else {
+        /* nodes are externally managed */
+        skel->managed = 0;
+        memcpy(skel->nodes, nodes, skel->node_n * sizeof *skel->nodes);
+    }
 
     return skel;
 }
