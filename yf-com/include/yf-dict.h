@@ -111,6 +111,12 @@ int yf_dict_contains(YF_dict dict, const void *key);
 /**
  * Gets the next key/value pair in a dictionary.
  *
+ * When the end of the dictionary is reached, 'it' is set to the nil iterator.
+ * One can check that there are no more pairs to retrieve using the macro
+ * 'YF_IT_ISNIL' - this is especially useful for dictionaries that can contain
+ * 'NULL' as a valid pair (checking the returned value or stored key would
+ * suffice otherwise).
+ *
  * @param dict: The dictionary.
  * @param it: The iterator. Can be 'NULL'.
  * @param key: The destination for the key. Can be 'NULL'.
@@ -120,6 +126,9 @@ void *yf_dict_next(YF_dict dict, YF_iter *it, void **key);
 
 /**
  * Executes a given function for each key/value pair in a dictionary.
+ *
+ * This function completes when the end of the dictionary is reached or when
+ * the provided callback returns a non-zero value.
  *
  * @param dict: The dictionary.
  * @param callb: The callback to execute for each key/value pair.
