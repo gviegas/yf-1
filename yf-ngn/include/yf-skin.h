@@ -71,6 +71,17 @@ YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes);
 YF_node yf_skin_getnode(YF_skin skin, YF_skeleton skel);
 
 /**
+ * Gets a joint node of a skin's skeleton.
+ *
+ * @param skin: The skin.
+ * @param skel: The skeleton.
+ * @param index: The index of the joint in the 'jnts' array used to initialize
+ *  the skin.
+ * @return: The skeleton's joint node for 'index'.
+ */
+YF_node yf_skin_getjntnode(YF_skin skin, YF_skeleton skel, unsigned index);
+
+/**
  * Unmakes a skin's skeleton.
  *
  * @param skin: The skin that produced 'skel'.

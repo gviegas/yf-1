@@ -126,6 +126,15 @@ YF_node yf_skin_getnode(YF_skin skin, YF_skeleton skel)
     return skel->nodes[skin->jnt_n];
 }
 
+YF_node yf_skin_getjntnode(YF_skin skin, YF_skeleton skel, unsigned index)
+{
+    assert(skin != NULL);
+    assert(skel != NULL);
+    assert(index < skin->jnt_n);
+
+    return skel->nodes[index];
+}
+
 void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel)
 {
     assert(skin != NULL);
