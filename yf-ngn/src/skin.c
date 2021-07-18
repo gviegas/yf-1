@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "yf/com/yf-list.h"
 #include "yf/com/yf-error.h"
 
 #include "yf-skin.h"
@@ -16,6 +17,7 @@
 struct YF_skin_o {
     YF_joint *jnts;
     unsigned jnt_n;
+    YF_list skels;
 };
 
 struct YF_skeleton_o {
@@ -53,6 +55,13 @@ YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n)
     }
     memcpy(skin->jnts, jnts, jnt_n * sizeof *jnts);
     skin->jnt_n = jnt_n;
+
+    skin->skels = yf_list_init(NULL);
+    if (skin->skels == NULL) {
+        free(skin->jnts);
+        free(skin);
+        return NULL;
+    }
 
     return skin;
 }
@@ -124,6 +133,10 @@ YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes)
         memcpy(skel->nodes, nodes, skel->node_n * sizeof *skel->nodes);
     }
 
+    if (yf_list_insert(skin->skels, skel) != 0) {
+        yf_skin_unmkskel(skin, skel);
+        return NULL;
+    }
     return skel;
 }
 
@@ -151,6 +164,9 @@ void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel)
     if (skel == NULL)
         return;
 
+    /* XXX: This call will fail when 'makeskel()' itself fails. */
+    yf_list_remove(skin->skels, skel);
+
     if (skel->managed) {
         for (unsigned i = 0; i < skel->node_n; i++)
             yf_node_deinit(skel->nodes[i]);
@@ -161,8 +177,14 @@ void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel)
 
 void yf_skin_deinit(YF_skin skin)
 {
-    if (skin != NULL) {
-        free(skin->jnts);
-        free(skin);
-    }
+    if (skin == NULL)
+        return;
+
+    YF_skeleton skel;
+    while ((skel = yf_list_removeat(skin->skels, NULL)) != NULL)
+        yf_skin_unmkskel(skin, skel);
+
+    yf_list_deinit(skin->skels);
+    free(skin->jnts);
+    free(skin);
 }
