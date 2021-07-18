@@ -57,6 +57,16 @@ YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n);
 const YF_joint *yf_skin_getjnts(YF_skin skin, unsigned *jnt_n);
 
 /**
+ * Executes a given function for each instantiated skeleton of a skin.
+ *
+ * @param skin: The skin.
+ * @param callb: The callback to execute for each instance.
+ * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
+ */
+void yf_skin_each(YF_skin skin, int (*callb)(YF_skeleton skel, void *arg),
+                  void *arg);
+
+/**
  * Makes a new skeleton from a given skin.
  *
  * @param skin: The skin.
