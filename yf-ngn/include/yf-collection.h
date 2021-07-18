@@ -95,7 +95,7 @@ int yf_collection_contains(YF_collection coll, int citem, const char *name);
  * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
  */
 void yf_collection_each(YF_collection coll, int citem,
-                        int (*callb)(void *name, void *item, void *arg),
+                        int (*callb)(const char *name, void *item, void *arg),
                         void *arg);
 
 /**

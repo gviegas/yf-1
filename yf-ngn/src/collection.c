@@ -165,14 +165,19 @@ int yf_collection_contains(YF_collection coll, int citem, const char *name)
 }
 
 void yf_collection_each(YF_collection coll, int citem,
-                        int (*callb)(void *name, void *item, void *arg),
+                        int (*callb)(const char *name, void *item, void *arg),
                         void *arg)
 {
     assert(coll != NULL);
     assert(citem >= 0 && citem < YF_CITEM_N);
     assert(callb != NULL);
 
-    yf_dict_each(coll->items[citem], callb, arg);
+    YF_iter it = YF_NILIT;
+    void *name, *item;
+    /* XXX: Insertion of 'NULL' item is guarded by an assertion. */
+    while ((item = yf_dict_next(coll->items[citem], &it, &name)) != NULL &&
+           callb(name, item, arg) == 0)
+        ;
 }
 
 void yf_collection_deinit(YF_collection coll)
