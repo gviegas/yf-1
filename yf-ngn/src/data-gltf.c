@@ -3556,7 +3556,7 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return cont->matls[material] == NULL ? -1 : 0;
 }
 
-/* Loads a node subgraph from glTF contents. */
+/* Loads a single node from glTF contents. */
 static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                      T_int node)
 {
@@ -3570,18 +3570,10 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         return -1;
     }
 
-    /* subgraphs can be created in any order */
     assert(cont->nodes != NULL);
-    if (cont->nodes[node] != NULL)
-        return 0;
-
-    for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++) {
-        if (load_node(gltf, fdata, cont, i) != 0)
-            return -1;
-    }
+    assert(cont->nodes[node] == NULL);
 
     /* node object */
-    /* TODO: Filter joint nodes, since they must be instantiated from skin. */
     const T_int mesh = gltf->nodes.v[node].mesh;
     if (mesh != YF_INT_MIN) {
         /* model */
@@ -3649,11 +3641,6 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
     /* node name */
     yf_node_setname(cont->nodes[node], gltf->nodes.v[node].name);
-
-    /* node hierarchy */
-    for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++)
-        yf_node_insert(cont->nodes[node],
-                       cont->nodes[gltf->nodes.v[node].children[i]]);
 
     return 0;
 }
