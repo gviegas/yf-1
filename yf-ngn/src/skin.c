@@ -75,6 +75,19 @@ const YF_joint *yf_skin_getjnts(YF_skin skin, unsigned *jnt_n)
     return skin->jnts;
 }
 
+void yf_skin_each(YF_skin skin, int (*callb)(YF_skeleton skel, void *arg),
+                  void *arg)
+{
+    assert(skin != NULL);
+    assert(callb != NULL);
+
+    YF_iter it = YF_NILIT;
+    YF_skeleton skel;
+    while ((skel = yf_list_next(skin->skels, &it)) != NULL &&
+           callb(skel, arg) == 0)
+        ;
+}
+
 YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes)
 {
     assert(skin != NULL);
