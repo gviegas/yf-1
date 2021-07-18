@@ -3556,7 +3556,7 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return cont->matls[material] == NULL ? -1 : 0;
 }
 
-/* Loads a node subgraph from glTF contents. */
+/* Loads a single node from glTF contents. */
 static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                      T_int node)
 {
@@ -3570,18 +3570,10 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         return -1;
     }
 
-    /* subgraphs can be created in any order */
     assert(cont->nodes != NULL);
-    if (cont->nodes[node] != NULL)
-        return 0;
-
-    for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++) {
-        if (load_node(gltf, fdata, cont, i) != 0)
-            return -1;
-    }
+    assert(cont->nodes[node] == NULL);
 
     /* node object */
-    /* TODO: Filter joint nodes, since they must be instantiated from skin. */
     const T_int mesh = gltf->nodes.v[node].mesh;
     if (mesh != YF_INT_MIN) {
         /* model */
@@ -3650,7 +3642,36 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     /* node name */
     yf_node_setname(cont->nodes[node], gltf->nodes.v[node].name);
 
-    /* node hierarchy */
+    return 0;
+}
+
+/* Loads a node subgraph from glTF contents. */
+static int load_subgraph(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                         T_int node)
+{
+    assert(gltf != NULL);
+    assert(fdata != NULL);
+    assert(cont != NULL);
+    assert(node >= 0);
+
+    if (gltf->nodes.n <= (size_t)node) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    assert(cont->nodes != NULL);
+
+    /* descendants will have been created by the time of insertion */
+    for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++) {
+        if (load_subgraph(gltf, fdata, cont,
+                          gltf->nodes.v[node].children[i]) != 0)
+            return -1;
+    }
+
+    /* node may have been created already */
+    if (cont->nodes[node] == NULL && load_node(gltf, fdata, cont, node) != 0)
+        return -1;
+
     for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++)
         yf_node_insert(cont->nodes[node],
                        cont->nodes[gltf->nodes.v[node].children[i]]);
@@ -3682,7 +3703,8 @@ static int load_scene(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     YF_node node = yf_scene_getnode(cont->scns[scene]);
     yf_node_setname(node, gltf->scenes.v[scene].name);
     for (size_t i = 0; i < gltf->scenes.v[scene].node_n; i++) {
-        if (load_node(gltf, fdata, cont, i) != 0)
+        if (load_subgraph(gltf, fdata, cont,
+                          gltf->scenes.v[scene].nodes[i]) != 0)
             return -1;
         yf_node_insert(node, cont->nodes[gltf->scenes.v[scene].nodes[i]]);
     }
@@ -3733,7 +3755,7 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     /* TODO: Filter joint nodes, since they must be instantiated from skin. */
     assert(gltf->nodes.n == 0 || cont->nodes != NULL);
     for (size_t i = 0; i < gltf->nodes.n; i++) {
-        /* XXX: Can be non-null. */
+        assert(cont->nodes[i] == NULL);
         if (load_node(gltf, fdata, cont, i) != 0)
             return -1;
     }
