@@ -164,6 +164,9 @@ void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel)
     if (skel == NULL)
         return;
 
+    /* XXX: This call will fail when 'makeskel()' itself fails. */
+    yf_list_remove(skin->skels, skel);
+
     if (skel->managed) {
         for (unsigned i = 0; i < skel->node_n; i++)
             yf_node_deinit(skel->nodes[i]);
