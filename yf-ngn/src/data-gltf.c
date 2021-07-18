@@ -3645,6 +3645,39 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return 0;
 }
 
+/* Loads a single skeleton from glTF contents. */
+static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                         T_int skin)
+{
+    assert(gltf != NULL);
+    assert(fdata != NULL);
+    assert(cont != NULL);
+    assert(skin >= 0);
+
+    if (gltf->skins.n <= (size_t)skin) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    assert(cont->skins != NULL);
+    if (cont->skins[skin] == NULL && load_skin(gltf, fdata, cont, skin) != 0)
+        return -1;
+
+    for (size_t i = 0; i < gltf->skins.v[skin].joint_n; i++) {
+        const T_int joint = gltf->skins.v[skin].joints[i];
+        if (cont->nodes[joint] == NULL &&
+            load_node(gltf, fdata, cont, joint) != 0)
+            return -1;
+    }
+
+    unsigned jnt_n;
+    const YF_joint *jnts = yf_skin_getjnts(cont->skins[skin], &jnt_n);
+
+    /* TODO... */
+
+    return 0;
+}
+
 /* Loads a node subgraph from glTF contents. */
 static int load_subgraph(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                          T_int node)
