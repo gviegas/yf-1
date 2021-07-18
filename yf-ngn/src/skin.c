@@ -177,8 +177,14 @@ void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel)
 
 void yf_skin_deinit(YF_skin skin)
 {
-    if (skin != NULL) {
-        free(skin->jnts);
-        free(skin);
-    }
+    if (skin == NULL)
+        return;
+
+    YF_skeleton skel;
+    while ((skel = yf_list_removeat(skin->skels, NULL)) != NULL)
+        yf_skin_unmkskel(skin, skel);
+
+    yf_list_deinit(skin->skels);
+    free(skin->jnts);
+    free(skin);
 }
