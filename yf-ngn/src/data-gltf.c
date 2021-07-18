@@ -3703,7 +3703,8 @@ static int load_scene(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     YF_node node = yf_scene_getnode(cont->scns[scene]);
     yf_node_setname(node, gltf->scenes.v[scene].name);
     for (size_t i = 0; i < gltf->scenes.v[scene].node_n; i++) {
-        if (load_node(gltf, fdata, cont, i) != 0)
+        if (load_subgraph(gltf, fdata, cont,
+                          gltf->scenes.v[scene].nodes[i]) != 0)
             return -1;
         yf_node_insert(node, cont->nodes[gltf->scenes.v[scene].nodes[i]]);
     }
