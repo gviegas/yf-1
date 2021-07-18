@@ -3645,6 +3645,40 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return 0;
 }
 
+/* Loads a node subgraph from glTF contents. */
+static int load_subgraph(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                         T_int node)
+{
+    assert(gltf != NULL);
+    assert(fdata != NULL);
+    assert(cont != NULL);
+    assert(node >= 0);
+
+    if (gltf->nodes.n <= (size_t)node) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    assert(cont->nodes != NULL);
+
+    /* descendants will have been created by the time of insertion */
+    for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++) {
+        if (load_subgraph(gltf, fdata, cont,
+                          gltf->nodes.v[node].children[i]) != 0)
+            return -1;
+    }
+
+    /* node may have been created already */
+    if (cont->nodes[node] == NULL && load_node(gltf, fdata, cont, node) != 0)
+        return -1;
+
+    for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++)
+        yf_node_insert(cont->nodes[node],
+                       cont->nodes[gltf->nodes.v[node].children[i]]);
+
+    return 0;
+}
+
 /* Loads an entire scene from glTF contents. */
 static int load_scene(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                       T_int scene)
