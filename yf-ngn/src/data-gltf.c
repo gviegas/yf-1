@@ -3888,7 +3888,8 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     assert(gltf->skins.n == 0 || cont->skins != NULL);
     for (size_t i = 0; i < gltf->skins.n; i++) {
         assert(cont->skins[i] == NULL);
-        if (load_skin(gltf, fdata, cont, i) != 0)
+        if (load_skin(gltf, fdata, cont, i) != 0 ||
+            load_skeleton(gltf, fdata, cont, i) != 0)
             return -1;
     }
 
@@ -3901,7 +3902,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     }
 
     /* node creation */
-    /* TODO: Filter joint nodes, since they must be instantiated from skin. */
     assert(gltf->nodes.n == 0 || cont->nodes != NULL);
     for (size_t i = 0; i < gltf->nodes.n; i++) {
         assert(cont->nodes[i] == NULL);
