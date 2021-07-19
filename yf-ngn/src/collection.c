@@ -43,7 +43,6 @@ static int deinit_item(void *key, void *val, void *arg)
         yf_mesh_deinit(val);
         break;
     case YF_CITEM_SKIN:
-        /* XXX: Skeletons. */
         yf_skin_deinit(val);
         break;
     case YF_CITEM_MATERIAL:
