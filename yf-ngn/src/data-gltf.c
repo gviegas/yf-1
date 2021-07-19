@@ -3673,17 +3673,17 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     unsigned jnt_n;
     const YF_joint *jnts = yf_skin_getjnts(cont->skins[skin], &jnt_n);
 
-    union { T_int i, *is; } root_jnt;
-    unsigned root_n = 0;
+    union { T_int i, *is; } unparented;
+    unsigned unparented_n = 0;
 
     for (unsigned i = 0; i < jnt_n; i++) {
         if (jnts[i].pnt_i >= 0)
             continue;
 
         /* XXX: 'YF_joint' array matches 'gltf.skins.v[].joints'. */
-        switch (root_n) {
+        switch (unparented_n) {
         case 0:
-            root_jnt.i = gltf->skins.v[skin].joints[i];
+            unparented.i = gltf->skins.v[skin].joints[i];
             break;
 
         case 1: {
@@ -3692,38 +3692,45 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 return -1;
             }
-            tmp[0] = root_jnt.i;
+            tmp[0] = unparented.i;
             tmp[1] = gltf->skins.v[skin].joints[i];
-            root_jnt.is = tmp;
+            unparented.is = tmp;
         } break;
 
         default:
-            root_jnt.is[root_n] = gltf->skins.v[skin].joints[i];
+            unparented.is[unparented_n] = gltf->skins.v[skin].joints[i];
         }
 
-        root_n++;
+        unparented_n++;
     }
-    assert(root_n != 0);
 
-    T_int root_skel = YF_INT_MIN;
-    if (root_n > 1) {
+    assert(unparented_n != 0);
+
+    T_int root = YF_INT_MIN;
+    if (unparented_n > 1) {
         /* need to find common root of unparented joints */
+        T_int *hier = malloc(gltf->nodes.n * sizeof *hier);
+        if (hier == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            free(unparented.is);
+            return -1;
+        }
         /* TODO */
-        free(root_jnt.is);
+        free(unparented.is);
     } else {
         /* need to find unparented joint's parent, if it exists */
         for (size_t i = 0; i < gltf->nodes.n; i++) {
             for (size_t j = 0; j < gltf->nodes.v[i].child_n; j++) {
-                if (gltf->nodes.v[i].children[j] == root_jnt.i) {
-                    root_skel = i;
+                if (gltf->nodes.v[i].children[j] == unparented.i) {
+                    root = i;
                     i = gltf->nodes.n;
                     break;
                 }
             }
         }
-        if (root_skel == YF_INT_MIN)
+        if (root == YF_INT_MIN)
             /* skeleton root is the joint itself */
-            root_skel = root_jnt.i;
+            root = unparented.i;
     }
 
     /* TODO... */
