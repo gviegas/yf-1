@@ -3705,10 +3705,28 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
     assert(root_n != 0);
 
-    /* TODO... */
-
-    if (root_n > 1)
+    T_int root_skel = YF_INT_MIN;
+    if (root_n > 1) {
+        /* need to find common root of unparented joints */
+        /* TODO */
         free(root_jnt.is);
+    } else {
+        /* need to find unparented joint's parent, if it exists */
+        for (size_t i = 0; i < gltf->nodes.n; i++) {
+            for (size_t j = 0; j < gltf->nodes.v[i].child_n; j++) {
+                if (gltf->nodes.v[i].children[j] == root_jnt.i) {
+                    root_skel = i;
+                    i = gltf->nodes.n;
+                    break;
+                }
+            }
+        }
+        if (root_skel == YF_INT_MIN)
+            /* skeleton root is the joint itself */
+            root_skel = root_jnt.i;
+    }
+
+    /* TODO... */
 
     return 0;
 }
