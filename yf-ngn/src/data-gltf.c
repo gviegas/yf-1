@@ -3645,6 +3645,155 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return 0;
 }
 
+/* Loads a single skeleton from glTF contents. */
+static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                         T_int skin)
+{
+    assert(gltf != NULL);
+    assert(fdata != NULL);
+    assert(cont != NULL);
+    assert(skin >= 0);
+
+    if (gltf->skins.n <= (size_t)skin) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    assert(cont->skins != NULL);
+    if (cont->skins[skin] == NULL && load_skin(gltf, fdata, cont, skin) != 0)
+        return -1;
+
+    for (size_t i = 0; i < gltf->skins.v[skin].joint_n; i++) {
+        const T_int joint = gltf->skins.v[skin].joints[i];
+        if (cont->nodes[joint] == NULL &&
+            load_node(gltf, fdata, cont, joint) != 0)
+            return -1;
+    }
+
+    unsigned jnt_n;
+    const YF_joint *jnts = yf_skin_getjnts(cont->skins[skin], &jnt_n);
+
+    union { T_int i, *is; } unparented;
+    unsigned unparented_n = 0;
+
+    for (size_t i = 0; i < jnt_n; i++) {
+        if (jnts[i].pnt_i >= 0)
+            continue;
+
+        /* XXX: 'YF_joint' array matches 'gltf.skins.v[].joints'. */
+        switch (unparented_n) {
+        case 0:
+            unparented.i = gltf->skins.v[skin].joints[i];
+            break;
+
+        case 1: {
+            T_int *tmp = malloc(jnt_n * sizeof *tmp);
+            if (tmp == NULL) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                return -1;
+            }
+            tmp[0] = unparented.i;
+            tmp[1] = gltf->skins.v[skin].joints[i];
+            unparented.is = tmp;
+        } break;
+
+        default:
+            unparented.is[unparented_n] = gltf->skins.v[skin].joints[i];
+        }
+
+        unparented_n++;
+    }
+
+    assert(unparented_n != 0);
+
+    T_int root = YF_INT_MIN;
+    if (unparented_n > 1) {
+        /* need to find common root of unparented joints */
+        T_int *hier = calloc(gltf->nodes.n, sizeof *hier);
+        if (hier == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            free(unparented.is);
+            return -1;
+        }
+
+        /* get ancestors */
+        for (size_t i = 0; i < gltf->nodes.n; i++) {
+            for (size_t j = 0; j < gltf->nodes.v[i].child_n; j++)
+                /* zero means no parent */
+                hier[gltf->nodes.v[i].children[j]] = i + 1;
+        }
+
+        /* go up the hierarchy chain to find the common root */
+        for (T_int i = hier[unparented.is[0]] - 1; i >= 0; i = hier[i] - 1) {
+            unsigned count = 1;
+            for (size_t j = 1; j < unparented_n; j++) {
+                for (T_int k = hier[unparented.is[j]] - 1; k >= 0;
+                     k = hier[k] - 1) {
+                    if (k == i) {
+                        count++;
+                        break;
+                    }
+                }
+            }
+            if (count == unparented_n) {
+                root = i;
+                break;
+            }
+        }
+        free(unparented.is);
+        assert(root != YF_INT_MIN);
+
+    } else {
+        /* need to find unparented joint's parent, if it exists */
+        for (size_t i = 0; i < gltf->nodes.n; i++) {
+            for (size_t j = 0; j < gltf->nodes.v[i].child_n; j++) {
+                if (gltf->nodes.v[i].children[j] == unparented.i) {
+                    root = i;
+                    i = gltf->nodes.n;
+                    break;
+                }
+            }
+        }
+        if (root == YF_INT_MIN)
+            /* skeleton root is the joint itself */
+            root = unparented.i;
+    }
+
+    /* XXX: The skeleton instantiated here is unmanaged. Its nodes must be
+       added to a collection since 'skin_unmkskel()' will not touch them. */
+    YF_node *nodes = malloc((jnt_n + 1) * sizeof *nodes);
+    if (nodes == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+
+    for (size_t i = 0; i < jnt_n; i++) {
+        const T_int joint = gltf->skins.v[skin].joints[i];
+        if (cont->nodes[joint] == NULL &&
+            load_node(gltf, fdata, cont, joint) != 0) {
+            free(nodes);
+            return -1;
+        }
+        nodes[i] = cont->nodes[joint];
+    }
+    if (cont->nodes[root] == NULL && load_node(gltf, fdata, cont, root) != 0) {
+        free(nodes);
+        return -1;
+    }
+    nodes[jnt_n] = cont->nodes[root];
+
+    for (size_t i = 0; i < jnt_n; i++) {
+        if (jnts[i].pnt_i < 0)
+            yf_node_insert(nodes[jnt_n], nodes[i]);
+        else
+            yf_node_insert(nodes[jnts[i].pnt_i], nodes[i]);
+    }
+
+    YF_skeleton skel = yf_skin_makeskel(cont->skins[skin], nodes);
+    free(nodes);
+    return skel == NULL ? -1 : 0;
+}
+
 /* Loads a node subgraph from glTF contents. */
 static int load_subgraph(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                          T_int node)
@@ -3739,7 +3888,8 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     assert(gltf->skins.n == 0 || cont->skins != NULL);
     for (size_t i = 0; i < gltf->skins.n; i++) {
         assert(cont->skins[i] == NULL);
-        if (load_skin(gltf, fdata, cont, i) != 0)
+        if (load_skin(gltf, fdata, cont, i) != 0 ||
+            load_skeleton(gltf, fdata, cont, i) != 0)
             return -1;
     }
 
@@ -3752,7 +3902,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     }
 
     /* node creation */
-    /* TODO: Filter joint nodes, since they must be instantiated from skin. */
     assert(gltf->nodes.n == 0 || cont->nodes != NULL);
     for (size_t i = 0; i < gltf->nodes.n; i++) {
         assert(cont->nodes[i] == NULL);
