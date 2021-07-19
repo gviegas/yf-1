@@ -3709,14 +3709,40 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     T_int root = YF_INT_MIN;
     if (unparented_n > 1) {
         /* need to find common root of unparented joints */
-        T_int *hier = malloc(gltf->nodes.n * sizeof *hier);
+        T_int *hier = calloc(gltf->nodes.n, sizeof *hier);
         if (hier == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             free(unparented.is);
             return -1;
         }
-        /* TODO */
+
+        /* get ancestors */
+        for (size_t i = 0; i < gltf->nodes.n; i++) {
+            for (size_t j = 0; j < gltf->nodes.v[i].child_n; j++)
+                /* zero means no parent */
+                hier[gltf->nodes.v[i].children[j]] = i + 1;
+        }
+
+        /* go up the hierarchy chain to find the common root */
+        for (T_int i = hier[unparented.is[0]] - 1; i >= 0; i = hier[i] - 1) {
+            unsigned count = 1;
+            for (unsigned j = 1; j < unparented_n; j++) {
+                for (T_int k = hier[unparented.is[j]] - 1; k >= 0;
+                     k = hier[k] - 1) {
+                    if (k == i) {
+                        count++;
+                        break;
+                    }
+                }
+            }
+            if (count == unparented_n) {
+                root = i;
+                break;
+            }
+        }
         free(unparented.is);
+        assert(root != YF_INT_MIN);
+
     } else {
         /* need to find unparented joint's parent, if it exists */
         for (size_t i = 0; i < gltf->nodes.n; i++) {
