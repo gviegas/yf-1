@@ -3676,7 +3676,7 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     union { T_int i, *is; } unparented;
     unsigned unparented_n = 0;
 
-    for (unsigned i = 0; i < jnt_n; i++) {
+    for (size_t i = 0; i < jnt_n; i++) {
         if (jnts[i].pnt_i >= 0)
             continue;
 
@@ -3726,7 +3726,7 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         /* go up the hierarchy chain to find the common root */
         for (T_int i = hier[unparented.is[0]] - 1; i >= 0; i = hier[i] - 1) {
             unsigned count = 1;
-            for (unsigned j = 1; j < unparented_n; j++) {
+            for (size_t j = 1; j < unparented_n; j++) {
                 for (T_int k = hier[unparented.is[j]] - 1; k >= 0;
                      k = hier[k] - 1) {
                     if (k == i) {
@@ -3759,7 +3759,8 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             root = unparented.i;
     }
 
-    /* instantiation */
+    /* XXX: The skeleton instantiated here is unmanaged. Its nodes must be
+       added to a collection since 'skin_unmkskel()' will not touch them. */
     YF_node *nodes = malloc((jnt_n + 1) * sizeof *nodes);
     if (nodes == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
