@@ -3759,9 +3759,38 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             root = unparented.i;
     }
 
-    /* TODO... */
+    /* instantiation */
+    YF_node *nodes = malloc((jnt_n + 1) * sizeof *nodes);
+    if (nodes == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
 
-    return 0;
+    for (size_t i = 0; i < jnt_n; i++) {
+        const T_int joint = gltf->skins.v[skin].joints[i];
+        if (cont->nodes[joint] == NULL &&
+            load_node(gltf, fdata, cont, joint) != 0) {
+            free(nodes);
+            return -1;
+        }
+        nodes[i] = cont->nodes[joint];
+    }
+    if (cont->nodes[root] == NULL && load_node(gltf, fdata, cont, root) != 0) {
+        free(nodes);
+        return -1;
+    }
+    nodes[jnt_n] = cont->nodes[root];
+
+    for (size_t i = 0; i < jnt_n; i++) {
+        if (jnts[i].pnt_i < 0)
+            yf_node_insert(nodes[jnt_n], nodes[i]);
+        else
+            yf_node_insert(nodes[jnts[i].pnt_i], nodes[i]);
+    }
+
+    YF_skeleton skel = yf_skin_makeskel(cont->skins[skin], nodes);
+    free(nodes);
+    return skel == NULL ? -1 : 0;
 }
 
 /* Loads a node subgraph from glTF contents. */
