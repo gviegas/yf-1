@@ -3673,7 +3673,42 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     unsigned jnt_n;
     const YF_joint *jnts = yf_skin_getjnts(cont->skins[skin], &jnt_n);
 
+    union { T_int i, *is; } root_jnt;
+    unsigned root_n = 0;
+
+    for (unsigned i = 0; i < jnt_n; i++) {
+        if (jnts[i].pnt_i >= 0)
+            continue;
+
+        /* XXX: 'YF_joint' array matches 'gltf.skins.v[].joints'. */
+        switch (root_n) {
+        case 0:
+            root_jnt.i = gltf->skins.v[skin].joints[i];
+            break;
+
+        case 1: {
+            T_int *tmp = malloc(jnt_n * sizeof *tmp);
+            if (tmp == NULL) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                return -1;
+            }
+            tmp[0] = root_jnt.i;
+            tmp[1] = gltf->skins.v[skin].joints[i];
+            root_jnt.is = tmp;
+        } break;
+
+        default:
+            root_jnt.is[root_n] = gltf->skins.v[skin].joints[i];
+        }
+
+        root_n++;
+    }
+    assert(root_n != 0);
+
     /* TODO... */
+
+    if (root_n > 1)
+        free(root_jnt.is);
 
     return 0;
 }
