@@ -18,6 +18,19 @@ YF_DECLS_BEGIN
 typedef struct YF_animation_o *YF_animation;
 
 /**
+ * Interpolation methods.
+ */
+#define YF_KFERP_STEP   0
+#define YF_KFERP_LINEAR 1
+
+/**
+ * Properties that can be animated.
+ */
+#define YF_KFPROP_T 0
+#define YF_KFPROP_R 1
+#define YF_KFPROP_S 2
+
+/**
  * Initializes a new animation.
  *
  * @return: On success, returns a new animation. Otherwise, 'NULL' is returned
