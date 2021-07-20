@@ -58,6 +58,13 @@ void yf_node_prune(YF_node node);
  * provided callback. It stops when there is no more descendants of 'node'
  * to visit or when the callback returns a non-zero value.
  *
+ * The following functions must not be called with 'node' or any of its
+ * descendants until this function completes:
+ * - 'node_insert()'
+ * - 'node_drop()'
+ * - 'node_prune()'
+ * - 'node_deinit()'
+ *
  * @param node: The node.
  * @param callb: The callback to execute for each descendant.
  * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
