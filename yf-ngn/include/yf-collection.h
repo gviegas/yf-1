@@ -89,6 +89,12 @@ int yf_collection_contains(YF_collection coll, int citem, const char *name);
 /**
  * Executes a given function for each entry of a given item type.
  *
+ * This function completes after executing 'callb' for every entry whose type
+ * is 'citem' or when 'callb' returns a non-zero value.
+ *
+ * One must not insert nor remove items of type 'citem' from 'coll' until
+ * this function completes.
+ *
  * @param coll: The collection.
  * @param citem: The 'YF_CITEM' value indicating the item type.
  * @param callb: The callback to execute for each entry.
