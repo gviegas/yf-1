@@ -59,6 +59,12 @@ const YF_joint *yf_skin_getjnts(YF_skin skin, unsigned *jnt_n);
 /**
  * Executes a given function for each instantiated skeleton of a skin.
  *
+ * This function completes after executing 'callb' for every instantiated
+ * skeleton of 'skin' or when 'callb' returns a non-zero value.
+ *
+ * One must not make nor unmake skeletons using 'skin' until this function
+ * completes.
+ *
  * @param skin: The skin.
  * @param callb: The callback to execute for each instance.
  * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
