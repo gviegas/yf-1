@@ -10,6 +10,7 @@
 
 #include "yf/com/yf-defs.h"
 
+#include "yf-node.h"
 #include "yf-vector.h"
 
 YF_DECLS_BEGIN
@@ -82,6 +83,17 @@ typedef struct {
 YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
                                const YF_kfoutput *outputs, unsigned output_n,
                                const YF_kfaction *actions, unsigned action_n);
+
+/**
+ * Sets the target of an animation's action.
+ *
+ * @param anim: The animation.
+ * @param action: The index in the 'YF_kfaction' array of 'anim' indicating
+ *  the action whose target is to be set.
+ * @param target: The node to set as target. Can be 'NULL'.
+ */
+void yf_animation_settarget(YF_animation anim, unsigned action,
+                            YF_node target);
 
 /**
  * Gets the inputs of an animation.
