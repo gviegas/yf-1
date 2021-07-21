@@ -133,5 +133,34 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
 
 void yf_animation_deinit(YF_animation anim)
 {
-    /* TODO */
+    if (anim == NULL)
+        return;
+
+    if (anim->inputs != NULL) {
+        for (unsigned i = 0; i < anim->input_n; i++)
+            free(anim->inputs[i].timeline);
+        free(anim->inputs);
+    }
+
+    if (anim->outputs != NULL) {
+        for (unsigned i = 0; i < anim->output_n; i++) {
+            switch (anim->outputs[i].kfprop) {
+            case YF_KFPROP_T:
+                free(anim->outputs[i].t);
+                break;
+            case YF_KFPROP_R:
+                free(anim->outputs[i].r);
+                break;
+            case YF_KFPROP_S:
+                free(anim->outputs[i].s);
+                break;
+            default:
+                break;
+            }
+        }
+        free(anim->outputs);
+    }
+
+    free(anim->actions);
+    free(anim);
 }
