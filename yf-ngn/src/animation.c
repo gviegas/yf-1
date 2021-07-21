@@ -38,6 +38,12 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
     }
+    anim->targets = calloc(action_n, sizeof(YF_node));
+    if (anim->targets == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(anim);
+        return NULL;
+    }
 
     /* inputs */
     anim->inputs = calloc(input_n, sizeof *inputs);
@@ -197,5 +203,6 @@ void yf_animation_deinit(YF_animation anim)
     }
 
     free(anim->actions);
+    free(anim->targets);
     free(anim);
 }
