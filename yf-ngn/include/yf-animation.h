@@ -10,6 +10,8 @@
 
 #include "yf/com/yf-defs.h"
 
+#include "yf-vector.h"
+
 YF_DECLS_BEGIN
 
 /**
@@ -29,6 +31,27 @@ typedef struct YF_animation_o *YF_animation;
 #define YF_KFPROP_T 0
 #define YF_KFPROP_R 1
 #define YF_KFPROP_S 2
+
+/**
+ * Type defining input values for an animation.
+ */
+typedef struct {
+    float *timeline;
+    unsigned n;
+} YF_kfinput;
+
+/**
+ * Type defining output values for an animation.
+ */
+typedef struct {
+    int kfprop;
+    union {
+        YF_vec3 *t;
+        YF_vec4 *r;
+        YF_vec3 *s;
+    };
+    unsigned n;
+} YF_kfoutput;
 
 /**
  * Initializes a new animation.
