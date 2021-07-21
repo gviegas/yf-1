@@ -142,7 +142,10 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
 void yf_animation_settarget(YF_animation anim, unsigned action,
                             YF_node target)
 {
-    /* TODO */
+    assert(anim != NULL);
+    assert(action < anim->action_n);
+
+    anim->targets[action] = target;
 }
 
 const YF_kfinput *yf_animation_getins(YF_animation anim, unsigned *n)
