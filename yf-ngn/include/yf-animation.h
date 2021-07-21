@@ -54,6 +54,17 @@ typedef struct {
 } YF_kfoutput;
 
 /**
+ * Type defining an animation action.
+ */
+typedef struct {
+    int kferp;
+    /* Indices in the 'YF_kfinput' and 'YF_kfoutput' arrays used to
+       initialize an animation. The number of samples must match. */
+    unsigned in_i;
+    unsigned out_i;
+} YF_kfaction;
+
+/**
  * Initializes a new animation.
  *
  * @return: On success, returns a new animation. Otherwise, 'NULL' is returned
