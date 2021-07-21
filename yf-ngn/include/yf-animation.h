@@ -93,6 +93,15 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
 const YF_kfinput *yf_animation_getins(YF_animation anim, unsigned *n);
 
 /**
+ * Gets the outputs of an animation.
+ *
+ * @param anim: The animation.
+ * @param n: The destination for the array size.
+ * @return: The 'YF_kfoutput' array of 'anim'.
+ */
+const YF_kfoutput *yf_animation_getouts(YF_animation anim, unsigned *n);
+
+/**
  * Deinitializes an animation.
  *
  * @param anim: The animation to deinitialize. Can be 'NULL'.
