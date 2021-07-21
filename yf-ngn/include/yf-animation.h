@@ -67,10 +67,21 @@ typedef struct {
 /**
  * Initializes a new animation.
  *
+ * @param inputs: The 'YF_kfinput' array containing all keyframe inputs
+ *  needed by 'actions'.
+ * @param input_n: The length of 'inputs'. Must be at least one.
+ * @param outputs: The 'YF_kfoutput' array containing all keyframe outputs
+ *  needed by 'actions'.
+ * @param output_n: The length of 'outputs'. Must be at least one.
+ * @param actions: The 'YF_kfaction' array referencing 'inputs' and 'outputs'
+ *  to define the keyframe animation.
+ * @param action_n: The length of 'actions'. Must be at least one.
  * @return: On success, returns a new animation. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_animation yf_animation_init(void);
+YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
+                               const YF_kfoutput *outputs, unsigned output_n,
+                               const YF_kfaction *actions, unsigned action_n);
 
 /**
  * Deinitializes an animation.
