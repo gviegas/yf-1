@@ -131,6 +131,15 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
     return anim;
 }
 
+const YF_kfinput *yf_animation_getins(YF_animation anim, unsigned *n)
+{
+    assert(anim != NULL);
+    assert(n != NULL);
+
+    *n = anim->input_n;
+    return anim->inputs;
+}
+
 void yf_animation_deinit(YF_animation anim)
 {
     if (anim == NULL)
