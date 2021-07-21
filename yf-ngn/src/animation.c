@@ -20,7 +20,9 @@ struct YF_animation_o {
     unsigned output_n;
     YF_kfaction *actions;
     unsigned action_n;
-    /* TODO */
+
+    /* targets can be set (or unset) at any time */
+    YF_node *targets;
 };
 
 YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
