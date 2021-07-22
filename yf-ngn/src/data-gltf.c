@@ -3864,9 +3864,26 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
 
         if (input != YF_INT_MIN) {
-            /* TODO */
+            assert(gltf->accessors.v[input].comp_type == YF_GLTF_COMP_FLOAT);
+
+            FILE *file = seek_data(gltf, fdata, input, YF_INT_MIN);
+            if (file == NULL) {
+                /* TODO */
+            }
+
+            ins[in_n].n = gltf->accessors.v[input].count;
+            ins[in_n].timeline = malloc(ins[in_n].n * sizeof(float));
+            if (ins[in_n].timeline == NULL) {
+                /* TODO */
+            }
+
+            if (fread(ins[in_n].timeline, sizeof(float),
+                      ins[in_n].n, file) < ins[in_n].n) {
+                /* TODO */
+            }
             in_n++;
         }
+
         if (output != YF_INT_MIN) {
             /* TODO */
             out_n++;
