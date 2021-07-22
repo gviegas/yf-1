@@ -3828,11 +3828,57 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     assert(cont->anims != NULL);
     assert(cont->anims[animation] == NULL);
 
+    const T_channels *channels = &gltf->animations.v[animation].channels;
     const size_t channel_n = gltf->animations.v[animation].channels.n;
+    const T_asamplers *samplers = &gltf->animations.v[animation].samplers;
     const size_t sampler_n = gltf->animations.v[animation].samplers.n;
 
-    /* TODO */
-    return -1;
+    YF_kfinput *ins = malloc(sampler_n * sizeof *ins);
+    YF_kfoutput *outs = malloc(sampler_n * sizeof *outs);
+    YF_kfaction *acts = malloc(channel_n * sizeof *acts);
+    if (ins == NULL || outs == NULL || acts == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(ins);
+        free(outs);
+        free(acts);
+        return -1;
+    }
+    unsigned in_n = 0;
+    unsigned out_n = 0;
+
+    for (size_t i = 0; i < sampler_n; i++) {
+        T_int input = samplers->v[i].input;
+        T_int output = samplers->v[i].output;
+
+        for (size_t j = 0; j < i; j++) {
+            if (input == samplers->v[j].input) {
+                input = YF_INT_MIN;
+                break;
+            }
+        }
+        for (size_t j = 0; j < i; j++) {
+            if (output == samplers->v[j].output) {
+                output = YF_INT_MIN;
+                break;
+            }
+        }
+
+        if (input != YF_INT_MIN) {
+            /* TODO */
+            in_n++;
+        }
+        if (output != YF_INT_MIN) {
+            /* TODO */
+            out_n++;
+        }
+    }
+
+    /* TODO... */
+
+    free(ins);
+    free(outs);
+    free(acts);
+    return 0;
 }
 
 /* Loads a node subgraph from glTF contents. */
