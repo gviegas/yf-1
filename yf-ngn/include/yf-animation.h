@@ -91,9 +91,10 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
  * @param action: The index in the 'YF_kfaction' array of 'anim' indicating
  *  the action whose target is to be set.
  * @param target: The node to set as target. Can be 'NULL'.
+ * @return: If 'action' is an invalid index, returns a non-zero value and
+ *  sets the global error to 'YF_ERR_INVARG'. Otherwise, zero is returned.
  */
-void yf_animation_settarget(YF_animation anim, unsigned action,
-                            YF_node target);
+int yf_animation_settarget(YF_animation anim, unsigned action, YF_node target);
 
 /**
  * Gets the inputs of an animation.

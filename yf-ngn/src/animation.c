@@ -139,13 +139,16 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
     return anim;
 }
 
-void yf_animation_settarget(YF_animation anim, unsigned action,
-                            YF_node target)
+int yf_animation_settarget(YF_animation anim, unsigned action, YF_node target)
 {
     assert(anim != NULL);
-    assert(action < anim->action_n);
 
-    anim->targets[action] = target;
+    if (action < anim->action_n) {
+        anim->targets[action] = target;
+        return 0;
+    }
+    yf_seterr(YF_ERR_INVARG, __func__);
+    return -1;
 }
 
 const YF_kfinput *yf_animation_getins(YF_animation anim, unsigned *n)
