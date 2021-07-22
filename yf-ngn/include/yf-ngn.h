@@ -11,6 +11,7 @@
 /**
  * NGN interface.
  */
+#include "yf-animation.h"
 #include "yf-camera.h"
 #include "yf-collection.h"
 #include "yf-font.h"
