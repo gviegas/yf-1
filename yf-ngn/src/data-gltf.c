@@ -30,6 +30,7 @@
 #include "yf-scene.h"
 #include "yf-node.h"
 #include "yf-model.h"
+#include "yf-animation.h"
 
 /*
  * Token
@@ -2644,6 +2645,7 @@ typedef struct {
     YF_texture *texs;
     YF_skin *skins;
     YF_material *matls;
+    YF_animation *anims;
 
     /* flag indicating that the contents must be destroyed
        when not set, only the allocated lists are freed */
