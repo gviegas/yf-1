@@ -2953,6 +2953,14 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             return -1;
         }
     }
+    if (gltf->animations.n > 0) {
+        cont->anims = calloc(gltf->animations.n, sizeof *cont->anims);
+        if (cont->anims == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            deinit_gltf(gltf, fdata, cont);
+            return -1;
+        }
+    }
 
 #ifdef YF_DEVEL
     print_gltf(gltf);
