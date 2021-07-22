@@ -3910,7 +3910,62 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 }
                 break;
             }
-            /* TODO */
+
+            size_t elem_sz;
+            switch (gltf->accessors.v[output].comp_type) {
+            case YF_GLTF_COMP_FLOAT:
+                elem_sz = sizeof(float);
+                break;
+            default:
+                yf_seterr(YF_ERR_UNSUP, __func__);
+                /* TODO: free() */
+                return -1;
+            }
+            switch (gltf->accessors.v[output].type) {
+            case YF_GLTF_TYPE_VEC3:
+                elem_sz *= 3;
+                break;
+            case YF_GLTF_TYPE_VEC4:
+                elem_sz *= 4;
+                break;
+            default:
+                yf_seterr(YF_ERR_UNSUP, __func__);
+                /* TODO: free() */
+                return -1;
+            }
+
+            FILE *file = seek_data(gltf, fdata, output, YF_INT_MIN);
+            if (file == NULL) {
+                /* TODO: free() */
+                return -1;
+            }
+
+            outs[out_n].n = gltf->accessors.v[output].count;
+            void *data = malloc(elem_sz * outs[out_n].n);
+            if (data == NULL) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                /* TODO: free() */
+                return -1;
+            }
+
+            if (fread(data, elem_sz, outs[out_n].n, file) < outs[out_n].n) {
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                free(data);
+                /* TODO: free() */
+                return -1;
+            }
+
+            switch (outs[out_n].kfprop) {
+            case YF_KFPROP_T:
+                outs[out_n].t = data;
+                break;
+            case YF_KFPROP_R:
+                outs[out_n].r = data;
+                break;
+            case YF_KFPROP_S:
+                outs[out_n].s = data;
+                break;
+            }
             out_n++;
         }
     }
