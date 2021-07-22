@@ -3846,6 +3846,16 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     unsigned in_n = 0;
     unsigned out_n = 0;
 
+    /* mapping between sampler indices and input/output indices */
+    struct { unsigned in, out; } *s_map = malloc(sampler_n * sizeof *s_map);
+    if (s_map == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(ins);
+        free(outs);
+        free(acts);
+        return -1;
+    }
+
     for (size_t i = 0; i < sampler_n; i++) {
         T_int input = samplers->v[i].input;
         T_int output = samplers->v[i].output;
@@ -3853,12 +3863,14 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         for (size_t j = 0; j < i; j++) {
             if (input == samplers->v[j].input) {
                 input = YF_INT_MIN;
+                s_map[i].in = s_map[j].in;
                 break;
             }
         }
         for (size_t j = 0; j < i; j++) {
             if (output == samplers->v[j].output) {
                 output = YF_INT_MIN;
+                s_map[i].out = s_map[j].out;
                 break;
             }
         }
@@ -3886,7 +3898,7 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 /* TODO: free() */
                 return -1;
             }
-            in_n++;
+            s_map[i].in = in_n++;
         }
 
         if (output != YF_INT_MIN) {
@@ -3966,7 +3978,7 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 outs[out_n].s = data;
                 break;
             }
-            out_n++;
+            s_map[i].out = out_n++;
         }
     }
 
