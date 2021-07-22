@@ -3868,23 +3868,48 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
             FILE *file = seek_data(gltf, fdata, input, YF_INT_MIN);
             if (file == NULL) {
-                /* TODO */
+                /* TODO: free() */
+                return -1;
             }
 
             ins[in_n].n = gltf->accessors.v[input].count;
             ins[in_n].timeline = malloc(ins[in_n].n * sizeof(float));
             if (ins[in_n].timeline == NULL) {
-                /* TODO */
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                /* TODO: free() */
+                return -1;
             }
 
             if (fread(ins[in_n].timeline, sizeof(float),
                       ins[in_n].n, file) < ins[in_n].n) {
-                /* TODO */
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                /* TODO: free() */
+                return -1;
             }
             in_n++;
         }
 
         if (output != YF_INT_MIN) {
+            for (size_t j = 0; j < channel_n; j++) {
+                if (channels->v[j].sampler == (T_int)i)
+                    continue;
+                switch (channels->v[j].target.path) {
+                case YF_GLTF_PATH_XLATE:
+                    outs[out_n].kfprop = YF_KFPROP_T;
+                    break;
+                case YF_GLTF_PATH_ROTATE:
+                    outs[out_n].kfprop = YF_KFPROP_R;
+                    break;
+                case YF_GLTF_PATH_SCALE:
+                    outs[out_n].kfprop = YF_KFPROP_S;
+                    break;
+                default:
+                    yf_seterr(YF_ERR_UNSUP, __func__);
+                    /* TODO: free() */
+                    return -1;
+                }
+                break;
+            }
             /* TODO */
             out_n++;
         }
