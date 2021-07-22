@@ -2751,6 +2751,13 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             }
             free(cont->matls);
         }
+        if (cont->anims != NULL) {
+            if (cont->deinit) {
+                for (size_t i = 0; i < gltf->animations.n; i++)
+                    yf_animation_deinit(cont->anims[i]);
+            }
+            free(cont->anims);
+        }
     }
 
     free(gltf->asset.copyright);
