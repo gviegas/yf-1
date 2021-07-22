@@ -3811,6 +3811,30 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return skel == NULL ? -1 : 0;
 }
 
+/* Loads a single animation from glTF contents. */
+static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                          T_int animation)
+{
+    assert(gltf != NULL);
+    assert(fdata != NULL);
+    assert(cont != NULL);
+    assert(animation >= 0);
+
+    if (gltf->animations.n <= (size_t)animation) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    assert(cont->anims != NULL);
+    assert(cont->anims[animation] == NULL);
+
+    const size_t channel_n = gltf->animations.v[animation].channels.n;
+    const size_t sampler_n = gltf->animations.v[animation].samplers.n;
+
+    /* TODO */
+    return -1;
+}
+
 /* Loads a node subgraph from glTF contents. */
 static int load_subgraph(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                          T_int node)
