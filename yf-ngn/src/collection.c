@@ -20,6 +20,7 @@
 #include "yf-skin.h"
 #include "yf-material.h"
 #include "yf-texture.h"
+#include "yf-animation.h"
 #include "yf-font.h"
 #include "data-gltf.h"
 
@@ -50,6 +51,9 @@ static int deinit_item(void *key, void *val, void *arg)
         break;
     case YF_CITEM_TEXTURE:
         yf_texture_deinit(val);
+        break;
+    case YF_CITEM_ANIMATION:
+        yf_animation_deinit(val);
         break;
     case YF_CITEM_FONT:
         yf_font_deinit(val);
