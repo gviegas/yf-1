@@ -145,6 +145,7 @@ YF_node yf_animation_gettarget(YF_animation anim, unsigned action)
 
     if (action < anim->action_n)
         return anim->targets[action];
+    yf_seterr(YF_ERR_INVARG, __func__);
     return NULL;
 }
 
