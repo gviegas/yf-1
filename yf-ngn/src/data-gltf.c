@@ -4186,6 +4186,14 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             return -1;
     }
 
+    /* animation creation */
+    assert(gltf->animations.n == 0 || cont->anims != NULL);
+    for (size_t i = 0; i < gltf->animations.n; i++) {
+        assert(cont->anims[i] == NULL);
+        if (load_animation(gltf, fdata, cont, i) != 0)
+            return -1;
+    }
+
     /* scene creation */
     assert(gltf->scenes.n == 0 || cont->scns != NULL);
     for (size_t i = 0; i < gltf->scenes.n; i++) {
