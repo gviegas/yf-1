@@ -4000,6 +4000,13 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         acts[i].out_i = s_map[sampler].out;
     }
 
+    cont->anims[animation] = yf_animation_init(ins, in_n, outs, out_n,
+                                               acts, channel_n);
+    if (cont->anims[animation] == NULL) {
+        /* TODO: free() */
+        return -1;
+    }
+
     /* TODO... */
 
     free(ins);
