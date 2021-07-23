@@ -3920,15 +3920,17 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 return -1;
             }
 
-            s_map[i].in = in_n++;
-
             if (fread(ins[in_n].timeline, sizeof(float),
                       ins[in_n].n, file) < ins[in_n].n) {
                 yf_seterr(YF_ERR_INVFILE, __func__);
                 YF_DEALLOCKF();
+                /* XXX: 'in_n' not incremented yet. */
+                free(ins[in_n].timeline);
                 free(s_map);
                 return -1;
             }
+
+            s_map[i].in = in_n++;
         }
 
         /* create new output only when necessary */
