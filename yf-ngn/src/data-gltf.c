@@ -4045,8 +4045,18 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
 #undef YF_DEALLOCKF
 
-    /* TODO... */
+    for (size_t i = 0; i < channel_n; i++) {
+        const T_int node = channels->v[i].target.node;
+        if (node == YF_INT_MIN)
+            continue;
 
+        if (cont->nodes[node] == NULL ||
+            load_node(gltf, fdata, cont, node) != 0)
+            return -1;
+
+        /* XXX: Caller is responsible for creating the node hierarchy. */
+        yf_animation_settarget(cont->anims[animation], i, cont->nodes[node]);
+    }
     return 0;
 }
 
