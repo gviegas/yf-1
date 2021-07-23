@@ -30,6 +30,7 @@
 #include "yf-scene.h"
 #include "yf-node.h"
 #include "yf-model.h"
+#include "yf-animation.h"
 
 /*
  * Token
@@ -2644,6 +2645,7 @@ typedef struct {
     YF_texture *texs;
     YF_skin *skins;
     YF_material *matls;
+    YF_animation *anims;
 
     /* flag indicating that the contents must be destroyed
        when not set, only the allocated lists are freed */
@@ -2748,6 +2750,13 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
                     yf_material_deinit(cont->matls[i]);
             }
             free(cont->matls);
+        }
+        if (cont->anims != NULL) {
+            if (cont->deinit) {
+                for (size_t i = 0; i < gltf->animations.n; i++)
+                    yf_animation_deinit(cont->anims[i]);
+            }
+            free(cont->anims);
         }
     }
 
@@ -2946,6 +2955,14 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     if (gltf->materials.n > 0) {
         cont->matls = calloc(gltf->materials.n, sizeof *cont->matls);
         if (cont->matls == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            deinit_gltf(gltf, fdata, cont);
+            return -1;
+        }
+    }
+    if (gltf->animations.n > 0) {
+        cont->anims = calloc(gltf->animations.n, sizeof *cont->anims);
+        if (cont->anims == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             deinit_gltf(gltf, fdata, cont);
             return -1;
@@ -3792,6 +3809,259 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     YF_skeleton skel = yf_skin_makeskel(cont->skins[skin], nodes);
     free(nodes);
     return skel == NULL ? -1 : 0;
+}
+
+/* Loads a single animation from glTF contents. */
+static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                          T_int animation)
+{
+    assert(gltf != NULL);
+    assert(fdata != NULL);
+    assert(cont != NULL);
+    assert(animation >= 0);
+
+    if (gltf->animations.n <= (size_t)animation) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    assert(cont->anims != NULL);
+    assert(cont->anims[animation] == NULL);
+
+    const T_channels *channels = &gltf->animations.v[animation].channels;
+    const size_t channel_n = gltf->animations.v[animation].channels.n;
+    const T_asamplers *samplers = &gltf->animations.v[animation].samplers;
+    const size_t sampler_n = gltf->animations.v[animation].samplers.n;
+
+    YF_kfinput *ins = malloc(sampler_n * sizeof *ins);
+    YF_kfoutput *outs = malloc(sampler_n * sizeof *outs);
+    YF_kfaction *acts = malloc(channel_n * sizeof *acts);
+    if (ins == NULL || outs == NULL || acts == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(ins);
+        free(outs);
+        free(acts);
+        return -1;
+    }
+    unsigned in_n = 0;
+    unsigned out_n = 0;
+
+#define YF_DEALLOCKF() do { \
+    if (ins != NULL) { \
+        for (unsigned i = 0; i < in_n; i++) \
+            free(ins[i].timeline); \
+        free(ins); \
+    } \
+    if (outs != NULL) { \
+        for (unsigned i = 0; i < out_n; i++) { \
+            switch (outs[i].kfprop) { \
+            case YF_KFPROP_T: \
+                free(outs[i].t); \
+                break; \
+            case YF_KFPROP_R: \
+                free(outs[i].r); \
+                break; \
+            case YF_KFPROP_S: \
+                free(outs[i].s); \
+                break; \
+            } \
+        } \
+        free(outs); \
+    } \
+    free(acts); } while (0)
+
+    /* mapping between sampler indices and input/output indices */
+    struct { unsigned in, out; } *s_map = malloc(sampler_n * sizeof *s_map);
+    if (s_map == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(ins);
+        free(outs);
+        free(acts);
+        return -1;
+    }
+
+    for (size_t i = 0; i < sampler_n; i++) {
+        T_int input = samplers->v[i].input;
+        T_int output = samplers->v[i].output;
+
+        for (size_t j = 0; j < i; j++) {
+            if (input == samplers->v[j].input) {
+                input = YF_INT_MIN;
+                s_map[i].in = s_map[j].in;
+                break;
+            }
+        }
+        for (size_t j = 0; j < i; j++) {
+            if (output == samplers->v[j].output) {
+                output = YF_INT_MIN;
+                s_map[i].out = s_map[j].out;
+                break;
+            }
+        }
+
+        /* create new input only when necessary */
+        if (input != YF_INT_MIN) {
+            assert(gltf->accessors.v[input].comp_type == YF_GLTF_COMP_FLOAT);
+            assert(gltf->accessors.v[input].type == YF_GLTF_TYPE_SCALAR);
+
+            FILE *file = seek_data(gltf, fdata, input, YF_INT_MIN);
+            if (file == NULL) {
+                YF_DEALLOCKF();
+                free(s_map);
+                return -1;
+            }
+
+            ins[in_n].n = gltf->accessors.v[input].count;
+            ins[in_n].timeline = malloc(ins[in_n].n * sizeof(float));
+            if (ins[in_n].timeline == NULL) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                YF_DEALLOCKF();
+                free(s_map);
+                return -1;
+            }
+
+            s_map[i].in = in_n++;
+
+            if (fread(ins[in_n].timeline, sizeof(float),
+                      ins[in_n].n, file) < ins[in_n].n) {
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                YF_DEALLOCKF();
+                free(s_map);
+                return -1;
+            }
+        }
+
+        /* create new output only when necessary */
+        if (output != YF_INT_MIN) {
+            for (size_t j = 0; j < channel_n; j++) {
+                if (channels->v[j].sampler == (T_int)i)
+                    continue;
+                switch (channels->v[j].target.path) {
+                case YF_GLTF_PATH_XLATE:
+                    outs[out_n].kfprop = YF_KFPROP_T;
+                    break;
+                case YF_GLTF_PATH_ROTATE:
+                    outs[out_n].kfprop = YF_KFPROP_R;
+                    break;
+                case YF_GLTF_PATH_SCALE:
+                    outs[out_n].kfprop = YF_KFPROP_S;
+                    break;
+                default:
+                    yf_seterr(YF_ERR_UNSUP, __func__);
+                    YF_DEALLOCKF();
+                    free(s_map);
+                    return -1;
+                }
+                break;
+            }
+
+            size_t elem_sz;
+            switch (gltf->accessors.v[output].comp_type) {
+            case YF_GLTF_COMP_FLOAT:
+                elem_sz = sizeof(float);
+                break;
+            default:
+                yf_seterr(YF_ERR_UNSUP, __func__);
+                YF_DEALLOCKF();
+                free(s_map);
+                return -1;
+            }
+            switch (gltf->accessors.v[output].type) {
+            case YF_GLTF_TYPE_VEC3:
+                elem_sz *= 3;
+                break;
+            case YF_GLTF_TYPE_VEC4:
+                elem_sz *= 4;
+                break;
+            default:
+                yf_seterr(YF_ERR_UNSUP, __func__);
+                YF_DEALLOCKF();
+                free(s_map);
+                return -1;
+            }
+
+            FILE *file = seek_data(gltf, fdata, output, YF_INT_MIN);
+            if (file == NULL) {
+                YF_DEALLOCKF();
+                free(s_map);
+                return -1;
+            }
+
+            outs[out_n].n = gltf->accessors.v[output].count;
+            void *data = malloc(elem_sz * outs[out_n].n);
+            if (data == NULL) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                YF_DEALLOCKF();
+                free(s_map);
+                return -1;
+            }
+
+            if (fread(data, elem_sz, outs[out_n].n, file) < outs[out_n].n) {
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                YF_DEALLOCKF();
+                free(s_map);
+                free(data);
+                return -1;
+            }
+
+            switch (outs[out_n].kfprop) {
+            case YF_KFPROP_T:
+                outs[out_n].t = data;
+                break;
+            case YF_KFPROP_R:
+                outs[out_n].r = data;
+                break;
+            case YF_KFPROP_S:
+                outs[out_n].s = data;
+                break;
+            }
+
+            s_map[i].out = out_n++;
+        }
+    }
+
+    /* each channel corresponds to a keyframe action */
+    for (size_t i = 0; i < channel_n; i++) {
+        const T_int sampler = channels->v[i].sampler;
+        switch (samplers->v[sampler].interpolation) {
+        case YF_GLTF_ERP_LINEAR:
+            acts[i].kferp = YF_KFERP_LINEAR;
+            break;
+        case YF_GLTF_ERP_STEP:
+            acts[i].kferp = YF_KFERP_STEP;
+            break;
+        default:
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            YF_DEALLOCKF();
+            free(s_map);
+            return -1;
+        }
+        acts[i].in_i = s_map[sampler].in;
+        acts[i].out_i = s_map[sampler].out;
+    }
+
+    cont->anims[animation] = yf_animation_init(ins, in_n, outs, out_n,
+                                               acts, channel_n);
+    YF_DEALLOCKF();
+    free(s_map);
+    if (cont->anims[animation] == NULL)
+        return -1;
+
+#undef YF_DEALLOCKF
+
+    for (size_t i = 0; i < channel_n; i++) {
+        const T_int node = channels->v[i].target.node;
+        if (node == YF_INT_MIN)
+            continue;
+
+        if (cont->nodes[node] == NULL &&
+            load_node(gltf, fdata, cont, node) != 0)
+            return -1;
+
+        /* XXX: Caller is responsible for creating the node hierarchy. */
+        yf_animation_settarget(cont->anims[animation], i, cont->nodes[node]);
+    }
+    return 0;
 }
 
 /* Loads a node subgraph from glTF contents. */
