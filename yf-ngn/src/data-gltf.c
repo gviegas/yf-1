@@ -3982,6 +3982,24 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
     }
 
+    for (size_t i = 0; i < channel_n; i++) {
+        const T_int sampler = channels->v[i].sampler;
+        switch (samplers->v[sampler].interpolation) {
+        case YF_GLTF_ERP_LINEAR:
+            acts[i].kferp = YF_KFERP_LINEAR;
+            break;
+        case YF_GLTF_ERP_STEP:
+            acts[i].kferp = YF_KFERP_STEP;
+            break;
+        default:
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            /* TODO: free() */
+            return -1;
+        }
+        acts[i].in_i = s_map[sampler].in;
+        acts[i].out_i = s_map[sampler].out;
+    }
+
     /* TODO... */
 
     free(ins);
