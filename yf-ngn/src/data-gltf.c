@@ -3936,7 +3936,7 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         /* create new output only when necessary */
         if (output != YF_INT_MIN) {
             for (size_t j = 0; j < channel_n; j++) {
-                if (channels->v[j].sampler == (T_int)i)
+                if (channels->v[j].sampler != (T_int)i)
                     continue;
                 switch (channels->v[j].target.path) {
                 case YF_GLTF_PATH_XLATE:
