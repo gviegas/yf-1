@@ -4683,7 +4683,7 @@ static void print_gltf(const T_gltf *gltf)
         puts("  samplers:");
         printf("  n: %lu\n", gltf->animations.v[i].samplers.n);
         for (size_t j = 0; j < gltf->animations.v[i].samplers.n; j++) {
-            printf("  channel #%lu:\n", j);
+            printf("  sampler #%lu:\n", j);
             printf("   input: %lld\n",
                    gltf->animations.v[i].samplers.v[j].input);
             printf("   output: %lld\n",
