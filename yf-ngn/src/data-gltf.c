@@ -3846,6 +3846,30 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     unsigned in_n = 0;
     unsigned out_n = 0;
 
+#define YF_DEALLOCKF() do { \
+    if (ins != NULL) { \
+        for (unsigned i = 0; i < in_n; i++) \
+            free(ins[i].timeline); \
+        free(ins); \
+    } \
+    if (outs != NULL) { \
+        for (unsigned i = 0; i < out_n; i++) { \
+            switch (outs[i].kfprop) { \
+            case YF_KFPROP_T: \
+                free(outs[i].t); \
+                break; \
+            case YF_KFPROP_R: \
+                free(outs[i].r); \
+                break; \
+            case YF_KFPROP_S: \
+                free(outs[i].s); \
+                break; \
+            } \
+        } \
+        free(outs); \
+    } \
+    free(acts); } while (0)
+
     /* mapping between sampler indices and input/output indices */
     struct { unsigned in, out; } *s_map = malloc(sampler_n * sizeof *s_map);
     if (s_map == NULL) {
@@ -4007,11 +4031,10 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         return -1;
     }
 
+#undef YF_DEALLOCKF
+
     /* TODO... */
 
-    free(ins);
-    free(outs);
-    free(acts);
     return 0;
 }
 
