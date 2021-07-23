@@ -85,6 +85,18 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
                                const YF_kfaction *actions, unsigned action_n);
 
 /**
+ * Gets the target of an animation's action.
+ *
+ * @param anim: The animation.
+ * @param action: The index in the 'YF_kfaction' array of 'anim' indicating
+ *  the action whose target is to be retrieved.
+ * @return: If 'action' is an invalid index, returns 'NULL' and sets the global
+ *  error to 'YF_ERR_INVARG'. Otherwise, returns the node currently set as
+ *  target for 'action', or 'NULL' if none is set.
+ */
+YF_node yf_animation_gettarget(YF_animation anim, unsigned action);
+
+/**
  * Sets the target of an animation's action.
  *
  * @param anim: The animation.
