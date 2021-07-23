@@ -3904,7 +3904,8 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
             FILE *file = seek_data(gltf, fdata, input, YF_INT_MIN);
             if (file == NULL) {
-                /* TODO: free() */
+                YF_DEALLOCKF();
+                free(s_map);
                 return -1;
             }
 
@@ -3912,17 +3913,20 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             ins[in_n].timeline = malloc(ins[in_n].n * sizeof(float));
             if (ins[in_n].timeline == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
-                /* TODO: free() */
+                YF_DEALLOCKF();
+                free(s_map);
                 return -1;
             }
+
+            s_map[i].in = in_n++;
 
             if (fread(ins[in_n].timeline, sizeof(float),
                       ins[in_n].n, file) < ins[in_n].n) {
                 yf_seterr(YF_ERR_INVFILE, __func__);
-                /* TODO: free() */
+                YF_DEALLOCKF();
+                free(s_map);
                 return -1;
             }
-            s_map[i].in = in_n++;
         }
 
         if (output != YF_INT_MIN) {
@@ -3941,7 +3945,8 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                     break;
                 default:
                     yf_seterr(YF_ERR_UNSUP, __func__);
-                    /* TODO: free() */
+                    YF_DEALLOCKF();
+                    free(s_map);
                     return -1;
                 }
                 break;
@@ -3954,7 +3959,8 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 break;
             default:
                 yf_seterr(YF_ERR_UNSUP, __func__);
-                /* TODO: free() */
+                YF_DEALLOCKF();
+                free(s_map);
                 return -1;
             }
             switch (gltf->accessors.v[output].type) {
@@ -3966,13 +3972,15 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 break;
             default:
                 yf_seterr(YF_ERR_UNSUP, __func__);
-                /* TODO: free() */
+                YF_DEALLOCKF();
+                free(s_map);
                 return -1;
             }
 
             FILE *file = seek_data(gltf, fdata, output, YF_INT_MIN);
             if (file == NULL) {
-                /* TODO: free() */
+                YF_DEALLOCKF();
+                free(s_map);
                 return -1;
             }
 
@@ -3980,14 +3988,16 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             void *data = malloc(elem_sz * outs[out_n].n);
             if (data == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
-                /* TODO: free() */
+                YF_DEALLOCKF();
+                free(s_map);
                 return -1;
             }
 
             if (fread(data, elem_sz, outs[out_n].n, file) < outs[out_n].n) {
                 yf_seterr(YF_ERR_INVFILE, __func__);
+                YF_DEALLOCKF();
+                free(s_map);
                 free(data);
-                /* TODO: free() */
                 return -1;
             }
 
@@ -4002,6 +4012,7 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 outs[out_n].s = data;
                 break;
             }
+
             s_map[i].out = out_n++;
         }
     }
@@ -4017,7 +4028,8 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             break;
         default:
             yf_seterr(YF_ERR_UNSUP, __func__);
-            /* TODO: free() */
+            YF_DEALLOCKF();
+            free(s_map);
             return -1;
         }
         acts[i].in_i = s_map[sampler].in;
@@ -4026,10 +4038,10 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
     cont->anims[animation] = yf_animation_init(ins, in_n, outs, out_n,
                                                acts, channel_n);
-    if (cont->anims[animation] == NULL) {
-        /* TODO: free() */
+    YF_DEALLOCKF();
+    free(s_map);
+    if (cont->anims[animation] == NULL)
         return -1;
-    }
 
 #undef YF_DEALLOCKF
 
