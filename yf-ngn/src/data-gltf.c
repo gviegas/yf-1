@@ -3899,8 +3899,10 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             }
         }
 
+        /* create new input only when necessary */
         if (input != YF_INT_MIN) {
             assert(gltf->accessors.v[input].comp_type == YF_GLTF_COMP_FLOAT);
+            assert(gltf->accessors.v[input].type == YF_GLTF_TYPE_SCALAR);
 
             FILE *file = seek_data(gltf, fdata, input, YF_INT_MIN);
             if (file == NULL) {
@@ -3929,6 +3931,7 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             }
         }
 
+        /* create new output only when necessary */
         if (output != YF_INT_MIN) {
             for (size_t j = 0; j < channel_n; j++) {
                 if (channels->v[j].sampler == (T_int)i)
@@ -4017,6 +4020,7 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
     }
 
+    /* each channel corresponds to a keyframe action */
     for (size_t i = 0; i < channel_n; i++) {
         const T_int sampler = channels->v[i].sampler;
         switch (samplers->v[sampler].interpolation) {
@@ -4050,7 +4054,7 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         if (node == YF_INT_MIN)
             continue;
 
-        if (cont->nodes[node] == NULL ||
+        if (cont->nodes[node] == NULL &&
             load_node(gltf, fdata, cont, node) != 0)
             return -1;
 
