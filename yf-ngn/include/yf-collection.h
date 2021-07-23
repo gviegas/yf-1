@@ -20,15 +20,16 @@ typedef struct YF_collection_o *YF_collection;
 /**
  * Item types indicating what can be stored in a collection.
  */
-#define YF_CITEM_SCENE    0
-#define YF_CITEM_NODE     1
-#define YF_CITEM_MESH     2
-#define YF_CITEM_SKIN     3
-#define YF_CITEM_MATERIAL 4
-#define YF_CITEM_TEXTURE  5
-#define YF_CITEM_FONT     6
+#define YF_CITEM_SCENE     0
+#define YF_CITEM_NODE      1
+#define YF_CITEM_MESH      2
+#define YF_CITEM_SKIN      3
+#define YF_CITEM_MATERIAL  4
+#define YF_CITEM_TEXTURE   5
+#define YF_CITEM_ANIMATION 6
+#define YF_CITEM_FONT      7
 
-#define YF_CITEM_N 7
+#define YF_CITEM_N 8
 
 /**
  * Initializes a new collection.
