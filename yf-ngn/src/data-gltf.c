@@ -4319,6 +4319,24 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
         }
     }
 
+    /* created animations */
+    if (cont->anims != NULL) {
+        for (size_t i = 0; i < gltf->animations.n; i++) {
+            YF_animation anim = cont->anims[i];
+            if (anim == NULL)
+                continue;
+
+            const char *name = gltf->animations.v[i].name;
+            if (yf_collection_manage(coll, YF_CITEM_ANIMATION, name,
+                                     anim) != 0) {
+                if (yf_geterr() != YF_ERR_EXIST ||
+                    yf_collection_manage(coll, YF_CITEM_ANIMATION, NULL,
+                                         anim) != 0)
+                    return -1;
+            }
+        }
+    }
+
     return 0;
 }
 
