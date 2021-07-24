@@ -48,11 +48,18 @@ YF_node yf_node_init(void)
     node->next_sibl = NULL;
     node->child = NULL;
     node->n = 1;
+
     yf_mat4_iden(node->xform);
+    yf_vec3_set(node->t, 0.0);
+    yf_vec3_set(node->r, 0.0);
+    node->r[3] = 1.0;
+    yf_vec3_set(node->s, 1.0);
     node->name = NULL;
+
     node->nodeobj = YF_NODEOBJ_NONE;
     node->obj = NULL;
     node->deinit = NULL;
+
     yf_mat4_iden(node->wld_xform);
     yf_mat4_iden(node->wld_inv);
     yf_mat4_iden(node->wld_norm);
