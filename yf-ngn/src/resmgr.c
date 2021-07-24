@@ -189,7 +189,9 @@ static int init_mdl(T_entry *entry, unsigned elements)
     const YF_vattr attrs[] = {
         {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
         {YF_RESLOC_TC, YF_VFMT_FLOAT2, offsetof(YF_vmdl, tc)},
-        {YF_RESLOC_NORM, YF_VFMT_FLOAT3, offsetof(YF_vmdl, norm)}
+        {YF_RESLOC_NORM, YF_VFMT_FLOAT3, offsetof(YF_vmdl, norm)},
+        {YF_RESLOC_JNTS, YF_VFMT_USHORT4, offsetof(YF_vmdl, jnts)},
+        {YF_RESLOC_WGTS, YF_VFMT_FLOAT4, offsetof(YF_vmdl, wgts)}
     };
     const YF_vinput vins[] = {
         {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vmdl), YF_VRATE_VERT}
