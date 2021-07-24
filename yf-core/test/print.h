@@ -13,5 +13,6 @@
 
 void yf_print_ctx(YF_context ctx);
 void yf_print_lim(const YF_limits *lim);
+void yf_print_capab(void);
 
 #endif /* YF_PRINT_H */

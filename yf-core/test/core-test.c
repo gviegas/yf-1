@@ -16,20 +16,6 @@
 #define YF_TEST_SUBT \
     printf("%s\n%.*s\n", __func__, (int)strlen(__func__), YF_TEST_SUBL)
 
-/* Info test. */
-#define YF_TEST_CAPAB "capab"
-
-int yf_test_capab(void);
-
-static int test_capab(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_capab();
-    puts("");
-    return r;
-}
-
 /* Draw test. */
 #define YF_TEST_DRAW "draw"
 
@@ -44,7 +30,7 @@ static int test_draw(void)
     return r;
 }
 
-static const char *l_ids[] = {YF_TEST_CAPAB, YF_TEST_DRAW, YF_TEST_ALL};
+static const char *l_ids[] = {YF_TEST_DRAW, YF_TEST_ALL};
 
 /* Test function. */
 static int test(int argc, char *argv[])
@@ -54,14 +40,11 @@ static int test(int argc, char *argv[])
     size_t test_n;
     size_t results;
 
-    if (strcmp(argv[0], YF_TEST_CAPAB) == 0) {
-        test_n = 1;
-        results = test_capab() == 0;
-    } else if (strcmp(argv[0], YF_TEST_DRAW) == 0) {
+    if (strcmp(argv[0], YF_TEST_DRAW) == 0) {
         test_n = 1;
         results = test_draw() == 0;
     } else if (strcmp(argv[0], YF_TEST_ALL) == 0) {
-        int (*const tests[])(void) = {test_capab, test_draw};
+        int (*const tests[])(void) = {test_draw};
         test_n = sizeof tests / sizeof tests[0];
         results = 0;
         for (size_t i = 0; i < test_n; i++)

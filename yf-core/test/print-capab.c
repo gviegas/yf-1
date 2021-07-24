@@ -1,14 +1,17 @@
 /*
  * YF
- * test-capab.c
+ * print-capab.c
  *
  * Copyright © 2020-2021 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 
 #include "context.h"
+
+/* XXX: VK-specific. */
 
 /* Context instance. */
 static YF_context l_ctx = NULL;
@@ -325,17 +328,18 @@ static void print_limits()
     printf("nonCoherentAtomSize: %lu\n", lim->nonCoherentAtomSize);
 }
 
-/* Tests capabilities. */
-int yf_test_capab(void)
+/* Prints capabilities. */
+void yf_print_capab(void)
 {
     l_ctx = yf_context_init();
-    if (l_ctx == NULL)
-        return -1;
+    if (l_ctx == NULL) {
+        assert(0);
+        abort();
+    }
 
     print_extensions();
     print_features();
     print_limits();
 
     yf_context_deinit(l_ctx);
-    return 0;
 }
