@@ -21,6 +21,9 @@ struct YF_node_o {
     size_t n;
 
     YF_mat4 xform;
+    YF_vec3 t;
+    YF_vec4 r;
+    YF_vec3 s;
     char *name;
 
     int nodeobj;
@@ -45,11 +48,18 @@ YF_node yf_node_init(void)
     node->next_sibl = NULL;
     node->child = NULL;
     node->n = 1;
+
     yf_mat4_iden(node->xform);
+    yf_vec3_set(node->t, 0.0);
+    yf_vec3_set(node->r, 0.0);
+    node->r[3] = 1.0;
+    yf_vec3_set(node->s, 1.0);
     node->name = NULL;
+
     node->nodeobj = YF_NODEOBJ_NONE;
     node->obj = NULL;
     node->deinit = NULL;
+
     yf_mat4_iden(node->wld_xform);
     yf_mat4_iden(node->wld_inv);
     yf_mat4_iden(node->wld_norm);
@@ -207,6 +217,24 @@ YF_mat4 *yf_node_getxform(YF_node node)
 {
     assert(node != NULL);
     return &node->xform;
+}
+
+YF_vec3 *yf_node_gett(YF_node node)
+{
+    assert(node != NULL);
+    return &node->t;
+}
+
+YF_vec4 *yf_node_getr(YF_node node)
+{
+    assert(node != NULL);
+    return &node->r;
+}
+
+YF_vec3 *yf_node_gets(YF_node node)
+{
+    assert(node != NULL);
+    return &node->s;
 }
 
 char *yf_node_getname(YF_node node, char *dst, size_t *n)
