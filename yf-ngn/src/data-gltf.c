@@ -3199,7 +3199,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         default:
 #ifdef YF_DEVEL
             printf("\n[YF] WARNING (%s):", __func__);
-            printf("\nglTF mesh attribute '%lu' ignored\n", i);
+            printf("\nglTF mesh attribute %zu ignored\n", i);
 #endif
             continue;
         }
@@ -4497,7 +4497,7 @@ static void print_gltf(const T_gltf *gltf)
     printf(" #: %lld\n", gltf->scene);
 
     puts("glTF.scenes:");
-    printf(" n: %lu\n", gltf->scenes.n);
+    printf(" n: %zu\n", gltf->scenes.n);
     for (size_t i = 0; i < gltf->scenes.n; i++) {
         printf(" scene '%s':\n", gltf->scenes.v[i].name);
         printf("  nodes: [ ");
@@ -4507,7 +4507,7 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.nodes:");
-    printf(" n: %lu\n", gltf->nodes.n);
+    printf(" n: %zu\n", gltf->nodes.n);
     for (size_t i = 0; i < gltf->nodes.n; i++) {
         printf(" node '%s':\n", gltf->nodes.v[i].name);
         printf("  children: [ ");
@@ -4545,7 +4545,7 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.cameras:");
-    printf(" n: %lu\n", gltf->cameras.n);
+    printf(" n: %zu\n", gltf->cameras.n);
     for (size_t i = 0; i < gltf->cameras.n; i++) {
         printf(" camera '%s':\n", gltf->cameras.v[i].name);
         if (gltf->cameras.v[i].type == YF_GLTF_CAMERA_PERSP) {
@@ -4565,12 +4565,12 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.meshes:");
-    printf(" n: %lu\n", gltf->meshes.n);
+    printf(" n: %zu\n", gltf->meshes.n);
     for (size_t i = 0; i < gltf->meshes.n; i++) {
         printf(" mesh '%s':\n", gltf->meshes.v[i].name);
-        printf("  n: %lu\n", gltf->meshes.v[i].primitives.n);
+        printf("  n: %zu\n", gltf->meshes.v[i].primitives.n);
         for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; j++) {
-            printf("  primitives #%lu:\n", j);
+            printf("  primitives #%zu:\n", j);
             puts("   attributes:");
             printf("    POSITION: %lld\n",
                    gltf->meshes.v[i].primitives.v[j]
@@ -4604,7 +4604,7 @@ static void print_gltf(const T_gltf *gltf)
                 const size_t target_n =
                     gltf->meshes.v[i].primitives.v[j].targets.n;
                 for (size_t k = 0; k < target_n; k++) {
-                    printf("   targets #%lu:\n", k);
+                    printf("   targets #%zu:\n", k);
                     printf("    POSITION: %lld\n",
                            gltf->meshes.v[i].primitives.v[j]
                            .targets.v[k].position);
@@ -4624,7 +4624,7 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.skins:");
-    printf(" n: %lu\n", gltf->skins.n);
+    printf(" n: %zu\n", gltf->skins.n);
     for (size_t i = 0; i < gltf->skins.n; i++) {
         printf(" skin '%s':\n", gltf->skins.v[i].name);
         printf("  inverseBindMatrices: %lld\n",
@@ -4637,7 +4637,7 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.materials:");
-    printf(" n: %lu\n", gltf->materials.n);
+    printf(" n: %zu\n", gltf->materials.n);
     for (size_t i = 0; i < gltf->materials.n; i++) {
         printf(" material '%s':\n", gltf->materials.v[i].name);
         puts("  pbrMetallicRoughness:");
@@ -4690,13 +4690,13 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.animations:");
-    printf(" n: %lu\n", gltf->animations.n);
+    printf(" n: %zu\n", gltf->animations.n);
     for (size_t i = 0; i < gltf->animations.n; i++) {
         printf(" animation '%s':\n", gltf->animations.v[i].name);
         puts("  channels:");
-        printf("  n: %lu\n", gltf->animations.v[i].channels.n);
+        printf("  n: %zu\n", gltf->animations.v[i].channels.n);
         for (size_t j = 0; j < gltf->animations.v[i].channels.n; j++) {
-            printf("  channel #%lu:\n", j);
+            printf("  channel #%zu:\n", j);
             printf("   sampler: %lld\n",
                    gltf->animations.v[i].channels.v[j].sampler);
             puts("   target:");
@@ -4706,9 +4706,9 @@ static void print_gltf(const T_gltf *gltf)
                    gltf->animations.v[i].channels.v[j].target.path);
         }
         puts("  samplers:");
-        printf("  n: %lu\n", gltf->animations.v[i].samplers.n);
+        printf("  n: %zu\n", gltf->animations.v[i].samplers.n);
         for (size_t j = 0; j < gltf->animations.v[i].samplers.n; j++) {
-            printf("  sampler #%lu:\n", j);
+            printf("  sampler #%zu:\n", j);
             printf("   input: %lld\n",
                    gltf->animations.v[i].samplers.v[j].input);
             printf("   output: %lld\n",
@@ -4719,7 +4719,7 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.accessors:");
-    printf(" n: %lu\n", gltf->accessors.n);
+    printf(" n: %zu\n", gltf->accessors.n);
     for (size_t i = 0; i < gltf->accessors.n; i++) {
         printf(" accessor '%s':\n", gltf->accessors.v[i].name);
         printf("  bufferView: %lld\n", gltf->accessors.v[i].buffer_view);
@@ -4779,7 +4779,7 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.bufferViews:");
-    printf(" n: %lu\n", gltf->bufferviews.n);
+    printf(" n: %zu\n", gltf->bufferviews.n);
     for (size_t i = 0; i < gltf->bufferviews.n; i++) {
         printf(" buffer view '%s':\n", gltf->bufferviews.v[i].name);
         printf("  buffer: %lld\n", gltf->bufferviews.v[i].buffer);
@@ -4790,7 +4790,7 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.buffers:");
-    printf(" n: %lu\n", gltf->buffers.n);
+    printf(" n: %zu\n", gltf->buffers.n);
     for (size_t i = 0; i < gltf->buffers.n; i++) {
         printf(" buffer '%s':\n", gltf->buffers.v[i].name);
         printf("  byteLength: %lld\n", gltf->buffers.v[i].byte_len);
@@ -4798,7 +4798,7 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.textures:");
-    printf(" n: %lu\n", gltf->textures.n);
+    printf(" n: %zu\n", gltf->textures.n);
     for (size_t i = 0; i < gltf->textures.n; i++) {
         printf(" texture '%s':\n", gltf->textures.v[i].name);
         printf("  sampler: %lld\n", gltf->textures.v[i].sampler);
@@ -4806,7 +4806,7 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.images:");
-    printf(" n: %lu\n", gltf->images.n);
+    printf(" n: %zu\n", gltf->images.n);
     for (size_t i = 0; i < gltf->images.n; i++) {
         printf(" image '%s':\n", gltf->images.v[i].name);
         printf("  uri: %s\n", gltf->images.v[i].uri);
@@ -4815,7 +4815,7 @@ static void print_gltf(const T_gltf *gltf)
     }
 
     puts("glTF.samplers:");
-    printf(" n: %lu\n", gltf->samplers.n);
+    printf(" n: %zu\n", gltf->samplers.n);
     for (size_t i = 0; i < gltf->samplers.n; i++) {
         printf(" sampler '%s':\n", gltf->samplers.v[i].name);
         printf("  minFilter: %lld\n", gltf->samplers.v[i].min_filter);
