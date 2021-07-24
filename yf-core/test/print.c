@@ -41,9 +41,9 @@ void yf_print_lim(const YF_limits *lim)
 {
     YF_PTITLE;
 
-    printf("\nmemory - max objects: %lu", lim->memory.obj_max);
+    printf("\nmemory - max objects: %zu", lim->memory.obj_max);
 
-    printf("\nbuffer - max size: %lu", lim->buffer.sz_max);
+    printf("\nbuffer - max size: %zu", lim->buffer.sz_max);
 
     printf("\nimage - max 1d: %u", lim->image.dim_1d_max);
     printf("\nimage - max 2d: %u", lim->image.dim_2d_max);
@@ -61,13 +61,13 @@ void yf_print_lim(const YF_limits *lim)
     printf("\ndtable - max sampled images: %u", lim->dtable.spld_max);
     printf("\ndtable - max samplers: %u", lim->dtable.splr_max);
     printf("\ndtable - max image+samplers: %u", lim->dtable.ispl_max);
-    printf("\ndtable - min copy alignment (uniform): %lu",
+    printf("\ndtable - min copy alignment (uniform): %zu",
            lim->dtable.cpy_unif_align_min);
-    printf("\ndtable - max copy size (uniform): %lu",
+    printf("\ndtable - max copy size (uniform): %zu",
            lim->dtable.cpy_unif_sz_max);
-    printf("\ndtable - min copy alignment (mutable): %lu",
+    printf("\ndtable - min copy alignment (mutable): %zu",
            lim->dtable.cpy_mut_align_min);
-    printf("\ndtable - max copy size (mutable): %lu",
+    printf("\ndtable - max copy size (mutable): %zu",
            lim->dtable.cpy_mut_sz_max);
 
     printf("\nvinput - max input attributes: %u", lim->vinput.attr_max);
