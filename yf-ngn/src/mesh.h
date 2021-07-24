@@ -19,6 +19,8 @@ typedef struct {
     YF_vec3 pos;
     YF_vec2 tc;
     YF_vec3 norm;
+    unsigned char jnts[4];
+    YF_vec4 wgts;
     /* TODO */
 } YF_vmdl;
 

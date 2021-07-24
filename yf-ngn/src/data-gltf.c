@@ -3171,6 +3171,24 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             }
             v_off = offsetof(YF_vmdl, tc);
             break;
+        case YF_GLTF_ATTR_JNT0:
+            /* TODO: Support for USHORT component type. */
+            if (comp_type != YF_GLTF_COMP_UBYTE) {
+                yf_seterr(YF_ERR_UNSUP, __func__);
+                free(verts);
+                return -1;
+            }
+            v_off = offsetof(YF_vmdl, jnts);
+            break;
+        case YF_GLTF_ATTR_WGT0:
+            /* TODO: Support for UBYTE and USHORT component types. */
+            if (comp_type != YF_GLTF_COMP_FLOAT) {
+                yf_seterr(YF_ERR_UNSUP, __func__);
+                free(verts);
+                return -1;
+            }
+            v_off = offsetof(YF_vmdl, wgts);
+            break;
         default:
 #ifdef YF_DEVEL
             printf("\n[YF] WARNING (%s):", __func__);
