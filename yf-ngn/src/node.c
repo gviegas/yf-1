@@ -231,6 +231,12 @@ YF_vec4 *yf_node_getr(YF_node node)
     return &node->r;
 }
 
+YF_vec3 *yf_node_gets(YF_node node)
+{
+    assert(node != NULL);
+    return &node->s;
+}
+
 char *yf_node_getname(YF_node node, char *dst, size_t *n)
 {
     assert(node != NULL);

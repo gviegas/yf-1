@@ -144,6 +144,14 @@ YF_vec3 *yf_node_gett(YF_node node);
 YF_vec4 *yf_node_getr(YF_node node);
 
 /**
+ * Gets the scale vector of a node.
+ *
+ * @param node: The node.
+ * @return: The node's scale vector.
+ */
+YF_vec3 *yf_node_gets(YF_node node);
+
+/**
  * Gets the name of a node.
  *
  * @param node: The node.
