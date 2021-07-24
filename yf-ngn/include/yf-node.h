@@ -136,6 +136,14 @@ YF_mat4 *yf_node_getxform(YF_node node);
 YF_vec3 *yf_node_gett(YF_node node);
 
 /**
+ * Gets the quaternion rotation of a node.
+ *
+ * @param node: The node.
+ * @return: The node's quaternion rotation.
+ */
+YF_vec4 *yf_node_getr(YF_node node);
+
+/**
  * Gets the name of a node.
  *
  * @param node: The node.
