@@ -8,8 +8,6 @@
 #ifndef YF_MESH_H
 #define YF_MESH_H
 
-#include <stdint.h>
-
 #include "yf/core/yf-cmdbuf.h"
 
 #include "yf-mesh.h"
@@ -21,7 +19,7 @@ typedef struct {
     YF_vec3 pos;
     YF_vec2 tc;
     YF_vec3 norm;
-    uint16_t jnts[4];
+    unsigned char jnts[4];
     YF_vec4 wgts;
     /* TODO */
 } YF_vmdl;
