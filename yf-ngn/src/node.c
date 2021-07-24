@@ -219,6 +219,12 @@ YF_mat4 *yf_node_getxform(YF_node node)
     return &node->xform;
 }
 
+YF_vec3 *yf_node_gett(YF_node node)
+{
+    assert(node != NULL);
+    return &node->t;
+}
+
 char *yf_node_getname(YF_node node, char *dst, size_t *n)
 {
     assert(node != NULL);

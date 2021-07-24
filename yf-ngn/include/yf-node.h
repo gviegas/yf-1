@@ -12,6 +12,7 @@
 
 #include "yf/com/yf-defs.h"
 
+#include "yf-vector.h"
 #include "yf-matrix.h"
 
 YF_DECLS_BEGIN
@@ -125,6 +126,14 @@ size_t yf_node_getlen(YF_node node);
  * @return: The node's transformation matrix.
  */
 YF_mat4 *yf_node_getxform(YF_node node);
+
+/**
+ * Gets the translation vector of a node.
+ *
+ * @param node: The node.
+ * @return: The node's translation vector.
+ */
+YF_vec3 *yf_node_gett(YF_node node);
 
 /**
  * Gets the name of a node.
