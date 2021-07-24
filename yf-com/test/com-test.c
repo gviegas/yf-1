@@ -367,7 +367,7 @@ static int test_list(void)
 
 static int dict_cb(void *key, void *val, void *arg)
 {
-    printf("\n %s:\n  key: %p\n  val: %s\n  arg: %lu", __func__,
+    printf("\n %s:\n  key: %p\n  val: %s\n  arg: %zu", __func__,
            key, (char *)val, (size_t)arg);
 
     return (size_t)arg;
@@ -499,7 +499,7 @@ static int test_dict(void)
 
     size_t count = 1000;
 
-    printf("\ninsert() #%lu\n", count);
+    printf("\ninsert() #%zu\n", count);
     for (size_t i = 0; i < count; i++) {
         if (yf_dict_insert(dict, (void *)i, (void *)(i*i)) != 0)
             return -1;
@@ -512,7 +512,7 @@ static int test_dict(void)
         !yf_dict_contains(dict, (void *)(count>>1)))
         return -1;
 
-    printf("\nremove() #%lu\n", count);
+    printf("\nremove() #%zu\n", count);
     yf_seterr(YF_ERR_UNKNOWN, NULL);
     for (size_t i = 0; i < count; i++) {
         void *val = yf_dict_remove(dict, (void *)i);
@@ -546,7 +546,7 @@ static int test_dict(void)
         strs[i*len+n] = '\0';
     }
 
-    printf("\ninsert() #%lu\n", count);
+    printf("\ninsert() #%zu\n", count);
     for (size_t i = 0; i < count; i++) {
         if (yf_dict_insert(dict, &strs[i*len], (void *)i) != 0)
             return -1;
@@ -568,7 +568,7 @@ static int test_dict(void)
         yf_geterr() != YF_ERR_EXIST)
         return -1;
 
-    printf("\nremove() #%lu\n", count);
+    printf("\nremove() #%zu\n", count);
     yf_seterr(YF_ERR_UNKNOWN, NULL);
     for (size_t i = 0; i < count; i++) {
         yf_dict_remove(dict, &strs[i*len]);
@@ -628,13 +628,13 @@ struct ps2 { double val; };
 
 static void pubsub_callb1(void *pub, int pubsub, void *arg)
 {
-    printf("\ngot: pub=%p (%d) pubsub=0x%x arg=%lu",
+    printf("\ngot: pub=%p (%d) pubsub=0x%x arg=%zu",
            pub, ((struct ps1 *)pub)->val, pubsub, (size_t)arg);
 }
 
 static void pubsub_callb2(void *pub, int pubsub, void *arg)
 {
-    printf("\ngot: pub=%p (%.4f) pubsub=0x%x arg=%lu",
+    printf("\ngot: pub=%p (%.4f) pubsub=0x%x arg=%zu",
            pub, ((struct ps2 *)pub)->val, pubsub, (size_t)arg);
 }
 
@@ -839,9 +839,9 @@ static int test(int argc, char *argv[])
         return -1;
     }
 
-    printf("\nDONE!\n\nNumber of tests executed: %lu\n", test_n);
-    printf("> #%lu passed\n", results);
-    printf("> #%lu failed\n", test_n - results);
+    printf("\nDONE!\n\nNumber of tests executed: %zu\n", test_n);
+    printf("> #%zu passed\n", results);
+    printf("> #%zu failed\n", test_n - results);
     printf("\n(%.0f%% coverage)\n", (double)results / (double)test_n * 100.0);
 
     return 0;
