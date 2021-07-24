@@ -234,9 +234,9 @@ static int test(int argc, char *argv[])
         return -1;
     }
 
-    printf("\nDONE!\n\nNumber of tests executed: %lu\n", test_n);
-    printf("> #%lu passed\n", results);
-    printf("> #%lu failed\n", test_n - results);
+    printf("\nDONE!\n\nNumber of tests executed: %zu\n", test_n);
+    printf("> #%zu passed\n", results);
+    printf("> #%zu failed\n", test_n - results);
     printf("\n(%.0f%% coverage)\n",(double)results / (double)test_n * 100.0);
 
     return 0;

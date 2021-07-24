@@ -124,7 +124,7 @@ void yf_print_meshdt(const YF_meshdt *data)
 
     YF_PTITLE;
 
-    printf("\nv.n: %lu", data->v.n);
+    printf("\nv.n: %zu", data->v.n);
     switch (data->v.vtype) {
     case YF_VTYPE_MDL:
         for (size_t i = 0; i < data->v.n; i++)
@@ -158,7 +158,7 @@ void yf_print_meshdt(const YF_meshdt *data)
     else
         itype = "(invalid ITYPE)";
     printf("\ni.itype: %s", itype);
-    printf("\ni.n: %lu", data->i.n);
+    printf("\ni.n: %zu", data->i.n);
     for (size_t i = 0; i < data->i.n; i++) {
         if (i % 3 == 0)
             printf("\n");
