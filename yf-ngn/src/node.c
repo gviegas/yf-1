@@ -21,6 +21,9 @@ struct YF_node_o {
     size_t n;
 
     YF_mat4 xform;
+    YF_vec3 t;
+    YF_vec4 r;
+    YF_vec3 s;
     char *name;
 
     int nodeobj;
