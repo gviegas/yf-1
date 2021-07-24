@@ -135,11 +135,11 @@ int yf_test_node(void)
     len[4] = yf_node_getlen(n5); \
     \
     puts("\n<getlen>"); \
-    printf("n1: %lu\n", len[0]); \
-    printf("n2: %lu\n", len[1]); \
-    printf("n3: %lu\n", len[2]); \
-    printf("n4: %lu\n", len[3]); \
-    printf("n5: %lu\n", len[4]); } while (0)
+    printf("n1: %zu\n", len[0]); \
+    printf("n2: %zu\n", len[1]); \
+    printf("n3: %zu\n", len[2]); \
+    printf("n4: %zu\n", len[3]); \
+    printf("n5: %zu\n", len[4]); } while (0)
 
     YF_DESCCHK();
     if (!chk[0] || !chk[1] || !chk[2] || !chk[3] || chk[4] || !chk[5] || chk[6])
