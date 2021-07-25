@@ -73,6 +73,14 @@ void yf_skin_each(YF_skin skin, int (*callb)(YF_skeleton skel, void *arg),
                   void *arg);
 
 /**
+ * Gets the most recent skeleton of a skin.
+ *
+ * @param skin: The skin.
+ * @return: The newest skeleton of 'skin', or 'NULL' if no instances exist.
+ */
+YF_skeleton yf_skin_newest(YF_skin skin);
+
+/**
  * Makes a new skeleton from a given skin.
  *
  * @param skin: The skin.
