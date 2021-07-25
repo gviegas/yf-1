@@ -15,6 +15,10 @@
 # error "INST_N not defined"
 #endif
 
+#ifndef JOINT_N
+# define JOINT_N 64
+#endif
+
 layout(std140, column_major) uniform;
 
 /**
@@ -36,6 +40,7 @@ struct T_inst {
     mat4 m;
     mat4 norm;
     mat4 mv;
+    mat4 jnts[JOINT_N];
 };
 
 /**
