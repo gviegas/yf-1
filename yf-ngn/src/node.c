@@ -24,6 +24,7 @@ struct YF_node_o {
     YF_vec3 t;
     YF_vec4 r;
     YF_vec3 s;
+    int pending;
     char *name;
 
     int nodeobj;
@@ -54,6 +55,7 @@ YF_node yf_node_init(void)
     yf_vec3_set(node->r, 0.0);
     node->r[3] = 1.0;
     yf_vec3_set(node->s, 1.0);
+    node->pending = 0;
     node->name = NULL;
 
     node->nodeobj = YF_NODEOBJ_NONE;
