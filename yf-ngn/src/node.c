@@ -224,18 +224,24 @@ YF_mat4 *yf_node_getxform(YF_node node)
 YF_vec3 *yf_node_gett(YF_node node)
 {
     assert(node != NULL);
+
+    node->pending = 1;
     return &node->t;
 }
 
 YF_vec4 *yf_node_getr(YF_node node)
 {
     assert(node != NULL);
+
+    node->pending = 1;
     return &node->r;
 }
 
 YF_vec3 *yf_node_gets(YF_node node)
 {
     assert(node != NULL);
+
+    node->pending = 1;
     return &node->s;
 }
 
