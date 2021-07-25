@@ -554,6 +554,23 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
         if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
             return -1;
         l_vars.buf_off += sizeof(YF_mat4);
+
+        /* skinning matrices */
+        YF_skeleton skel;
+        YF_skin skin = yf_model_getskin(mdls[i], &skel);
+        if (skin != NULL) {
+            unsigned jnt_n;
+            const YF_joint *jnts = yf_skin_getjnts(skin, &jnt_n);
+            assert(jnt_n <= YF_JOINTN);
+            YF_mat4 jm[YF_JOINTN];
+            for (unsigned j = 0; j < jnt_n; j++) {
+                YF_node jnt = yf_skin_getjntnode(skin, skel, j);
+                if (jnt == NULL)
+                    /* TODO */
+                    assert(0);
+                yf_mat4_mul(jm[j], *yf_node_getwldxform(jnt), jnts[j].ibm);
+            }
+        }
     }
 
     const YF_slice elems = {0, 1};
