@@ -15,6 +15,10 @@
 # error "INST_N not defined"
 #endif
 
+#ifndef JOINT_N
+# define JOINT_N 64
+#endif
+
 layout(std140, column_major) uniform;
 
 /**
@@ -36,6 +40,7 @@ struct T_inst {
     mat4 m;
     mat4 norm;
     mat4 mv;
+    mat4 jnts[JOINT_N];
 };
 
 /**
@@ -74,7 +79,11 @@ layout(location=0) out IO_v {
 void main()
 {
     const int i = gl_InstanceIndex;
-    gl_Position = u_globl.p * u_inst.i[i].mv * vec4(in_pos, 1.0);
+    mat4 skin = in_wgts.x * u_inst.i[i].jnts[in_jnts.x] +
+                in_wgts.y * u_inst.i[i].jnts[in_jnts.y] +
+                in_wgts.z * u_inst.i[i].jnts[in_jnts.z] +
+                in_wgts.w * u_inst.i[i].jnts[in_jnts.w];
+    gl_Position = u_globl.p * u_inst.i[i].mv * skin * vec4(in_pos, 1.0);
 
     out_v.pos = in_pos; /* TODO */
     out_v.tc = in_tc;
