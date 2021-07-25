@@ -570,6 +570,9 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
                     assert(0);
                 yf_mat4_mul(jm[j], *yf_node_getwldxform(jnt), jnts[j].ibm);
             }
+            if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, jm, sizeof jm) != 0)
+                return -1;
+            l_vars.buf_off += sizeof jm;
         }
     }
 
