@@ -218,6 +218,17 @@ size_t yf_node_getlen(YF_node node)
 YF_mat4 *yf_node_getxform(YF_node node)
 {
     assert(node != NULL);
+
+    if (node->pending) {
+        node->pending = 0;
+        YF_mat4 tr, t, r, s;
+        yf_mat4_xlate(t, node->t[0], node->t[1], node->t[2]);
+        yf_mat4_rotq(r, node->r);
+        yf_mat4_scale(s, node->s[0], node->s[1], node->s[2]);
+        yf_mat4_mul(tr, t, r);
+        /* XXX: 'xform' is overwritten. */
+        yf_mat4_mul(node->xform, tr, s);
+    }
     return &node->xform;
 }
 
