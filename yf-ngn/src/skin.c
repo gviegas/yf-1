@@ -88,6 +88,12 @@ void yf_skin_each(YF_skin skin, int (*callb)(YF_skeleton skel, void *arg),
         ;
 }
 
+YF_skeleton yf_skin_newest(YF_skin skin)
+{
+    assert(skin != NULL);
+    return yf_list_next(skin->skels, NULL);
+}
+
 YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes)
 {
     assert(skin != NULL);
