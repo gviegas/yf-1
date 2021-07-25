@@ -24,6 +24,7 @@ struct YF_node_o {
     YF_vec3 t;
     YF_vec4 r;
     YF_vec3 s;
+    int pending;
     char *name;
 
     int nodeobj;
@@ -54,6 +55,7 @@ YF_node yf_node_init(void)
     yf_vec3_set(node->r, 0.0);
     node->r[3] = 1.0;
     yf_vec3_set(node->s, 1.0);
+    node->pending = 0;
     node->name = NULL;
 
     node->nodeobj = YF_NODEOBJ_NONE;
@@ -216,24 +218,41 @@ size_t yf_node_getlen(YF_node node)
 YF_mat4 *yf_node_getxform(YF_node node)
 {
     assert(node != NULL);
+
+    if (node->pending) {
+        node->pending = 0;
+        YF_mat4 tr, t, r, s;
+        yf_mat4_xlate(t, node->t[0], node->t[1], node->t[2]);
+        yf_mat4_rotq(r, node->r);
+        yf_mat4_scale(s, node->s[0], node->s[1], node->s[2]);
+        yf_mat4_mul(tr, t, r);
+        /* XXX: 'xform' is overwritten. */
+        yf_mat4_mul(node->xform, tr, s);
+    }
     return &node->xform;
 }
 
 YF_vec3 *yf_node_gett(YF_node node)
 {
     assert(node != NULL);
+
+    node->pending = 1;
     return &node->t;
 }
 
 YF_vec4 *yf_node_getr(YF_node node)
 {
     assert(node != NULL);
+
+    node->pending = 1;
     return &node->r;
 }
 
 YF_vec3 *yf_node_gets(YF_node node)
 {
     assert(node != NULL);
+
+    node->pending = 1;
     return &node->s;
 }
 
