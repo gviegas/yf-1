@@ -3598,6 +3598,8 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return cont->matls[material] == NULL ? -1 : 0;
 }
 
+static int load_skeleton(const T_gltf *, T_fdata *, T_cont *, T_int);
+
 /* Loads a single node from glTF contents. */
 static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                      T_int node)
@@ -3645,9 +3647,15 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
         const T_int skin = gltf->nodes.v[node].skin;
         if (skin != YF_INT_MIN) {
+            YF_skeleton skel = NULL;
             if (cont->skins[skin] == NULL) {
-                if (load_skin(gltf, fdata, cont, skin) != 0)
+                if (load_skeleton(gltf, fdata, cont, skin) != 0)
                     return -1;
+                skel = yf_skin_newest(cont->skins[skin]);
+            } else if ((skel = yf_skin_newest(cont->skins[skin])) == NULL) {
+                if (load_skeleton(gltf, fdata, cont, skin) != 0)
+                    return -1;
+                skel = yf_skin_newest(cont->skins[skin]);
             }
         }
 
