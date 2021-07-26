@@ -77,16 +77,30 @@ layout(location=0) out IO_v {
     vec4 clr;
 } out_v;
 
-void main()
+/**
+ * Gets vertex position.
+ */
+vec4 getpos()
 {
     const int i = gl_InstanceIndex;
+
     mat4 skin = in_wgts.x * u_inst.i[i].jnts[in_jnts.x] +
                 in_wgts.y * u_inst.i[i].jnts[in_jnts.y] +
                 in_wgts.z * u_inst.i[i].jnts[in_jnts.z] +
                 in_wgts.w * u_inst.i[i].jnts[in_jnts.w];
-    gl_Position = u_globl.p * u_inst.i[i].mv * skin * vec4(in_pos, 1.0);
 
-    out_v.pos = in_pos; /* TODO */
+    return skin * vec4(in_pos, 1.0);
+}
+
+void main()
+{
+    const int i = gl_InstanceIndex;
+
+    vec4 pos = u_inst.i[i].m * getpos();
+
+    gl_Position = u_globl.vp * pos;
+
+    out_v.pos = pos.xyz / pos.w;
     out_v.tc = in_tc;
     out_v.norm = in_norm; /* TODO */
     out_v.clr = in_clr;
