@@ -3657,6 +3657,7 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                     return -1;
                 skel = yf_skin_newest(cont->skins[skin]);
             }
+            yf_model_setskin(mdl, cont->skins[skin], skel);
         }
 
     } else {
