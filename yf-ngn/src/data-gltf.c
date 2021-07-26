@@ -3104,8 +3104,26 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     for (size_t i = 0; i < YF_GLTF_ATTR_N; i++) {
-        if (attrs[i].acc == YF_INT_MIN)
+        if (attrs[i].acc == YF_INT_MIN) {
+            switch (i) {
+            case YF_GLTF_ATTR_NORM:
+                /* TODO */
+                break;
+            case YF_GLTF_ATTR_TC0:
+                /* TODO */
+                break;
+            case YF_GLTF_ATTR_JNT0:
+                /* TODO */
+                break;
+            case YF_GLTF_ATTR_WGT0:
+                /* TODO */
+                break;
+            default:
+                break;
+            }
+
             continue;
+        }
 
         const T_int comp_type = gltf->accessors.v[attrs[i].acc].comp_type;
         size_t comp_sz;
