@@ -3535,7 +3535,9 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->matls != NULL);
-    assert(cont->matls[material] == NULL);
+    /* XXX: Contents pending creation are expected to be 'NULL'. */
+    if (cont->matls[material] != NULL)
+        return 0;
 
     /* TODO: Specular-Glossiness and Unlit exts. */
 
