@@ -16,7 +16,7 @@
 #endif
 
 #ifndef JOINT_N
-# define JOINT_N 64
+# error "JOINT_N not defined"
 #endif
 
 layout(std140, column_major) uniform;
