@@ -3409,7 +3409,9 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->skins != NULL);
-    assert(cont->skins[skin] == NULL);
+    /* XXX: Contents pending creation are expected to be 'NULL'. */
+    if (cont->skins[skin] != NULL)
+        return 0;
 
     const size_t jnt_n = gltf->skins.v[skin].joint_n;
     assert(jnt_n > 0);
