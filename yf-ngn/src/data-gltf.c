@@ -3731,13 +3731,18 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->skins != NULL);
-    if (cont->skins[skin] == NULL && load_skin(gltf, fdata, cont, skin) != 0)
-        return -1;
+    if (cont->skins[skin] == NULL) {
+        if (load_skin(gltf, fdata, cont, skin) != 0)
+            return -1;
+    } else {
+        if (yf_skin_newest(cont->skins[skin]) != NULL)
+            /* skeleton already instantiated */
+            return 0;
+    }
 
     for (size_t i = 0; i < gltf->skins.v[skin].joint_n; i++) {
         const T_int joint = gltf->skins.v[skin].joints[i];
-        if (cont->nodes[joint] == NULL &&
-            load_node(gltf, fdata, cont, joint) != 0)
+        if (load_node(gltf, fdata, cont, joint) != 0)
             return -1;
     }
 
@@ -3840,14 +3845,13 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
     for (size_t i = 0; i < jnt_n; i++) {
         const T_int joint = gltf->skins.v[skin].joints[i];
-        if (cont->nodes[joint] == NULL &&
-            load_node(gltf, fdata, cont, joint) != 0) {
+        if (load_node(gltf, fdata, cont, joint) != 0) {
             free(nodes);
             return -1;
         }
         nodes[i] = cont->nodes[joint];
     }
-    if (cont->nodes[root] == NULL && load_node(gltf, fdata, cont, root) != 0) {
+    if (load_node(gltf, fdata, cont, root) != 0) {
         free(nodes);
         return -1;
     }
