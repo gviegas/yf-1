@@ -3621,6 +3621,7 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->nodes != NULL);
+    /* XXX: Contents pending creation are expected to be 'NULL'. */
     if (cont->nodes[node] != NULL)
         return 0;
 
@@ -3634,8 +3635,7 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
         cont->nodes[node] = yf_model_getnode(mdl);
 
-        if (cont->meshes[mesh] == NULL &&
-            load_mesh(gltf, fdata, cont, mesh) != 0) {
+        if (load_mesh(gltf, fdata, cont, mesh) != 0) {
             yf_model_deinit(mdl);
             cont->nodes[node] = NULL;
             return -1;
@@ -3645,8 +3645,7 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         /* TODO: Support for multiple primitives. */
         const T_int material = gltf->meshes.v[mesh].primitives.v[0].material;
         if (material != YF_INT_MIN) {
-            if (cont->matls[material] == NULL &&
-                load_material(gltf, fdata, cont, material) != 0) {
+            if (load_material(gltf, fdata, cont, material) != 0) {
                 yf_model_deinit(mdl);
                 cont->nodes[node] = NULL;
                 return -1;
