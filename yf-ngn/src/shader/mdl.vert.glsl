@@ -100,7 +100,7 @@ void main()
 
     gl_Position = u_globl.vp * pos;
 
-    out_v.pos = in_pos; /* TODO */
+    out_v.pos = pos.xyz / pos.w;
     out_v.tc = in_tc;
     out_v.norm = in_norm; /* TODO */
     out_v.clr = in_clr;
