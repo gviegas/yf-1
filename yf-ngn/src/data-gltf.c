@@ -3615,7 +3615,8 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->nodes != NULL);
-    assert(cont->nodes[node] == NULL);
+    if (cont->nodes[node] != NULL)
+        return 0;
 
     /* node object */
     const T_int mesh = gltf->nodes.v[node].mesh;
@@ -4215,7 +4216,8 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     /* node creation */
     assert(gltf->nodes.n == 0 || cont->nodes != NULL);
     for (size_t i = 0; i < gltf->nodes.n; i++) {
-        assert(cont->nodes[i] == NULL);
+        /* XXX: 'load_node()' may indirectly call itself. */
+        /* assert(cont->nodes[i] == NULL); */
         if (load_node(gltf, fdata, cont, i) != 0)
             return -1;
     }
