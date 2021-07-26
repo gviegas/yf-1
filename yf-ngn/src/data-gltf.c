@@ -4174,7 +4174,9 @@ static int load_scene(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->scns != NULL);
-    assert(cont->scns[scene] == NULL);
+    /* XXX: Contents pending creation are expected to be 'NULL'. */
+    if (cont->scns[scene] != NULL)
+        return 0;
 
     cont->scns[scene] = yf_scene_init();
     if (cont->scns[scene] == NULL)
