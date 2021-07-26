@@ -92,16 +92,32 @@ vec4 getpos()
     return skin * vec4(in_pos, 1.0);
 }
 
+/**
+ * Gets vertex normal.
+ */
+vec3 getnorm()
+{
+    const int i = gl_InstanceIndex;
+
+    mat4 nskin = in_wgts.x * u_inst.i[i].jnts_norm[in_jnts.x] +
+                 in_wgts.y * u_inst.i[i].jnts_norm[in_jnts.y] +
+                 in_wgts.z * u_inst.i[i].jnts_norm[in_jnts.z] +
+                 in_wgts.w * u_inst.i[i].jnts_norm[in_jnts.w];
+
+    return normalize(mat3(nskin) * in_norm);
+}
+
 void main()
 {
     const int i = gl_InstanceIndex;
 
     vec4 pos = u_inst.i[i].m * getpos();
+    vec3 norm = normalize(vec3(u_inst.i[i].norm * vec4(getnorm(), 0.0)));
 
     gl_Position = u_globl.vp * pos;
 
     out_v.pos = pos.xyz / pos.w;
     out_v.tc = in_tc;
-    out_v.norm = in_norm; /* TODO */
+    out_v.norm = norm;
     out_v.clr = in_clr;
 }
