@@ -83,7 +83,8 @@
 #define YF_JOINTN 64
 
 #define YF_GLOBLSZ     ((sizeof(YF_mat4) << 2) + 32)
-#define YF_INSTSZ_MDL  ((sizeof(YF_mat4) * 3) + (sizeof(YF_mat4) * YF_JOINTN))
+#define YF_INSTSZ_MDL  ((sizeof(YF_mat4) * 3) + \
+                        (sizeof(YF_mat4) * (YF_JOINTN << 1)))
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_QUAD ((sizeof(YF_mat4) << 1) + 16)
