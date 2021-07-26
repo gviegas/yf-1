@@ -3656,21 +3656,12 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         const T_int skin = gltf->nodes.v[node].skin;
         if (skin != YF_INT_MIN) {
             YF_skeleton skel = NULL;
-            if (cont->skins[skin] == NULL) {
-                if (load_skeleton(gltf, fdata, cont, skin) != 0) {
-                    yf_model_deinit(mdl);
-                    cont->nodes[node] = NULL;
-                    return -1;
-                }
-                skel = yf_skin_newest(cont->skins[skin]);
-            } else if ((skel = yf_skin_newest(cont->skins[skin])) == NULL) {
-                if (load_skeleton(gltf, fdata, cont, skin) != 0) {
-                    yf_model_deinit(mdl);
-                    cont->nodes[node] = NULL;
-                    return -1;
-                }
-                skel = yf_skin_newest(cont->skins[skin]);
+            if (load_skeleton(gltf, fdata, cont, skin) != 0) {
+                yf_model_deinit(mdl);
+                cont->nodes[node] = NULL;
+                return -1;
             }
+            skel = yf_skin_newest(cont->skins[skin]);
             yf_model_setskin(mdl, cont->skins[skin], skel);
         }
 
