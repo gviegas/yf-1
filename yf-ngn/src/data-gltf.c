@@ -4207,7 +4207,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     /* mesh creation */
     assert(gltf->meshes.n == 0 || cont->meshes != NULL);
     for (size_t i = 0; i < gltf->meshes.n; i++) {
-        assert(cont->meshes[i] == NULL);
         if (load_mesh(gltf, fdata, cont, i) != 0)
             return -1;
     }
@@ -4215,7 +4214,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     /* texture creation */
     assert(gltf->textures.n == 0 || cont->texs != NULL);
     for (size_t i = 0; i < gltf->textures.n; i++) {
-        assert(cont->texs[i] == NULL);
         if (load_texture(gltf, fdata, cont, i) != 0)
             return -1;
     }
@@ -4223,7 +4221,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     /* skin creation */
     assert(gltf->skins.n == 0 || cont->skins != NULL);
     for (size_t i = 0; i < gltf->skins.n; i++) {
-        assert(cont->skins[i] == NULL);
         if (load_skin(gltf, fdata, cont, i) != 0)
             return -1;
     }
@@ -4231,7 +4228,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     /* material creation */
     assert(gltf->materials.n == 0 || cont->matls != NULL);
     for (size_t i = 0; i < gltf->materials.n; i++) {
-        assert(cont->matls[i] == NULL);
         if (load_material(gltf, fdata, cont, i) != 0)
             return -1;
     }
@@ -4239,8 +4235,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     /* node creation */
     assert(gltf->nodes.n == 0 || cont->nodes != NULL);
     for (size_t i = 0; i < gltf->nodes.n; i++) {
-        /* XXX: 'load_node()' may indirectly call itself. */
-        /* assert(cont->nodes[i] == NULL); */
         if (load_node(gltf, fdata, cont, i) != 0)
             return -1;
     }
@@ -4248,7 +4242,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     /* skeleton creation */
     assert(gltf->skins.n == 0 || gltf->nodes.n > 0);
     for (size_t i = 0; i < gltf->skins.n; i++) {
-        assert(cont->skins[i] != NULL);
         if (load_skeleton(gltf, fdata, cont, i) != 0)
             return -1;
     }
@@ -4256,7 +4249,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     /* animation creation */
     assert(gltf->animations.n == 0 || cont->anims != NULL);
     for (size_t i = 0; i < gltf->animations.n; i++) {
-        assert(cont->anims[i] == NULL);
         if (load_animation(gltf, fdata, cont, i) != 0)
             return -1;
     }
@@ -4264,7 +4256,6 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     /* scene creation */
     assert(gltf->scenes.n == 0 || cont->scns != NULL);
     for (size_t i = 0; i < gltf->scenes.n; i++) {
-        assert(cont->scns[i] == NULL);
         if (load_scene(gltf, fdata, cont, i) != 0)
             return -1;
     }
