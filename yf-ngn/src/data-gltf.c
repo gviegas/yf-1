@@ -3883,7 +3883,9 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->anims != NULL);
-    assert(cont->anims[animation] == NULL);
+    /* XXX: Contents pending creation are expected to be 'NULL'. */
+    if (cont->anims[animation] != NULL)
+        return 0;
 
     const T_channels *channels = &gltf->animations.v[animation].channels;
     const size_t channel_n = gltf->animations.v[animation].channels.n;
