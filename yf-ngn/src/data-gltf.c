@@ -3065,7 +3065,9 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->meshes != NULL);
-    assert(cont->meshes[mesh] == NULL);
+    /* XXX: Contents pending creation are expected to be 'NULL'. */
+    if (cont->meshes[mesh] != NULL)
+        return 0;
 
     const T_primitives *prim = &gltf->meshes.v[mesh].primitives;
     switch (prim->n) {
