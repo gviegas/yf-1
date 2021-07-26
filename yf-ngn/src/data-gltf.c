@@ -3731,12 +3731,6 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             return 0;
     }
 
-    for (size_t i = 0; i < gltf->skins.v[skin].joint_n; i++) {
-        const T_int joint = gltf->skins.v[skin].joints[i];
-        if (load_node(gltf, fdata, cont, joint) != 0)
-            return -1;
-    }
-
     unsigned jnt_n;
     const YF_joint *jnts = yf_skin_getjnts(cont->skins[skin], &jnt_n);
 
