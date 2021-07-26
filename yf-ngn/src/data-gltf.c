@@ -3357,7 +3357,9 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->texs != NULL);
-    assert(cont->texs[texture] == NULL);
+    /* XXX: Contents pending creation are expected to be 'NULL'. */
+    if (cont->texs[texture] != NULL)
+        return 0;
 
     const T_int image = gltf->textures.v[texture].source;
     if (gltf->images.v[image].mime_type != NULL &&
