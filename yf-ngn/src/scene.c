@@ -563,17 +563,21 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
             unsigned jnt_n;
             const YF_joint *jnts = yf_skin_getjnts(skin, &jnt_n);
             assert(jnt_n <= YF_JOINTN);
-            YF_mat4 jm[YF_JOINTN];
+            YF_mat4 jm[YF_JOINTN << 1], inv;
             for (unsigned j = 0; j < jnt_n; j++) {
                 YF_node jnt = yf_skin_getjntnode(skin, skel, j);
-                if (jnt == NULL)
-                    /* TODO */
-                    assert(0);
+                assert(jnt != NULL);
+                /* joint matrix */
                 yf_mat4_mul(jm[j], *yf_node_getwldxform(jnt), jnts[j].ibm);
+                /* joint normal matrix */
+                yf_mat4_inv(inv, jm[j]);
+                yf_mat4_xpose(jm[YF_JOINTN + j], inv);
             }
             if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, jm, sizeof jm) != 0)
                 return -1;
             l_vars.buf_off += sizeof jm;
+        } else {
+            /* TODO */
         }
     }
 
