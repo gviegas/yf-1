@@ -3595,10 +3595,8 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             *tex_p[i] = NULL;
             continue;
         }
-        if (cont->texs[tex_i[i]] == NULL) {
-            if (load_texture(gltf, fdata, cont, tex_i[i]) != 0)
-                return -1;
-        }
+        if (load_texture(gltf, fdata, cont, tex_i[i]) != 0)
+            return -1;
         *tex_p[i] = cont->texs[tex_i[i]];
     }
 
