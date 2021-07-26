@@ -3626,9 +3626,12 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         if (mdl == NULL)
             return -1;
 
+        cont->nodes[node] = yf_model_getnode(mdl);
+
         if (cont->meshes[mesh] == NULL &&
             load_mesh(gltf, fdata, cont, mesh) != 0) {
             yf_model_deinit(mdl);
+            cont->nodes[node] = NULL;
             return -1;
         }
         yf_model_setmesh(mdl, cont->meshes[mesh]);
@@ -3639,23 +3642,28 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             if (cont->matls[material] == NULL &&
                 load_material(gltf, fdata, cont, material) != 0) {
                 yf_model_deinit(mdl);
+                cont->nodes[node] = NULL;
                 return -1;
             }
             yf_model_setmatl(mdl, cont->matls[material]);
         }
 
-        cont->nodes[node] = yf_model_getnode(mdl);
-
         const T_int skin = gltf->nodes.v[node].skin;
         if (skin != YF_INT_MIN) {
             YF_skeleton skel = NULL;
             if (cont->skins[skin] == NULL) {
-                if (load_skeleton(gltf, fdata, cont, skin) != 0)
+                if (load_skeleton(gltf, fdata, cont, skin) != 0) {
+                    yf_model_deinit(mdl);
+                    cont->nodes[node] = NULL;
                     return -1;
+                }
                 skel = yf_skin_newest(cont->skins[skin]);
             } else if ((skel = yf_skin_newest(cont->skins[skin])) == NULL) {
-                if (load_skeleton(gltf, fdata, cont, skin) != 0)
+                if (load_skeleton(gltf, fdata, cont, skin) != 0) {
+                    yf_model_deinit(mdl);
+                    cont->nodes[node] = NULL;
                     return -1;
+                }
                 skel = yf_skin_newest(cont->skins[skin]);
             }
             yf_model_setskin(mdl, cont->skins[skin], skel);
