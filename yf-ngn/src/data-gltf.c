@@ -4149,8 +4149,7 @@ static int load_subgraph(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             return -1;
     }
 
-    /* node may have been created already */
-    if (cont->nodes[node] == NULL && load_node(gltf, fdata, cont, node) != 0)
+    if (load_node(gltf, fdata, cont, node) != 0)
         return -1;
 
     for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++)
