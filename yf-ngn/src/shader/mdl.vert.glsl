@@ -41,6 +41,7 @@ struct T_inst {
     mat4 norm;
     mat4 mv;
     mat4 jnts[JOINT_N];
+    mat4 jnts_norm[JOINT_N];
 };
 
 /**
