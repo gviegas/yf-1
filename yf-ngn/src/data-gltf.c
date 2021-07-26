@@ -3641,9 +3641,15 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             yf_model_setmatl(mdl, cont->matls[material]);
         }
 
-        /* TODO: Set skin and instantiate skeleton. */
-
         cont->nodes[node] = yf_model_getnode(mdl);
+
+        const T_int skin = gltf->nodes.v[node].skin;
+        if (skin != YF_INT_MIN) {
+            if (cont->skins[skin] == NULL) {
+                if (load_skin(gltf, fdata, cont, skin) != 0)
+                    return -1;
+            }
+        }
 
     } else {
         /* none */
