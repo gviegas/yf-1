@@ -294,7 +294,7 @@ float yf_animation_apply(YF_animation anim, float frame_tm)
         tm_max = YF_MAX(tm_max,
                         anim->inputs[i].timeline[anim->inputs[i].n - 1]);
     }
-    assert(tm_min <= tm_max);
+    assert(tm_min >= 0.0f && tm_min <= tm_max);
     const float dur = tm_max - tm_min;
 
     for (unsigned i = 0; i < anim->action_n; i++) {
@@ -381,8 +381,6 @@ float yf_animation_apply(YF_animation anim, float frame_tm)
             abort();
         }
     }
-
-    /* TODO */
 
     return dur - frame_tm;
 }
