@@ -136,6 +136,15 @@ const YF_kfoutput *yf_animation_getouts(YF_animation anim, unsigned *n);
 const YF_kfaction *yf_animation_getacts(YF_animation anim, unsigned *n);
 
 /**
+ * Applies a keyframe animation.
+ *
+ * @param anim: The animation.
+ * @param frame_tm: The keyframe time, in seconds.
+ * @return: The difference between the duration of 'anim' and 'frame_tm'.
+ */
+float yf_animation_apply(YF_animation anim, float frame_tm);
+
+/**
  * Deinitializes an animation.
  *
  * @param anim: The animation to deinitialize. Can be 'NULL'.

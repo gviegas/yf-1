@@ -7,8 +7,11 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
+#include <math.h>
 #include <assert.h>
 
+#include "yf/com/yf-util.h"
 #include "yf/com/yf-error.h"
 
 #include "yf-animation.h"
@@ -24,6 +27,97 @@ struct YF_animation_o {
     /* targets can be set (or unset) at any time */
     YF_node *targets;
 };
+
+/* Gets a pair of timeline indices defining keyframes for interpolation. */
+static void get_keyframes(const YF_kfinput *input, float frame_tm,
+                          unsigned *i1, unsigned *i2)
+{
+    const float *timeline = input->timeline;
+    const unsigned n = input->n;
+    assert(n > 0);
+
+    if (timeline[0] > frame_tm) {
+        *i1 = *i2 = 0;
+        return;
+    }
+
+    if (timeline[n-1] < frame_tm) {
+        *i1 = *i2 = n - 1;
+        return;
+    }
+
+    unsigned beg = 0;
+    unsigned end = n - 1;
+    unsigned cur = (beg + end) >> 1;
+
+    while (beg < end) {
+        if (timeline[cur] < frame_tm)
+            beg = cur + 1;
+        else if (timeline[cur] > frame_tm)
+            end = cur - 1;
+        else
+            break;
+
+        cur = (beg + end) >> 1;
+    }
+
+    if (timeline[cur] > frame_tm) {
+        *i1 = cur - 1;
+        *i2 = cur;
+    } else {
+        *i1 = cur;
+        *i2 = cur + 1;
+    }
+}
+
+/* Linear interpolation on 3-component vectors. */
+static void lerp3(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b, YF_float t)
+{
+    dst[0] = ((YF_float)1 - t) * a[0] + t * b[0];
+    dst[1] = ((YF_float)1 - t) * a[1] + t * b[1];
+    dst[2] = ((YF_float)1 - t) * a[2] + t * b[2];
+}
+
+/* Spherical linear interpolation on quaternions. */
+static void slerpq(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b, YF_float t)
+{
+    YF_float d = yf_vec3_dot(a, b);
+
+#ifdef YF_USE_FLOAT64
+    const YF_float e = 1.0 - DBL_EPSILON;
+#else
+    const YF_float e = 1.0f - FLT_EPSILON;
+#endif
+
+    if (d > e) {
+        lerp3(dst, a, b, t);
+        dst[3] = ((YF_float)1 - t) * a[3] + t * b[3];
+        return;
+    }
+
+    YF_float k = (YF_float)1;
+    if (d < (YF_float)0) {
+        k = -k;
+        d = -d;
+    }
+
+#ifdef YF_USE_FLOAT64
+    const YF_float ang = acos(d);
+    const YF_float s = sin(ang);
+    const YF_float s1 = sin((1.0 - t) * ang);
+    const YF_float s2 = sin(t * ang);
+#else
+    const YF_float ang = acosf(d);
+    const YF_float s = sinf(ang);
+    const YF_float s1 = sinf((1.0f - t) * ang);
+    const YF_float s2 = sinf(t * ang);
+#endif
+
+    dst[0] = (a[0] * s1 + b[0] * s2 * k) / s;
+    dst[1] = (a[1] * s1 + b[1] * s2 * k) / s;
+    dst[2] = (a[2] * s1 + b[2] * s2 * k) / s;
+    dst[3] = (a[3] * s1 + b[3] * s2 * k) / s;
+}
 
 YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
                                const YF_kfoutput *outputs, unsigned output_n,
@@ -186,6 +280,109 @@ const YF_kfaction *yf_animation_getacts(YF_animation anim, unsigned *n)
 
     *n = anim->action_n;
     return anim->actions;
+}
+
+float yf_animation_apply(YF_animation anim, float frame_tm)
+{
+    assert(anim != NULL);
+
+    /* TODO: Compute this once. */
+    float tm_min = 0.0f;
+    float tm_max = 0.0f;
+    for (unsigned i = 0; i < anim->input_n; i++) {
+        tm_min = YF_MIN(tm_min, anim->inputs[i].timeline[0]);
+        tm_max = YF_MAX(tm_max,
+                        anim->inputs[i].timeline[anim->inputs[i].n - 1]);
+    }
+    assert(tm_min >= 0.0f && tm_min <= tm_max);
+    const float dur = tm_max - tm_min;
+
+    for (unsigned i = 0; i < anim->action_n; i++) {
+        YF_node node = anim->targets[i];
+        if (node == NULL)
+            continue;
+
+        const YF_kfaction *act = &anim->actions[i];
+        const YF_kfinput *in = &anim->inputs[act->in_i];
+        const YF_kfoutput *out = &anim->outputs[act->out_i];
+
+        unsigned i1, i2;
+        get_keyframes(in, frame_tm, &i1, &i2);
+
+        switch (out->kfprop) {
+        case YF_KFPROP_T:
+            switch (act->kferp) {
+            case YF_KFERP_STEP:
+                if (frame_tm - in->timeline[i1] < in->timeline[i2] - frame_tm)
+                    yf_vec3_copy(*yf_node_gett(node), out->t[i1]);
+                else
+                    yf_vec3_copy(*yf_node_gett(node), out->t[i2]);
+                break;
+            case YF_KFERP_LINEAR:
+                if (i1 != i2)
+                    lerp3(*yf_node_gett(node), out->t[i1], out->t[i2],
+                          (frame_tm - in->timeline[i1]) /
+                          (in->timeline[i2] - in->timeline[i1]));
+                else
+                    yf_vec3_copy(*yf_node_gett(node), out->t[i1]);
+                break;
+            default:
+                assert(0);
+                abort();
+            }
+            break;
+
+        case YF_KFPROP_R:
+            switch (act->kferp) {
+            case YF_KFERP_STEP:
+                if (frame_tm - in->timeline[i1] < in->timeline[i2] - frame_tm)
+                    yf_vec4_copy(*yf_node_getr(node), out->r[i1]);
+                else
+                    yf_vec4_copy(*yf_node_getr(node), out->r[i2]);
+                break;
+            case YF_KFERP_LINEAR:
+                if (i1 != i2)
+                    slerpq(*yf_node_getr(node), out->r[i1], out->r[i2],
+                           (frame_tm - in->timeline[i1]) /
+                           (in->timeline[i2] - in->timeline[i1]));
+                else
+                    yf_vec4_copy(*yf_node_getr(node), out->r[i1]);
+                break;
+            default:
+                assert(0);
+                abort();
+            }
+            break;
+
+        case YF_KFPROP_S:
+            switch (act->kferp) {
+            case YF_KFERP_STEP:
+                if (frame_tm - in->timeline[i1] < in->timeline[i2] - frame_tm)
+                    yf_vec3_copy(*yf_node_gets(node), out->s[i1]);
+                else
+                    yf_vec3_copy(*yf_node_gets(node), out->s[i2]);
+                break;
+            case YF_KFERP_LINEAR:
+                if (i1 != i2)
+                    lerp3(*yf_node_gets(node), out->s[i1], out->s[i2],
+                          (frame_tm - in->timeline[i1]) /
+                          (in->timeline[i2] - in->timeline[i1]));
+                else
+                    yf_vec3_copy(*yf_node_gets(node), out->s[i1]);
+                break;
+            default:
+                assert(0);
+                abort();
+            }
+            break;
+
+        default:
+            assert(0);
+            abort();
+        }
+    }
+
+    return dur - frame_tm;
 }
 
 void yf_animation_deinit(YF_animation anim)
