@@ -9,6 +9,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "yf/com/yf-util.h"
 #include "yf/com/yf-error.h"
 
 #include "yf-animation.h"
@@ -186,6 +187,33 @@ const YF_kfaction *yf_animation_getacts(YF_animation anim, unsigned *n)
 
     *n = anim->action_n;
     return anim->actions;
+}
+
+float yf_animation_apply(YF_animation anim, float frame_tm)
+{
+    assert(anim != NULL);
+
+    /* TODO: Compute this once. */
+    float tm_min = 0.0f;
+    float tm_max = 0.0f;
+    for (unsigned i = 0; i < anim->input_n; i++) {
+        tm_min = YF_MIN(tm_min, anim->inputs[i].timeline[0]);
+        tm_max = YF_MAX(tm_max,
+                        anim->inputs[i].timeline[anim->inputs[i].n - 1]);
+    }
+    assert(tm_min <= tm_max);
+    const float dur = tm_max - tm_min;
+
+    for (unsigned i = 0; i < anim->action_n; i++) {
+        if (anim->targets[i] == NULL)
+            continue;
+
+        /* TODO */
+    }
+
+    /* TODO */
+
+    return dur - frame_tm;
 }
 
 void yf_animation_deinit(YF_animation anim)
