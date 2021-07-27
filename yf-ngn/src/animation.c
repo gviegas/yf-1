@@ -26,6 +26,14 @@ struct YF_animation_o {
     YF_node *targets;
 };
 
+/* Linear interpolation on 3-component vectors. */
+static void lerp3(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b, YF_float t)
+{
+    dst[0] = ((YF_float)1 - t) * a[0] + t * b[0];
+    dst[1] = ((YF_float)1 - t) * a[1] + t * b[1];
+    dst[2] = ((YF_float)1 - t) * a[2] + t * b[2];
+}
+
 YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
                                const YF_kfoutput *outputs, unsigned output_n,
                                const YF_kfaction *actions, unsigned action_n)
