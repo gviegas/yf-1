@@ -357,8 +357,18 @@ float yf_animation_apply(YF_animation anim, float frame_tm)
         case YF_KFPROP_S:
             switch (act->kferp) {
             case YF_KFERP_STEP:
+                if (frame_tm - in->timeline[i1] < in->timeline[i2] - frame_tm)
+                    yf_vec3_copy(*yf_node_gets(node), out->s[i1]);
+                else
+                    yf_vec3_copy(*yf_node_gets(node), out->s[i2]);
                 break;
             case YF_KFERP_LINEAR:
+                if (i1 != i2)
+                    lerp3(*yf_node_gets(node), out->s[i1], out->s[i2],
+                          (frame_tm - in->timeline[i1]) /
+                          (in->timeline[i2] - in->timeline[i1]));
+                else
+                    yf_vec3_copy(*yf_node_gets(node), out->s[i1]);
                 break;
             default:
                 assert(0);
