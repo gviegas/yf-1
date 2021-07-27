@@ -28,6 +28,48 @@ struct YF_animation_o {
     YF_node *targets;
 };
 
+/* Gets a pair of timeline indices defining keyframes for interpolation. */
+static void get_keyframes(const YF_kfinput *input, float frame_tm,
+                          unsigned *i1, unsigned *i2)
+{
+    const float *timeline = input->timeline;
+    const unsigned n = input->n;
+    assert(n > 0);
+
+    if (timeline[0] > frame_tm) {
+        *i1 = *i2 = 0;
+        return;
+    }
+
+    if (timeline[n-1] < frame_tm) {
+        *i1 = *i2 = n - 1;
+        return;
+    }
+
+    unsigned beg = 0;
+    unsigned end = n - 1;
+    unsigned cur = (beg + end) >> 1;
+
+    while (beg < end) {
+        if (timeline[cur] < frame_tm)
+            beg = cur + 1;
+        else if (timeline[cur] > frame_tm)
+            end = cur - 1;
+        else
+            break;
+
+        cur = (beg + end) >> 1;
+    }
+
+    if (timeline[cur] > frame_tm) {
+        *i1 = cur - 1;
+        *i2 = cur;
+    } else {
+        *i1 = cur;
+        *i2 = cur + 1;
+    }
+}
+
 /* Linear interpolation on 3-component vectors. */
 static void lerp3(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b, YF_float t)
 {
