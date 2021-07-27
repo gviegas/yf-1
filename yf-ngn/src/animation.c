@@ -7,6 +7,8 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <float.h>
+#include <math.h>
 #include <assert.h>
 
 #include "yf/com/yf-util.h"
@@ -32,6 +34,47 @@ static void lerp3(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b, YF_float t)
     dst[0] = ((YF_float)1 - t) * a[0] + t * b[0];
     dst[1] = ((YF_float)1 - t) * a[1] + t * b[1];
     dst[2] = ((YF_float)1 - t) * a[2] + t * b[2];
+}
+
+/* Spherical linear interpolation on quaternions. */
+static void slerpq(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b, YF_float t)
+{
+    YF_float d = yf_vec3_dot(a, b);
+
+#ifdef YF_USE_FLOAT64
+    const YF_float e = 1.0 - DBL_EPSILON;
+#else
+    const YF_float e = 1.0f - FLT_EPSILON;
+#endif
+
+    if (d > e) {
+        lerp3(dst, a, b, t);
+        dst[3] = ((YF_float)1 - t) * a[3] + t * b[3];
+        return;
+    }
+
+    YF_float k = (YF_float)1;
+    if (d < (YF_float)0) {
+        k = -k;
+        d = -d;
+    }
+
+#ifdef YF_USE_FLOAT64
+    const YF_float ang = acos(d);
+    const YF_float s = sin(ang);
+    const YF_float s1 = sin((1.0 - t) * ang);
+    const YF_float s2 = sin(t * ang);
+#else
+    const YF_float ang = acosf(d);
+    const YF_float s = sinf(ang);
+    const YF_float s1 = sinf((1.0f - t) * ang);
+    const YF_float s2 = sinf(t * ang);
+#endif
+
+    dst[0] = (a[0] * s1 + b[0] * s2 * k) / s;
+    dst[1] = (a[1] * s1 + b[1] * s2 * k) / s;
+    dst[2] = (a[2] * s1 + b[2] * s2 * k) / s;
+    dst[3] = (a[3] * s1 + b[3] * s2 * k) / s;
 }
 
 YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
