@@ -298,10 +298,58 @@ float yf_animation_apply(YF_animation anim, float frame_tm)
     const float dur = tm_max - tm_min;
 
     for (unsigned i = 0; i < anim->action_n; i++) {
-        if (anim->targets[i] == NULL)
+        YF_node node = anim->targets[i];
+        if (node == NULL)
             continue;
 
-        /* TODO */
+        const YF_kfaction *act = &anim->actions[i];
+        const YF_kfinput *in = &anim->inputs[act->in_i];
+        const YF_kfoutput *out = &anim->outputs[act->out_i];
+
+        unsigned i1, i2;
+        get_keyframes(in, frame_tm, &i1, &i2);
+
+        switch (out->kfprop) {
+        case YF_KFPROP_T:
+            switch (act->kferp) {
+            case YF_KFERP_STEP:
+                break;
+            case YF_KFERP_LINEAR:
+                break;
+            default:
+                assert(0);
+                abort();
+            }
+            break;
+
+        case YF_KFPROP_R:
+            switch (act->kferp) {
+            case YF_KFERP_STEP:
+                break;
+            case YF_KFERP_LINEAR:
+                break;
+            default:
+                assert(0);
+                abort();
+            }
+            break;
+
+        case YF_KFPROP_S:
+            switch (act->kferp) {
+            case YF_KFERP_STEP:
+                break;
+            case YF_KFERP_LINEAR:
+                break;
+            default:
+                assert(0);
+                abort();
+            }
+            break;
+
+        default:
+            assert(0);
+            abort();
+        }
     }
 
     /* TODO */
