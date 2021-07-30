@@ -116,16 +116,10 @@ void yf_camera_point(YF_camera cam, const YF_vec3 pos)
     if (yf_vec3_iseq(pos, cam->pos)) return;
 #endif
 
-    YF_float ang;
     YF_vec3 dir;
     yf_vec3_sub(dir, pos, cam->pos);
     yf_vec3_normi(dir);
-
-#ifdef YF_USE_FLOAT64
-    ang = acos(yf_vec3_dot(dir, l_wld_u));
-#else
-    ang = acosf(yf_vec3_dot(dir, l_wld_u));
-#endif
+    float ang = acosf(yf_vec3_dot(dir, l_wld_u));
 
     if (ang >= YF_TURNX_MIN && ang <= YF_TURNX_MAX) {
         yf_vec3_copy(cam->dir, dir);
