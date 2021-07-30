@@ -71,11 +71,11 @@ static void get_keyframes(const YF_kfinput *input, float frame_tm,
 }
 
 /* Linear interpolation on 3-component vectors. */
-static void lerp3(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b, YF_float t)
+static void lerp3(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b, float t)
 {
-    dst[0] = ((YF_float)1 - t) * a[0] + t * b[0];
-    dst[1] = ((YF_float)1 - t) * a[1] + t * b[1];
-    dst[2] = ((YF_float)1 - t) * a[2] + t * b[2];
+    dst[0] = (1.0f - t) * a[0] + t * b[0];
+    dst[1] = (1.0f - t) * a[1] + t * b[1];
+    dst[2] = (1.0f - t) * a[2] + t * b[2];
 }
 
 /* Spherical linear interpolation on quaternions. */
