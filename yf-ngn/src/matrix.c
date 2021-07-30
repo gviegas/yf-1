@@ -190,7 +190,7 @@ void yf_mat4_mulv(YF_vec4 dst, const YF_mat4 m, const YF_vec4 v)
 
 void yf_mat2_inv(YF_mat2 dst, const YF_mat2 m)
 {
-    const YF_float idet = 1.0 / (m[0] * m[3] - m[1] * m[2]);
+    const float idet = 1.0f / (m[0] * m[3] - m[1] * m[2]);
     dst[0] = +m[3] * idet;
     dst[1] = +m[1] * idet;
     dst[2] = -m[2] * idet;
@@ -199,10 +199,10 @@ void yf_mat2_inv(YF_mat2 dst, const YF_mat2 m)
 
 void yf_mat3_inv(YF_mat3 dst, const YF_mat3 m)
 {
-    const YF_float s0 = m[4] * m[8] - m[5] * m[7];
-    const YF_float s1 = m[3] * m[8] - m[5] * m[6];
-    const YF_float s2 = m[3] * m[7] - m[4] * m[6];
-    const YF_float idet = 1.0 / (m[0]*s0 - m[1]*s1 + m[2]*s2);
+    const float s0 = m[4] * m[8] - m[5] * m[7];
+    const float s1 = m[3] * m[8] - m[5] * m[6];
+    const float s2 = m[3] * m[7] - m[4] * m[6];
+    const float idet = 1.0f / (m[0]*s0 - m[1]*s1 + m[2]*s2);
     dst[0] = +s0 * idet;
     dst[1] = -(m[1] * m[8] - m[2] * m[7]) * idet;
     dst[2] = +(m[1] * m[5] - m[2] * m[4]) * idet;
@@ -216,19 +216,19 @@ void yf_mat3_inv(YF_mat3 dst, const YF_mat3 m)
 
 void yf_mat4_inv(YF_mat4 dst, const YF_mat4 m)
 {
-    const YF_float s0 = m[0]  * m[5]  - m[1]  * m[4];
-    const YF_float s1 = m[0]  * m[6]  - m[2]  * m[4];
-    const YF_float s2 = m[0]  * m[7]  - m[3]  * m[4];
-    const YF_float s3 = m[1]  * m[6]  - m[2]  * m[5];
-    const YF_float s4 = m[1]  * m[7]  - m[3]  * m[5];
-    const YF_float s5 = m[2]  * m[7]  - m[3]  * m[6];
-    const YF_float c0 = m[8]  * m[13] - m[9]  * m[12];
-    const YF_float c1 = m[8]  * m[14] - m[10] * m[12];
-    const YF_float c2 = m[8]  * m[15] - m[11] * m[12];
-    const YF_float c3 = m[9]  * m[14] - m[10] * m[13];
-    const YF_float c4 = m[9]  * m[15] - m[11] * m[13];
-    const YF_float c5 = m[10] * m[15] - m[11] * m[14];
-    const YF_float idet = 1.0 / (s0*c5 - s1*c4 + s2*c3 + s3*c2 - s4*c1 + s5*c0);
+    const float s0 = m[0]  * m[5]  - m[1]  * m[4];
+    const float s1 = m[0]  * m[6]  - m[2]  * m[4];
+    const float s2 = m[0]  * m[7]  - m[3]  * m[4];
+    const float s3 = m[1]  * m[6]  - m[2]  * m[5];
+    const float s4 = m[1]  * m[7]  - m[3]  * m[5];
+    const float s5 = m[2]  * m[7]  - m[3]  * m[6];
+    const float c0 = m[8]  * m[13] - m[9]  * m[12];
+    const float c1 = m[8]  * m[14] - m[10] * m[12];
+    const float c2 = m[8]  * m[15] - m[11] * m[12];
+    const float c3 = m[9]  * m[14] - m[10] * m[13];
+    const float c4 = m[9]  * m[15] - m[11] * m[13];
+    const float c5 = m[10] * m[15] - m[11] * m[14];
+    const float idet = 1.0f / (s0*c5 - s1*c4 + s2*c3 + s3*c2 - s4*c1 + s5*c0);
     dst[0]  = (+c5 * m[5]  - c4 * m[6]  + c3 * m[7])  * idet;
     dst[1]  = (-c5 * m[1]  + c4 * m[2]  - c3 * m[3])  * idet;
     dst[2]  = (+s5 * m[13] - s4 * m[14] + s3 * m[15]) * idet;
