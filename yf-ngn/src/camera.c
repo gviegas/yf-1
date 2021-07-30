@@ -15,18 +15,18 @@
 
 #include "yf-camera.h"
 
-#define YF_FOV_MIN (YF_float)0.07957747154594767280
-#define YF_FOV_MAX (YF_float)M_PI_4
+#define YF_FOV_MIN 0.07957747154594767280
+#define YF_FOV_MAX M_PI_4
 
-#define YF_TURNX_MIN (YF_float)0.0001
-#define YF_TURNX_MAX (YF_float)(M_PI-0.0001)
+#define YF_TURNX_MIN 0.0001
+#define YF_TURNX_MAX (M_PI-0.0001)
 
 struct YF_camera_o {
     YF_vec3 pos;
     YF_vec3 dir;
-    YF_float turn_x;
-    YF_float zoom;
-    YF_float aspect;
+    float turn_x;
+    float zoom;
+    float aspect;
     YF_mat4 view;
     YF_mat4 proj;
     YF_mat4 view_proj;
