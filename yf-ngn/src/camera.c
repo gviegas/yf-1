@@ -69,10 +69,10 @@ static void update_vp(YF_camera cam)
 }
 
 YF_camera yf_camera_init(const YF_vec3 origin, const YF_vec3 target,
-                         YF_float aspect)
+                         float aspect)
 {
     assert(!yf_vec3_iseq(origin, target));
-    assert(aspect > 0.0);
+    assert(aspect > 0.0f);
 
     YF_camera cam = malloc(sizeof(struct YF_camera_o));
     if (cam == NULL) {
@@ -83,11 +83,7 @@ YF_camera yf_camera_init(const YF_vec3 origin, const YF_vec3 target,
     yf_vec3_sub(cam->dir, target, origin);
     yf_vec3_normi(cam->dir);
 
-#ifdef YF_USE_FLOAT64
-    cam->turn_x = acos(yf_vec3_dot(cam->dir, l_wld_u));
-#else
     cam->turn_x = acosf(yf_vec3_dot(cam->dir, l_wld_u));
-#endif
     if (cam->turn_x < YF_TURNX_MIN || cam->turn_x > YF_TURNX_MAX) {
         yf_seterr(YF_ERR_INVARG, __func__);
         free(cam);
