@@ -88,15 +88,15 @@ static void update_rect(YF_label labl)
 
     if (labl->pend_mask & YF_PEND_TC) {
         const YF_fontrz *rz = &labl->rz;
-        YF_float s0, t0, s1, t1;
+        float s0, t0, s1, t1;
 
         if (rz->tex == NULL || rz->dim.width == 0 || rz->dim.height == 0) {
             s0 = t0 = 0.0;
             s1 = t1 = 1.0;
         } else {
             const YF_dim2 dim = yf_texture_getdim(rz->tex);
-            const YF_float wdt = dim.width;
-            const YF_float hgt = dim.height;
+            const float wdt = dim.width;
+            const float hgt = dim.height;
             s0 = rz->off.x / wdt;
             t0 = rz->off.y / hgt;
             s1 = rz->dim.width / wdt + s0;
