@@ -417,7 +417,7 @@ void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q)
     m[10] = 1.0f - two_xx - two_yy;
 }
 
-void yf_mat3_scale(YF_mat3 m, YF_float sx, YF_float sy, YF_float sz)
+void yf_mat3_scale(YF_mat3 m, float sx, float sy, float sz)
 {
     memset(m, 0, sizeof(YF_mat3));
     m[0] = sx;
@@ -425,16 +425,16 @@ void yf_mat3_scale(YF_mat3 m, YF_float sx, YF_float sy, YF_float sz)
     m[8] = sz;
 }
 
-void yf_mat4_scale(YF_mat4 m, YF_float sx, YF_float sy, YF_float sz)
+void yf_mat4_scale(YF_mat4 m, float sx, float sy, float sz)
 {
     memset(m, 0, sizeof(YF_mat4));
     m[0] = sx;
     m[5] = sy;
     m[10] = sz;
-    m[15] = 1.0;
+    m[15] = 1.0f;
 }
 
-void yf_mat4_xlate(YF_mat4 m, YF_float tx, YF_float ty, YF_float tz)
+void yf_mat4_xlate(YF_mat4 m, float tx, float ty, float tz)
 {
     yf_mat4_iden(m);
     m[12] = tx;
