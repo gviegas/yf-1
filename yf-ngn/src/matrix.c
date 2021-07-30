@@ -83,17 +83,17 @@ void yf_mat4_iden(YF_mat4 m)
     memcpy(m, iden, sizeof iden);
 }
 
-void yf_mat2_set(YF_mat2 m, YF_float s)
+void yf_mat2_set(YF_mat2 m, float s)
 {
     YF_MAT_SET(m, s, 2, 2);
 }
 
-void yf_mat3_set(YF_mat3 m, YF_float s)
+void yf_mat3_set(YF_mat3 m, float s)
 {
     YF_MAT_SET(m, s, 3, 3);
 }
 
-void yf_mat4_set(YF_mat4 m, YF_float s)
+void yf_mat4_set(YF_mat4 m, float s)
 {
     YF_MAT_SET(m, s, 4, 4);
 }
