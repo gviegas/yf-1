@@ -9,15 +9,6 @@
 #define YF_YF_TYPES_H
 
 /**
- * Configurable float type.
- */
-#ifdef YF_USE_FLOAT64
-typedef double YF_float;
-#else
-typedef float YF_float;
-#endif
-
-/**
  * Type defining a range of size 'n', starting at index 'i'.
  */
 typedef struct {
