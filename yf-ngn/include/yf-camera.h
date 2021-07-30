@@ -34,7 +34,7 @@ typedef struct YF_camera_o *YF_camera;
  *  and the global error is set to indicate the cause.
  */
 YF_camera yf_camera_init(const YF_vec3 origin, const YF_vec3 target,
-                         YF_float aspect);
+                         float aspect);
 
 /**
  * Places the camera at a given position.
@@ -58,7 +58,7 @@ void yf_camera_point(YF_camera cam, const YF_vec3 pos);
  * @param cam: The camera.
  * @param d: The amount to move.
  */
-void yf_camera_movef(YF_camera cam, YF_float d);
+void yf_camera_movef(YF_camera cam, float d);
 
 /**
  * Moves the camera backward.
@@ -66,7 +66,7 @@ void yf_camera_movef(YF_camera cam, YF_float d);
  * @param cam: The camera.
  * @param d: The amount to move.
  */
-void yf_camera_moveb(YF_camera cam, YF_float d);
+void yf_camera_moveb(YF_camera cam, float d);
 
 /**
  * Moves the camera upward.
@@ -74,7 +74,7 @@ void yf_camera_moveb(YF_camera cam, YF_float d);
  * @param cam: The camera.
  * @param d: The amount to move.
  */
-void yf_camera_moveu(YF_camera cam, YF_float d);
+void yf_camera_moveu(YF_camera cam, float d);
 
 /**
  * Moves the camera downward.
@@ -82,7 +82,7 @@ void yf_camera_moveu(YF_camera cam, YF_float d);
  * @param cam: The camera.
  * @param d: The amount to move.
  */
-void yf_camera_moved(YF_camera cam, YF_float d);
+void yf_camera_moved(YF_camera cam, float d);
 
 /**
  * Moves the camera sideways to the left.
@@ -90,7 +90,7 @@ void yf_camera_moved(YF_camera cam, YF_float d);
  * @param cam: The camera.
  * @param d: The amount to move.
  */
-void yf_camera_movel(YF_camera cam, YF_float d);
+void yf_camera_movel(YF_camera cam, float d);
 
 /**
  * Moves the camera sideways to the right.
@@ -98,7 +98,7 @@ void yf_camera_movel(YF_camera cam, YF_float d);
  * @param cam: The camera.
  * @param d: The amount to move.
  */
-void yf_camera_mover(YF_camera cam, YF_float d);
+void yf_camera_mover(YF_camera cam, float d);
 
 /**
  * Turns the camera up.
@@ -106,7 +106,7 @@ void yf_camera_mover(YF_camera cam, YF_float d);
  * @param cam: The camera.
  * @param d: The amount to turn.
  */
-void yf_camera_turnu(YF_camera cam, YF_float d);
+void yf_camera_turnu(YF_camera cam, float d);
 
 /**
  * Turns the camera down.
@@ -114,7 +114,7 @@ void yf_camera_turnu(YF_camera cam, YF_float d);
  * @param cam: The camera.
  * @param d: The amount to turn.
  */
-void yf_camera_turnd(YF_camera cam, YF_float d);
+void yf_camera_turnd(YF_camera cam, float d);
 
 /**
  * Turns the camera to the left.
@@ -122,7 +122,7 @@ void yf_camera_turnd(YF_camera cam, YF_float d);
  * @param cam: The camera.
  * @param d: The amount to turn.
  */
-void yf_camera_turnl(YF_camera cam, YF_float d);
+void yf_camera_turnl(YF_camera cam, float d);
 
 /**
  * Turns the camera to the right.
@@ -130,7 +130,7 @@ void yf_camera_turnl(YF_camera cam, YF_float d);
  * @param cam: The camera.
  * @param d: The amount to turn.
  */
-void yf_camera_turnr(YF_camera cam, YF_float d);
+void yf_camera_turnr(YF_camera cam, float d);
 
 /**
  * Zooms the camera in.
@@ -138,7 +138,7 @@ void yf_camera_turnr(YF_camera cam, YF_float d);
  * @param cam: The camera.
  * @param d: The amount to zoom.
  */
-void yf_camera_zoomi(YF_camera cam, YF_float d);
+void yf_camera_zoomi(YF_camera cam, float d);
 
 /**
  * Zooms the camera out
@@ -146,7 +146,7 @@ void yf_camera_zoomi(YF_camera cam, YF_float d);
  * @param cam: The camera.
  * @param d: The amount to zoom.
  */
-void yf_camera_zoomo(YF_camera cam, YF_float d);
+void yf_camera_zoomo(YF_camera cam, float d);
 
 /**
  * Gets the camera's view-projection matrix.
@@ -178,7 +178,7 @@ const YF_mat4 *yf_camera_getproj(YF_camera cam);
  * @param cam: The camera.
  * @param aspect: The new aspect ratio.
  */
-void yf_camera_adjust(YF_camera cam, YF_float aspect);
+void yf_camera_adjust(YF_camera cam, float aspect);
 
 /**
  * Deinitializes a camera.
