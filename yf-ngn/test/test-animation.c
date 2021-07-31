@@ -133,12 +133,11 @@ static void update(double elapsed_time)
 
     if (l_vars.input.play) {
         static float dt = 0.0f;
-        if (dt > 1.0f) {
-            float rem = yf_animation_apply(l_vars.anim, dt);
-            if (rem < 0.0f)
-                dt = 0.0f;
-        }
-        dt += elapsed_time;
+        float rem = yf_animation_apply(l_vars.anim, dt);
+        if (rem < -1.0f)
+            dt = 0.0f;
+        else
+            dt += elapsed_time;
     }
 }
 
@@ -247,11 +246,12 @@ int yf_test_animation(void)
     l_vars.view = yf_view_init(l_vars.win);
     assert(l_vars.view != NULL);
 
-    l_vars.coll = yf_collection_init("tmp/animation.glb");
+    l_vars.coll = yf_collection_init("tmp/animation3.glb");
     assert(l_vars.coll != NULL);
 
     yf_collection_each(l_vars.coll, YF_CITEM_ANIMATION, each_anim, NULL);
 
+#if 1
     l_vars.anim = yf_collection_getitem(l_vars.coll, YF_CITEM_ANIMATION,
                                         "Animation");
     assert(l_vars.anim != NULL);
@@ -264,6 +264,7 @@ int yf_test_animation(void)
     yf_scene_setcolor(l_vars.scn, YF_COLOR_DARKGREY);
     yf_view_setscene(l_vars.view, l_vars.scn);
     yf_view_start(l_vars.view, YF_FPS, update);
+#endif
 
     /* managed... */
     /*yf_animation_deinit(l_vars.anim);*/
