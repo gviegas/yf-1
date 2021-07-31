@@ -156,16 +156,16 @@ static int test_render(void)
     return r;
 }
 
-/* Miscellaneous test. */
-#define YF_TEST_MISC "misc"
+/* Composition test. */
+#define YF_TEST_COMPOSITION "composition"
 
-int yf_test_misc(void);
+int yf_test_composition(void);
 
-static int test_misc(void)
+static int test_composition(void)
 {
     YF_TEST_SUBT;
     puts("");
-    int r = yf_test_misc();
+    int r = yf_test_composition();
     puts("");
     return r;
 }
@@ -181,7 +181,7 @@ static const char *l_ids[] = {
     YF_TEST_SCENE,
     YF_TEST_ANIMATION,
     YF_TEST_RENDER,
-    YF_TEST_MISC,
+    YF_TEST_COMPOSITION,
     YF_TEST_ALL
 };
 
@@ -223,9 +223,9 @@ static int test(int argc, char *argv[])
     } else if (strcmp(argv[0], YF_TEST_RENDER) == 0) {
         test_n = 1;
         results = test_render() == 0;
-    } else if (strcmp(argv[0], YF_TEST_MISC) == 0) {
+    } else if (strcmp(argv[0], YF_TEST_COMPOSITION) == 0) {
         test_n = 1;
-        results = test_misc() == 0;
+        results = test_composition() == 0;
     } else if (strcmp(argv[0], YF_TEST_ALL) == 0) {
         int (*const tests[])(void) = {
             test_node,
@@ -238,7 +238,7 @@ static int test(int argc, char *argv[])
             test_scene,
             test_animation,
             test_render,
-            test_misc
+            test_composition
         };
         test_n = sizeof tests / sizeof tests[0];
         results = 0;
