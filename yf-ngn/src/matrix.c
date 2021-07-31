@@ -40,7 +40,7 @@
 #define YF_MAT_MUL(dst, a, b, cn, rn, n) do { \
     for (unsigned i = 0; i < (cn); i++) { \
         for (unsigned j = 0; j < (rn); j++) { \
-            (dst)[i*(rn)+j] = 0.0; \
+            (dst)[i*(rn)+j] = 0.0f; \
             for (unsigned k = 0; k < (n); k++) \
                 (dst)[i*(rn)+j] += (a)[k*(n)+j] * (b)[i*(n)+k]; \
         } \
@@ -48,7 +48,7 @@
 
 #define YF_MAT_MULV(dst, m, v, n) do { \
     for (unsigned i = 0; i < (n); i++) { \
-        (dst)[i] = 0.0; \
+        (dst)[i] = 0.0f; \
         for (unsigned j = 0; j < (n); j++) \
             (dst)[i] += (m)[j*(n)+i] * (v)[j]; \
     } } while (0)
