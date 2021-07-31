@@ -1,6 +1,6 @@
 /*
  * YF
- * test-misc.c
+ * test-composition.c
  *
  * Copyright © 2021 Gustavo C. Viegas.
  */
@@ -16,7 +16,7 @@
 
 #define YF_WINW 960
 #define YF_WINH 600
-#define YF_WINT "Misc"
+#define YF_WINT "Composition"
 #define YF_FPS  60
 #define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
 #define YF_POINT (YF_vec3){0}
@@ -256,8 +256,8 @@ static void update(double elapsed_time)
     }
 }
 
-/* Tests miscellany. */
-int yf_test_misc(void)
+/* Tests object composition. */
+int yf_test_composition(void)
 {
     srand(time(NULL));
 
@@ -370,7 +370,7 @@ int yf_test_misc(void)
             break;
 
         case 1:
-            yf_label_setstr(l_vars.labls[i], L"test-misc");
+            yf_label_setstr(l_vars.labls[i], L"test-composition");
             yf_label_setpt(l_vars.labls[i], 18);
             yf_label_setcolor(l_vars.labls[i], YF_CORNER_ALL, YF_COLOR_BLACK);
             (*m)[12] = 0.85;
