@@ -44,8 +44,8 @@ int yf_test_vecmat(void)
         return -1;
 
     YF_vec4 a = {2.0f, 4.0f, 2.0f, 5.0f};
-    YF_float dot = yf_vec4_dot(a, a);
-    YF_float len = yf_vec4_len(a);
+    float dot = yf_vec4_dot(a, a);
+    float len = yf_vec4_len(a);
 
     YF_PVEC(a, 4);
     printf("<dot a,a> %.4f\n\n", dot);
