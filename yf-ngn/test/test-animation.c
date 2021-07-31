@@ -246,7 +246,7 @@ int yf_test_animation(void)
     l_vars.view = yf_view_init(l_vars.win);
     assert(l_vars.view != NULL);
 
-    l_vars.coll = yf_collection_init("tmp/animation3.glb");
+    l_vars.coll = yf_collection_init("tmp/animation.glb");
     assert(l_vars.coll != NULL);
 
     yf_collection_each(l_vars.coll, YF_CITEM_ANIMATION, each_anim, NULL);
