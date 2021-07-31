@@ -34,31 +34,31 @@ static int init_rect(YF_quad quad)
     assert(quad != NULL);
 
 #ifdef YF_FLIP_TEX
-# define YF_TEX_T 0.0
+# define YF_TEX_T 0.0f
 #else
-# define YF_TEX_T 1.0
+# define YF_TEX_T 1.0f
 #endif
 
     static const YF_vquad verts[4] = {
         {
-            .pos = {-1.0, -1.0, 0.5},
-            .tc = {0.0, 1.0-YF_TEX_T},
-            .clr = {1.0, 1.0, 1.0, 1.0}
+            .pos = {-1.0f, -1.0f, 0.5f},
+            .tc = {0.0f, 1.0f - YF_TEX_T},
+            .clr = {1.0f, 1.0f, 1.0f, 1.0f}
         },
         {
-            .pos = {-1.0, 1.0, 0.5},
-            .tc = {0.0, YF_TEX_T},
-            .clr = {1.0, 1.0, 1.0, 1.0}
+            .pos = {-1.0f, 1.0f, 0.5f},
+            .tc = {0.0f, YF_TEX_T},
+            .clr = {1.0f, 1.0f, 1.0f, 1.0f}
         },
         {
-            .pos = {1.0, 1.0, 0.5},
-            .tc = {1.0, YF_TEX_T},
-            .clr = {1.0, 1.0, 1.0, 1.0}
+            .pos = {1.0f, 1.0f, 0.5f},
+            .tc = {1.0f, YF_TEX_T},
+            .clr = {1.0f, 1.0f, 1.0f, 1.0f}
         },
         {
-            .pos = {1.0, -1.0, 0.5},
-            .tc = {1.0, 1.0-YF_TEX_T},
-            .clr = {1.0, 1.0, 1.0, 1.0}
+            .pos = {1.0f, -1.0f, 0.5f},
+            .tc = {1.0f, 1.0f - YF_TEX_T},
+            .clr = {1.0f, 1.0f, 1.0, 1.0f}
         }
     };
     static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
