@@ -27,9 +27,9 @@
 #undef YF
 #define YF "YF"
 
-/* TODO */
+/* TODO: Should be defined elsewhere. */
 #undef YF_CORE_VERSION
-#define YF_CORE_VERSION YF_VERSION_MAKE(0, 2, 0)
+#define YF_CORE_VERSION YF_VERSION_MAKE(0, 1, 0)
 
 #ifndef YF_APP
 # define YF_APP ""
