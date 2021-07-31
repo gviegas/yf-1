@@ -9,6 +9,7 @@
 #define YF_YF_SCENE_H
 
 #include "yf/com/yf-defs.h"
+#include "yf/com/yf-types.h"
 
 #include "yf-node.h"
 #include "yf-camera.h"
