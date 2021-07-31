@@ -491,20 +491,12 @@ void yf_mat4_infpersp(YF_mat4 m, float yfov, float aspect, float znear)
     m[14] = -2.0f * znear;
 }
 
-void yf_mat4_ortho(YF_mat4 m, YF_float xmag, YF_float ymag,
-                   YF_float znear, YF_float zfar)
+void yf_mat4_ortho(YF_mat4 m, float xmag, float ymag, float znear, float zfar)
 {
-#ifdef YF_USE_FLOAT64
-    const YF_float one = 1.0;
-    const YF_float two = 2.0;
-#else
-    const YF_float one = 1.0f;
-    const YF_float two = 2.0f;
-#endif
     memset(m, 0, sizeof(YF_mat4));
-    m[0] = one / xmag;
-    m[5] = one / ymag;
-    m[10] = two / (znear - zfar);
+    m[0] = 1.0f / xmag;
+    m[5] = 1.0f / ymag;
+    m[10] = 2.0f / (znear - zfar);
     m[14] = (zfar + znear) / (znear - zfar);
-    m[15] = one;
+    m[15] = 1.0f;
 }
