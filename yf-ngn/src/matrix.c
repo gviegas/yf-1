@@ -454,19 +454,19 @@ void yf_mat4_lookat(YF_mat4 m, const YF_vec3 eye, const YF_vec3 center,
     m[0] = +s[0];
     m[1] = +u[0];
     m[2] = -f[0];
-    m[3] = 0.0;
+    m[3] = 0.0f;
     m[4] = +s[1];
     m[5] = +u[1];
     m[6] = -f[1];
-    m[7] = 0.0;
+    m[7] = 0.0f;
     m[8] = +s[2];
     m[9] = +u[2];
     m[10] = -f[2];
-    m[11] = 0.0;
+    m[11] = 0.0f;
     m[12] = -yf_vec3_dot(s, eye);
     m[13] = -yf_vec3_dot(u, eye);
     m[14] = +yf_vec3_dot(f, eye);
-    m[15] = 1.0;
+    m[15] = 1.0f;
 }
 
 void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
