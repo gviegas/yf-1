@@ -10,11 +10,7 @@
 
 #include "yf-vector.h"
 
-#ifdef YF_USE_FLOAT64
-# define YF_FLT_ISEQ(a, b) (fabs((a)-(b)) < 1e-15)
-#else
-# define YF_FLT_ISEQ(a, b) (fabsf((a)-(b)) < 1e-6)
-#endif
+#define YF_FLT_ISEQ(a, b) (fabsf((a)-(b)) < 1e-6f)
 
 #define YF_VEC_ISEQ(r, a, b, n) do { \
     for (unsigned i = 0; i < (n); i++) { \
@@ -39,7 +35,7 @@
         (dst)[i] = (v)[i] * (s); } while (0)
 
 #define YF_VEC_DOT(r, a, b, n) do { \
-    r = 0.0; \
+    r = 0.0f; \
     for (unsigned i = 0; i < (n); i++) \
         r += (a)[i] * (b)[i]; } while (0)
 
