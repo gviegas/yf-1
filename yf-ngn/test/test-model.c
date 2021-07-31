@@ -20,7 +20,7 @@
 #define YF_WINH 600
 #define YF_WINT "Model"
 #define YF_FPS 60
-#define YF_PLACE (YF_vec3){20.0, 20.0, 20.0}
+#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
 #define YF_POINT (YF_vec3){0}
 
 /* Shared variables. */
@@ -204,10 +204,10 @@ static void update(double elapsed_time)
     }
 
     /* Rotate models */
-    static YF_float ang = 0.0;
-    ang += 0.01 * l_vars.input.speed;
+    static float ang = 0.0f;
+    ang += 0.01f * l_vars.input.speed;
     YF_mat4 rot;
-    YF_vec3 axis = {0.7071, -0.7071, 0.0};
+    YF_vec3 axis = {0.7071f, -0.7071f, 0.0f};
     yf_mat4_rot(rot, ang, axis);
     for (unsigned i = 0; i < YF_MDLN; i++)
         yf_mat4_mul(*yf_node_getxform(yf_model_getnode(l_vars.mdl[i])),
@@ -215,8 +215,8 @@ static void update(double elapsed_time)
 
     /* Update camera */
     YF_camera cam = yf_scene_getcam(l_vars.scn[scn_i]);
-    const YF_float md = 20.0 * elapsed_time;
-    const YF_float td = 2.0 * elapsed_time;
+    const float md = 20.0 * elapsed_time;
+    const float td = 2.0 * elapsed_time;
 
     if (l_vars.input.place)
         yf_camera_place(cam, YF_PLACE);
