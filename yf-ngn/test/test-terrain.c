@@ -17,7 +17,7 @@
 #define YF_WINH 600
 #define YF_WINT "Terrain"
 #define YF_FPS  60
-#define YF_PLACE (YF_vec3){20.0, 20.0, 20.0}
+#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
 #define YF_POINT (YF_vec3){0}
 
 /* Shared variables. */
@@ -96,8 +96,8 @@ static void update(double elapsed_time)
     }
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
-    const YF_float md = 20.0 * elapsed_time;
-    const YF_float td = 2.0 * elapsed_time;
+    const float md = 20.0 * elapsed_time;
+    const float td = 2.0 * elapsed_time;
 
     if (l_vars.input.place)
         yf_camera_place(cam, YF_PLACE);
@@ -152,13 +152,13 @@ int yf_test_terrain(void)
     yf_terrain_sethmap(l_vars.terr, l_vars.hmap);
     yf_terrain_settex(l_vars.terr, l_vars.tex);
     yf_mat4_scale(*yf_node_getxform(yf_terrain_getnode(l_vars.terr)),
-                  3.0, 3.0, 3.0);
+                  3.0f, 3.0f, 3.0f);
 
     yf_node_insert(yf_scene_getnode(l_vars.scn),
                    yf_terrain_getnode(l_vars.terr));
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
-    const YF_vec3 pos = {-2.0, 20.0, 10.0};
+    const YF_vec3 pos = {-2.0f, 20.0f, 10.0f};
     const YF_vec3 tgt = {0};
     yf_camera_place(cam, pos);
     yf_camera_point(cam, tgt);
