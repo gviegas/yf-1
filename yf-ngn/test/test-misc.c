@@ -168,7 +168,7 @@ static void update(double elapsed_time)
             yf_camera_turnr(cam, td);
 
         if (l_vars.input.primary) {
-            const float ld = 0.5 * elapsed_time;
+            const float ld = 0.75 * elapsed_time;
             const int x0 = l_vars.input.x[0];
             const int x1 = l_vars.input.x[1];
             const int y0 = l_vars.input.y[0];
@@ -282,14 +282,14 @@ int yf_test_misc(void)
     l_vars.labl_node = yf_node_init();
     assert(l_vars.labl_node != NULL);
 
-    YF_mesh mesh1 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model1.gltf", 0);
+    YF_mesh mesh1 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.glb", 0);
     assert(mesh1 != NULL);
-    YF_mesh mesh2 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model2.gltf", 0);
+    YF_mesh mesh2 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube2.glb", 0);
     assert(mesh2 != NULL);
 
-    YF_texture tex1 = yf_texture_init(YF_FILETYPE_PNG, "tmp/model1.png");
+    YF_texture tex1 = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube.png");
     assert(tex1 != NULL);
-    YF_texture tex2 = yf_texture_init(YF_FILETYPE_PNG, "tmp/model2.png");
+    YF_texture tex2 = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube2.png");
     assert(tex2 != NULL);
 
     YF_font font1 = yf_font_init(YF_FILETYPE_TTF, "tmp/serif.ttf");
