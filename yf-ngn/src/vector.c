@@ -84,17 +84,17 @@ int yf_vec4_iseq(const YF_vec4 a, const YF_vec4 b)
     return r;
 }
 
-void yf_vec2_set(YF_vec2 v, YF_float s)
+void yf_vec2_set(YF_vec2 v, float s)
 {
     YF_VEC_SET(v, s, 2);
 }
 
-void yf_vec3_set(YF_vec3 v, YF_float s)
+void yf_vec3_set(YF_vec3 v, float s)
 {
     YF_VEC_SET(v, s, 3);
 }
 
-void yf_vec4_set(YF_vec4 v, YF_float s)
+void yf_vec4_set(YF_vec4 v, float s)
 {
     YF_VEC_SET(v, s, 4);
 }
@@ -174,32 +174,32 @@ void yf_vec4_addi(YF_vec4 dst, const YF_vec4 v)
     YF_VEC_ADD(dst, dst, v, 4);
 }
 
-void yf_vec2_muls(YF_vec2 dst, const YF_vec2 v, YF_float s)
+void yf_vec2_muls(YF_vec2 dst, const YF_vec2 v, float s)
 {
     YF_VEC_MULS(dst, v, s, 2);
 }
 
-void yf_vec3_muls(YF_vec3 dst, const YF_vec3 v, YF_float s)
+void yf_vec3_muls(YF_vec3 dst, const YF_vec3 v, float s)
 {
     YF_VEC_MULS(dst, v, s, 3);
 }
 
-void yf_vec4_muls(YF_vec4 dst, const YF_vec4 v, YF_float s)
+void yf_vec4_muls(YF_vec4 dst, const YF_vec4 v, float s)
 {
     YF_VEC_MULS(dst, v, s, 4);
 }
 
-void yf_vec2_mulsi(YF_vec2 dst, YF_float s)
+void yf_vec2_mulsi(YF_vec2 dst, float s)
 {
     YF_VEC_MULS(dst, dst, s, 2);
 }
 
-void yf_vec3_mulsi(YF_vec3 dst, YF_float s)
+void yf_vec3_mulsi(YF_vec3 dst, float s)
 {
     YF_VEC_MULS(dst, dst, s, 3);
 }
 
-void yf_vec4_mulsi(YF_vec4 dst, YF_float s)
+void yf_vec4_mulsi(YF_vec4 dst, float s)
 {
     YF_VEC_MULS(dst, dst, s, 4);
 }
