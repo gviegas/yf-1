@@ -4,7 +4,7 @@
 # YF
 # Lib.mk
 #
-# Copyright © 2020 Gustavo C. Viegas.
+# Copyright © 2020-2021 Gustavo C. Viegas.
 #
 
 SHELL := /bin/sh
@@ -19,7 +19,7 @@ INCLIB_DIR := $(INSTALL_DIR)include/yf/core/
 
 SO_LINK := libyf-core.so
 SO_NAME := $(SO_LINK).0
-SO_FILE := $(SO_NAME).2.0
+SO_FILE := $(SO_NAME).1.0
 
 LIB_FILE := $(INSTALL_DIR)lib/$(SO_FILE)
 LIB_NAME := $(INSTALL_DIR)lib/$(SO_NAME)
