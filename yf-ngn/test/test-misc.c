@@ -139,7 +139,7 @@ static void update(double elapsed_time)
 
     if (l_vars.input.camera) {
         YF_camera cam = yf_scene_getcam(l_vars.scn);
-        const float md = 20.0 * elapsed_time;
+        const float md = 16.0 * elapsed_time;
         const float td = 2.0 * elapsed_time;
 
         if (l_vars.input.place)
@@ -191,8 +191,8 @@ static void update(double elapsed_time)
         }
 
     } else {
-        const float d = 6.0 * elapsed_time;
-        const float a = 3.14159265358979 * elapsed_time;
+        const float md = 10.0 * elapsed_time;
+        const float td = 6.0 * elapsed_time;
 
         YF_vec3 t = {0};
         YF_vec4 r = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -204,36 +204,36 @@ static void update(double elapsed_time)
         }
 
         if (l_vars.input.move[0])
-            t[2] += d;
+            t[2] += md;
         if (l_vars.input.move[1])
-            t[2] -= d;
+            t[2] -= md;
         if (l_vars.input.move[2])
-            t[0] += d;
+            t[0] += md;
         if (l_vars.input.move[3])
-            t[0] -= d;
+            t[0] -= md;
         if (l_vars.input.move[4])
-            t[1] += d;
+            t[1] += md;
         if (l_vars.input.move[5])
-            t[1] -= d;
+            t[1] -= md;
 
         if (l_vars.input.turn[0]) {
             YF_vec4 q;
-            yf_vec4_rotqx(q, a);
+            yf_vec4_rotqx(q, td);
             yf_vec4_mulqi(r, q);
         }
         if (l_vars.input.turn[1]) {
             YF_vec4 q;
-            yf_vec4_rotqx(q, -a);
+            yf_vec4_rotqx(q, -td);
             yf_vec4_mulqi(r, q);
         }
         if (l_vars.input.turn[2]) {
             YF_vec4 q;
-            yf_vec4_rotqy(q, a);
+            yf_vec4_rotqy(q, td);
             yf_vec4_mulqi(r, q);
         }
         if (l_vars.input.turn[3]) {
             YF_vec4 q;
-            yf_vec4_rotqy(q, -a);
+            yf_vec4_rotqy(q, -td);
             yf_vec4_mulqi(r, q);
         }
 

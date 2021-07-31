@@ -97,8 +97,8 @@ static void update(double elapsed_time)
 
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
-    const float md = 10.0 * elapsed_time;
-    const float td = 1.5 * elapsed_time;
+    const float md = 16.0 * elapsed_time;
+    const float td = 2.0 * elapsed_time;
 
     if (l_vars.input.place)
         yf_camera_place(cam, YF_PLACE);
