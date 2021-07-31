@@ -9,16 +9,15 @@
 #define YF_YF_VECTOR_H
 
 #include "yf/com/yf-defs.h"
-#include "yf/com/yf-types.h"
 
 YF_DECLS_BEGIN
 
 /**
  * 2-, 3- and 4-component vectors.
  */
-typedef YF_float YF_vec2[2];
-typedef YF_float YF_vec3[3];
-typedef YF_float YF_vec4[4];
+typedef float YF_vec2[2];
+typedef float YF_vec3[3];
+typedef float YF_vec4[4];
 
 /**
  * Checks whether or not a given vector is the zero vector.
@@ -49,9 +48,9 @@ int yf_vec4_iseq(const YF_vec4 a, const YF_vec4 b);
  * @param v: The vector.
  * @param s: The scalar.
  */
-void yf_vec2_set(YF_vec2 v, YF_float s);
-void yf_vec3_set(YF_vec3 v, YF_float s);
-void yf_vec4_set(YF_vec4 v, YF_float s);
+void yf_vec2_set(YF_vec2 v, float s);
+void yf_vec3_set(YF_vec3 v, float s);
+void yf_vec4_set(YF_vec4 v, float s);
 
 /**
  * Copies one vector to another.
@@ -112,9 +111,9 @@ void yf_vec4_addi(YF_vec4 dst, const YF_vec4 v);
  * @param v: The vector.
  * @param s: The scalar.
  */
-void yf_vec2_muls(YF_vec2 dst, const YF_vec2 v, YF_float s);
-void yf_vec3_muls(YF_vec3 dst, const YF_vec3 v, YF_float s);
-void yf_vec4_muls(YF_vec4 dst, const YF_vec4 v, YF_float s);
+void yf_vec2_muls(YF_vec2 dst, const YF_vec2 v, float s);
+void yf_vec3_muls(YF_vec3 dst, const YF_vec3 v, float s);
+void yf_vec4_muls(YF_vec4 dst, const YF_vec4 v, float s);
 
 /**
  * Multiplies a destination vector by a given scalar.
@@ -122,9 +121,9 @@ void yf_vec4_muls(YF_vec4 dst, const YF_vec4 v, YF_float s);
  * @param dst: The destination vector.
  * @param s: The scalar.
  */
-void yf_vec2_mulsi(YF_vec2 dst, YF_float s);
-void yf_vec3_mulsi(YF_vec3 dst, YF_float s);
-void yf_vec4_mulsi(YF_vec4 dst, YF_float s);
+void yf_vec2_mulsi(YF_vec2 dst, float s);
+void yf_vec3_mulsi(YF_vec3 dst, float s);
+void yf_vec4_mulsi(YF_vec4 dst, float s);
 
 /**
  * Computes the dot product of two vectors.
@@ -133,9 +132,9 @@ void yf_vec4_mulsi(YF_vec4 dst, YF_float s);
  * @param b: The second vector.
  * @return: The dot product.
  */
-YF_float yf_vec2_dot(const YF_vec2 a, const YF_vec2 b);
-YF_float yf_vec3_dot(const YF_vec3 a, const YF_vec3 b);
-YF_float yf_vec4_dot(const YF_vec4 a, const YF_vec4 b);
+float yf_vec2_dot(const YF_vec2 a, const YF_vec2 b);
+float yf_vec3_dot(const YF_vec3 a, const YF_vec3 b);
+float yf_vec4_dot(const YF_vec4 a, const YF_vec4 b);
 
 /**
  * Computes the length of a vector.
@@ -143,9 +142,9 @@ YF_float yf_vec4_dot(const YF_vec4 a, const YF_vec4 b);
  * @param v: The vector.
  * @return: The length.
  */
-YF_float yf_vec2_len(const YF_vec2 v);
-YF_float yf_vec3_len(const YF_vec3 v);
-YF_float yf_vec4_len(const YF_vec4 v);
+float yf_vec2_len(const YF_vec2 v);
+float yf_vec3_len(const YF_vec3 v);
+float yf_vec4_len(const YF_vec4 v);
 
 /**
  * Normalizes a vector.
@@ -185,9 +184,9 @@ void yf_vec4_cross(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b);
  * @param q: The destination quaternion.
  * @param angle: The rotation angle, in radians.
  */
-void yf_vec4_rotqx(YF_vec4 q, YF_float angle);
-void yf_vec4_rotqy(YF_vec4 q, YF_float angle);
-void yf_vec4_rotqz(YF_vec4 q, YF_float angle);
+void yf_vec4_rotqx(YF_vec4 q, float angle);
+void yf_vec4_rotqy(YF_vec4 q, float angle);
+void yf_vec4_rotqz(YF_vec4 q, float angle);
 
 /**
  * Computes a quaternion rotation for a given axis.
@@ -199,7 +198,7 @@ void yf_vec4_rotqz(YF_vec4 q, YF_float angle);
  * @param angle: The rotation angle, in radians.
  * @param axis: The rotation axis.
  */
-void yf_vec4_rotq(YF_vec4 q, YF_float angle, const YF_vec3 axis);
+void yf_vec4_rotq(YF_vec4 q, float angle, const YF_vec3 axis);
 
 /**
  * Multiplies two quaternions.

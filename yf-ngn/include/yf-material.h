@@ -44,24 +44,24 @@ typedef struct {
             YF_vec4 diffuse_fac;
             YF_texture spec_gloss_tex;
             YF_vec3 specular_fac;
-            YF_float glossiness_fac;
+            float glossiness_fac;
         } pbrsg;
         /* PBR metallic-roughness. */
         struct {
             YF_texture color_tex;
             YF_vec4 color_fac;
             YF_texture metal_rough_tex;
-            YF_float metallic_fac;
-            YF_float roughness_fac;
+            float metallic_fac;
+            float roughness_fac;
         } pbrmr;
     };
     struct {
         YF_texture tex;
-        YF_float scale;
+        float scale;
     } normal;
     struct {
         YF_texture tex;
-        YF_float strength;
+        float strength;
     } occlusion;
     struct {
         YF_texture tex;

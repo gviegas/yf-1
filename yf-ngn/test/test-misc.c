@@ -18,7 +18,7 @@
 #define YF_WINH 600
 #define YF_WINT "Misc"
 #define YF_FPS  60
-#define YF_PLACE (YF_vec3){20.0, 20.0, 20.0}
+#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
 #define YF_POINT (YF_vec3){0}
 
 /* Shared variables. */
@@ -123,8 +123,8 @@ static void update(double elapsed_time)
 
     if (l_vars.input.camera) {
         YF_camera cam = yf_scene_getcam(l_vars.scn);
-        const YF_float md = 20.0 * elapsed_time;
-        const YF_float td = 2.0 * elapsed_time;
+        const float md = 20.0 * elapsed_time;
+        const float td = 2.0 * elapsed_time;
 
         if (l_vars.input.place)
             yf_camera_place(cam, YF_PLACE);
@@ -151,7 +151,7 @@ static void update(double elapsed_time)
         if (l_vars.input.turn[3])
             yf_camera_turnr(cam, td);
 
-        const YF_float ld = 0.5 * elapsed_time;
+        const float ld = 0.5 * elapsed_time;
         const int x0 = l_vars.input.x[0];
         const int x1 = l_vars.input.x[1];
         const int y0 = l_vars.input.y[0];
@@ -173,15 +173,15 @@ static void update(double elapsed_time)
         }
 
     } else {
-        const YF_float d = 6.0 * elapsed_time;
-        const YF_float a = 3.14159265358979 * elapsed_time;
+        const float d = 6.0 * elapsed_time;
+        const float a = 3.14159265358979 * elapsed_time;
 
         YF_vec3 t = {0};
-        YF_vec4 r = {0.0, 0.0, 0.0, 1.0};
+        YF_vec4 r = {0.0f, 0.0f, 0.0f, 1.0f};
 
         if (l_vars.input.place) {
             YF_mat4 *xform = yf_node_getxform(yf_model_getnode(l_vars.mdl));
-            (*xform)[12] = (*xform)[13] = (*xform)[14] = 0.0;
+            (*xform)[12] = (*xform)[13] = (*xform)[14] = 0.0f;
             l_vars.input.place = 0;
         }
 
@@ -377,7 +377,7 @@ int yf_test_misc(void)
     yf_node_insert(yf_scene_getnode(l_vars.scn), l_vars.labl_node);
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
-    const YF_vec3 pos = {-4.0, 6.0, 15.0};
+    const YF_vec3 pos = {-4.0f, 6.0f, 15.0f};
     const YF_vec3 tgt = {0};
     yf_camera_place(cam, pos);
     yf_camera_point(cam, tgt);

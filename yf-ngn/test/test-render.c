@@ -20,7 +20,7 @@
 #define YF_FPS  60
 #define YF_MDLN_1 10
 #define YF_MDLN_2 5
-#define YF_PLACE (YF_vec3){20.0, 20.0, 20.0}
+#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
 #define YF_POINT (YF_vec3){0}
 
 /* Shared variables. */
@@ -133,8 +133,8 @@ static void update(double elapsed_time)
     }
 
     YF_camera cam = yf_scene_getcam(scn_i == 1 ? l_vars.scn1 : l_vars.scn2);
-    const YF_float md = 20.0 * elapsed_time;
-    const YF_float td = 2.0 * elapsed_time;
+    const float md = 20.0 * elapsed_time;
+    const float td = 2.0 * elapsed_time;
 
     if (l_vars.input.place)
         yf_camera_place(cam, YF_PLACE);
@@ -222,7 +222,7 @@ int yf_test_render(void)
     mprop->pbrmr.color_tex = l_vars.tex1;
 
     YF_node scn1_nd = yf_scene_getnode(l_vars.scn1);
-    YF_float tf = -YF_MDLN_1;
+    float tf = -YF_MDLN_1;
     for (size_t i = 0; i < YF_MDLN_1; i++) {
         l_vars.mdls1[i] = yf_model_init();
         assert(l_vars.mdls1[i] != NULL);
@@ -232,8 +232,8 @@ int yf_test_render(void)
 
         YF_node nd = yf_model_getnode(l_vars.mdls1[i]);
         YF_mat4 *m = yf_node_getxform(nd);
-        yf_mat4_xlate(*m, tf, tf*0.5, 0.0);
-        tf += 2.0;
+        yf_mat4_xlate(*m, tf, tf*0.5f, 0.0f);
+        tf += 2.0f;
 
         yf_node_insert(scn1_nd, nd);
     }
@@ -250,10 +250,10 @@ int yf_test_render(void)
         YF_mat4 *m = yf_node_getxform(nd);
         YF_mat4 t, r, s, tr;
         YF_vec4 q;
-        yf_mat4_xlate(t, 0.0, 0.0, -2.0);
+        yf_mat4_xlate(t, 0.0f, 0.0f, -2.0f);
         yf_vec4_rotqz(q, M_PI_4);
         yf_mat4_rotq(r, q);
-        yf_mat4_scale(s, 1.2, 1.2, 1.0);
+        yf_mat4_scale(s, 1.2f, 1.2f, 1.0f);
         yf_mat4_mul(tr, t, r);
         yf_mat4_mul(*m, tr, s);
 

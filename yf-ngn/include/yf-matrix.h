@@ -9,7 +9,6 @@
 #define YF_YF_MATRIX_H
 
 #include "yf/com/yf-defs.h"
-#include "yf/com/yf-types.h"
 
 #include "yf-vector.h"
 
@@ -18,9 +17,9 @@ YF_DECLS_BEGIN
 /**
  * Quadratic matrices.
  */
-typedef YF_float YF_mat2[4];
-typedef YF_float YF_mat3[9];
-typedef YF_float YF_mat4[16];
+typedef float YF_mat2[4];
+typedef float YF_mat3[9];
+typedef float YF_mat4[16];
 
 /**
  * Makes a given matrix an identity matrix.
@@ -37,9 +36,9 @@ void yf_mat4_iden(YF_mat4 m);
  * @param m: The matrix.
  * @param s: The scalar.
  */
-void yf_mat2_set(YF_mat2 m, YF_float s);
-void yf_mat3_set(YF_mat3 m, YF_float s);
-void yf_mat4_set(YF_mat4 m, YF_float s);
+void yf_mat2_set(YF_mat2 m, float s);
+void yf_mat3_set(YF_mat3 m, float s);
+void yf_mat4_set(YF_mat4 m, float s);
 
 /**
  * Copies one matrix to another.
@@ -121,12 +120,12 @@ void yf_mat4_inv(YF_mat4 dst, const YF_mat4 m);
  * @param m: The destination matrix.
  * @param angle: The rotation angle, in radians.
  */
-void yf_mat3_rotx(YF_mat3 m, YF_float angle);
-void yf_mat3_roty(YF_mat3 m, YF_float angle);
-void yf_mat3_rotz(YF_mat3 m, YF_float angle);
-void yf_mat4_rotx(YF_mat4 m, YF_float angle);
-void yf_mat4_roty(YF_mat4 m, YF_float angle);
-void yf_mat4_rotz(YF_mat4 m, YF_float angle);
+void yf_mat3_rotx(YF_mat3 m, float angle);
+void yf_mat3_roty(YF_mat3 m, float angle);
+void yf_mat3_rotz(YF_mat3 m, float angle);
+void yf_mat4_rotx(YF_mat4 m, float angle);
+void yf_mat4_roty(YF_mat4 m, float angle);
+void yf_mat4_rotz(YF_mat4 m, float angle);
 
 /**
  * Computes a rotation matrix for a given axis.
@@ -135,8 +134,8 @@ void yf_mat4_rotz(YF_mat4 m, YF_float angle);
  * @param angle: The rotation angle, in radians.
  * @param axis: The rotation axis.
  */
-void yf_mat3_rot(YF_mat3 m, YF_float angle, const YF_vec3 axis);
-void yf_mat4_rot(YF_mat4 m, YF_float angle, const YF_vec3 axis);
+void yf_mat3_rot(YF_mat3 m, float angle, const YF_vec3 axis);
+void yf_mat4_rot(YF_mat4 m, float angle, const YF_vec3 axis);
 
 /**
  * Computes a rotation matrix from a quaternion rotation.
@@ -155,8 +154,8 @@ void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q);
  * @param sy: The y-axis scale.
  * @param sz: The z-axis scale.
  */
-void yf_mat3_scale(YF_mat3 m, YF_float sx, YF_float sy, YF_float sz);
-void yf_mat4_scale(YF_mat4 m, YF_float sx, YF_float sy, YF_float sz);
+void yf_mat3_scale(YF_mat3 m, float sx, float sy, float sz);
+void yf_mat4_scale(YF_mat4 m, float sx, float sy, float sz);
 
 /**
  * Computes a translation matrix.
@@ -166,7 +165,7 @@ void yf_mat4_scale(YF_mat4 m, YF_float sx, YF_float sy, YF_float sz);
  * @param ty: The y-axis translation.
  * @param tz: The z-axis translation.
  */
-void yf_mat4_xlate(YF_mat4 m, YF_float tx, YF_float ty, YF_float tz);
+void yf_mat4_xlate(YF_mat4 m, float tx, float ty, float tz);
 
 /**
  * Computes a view matrix.
@@ -188,8 +187,8 @@ void yf_mat4_lookat(YF_mat4 m, const YF_vec3 eye, const YF_vec3 center,
  * @param znear: The distance to the near clipping plane.
  * @param zfar: The distance to the far clipping plane.
  */
-void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
-                   YF_float znear, YF_float zfar);
+void yf_mat4_persp(YF_mat4 m, float yfov, float aspect, float znear,
+                   float zfar);
 
 /**
  * Computes an infinite perspective projection matrix.
@@ -199,8 +198,7 @@ void yf_mat4_persp(YF_mat4 m, YF_float yfov, YF_float aspect,
  * @param aspect: The aspect ratio of the field of view.
  * @param znear: The distance to the near clipping plane.
  */
-void yf_mat4_infpersp(YF_mat4 m, YF_float yfov, YF_float aspect,
-                      YF_float znear);
+void yf_mat4_infpersp(YF_mat4 m, float yfov, float aspect, float znear);
 
 /**
  * Computes an orthographic projection matrix.
@@ -211,8 +209,7 @@ void yf_mat4_infpersp(YF_mat4 m, YF_float yfov, YF_float aspect,
  * @param znear: The distance to the near clipping plane.
  * @param zfar: The distance to the far clipping plane.
  */
-void yf_mat4_ortho(YF_mat4 m, YF_float xmag, YF_float ymag,
-                   YF_float znear, YF_float zfar);
+void yf_mat4_ortho(YF_mat4 m, float xmag, float ymag, float znear, float zfar);
 
 YF_DECLS_END
 

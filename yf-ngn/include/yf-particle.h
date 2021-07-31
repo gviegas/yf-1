@@ -27,15 +27,15 @@ typedef struct YF_particle_o *YF_particle;
 typedef struct {
     struct {
         YF_vec3 norm;
-        YF_float size;
+        float size;
     } emitter;
     struct {
-        YF_float duration_min;
-        YF_float duration_max;
-        YF_float spawn_min;
-        YF_float spawn_max;
-        YF_float death_min;
-        YF_float death_max;
+        float duration_min;
+        float duration_max;
+        float spawn_min;
+        float spawn_max;
+        float death_min;
+        float death_max;
         int once;
     } lifetime;
     struct {

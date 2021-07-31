@@ -71,47 +71,33 @@ static void get_keyframes(const YF_kfinput *input, float frame_tm,
 }
 
 /* Linear interpolation on 3-component vectors. */
-static void lerp3(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b, YF_float t)
+static void lerp3(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b, float t)
 {
-    dst[0] = ((YF_float)1 - t) * a[0] + t * b[0];
-    dst[1] = ((YF_float)1 - t) * a[1] + t * b[1];
-    dst[2] = ((YF_float)1 - t) * a[2] + t * b[2];
+    dst[0] = (1.0f - t) * a[0] + t * b[0];
+    dst[1] = (1.0f - t) * a[1] + t * b[1];
+    dst[2] = (1.0f - t) * a[2] + t * b[2];
 }
 
 /* Spherical linear interpolation on quaternions. */
-static void slerpq(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b, YF_float t)
+static void slerpq(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b, float t)
 {
-    YF_float d = yf_vec3_dot(a, b);
-
-#ifdef YF_USE_FLOAT64
-    const YF_float e = 1.0 - DBL_EPSILON;
-#else
-    const YF_float e = 1.0f - FLT_EPSILON;
-#endif
-
-    if (d > e) {
+    float d = yf_vec3_dot(a, b);
+    if (d > 1.0f - FLT_EPSILON) {
         lerp3(dst, a, b, t);
-        dst[3] = ((YF_float)1 - t) * a[3] + t * b[3];
+        dst[3] = (1.0f - t) * a[3] + t * b[3];
         return;
     }
 
-    YF_float k = (YF_float)1;
-    if (d < (YF_float)0) {
+    float k = 1.0f;
+    if (d < 0.0f) {
         k = -k;
         d = -d;
     }
 
-#ifdef YF_USE_FLOAT64
-    const YF_float ang = acos(d);
-    const YF_float s = sin(ang);
-    const YF_float s1 = sin((1.0 - t) * ang);
-    const YF_float s2 = sin(t * ang);
-#else
-    const YF_float ang = acosf(d);
-    const YF_float s = sinf(ang);
-    const YF_float s1 = sinf((1.0f - t) * ang);
-    const YF_float s2 = sinf(t * ang);
-#endif
+    const float ang = acosf(d);
+    const float s = sinf(ang);
+    const float s1 = sinf((1.0f - t) * ang);
+    const float s2 = sinf(t * ang);
 
     dst[0] = (a[0] * s1 + b[0] * s2 * k) / s;
     dst[1] = (a[1] * s1 + b[1] * s2 * k) / s;

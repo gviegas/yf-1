@@ -202,7 +202,7 @@ static int next_token(FILE *file, T_token *token)
 typedef char *T_str;
 
 /* Type defining a floating-point number. */
-typedef YF_float T_num;
+typedef float T_num;
 
 /* Type defining an integer number. */
 typedef long long T_int;

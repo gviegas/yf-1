@@ -16,10 +16,10 @@
 #include "mesh.h"
 
 #undef YF_NRND
-#define YF_NRND ((YF_float)rand() / (YF_float)RAND_MAX)
+#define YF_NRND ((float)rand() / (float)RAND_MAX)
 
 #undef YF_LERP
-#define YF_LERP(a, b, t) (((YF_float)1 - (t)) * (a) + (t) * (b))
+#define YF_LERP(a, b, t) ((1.0f - (t)) * (a) + (t) * (b))
 
 /* Type defining the state of a single particle. */
 typedef struct {
@@ -29,11 +29,11 @@ typedef struct {
 #define YF_PSTATE_DYING    3
 #define YF_PSTATE_DEAD     4
     int pstate;
-    YF_float tm;
-    YF_float dur;
-    YF_float spawn;
-    YF_float death;
-    YF_float alpha;
+    float tm;
+    float dur;
+    float spawn;
+    float death;
+    float alpha;
     YF_vec3 vel;
 } T_pstate;
 
@@ -60,8 +60,11 @@ static int init_points(YF_particle part)
         return -1;
     }
 
-    const YF_vpart pt = {.pos = {0.0, 0.0, 0.5}, .clr = {1.0, 1.0, 1.0, 1.0}};
-    const T_pstate st = {YF_PSTATE_UNSET, 0.0, 0.0, 0.0, 0.0, 0.0, {0}};
+    const YF_vpart pt = {
+        .pos = {0.0f, 0.0f, 0.5f},
+        .clr = {1.0f, 1.0f, 1.0f, 1.0f}
+    };
+    const T_pstate st = {YF_PSTATE_UNSET, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, {0}};
     for (unsigned i = 0; i < part->count; i++) {
         memcpy(part->pts+i, &pt, sizeof pt);
         memcpy(part->sts+i, &st, sizeof st);
@@ -107,31 +110,31 @@ YF_particle yf_particle_init(unsigned count)
     yf_node_setobj(part->node, YF_NODEOBJ_PARTICLE, part, deinit_part);
     part->count = count;
 
-    part->sys.emitter.norm[0] = 0.0;
-    part->sys.emitter.norm[1] = 1.0;
-    part->sys.emitter.norm[2] = 0.0;
-    part->sys.emitter.size = 1.0;
-    part->sys.lifetime.duration_min = 0.1;
-    part->sys.lifetime.duration_max = 1.0;
-    part->sys.lifetime.spawn_min = 0.01;
-    part->sys.lifetime.spawn_max = 0.1;
-    part->sys.lifetime.death_min = 0.01;
-    part->sys.lifetime.death_max = 0.1;
+    part->sys.emitter.norm[0] = 0.0f;
+    part->sys.emitter.norm[1] = 1.0f;
+    part->sys.emitter.norm[2] = 0.0f;
+    part->sys.emitter.size = 1.0f;
+    part->sys.lifetime.duration_min = 0.1f;
+    part->sys.lifetime.duration_max = 1.0f;
+    part->sys.lifetime.spawn_min = 0.01f;
+    part->sys.lifetime.spawn_max = 0.1f;
+    part->sys.lifetime.death_min = 0.01f;
+    part->sys.lifetime.death_max = 0.1f;
     part->sys.lifetime.once = 0;
-    part->sys.color.min[0] = 0.0;
-    part->sys.color.min[1] = 0.0;
-    part->sys.color.min[2] = 0.0;
-    part->sys.color.min[3] = 0.1;
-    part->sys.color.max[0] = 1.0;
-    part->sys.color.max[1] = 1.0;
-    part->sys.color.max[2] = 1.0;
-    part->sys.color.max[3] = 1.0;
-    part->sys.velocity.min[0] = -0.1;
-    part->sys.velocity.min[1] = -0.1;
-    part->sys.velocity.min[2] = -0.1;
-    part->sys.velocity.max[0] = 0.1;
-    part->sys.velocity.max[1] = 0.1;
-    part->sys.velocity.max[2] = 0.1;
+    part->sys.color.min[0] = 0.0f;
+    part->sys.color.min[1] = 0.0f;
+    part->sys.color.min[2] = 0.0f;
+    part->sys.color.min[3] = 0.1f;
+    part->sys.color.max[0] = 1.0f;
+    part->sys.color.max[1] = 1.0f;
+    part->sys.color.max[2] = 1.0f;
+    part->sys.color.max[3] = 1.0f;
+    part->sys.velocity.min[0] = -0.1f;
+    part->sys.velocity.min[1] = -0.1f;
+    part->sys.velocity.min[2] = -0.1f;
+    part->sys.velocity.max[0] = 0.1f;
+    part->sys.velocity.max[1] = 0.1f;
+    part->sys.velocity.max[2] = 0.1f;
 
     if (init_points(part) != 0) {
         yf_particle_deinit(part);
@@ -175,7 +178,7 @@ void yf_particle_simulate(YF_particle part, double tm)
 {
     assert(tm >= 0.0);
 
-    const YF_float dt = tm;
+    const float dt = tm;
     const YF_psys *sys = &part->sys;
     YF_vpart *pt;
     T_pstate *st;
@@ -186,15 +189,15 @@ void yf_particle_simulate(YF_particle part, double tm)
 
         switch (st->pstate) {
         case YF_PSTATE_UNSET:
-            pt->pos[0] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
-            pt->pos[1] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
-            pt->pos[2] = sys->emitter.size * (2.0 * YF_NRND - 1.0);
+            pt->pos[0] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
+            pt->pos[1] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
+            pt->pos[2] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
             pt->clr[0] = YF_LERP(sys->color.min[0], sys->color.max[0], YF_NRND);
             pt->clr[1] = YF_LERP(sys->color.min[1], sys->color.max[1], YF_NRND);
             pt->clr[2] = YF_LERP(sys->color.min[2], sys->color.max[2], YF_NRND);
-            pt->clr[3] = 0.0;
+            pt->clr[3] = 0.0f;
 
-            st->tm = 0.0;
+            st->tm = 0.0f;
             st->alpha = YF_LERP(sys->color.min[3], sys->color.max[3], YF_NRND);
 
             st->dur = YF_LERP(sys->lifetime.duration_min,
@@ -242,7 +245,7 @@ void yf_particle_simulate(YF_particle part, double tm)
 
         case YF_PSTATE_DYING:
             if (st->tm >= st->death) {
-                pt->clr[3] = 0.0;
+                pt->clr[3] = 0.0f;
                 st->tm -= st->death;
                 st->pstate = YF_PSTATE_DEAD;
             } else {
@@ -256,7 +259,7 @@ void yf_particle_simulate(YF_particle part, double tm)
 
         case YF_PSTATE_DEAD:
             if (!sys->lifetime.once) {
-                st->tm = 0.0;
+                st->tm = 0.0f;
                 st->pstate = YF_PSTATE_UNSET;
             }
             break;

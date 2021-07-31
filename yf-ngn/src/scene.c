@@ -69,15 +69,9 @@
 # endif
 #endif /* !YF_SCN_DYNAMIC */
 
-#ifdef YF_USE_FLOAT64
-# define YF_CAMORIG (YF_vec3){-20.0, 20.0, 20.0}
-# define YF_CAMTGT  (YF_vec3){0.0, 0.0, 0.0}
-# define YF_CAMASP  1.0
-#else
-# define YF_CAMORIG (YF_vec3){-20.0f, 20.0f, 20.0f}
-# define YF_CAMTGT  (YF_vec3){0.0f, 0.0f, 0.0f}
-# define YF_CAMASP  1.0f
-#endif
+#define YF_CAMORIG (YF_vec3){-20.0f, 20.0f, 20.0f}
+#define YF_CAMTGT  (YF_vec3){0.0f, 0.0f, 0.0f}
+#define YF_CAMASP  1.0f
 
 /* XXX */
 #define YF_JOINTN 64
@@ -498,7 +492,7 @@ static int copy_globl(YF_scene scn)
     /* projection matrix (ortho.) */
     /* TODO: This matrix should be taken from the camera. */
     YF_mat4 ortho;
-    yf_mat4_ortho(ortho, 1.0, 1.0, 0.0, -1.0);
+    yf_mat4_ortho(ortho, 1.0f, 1.0f, 0.0f, -1.0f);
     if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, ortho, sizeof ortho) != 0)
         return -1;
     l_vars.buf_off += sizeof(YF_mat4);
@@ -1273,7 +1267,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     if (l_vars.ctx == NULL && init_vars() != 0)
         return -1;
 
-    yf_camera_adjust(scn->cam, (YF_float)dim.width / (YF_float)dim.height);
+    yf_camera_adjust(scn->cam, (float)dim.width / (float)dim.height);
     YF_VIEWPORT_FROMDIM2(dim, scn->vport);
     YF_VIEWPORT_SCISSOR(scn->vport, scn->sciss);
 
