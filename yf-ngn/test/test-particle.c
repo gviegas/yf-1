@@ -19,7 +19,7 @@
 #define YF_WINH 600
 #define YF_WINT "Particle"
 #define YF_FPS  60
-#define YF_PLACE (YF_vec3){20.0, 20.0, 20.0}
+#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
 #define YF_POINT (YF_vec3){0}
 
 /* Shared variables. */
@@ -114,8 +114,8 @@ static void update(double elapsed_time)
     }
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
-    const YF_float md = 20.0 * elapsed_time;;
-    const YF_float td = 2.0 * elapsed_time;
+    const float md = 20.0 * elapsed_time;;
+    const float td = 2.0 * elapsed_time;
 
     if (l_vars.input.place)
         yf_camera_place(cam, YF_PLACE);
@@ -144,9 +144,9 @@ static void update(double elapsed_time)
 
     YF_psys *sys = yf_particle_getsys(l_vars.part);
     sys->lifetime.once = l_vars.input.once;
-    sys->color.max[0] = l_vars.input.rgb[0] ? 0.0 : 1.0;
-    sys->color.max[1] = l_vars.input.rgb[1] ? 0.0 : 1.0;
-    sys->color.max[2] = l_vars.input.rgb[2] ? 0.0 : 1.0;
+    sys->color.max[0] = l_vars.input.rgb[0] ? 0.0f : 1.0f;
+    sys->color.max[1] = l_vars.input.rgb[1] ? 0.0f : 1.0f;
+    sys->color.max[2] = l_vars.input.rgb[2] ? 0.0f : 1.0f;
 
     yf_particle_simulate(l_vars.part, elapsed_time);
 }
@@ -176,22 +176,22 @@ int yf_test_particle(void)
 
     yf_particle_settex(l_vars.part, l_vars.tex);
     yf_mat4_scale(*yf_node_getxform(yf_particle_getnode(l_vars.part)),
-                  0.5, 1.0, 0.25);
+                  0.5f, 1.0f, 0.25f);
 
     YF_psys *sys = yf_particle_getsys(l_vars.part);
-    sys->velocity.min[1] = -0.001;
-    sys->velocity.max[1] = 0.25;
-    sys->lifetime.spawn_min = 0.1;
-    sys->lifetime.spawn_max = 0.5;
-    sys->lifetime.duration_min = 0.75;
-    sys->lifetime.duration_max = 2.5;
+    sys->velocity.min[1] = -0.001f;
+    sys->velocity.max[1] = 0.25f;
+    sys->lifetime.spawn_min = 0.1f;
+    sys->lifetime.spawn_max = 0.5f;
+    sys->lifetime.duration_min = 0.75f;
+    sys->lifetime.duration_max = 2.5f;
 
     yf_node_insert(yf_scene_getnode(l_vars.scn),
                    yf_particle_getnode(l_vars.part));
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
-    const YF_vec3 pos = {0.0, 0.0, 20.0};
-    const YF_vec3 tgt = {0.0, 6.0, 0.0};
+    const YF_vec3 pos = {0.0f, 0.0f, 20.0f};
+    const YF_vec3 tgt = {0.0f, 6.0f, 0.0f};
     yf_camera_place(cam, pos);
     yf_camera_point(cam, tgt);
 
