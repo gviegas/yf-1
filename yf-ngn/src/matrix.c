@@ -56,8 +56,8 @@
 void yf_mat2_iden(YF_mat2 m)
 {
     static const YF_mat2 iden = {
-        1.0, 0.0,
-        0.0, 1.0
+        1.0f, 0.0f,
+        0.0f, 1.0f
     };
     memcpy(m, iden, sizeof iden);
 }
@@ -65,9 +65,9 @@ void yf_mat2_iden(YF_mat2 m)
 void yf_mat3_iden(YF_mat3 m)
 {
     static const YF_mat3 iden = {
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        0.0, 0.0, 1.0
+        1.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 1.0f
     };
     memcpy(m, iden, sizeof iden);
 }
@@ -75,10 +75,10 @@ void yf_mat3_iden(YF_mat3 m)
 void yf_mat4_iden(YF_mat4 m)
 {
     static const YF_mat4 iden = {
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
     };
     memcpy(m, iden, sizeof iden);
 }
