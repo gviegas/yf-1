@@ -41,7 +41,7 @@
 
 int yf_vec2_iszero(const YF_vec2 v)
 {
-    static const YF_vec2 zero = {0.0, 0.0};
+    static const YF_vec2 zero = {0.0f, 0.0f};
     int r;
     YF_VEC_ISEQ(r, v, zero, 2);
     return r;
@@ -49,7 +49,7 @@ int yf_vec2_iszero(const YF_vec2 v)
 
 int yf_vec3_iszero(const YF_vec3 v)
 {
-    static const YF_vec3 zero = {0.0, 0.0, 0.0};
+    static const YF_vec3 zero = {0.0f, 0.0f, 0.0f};
     int r;
     YF_VEC_ISEQ(r, v, zero, 3);
     return r;
@@ -57,7 +57,7 @@ int yf_vec3_iszero(const YF_vec3 v)
 
 int yf_vec4_iszero(const YF_vec4 v)
 {
-    static const YF_vec4 zero = {0.0, 0.0, 0.0, 0.0};
+    static const YF_vec4 zero = {0.0f, 0.0f, 0.0f, 0.0f};
     int r;
     YF_VEC_ISEQ(r, v, zero, 4);
     return r;
