@@ -41,6 +41,8 @@ struct T_vars {
         int quit;
         int x[2];
         int y[2];
+        int primary;
+        int secondary;
     } input;
 };
 static struct T_vars l_vars = {0};
@@ -111,6 +113,20 @@ static void on_motion(int x, int y, YF_UNUSED void *arg)
     l_vars.input.y[1] = y;
 }
 
+/* Handles button events. */
+static void on_button(int btn, int state,
+                      YF_UNUSED int x, YF_UNUSED int y, YF_UNUSED void *arg)
+{
+    switch (btn) {
+    case YF_BTN_LEFT:
+        l_vars.input.primary = state;
+        break;
+    case YF_BTN_RIGHT:
+        l_vars.input.secondary = state;
+        break;
+    }
+}
+
 /* Updates content. */
 static void update(double elapsed_time)
 {
@@ -151,25 +167,27 @@ static void update(double elapsed_time)
         if (l_vars.input.turn[3])
             yf_camera_turnr(cam, td);
 
-        const float ld = 0.5 * elapsed_time;
-        const int x0 = l_vars.input.x[0];
-        const int x1 = l_vars.input.x[1];
-        const int y0 = l_vars.input.y[0];
-        const int y1 = l_vars.input.y[1];
+        if (l_vars.input.primary) {
+            const float ld = 0.5 * elapsed_time;
+            const int x0 = l_vars.input.x[0];
+            const int x1 = l_vars.input.x[1];
+            const int y0 = l_vars.input.y[0];
+            const int y1 = l_vars.input.y[1];
 
-        if (x1 < x0) {
-            yf_camera_turnl(cam, ld);
-            l_vars.input.x[0] = x1;
-        } else if (x1 > x0) {
-            yf_camera_turnr(cam, ld);
-            l_vars.input.x[0] = x1;
-        }
-        if (y1 < y0) {
-            yf_camera_turnu(cam, ld);
-            l_vars.input.y[0] = y1;
-        } else if (y1 > y0) {
-            yf_camera_turnd(cam, ld);
-            l_vars.input.y[0] = y1;
+            if (x1 < x0) {
+                yf_camera_turnl(cam, ld);
+                l_vars.input.x[0] = x1;
+            } else if (x1 > x0) {
+                yf_camera_turnr(cam, ld);
+                l_vars.input.x[0] = x1;
+            }
+            if (y1 < y0) {
+                yf_camera_turnu(cam, ld);
+                l_vars.input.y[0] = y1;
+            } else if (y1 > y0) {
+                yf_camera_turnd(cam, ld);
+                l_vars.input.y[0] = y1;
+            }
         }
 
     } else {
@@ -248,6 +266,9 @@ int yf_test_misc(void)
 
     evtfn.motion_pt = on_motion;
     yf_setevtfn(YF_EVT_MOTIONPT, evtfn, NULL);
+
+    evtfn.button_pt = on_button;
+    yf_setevtfn(YF_EVT_BUTTONPT, evtfn, NULL);
 
     l_vars.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
     assert(l_vars.win != NULL);
