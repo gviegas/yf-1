@@ -103,7 +103,7 @@ void yf_particle_settex(YF_particle part, YF_texture tex);
  * @param part: The particle system.
  * @param tm: The time to advance the simulation.
  */
-void yf_particle_simulate(YF_particle part, double tm);
+void yf_particle_simulate(YF_particle part, float tm);
 
 /**
  * Deinitializes a particle system.

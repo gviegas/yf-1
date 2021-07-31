@@ -174,11 +174,10 @@ void yf_particle_settex(YF_particle part, YF_texture tex)
     part->tex = tex;
 }
 
-void yf_particle_simulate(YF_particle part, double tm)
+void yf_particle_simulate(YF_particle part, float tm)
 {
-    assert(tm >= 0.0);
+    assert(tm >= 0.0f);
 
-    const float dt = tm;
     const YF_psys *sys = &part->sys;
     YF_vpart *pt;
     T_pstate *st;
@@ -227,7 +226,7 @@ void yf_particle_simulate(YF_particle part, double tm)
                 pt->pos[1] += st->vel[1];
                 pt->pos[2] += st->vel[2];
                 pt->clr[3] = st->tm / st->spawn * st->alpha;
-                st->tm += dt;
+                st->tm += tm;
             }
             break;
 
@@ -239,7 +238,7 @@ void yf_particle_simulate(YF_particle part, double tm)
                 pt->pos[0] += st->vel[0];
                 pt->pos[1] += st->vel[1];
                 pt->pos[2] += st->vel[2];
-                st->tm += dt;
+                st->tm += tm;
             }
             break;
 
@@ -253,7 +252,7 @@ void yf_particle_simulate(YF_particle part, double tm)
                 pt->pos[1] += st->vel[1];
                 pt->pos[2] += st->vel[2];
                 pt->clr[3] = st->alpha - st->tm / st->death * st->alpha;
-                st->tm += dt;
+                st->tm += tm;
             }
             break;
 
