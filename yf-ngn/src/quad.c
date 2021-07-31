@@ -80,18 +80,18 @@ static void update_rect(YF_quad quad)
     assert(quad->pend_mask != YF_PEND_NONE);
 
     if (quad->pend_mask & YF_PEND_TC) {
-        YF_float s0, t0, s1, t1;
+        float s0, t0, s1, t1;
 
         if (quad->rect.size.width == 0) {
-            s0 = t0 = 0.0;
-            s1 = t1 = 1.0;
+            s0 = t0 = 0.0f;
+            s1 = t1 = 1.0f;
         } else {
             /* XXX: This assumes that the rect values are valid. */
             assert(quad->tex != NULL);
 
             const YF_dim2 dim = yf_texture_getdim(quad->tex);
-            const YF_float wdt = dim.width;
-            const YF_float hgt = dim.height;
+            const float wdt = dim.width;
+            const float hgt = dim.height;
             s0 = quad->rect.origin.x / wdt;
             t0 = quad->rect.origin.y / hgt;
             s1 = quad->rect.size.width / wdt + s0;
@@ -99,7 +99,7 @@ static void update_rect(YF_quad quad)
         }
 
 #ifdef YF_FLIP_TEX
-        const YF_float tmp = t0;
+        const float tmp = t0;
         t0 = t1;
         t1 = tmp;
 #endif
