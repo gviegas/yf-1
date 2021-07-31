@@ -275,14 +275,14 @@ int yf_test_model(void)
         l_vars.uniq_res_n = 2;
 
         /* Create mesh */
-        l_vars.mesh[0] = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model1.gltf", 0);
-        l_vars.mesh[1] = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/model2.gltf", 0);
+        l_vars.mesh[0] = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.glb", 0);
+        l_vars.mesh[1] = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube2.glb", 0);
         assert(l_vars.mesh[0] != NULL);
         assert(l_vars.mesh[1] != NULL);
 
         /* Create texture */
-        l_vars.tex[0] = yf_texture_init(YF_FILETYPE_PNG, "tmp/model1.png");
-        l_vars.tex[1] = yf_texture_init(YF_FILETYPE_PNG, "tmp/model2.png");
+        l_vars.tex[0] = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube.png");
+        l_vars.tex[1] = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube2.png");
         assert(l_vars.tex[0] != NULL);
         assert(l_vars.tex[1] != NULL);
 
@@ -315,10 +315,10 @@ int yf_test_model(void)
         for (unsigned i = 0; i < YF_MDLN; i++) {
             if (i&1)
                 l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_GLTF,
-                                              "tmp/model1.gltf", 0);
+                                              "tmp/cube.glb", 0);
             else
                 l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_GLTF,
-                                              "tmp/model2.gltf", 0);
+                                              "tmp/cube2.glb", 0);
             assert(l_vars.mesh[i] != NULL);
         }
 
@@ -326,10 +326,10 @@ int yf_test_model(void)
         for (unsigned i = 0; i < YF_MDLN; i++) {
             if (i&1)
                 l_vars.tex[i] = yf_texture_init(YF_FILETYPE_PNG,
-                                                "tmp/model1.png");
+                                                "tmp/cube.png");
             else
                 l_vars.tex[i] = yf_texture_init(YF_FILETYPE_PNG,
-                                                "tmp/model2.png");
+                                                "tmp/cube2.png");
             assert(l_vars.tex[i] != NULL);
 
             l_vars.matl[i] = yf_material_init(NULL);
