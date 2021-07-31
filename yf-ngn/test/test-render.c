@@ -199,13 +199,13 @@ int yf_test_render(void)
     assert(l_vars.scn1 != NULL);
     assert(l_vars.scn2 != NULL);
 
-    l_vars.mesh1 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.gltf", 0);
-    l_vars.mesh2 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.gltf", 0);
+    l_vars.mesh1 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.glb", 0);
+    l_vars.mesh2 = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube2.glb", 0);
     assert(l_vars.mesh1 != NULL);
     assert(l_vars.mesh2 != NULL);
 
     l_vars.tex1 = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube.png");
-    l_vars.tex2 = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube.png");
+    l_vars.tex2 = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube2.png");
     assert(l_vars.tex1 != NULL);
     assert(l_vars.tex2 != NULL);
 
@@ -219,7 +219,7 @@ int yf_test_render(void)
     mprop->pbrmr.color_tex = l_vars.tex1;
     mprop = yf_material_getprop(l_vars.matl2);
     mprop->pbr = YF_PBR_METALROUGH;
-    mprop->pbrmr.color_tex = l_vars.tex1;
+    mprop->pbrmr.color_tex = l_vars.tex2;
 
     YF_node scn1_nd = yf_scene_getnode(l_vars.scn1);
     float tf = -YF_MDLN_1;
