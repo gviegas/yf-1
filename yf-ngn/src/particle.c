@@ -60,8 +60,11 @@ static int init_points(YF_particle part)
         return -1;
     }
 
-    const YF_vpart pt = {.pos = {0.0, 0.0, 0.5}, .clr = {1.0, 1.0, 1.0, 1.0}};
-    const T_pstate st = {YF_PSTATE_UNSET, 0.0, 0.0, 0.0, 0.0, 0.0, {0}};
+    const YF_vpart pt = {
+        .pos = {0.0f, 0.0f, 0.5f},
+        .clr = {1.0f, 1.0f, 1.0f, 1.0f}
+    };
+    const T_pstate st = {YF_PSTATE_UNSET, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, {0}};
     for (unsigned i = 0; i < part->count; i++) {
         memcpy(part->pts+i, &pt, sizeof pt);
         memcpy(part->sts+i, &st, sizeof st);
