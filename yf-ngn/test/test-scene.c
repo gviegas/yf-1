@@ -16,7 +16,7 @@
 #define YF_WINH 600
 #define YF_WINT "Scene"
 #define YF_FPS  60
-#define YF_PLACE (YF_vec3){20.0, 20.0, 20.0}
+#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
 #define YF_POINT (YF_vec3){0}
 
 /* Shared variables. */
@@ -97,8 +97,8 @@ static void update(double elapsed_time)
 
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
-    const YF_float md = 10.0 * elapsed_time;
-    const YF_float td = 1.5 * elapsed_time;
+    const float md = 10.0 * elapsed_time;
+    const float td = 1.5 * elapsed_time;
 
     if (l_vars.input.place)
         yf_camera_place(cam, YF_PLACE);
