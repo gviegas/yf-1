@@ -204,69 +204,57 @@ void yf_vec4_mulsi(YF_vec4 dst, float s)
     YF_VEC_MULS(dst, dst, s, 4);
 }
 
-YF_float yf_vec2_dot(const YF_vec2 a, const YF_vec2 b)
+float yf_vec2_dot(const YF_vec2 a, const YF_vec2 b)
 {
-    YF_float r;
+    float r;
     YF_VEC_DOT(r, a, b, 2);
     return r;
 }
 
-YF_float yf_vec3_dot(const YF_vec3 a, const YF_vec3 b)
+float yf_vec3_dot(const YF_vec3 a, const YF_vec3 b)
 {
-    YF_float r;
+    float r;
     YF_VEC_DOT(r, a, b, 3);
     return r;
 }
 
-YF_float yf_vec4_dot(const YF_vec4 a, const YF_vec4 b)
+float yf_vec4_dot(const YF_vec4 a, const YF_vec4 b)
 {
-    YF_float r;
+    float r;
     YF_VEC_DOT(r, a, b, 4);
     return r;
 }
 
-YF_float yf_vec2_len(const YF_vec2 v)
+float yf_vec2_len(const YF_vec2 v)
 {
-#ifdef YF_USE_FLOAT64
-    return sqrt(yf_vec2_dot(v, v));
-#else
     return sqrtf(yf_vec2_dot(v, v));
-#endif
 }
 
-YF_float yf_vec3_len(const YF_vec3 v)
+float yf_vec3_len(const YF_vec3 v)
 {
-#ifdef YF_USE_FLOAT64
-    return sqrt(yf_vec3_dot(v, v));
-#else
     return sqrtf(yf_vec3_dot(v, v));
-#endif
 }
 
-YF_float yf_vec4_len(const YF_vec4 v)
+float yf_vec4_len(const YF_vec4 v)
 {
-#ifdef YF_USE_FLOAT64
-    return sqrt(yf_vec4_dot(v, v));
-#else
     return sqrtf(yf_vec4_dot(v, v));
-#endif
 }
 
 void yf_vec2_norm(YF_vec2 dst, const YF_vec2 v)
 {
-    const YF_float s = 1.0 / yf_vec2_len(v);
+    const float s = 1.0f / yf_vec2_len(v);
     YF_VEC_MULS(dst, v, s, 2);
 }
 
 void yf_vec3_norm(YF_vec3 dst, const YF_vec3 v)
 {
-    const YF_float s = 1.0 / yf_vec3_len(v);
+    const float s = 1.0f / yf_vec3_len(v);
     YF_VEC_MULS(dst, v, s, 3);
 }
 
 void yf_vec4_norm(YF_vec4 dst, const YF_vec4 v)
 {
-    const YF_float s = 1.0 / yf_vec4_len(v);
+    const float s = 1.0f / yf_vec4_len(v);
     YF_VEC_MULS(dst, v, s, 4);
 }
 
@@ -295,7 +283,7 @@ void yf_vec3_cross(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b)
 void yf_vec4_cross(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b)
 {
     yf_vec3_cross(dst, a, b);
-    dst[3] = 1.0;
+    dst[3] = 1.0f;
 }
 
 void yf_vec4_rotqx(YF_vec4 q, YF_float angle)
