@@ -61,7 +61,6 @@ void yf_resmgr_clear(void);
 #define YF_RESBIND_GLOBL 0
 #define YF_RESBIND_INST  0
 #define YF_RESBIND_MASK  1
-#define YF_RESBIND_SKIN  2
 #define YF_RESBIND_HMAP  2
 #define YF_RESBIND_MATL  3
 #define YF_RESBIND_TEX   4
