@@ -16,10 +16,10 @@
 #include "mesh.h"
 
 #undef YF_NRND
-#define YF_NRND ((YF_float)rand() / (YF_float)RAND_MAX)
+#define YF_NRND ((float)rand() / (float)RAND_MAX)
 
 #undef YF_LERP
-#define YF_LERP(a, b, t) (((YF_float)1 - (t)) * (a) + (t) * (b))
+#define YF_LERP(a, b, t) ((1.0f - (t)) * (a) + (t) * (b))
 
 /* Type defining the state of a single particle. */
 typedef struct {
@@ -29,11 +29,11 @@ typedef struct {
 #define YF_PSTATE_DYING    3
 #define YF_PSTATE_DEAD     4
     int pstate;
-    YF_float tm;
-    YF_float dur;
-    YF_float spawn;
-    YF_float death;
-    YF_float alpha;
+    float tm;
+    float dur;
+    float spawn;
+    float death;
+    float alpha;
     YF_vec3 vel;
 } T_pstate;
 
