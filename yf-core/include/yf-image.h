@@ -111,7 +111,7 @@ typedef struct YF_image_o *YF_image;
  * Initializes a new image.
  *
  * @param ctx: The context.
- * @param pixfmt: The 'YF_PIXFMT' value representing the pixel format.
+ * @param pixfmt: The 'YF_PIXFMT' value indicating the pixel format.
  * @param dim: The size of the image.
  * @param layers: The number of array layers.
  * @param levels: The number of mip levels.
@@ -130,7 +130,7 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
  * the 'YF_PIXFMT' size ('data' is assumed to be tightly packed).
  *
  * @param img: The image.
- * @param off: The offset from the start of the image, in pixels.
+ * @param off: The offset from the beginning of the image, in pixels.
  * @param dim: The copy dimensions, in pixels.
  * @param layer: The destination layer.
  * @param level: The destination level.
