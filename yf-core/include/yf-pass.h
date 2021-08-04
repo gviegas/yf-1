@@ -73,9 +73,10 @@ typedef struct {
  * @param ctx: The context.
  * @param colors: The descriptions for color attachments.
  * @param color_n: The number of color descriptions.
- * @param reolves: The descriptions for resolve attachments. If not 'NULL',
+ * @param resolves: The descriptions for resolve attachments. If not 'NULL',
  *  it must contain 'color_n' entries.
  * @param depth_stencil: The description for depth/stencil attachment.
+ *  Can be 'NULL'.
  * @return: On success, returns a new pass. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
@@ -91,8 +92,7 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
  * @param layers: The number of layers in the target.
  * @param colors: The color attachments.
  * @param color_n: The number of color attachments.
- * @param reolves: The resolve attachments. If not 'NULL', it must contain
- *  'color_n' entries.
+ * @param resolves: The resolve attachments.
  * @param depth_stencil: The depth/stencil attachment.
  * @return: On success, returns a new target. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
