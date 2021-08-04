@@ -90,16 +90,14 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
  * @param pass: The pass that this target will be compatible with.
  * @param dim: The size of the framebuffer.
  * @param layers: The number of layers in the target.
- * @param colors: The color attachments.
- * @param color_n: The number of color attachments.
- * @param resolves: The resolve attachments.
- * @param depth_stencil: The depth/stencil attachment.
+ * @param colors: The color attachments, as specified in 'pass'.
+ * @param resolves: The resolve attachments, as specified in 'pass'.
+ * @param depth_stencil: The depth/stencil attachment, as specified in 'pass'.
  * @return: On success, returns a new target. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
 YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
-                             const YF_attach *colors, unsigned color_n,
-                             const YF_attach *resolves,
+                             const YF_attach *colors, const YF_attach *resolves,
                              const YF_attach *depth_stencil);
 
 /**

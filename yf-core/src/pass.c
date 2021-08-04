@@ -195,8 +195,7 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
 }
 
 YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
-                             const YF_attach *colors, unsigned color_n,
-                             const YF_attach *resolves,
+                             const YF_attach *colors, const YF_attach *resolves,
                              const YF_attach *depth_stencil)
 {
     assert(pass != NULL);
@@ -209,10 +208,9 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
         return NULL;
     }
 
-    const unsigned resolve_n = resolves == NULL ? 0 : color_n;
-    const unsigned depth_n = depth_stencil == NULL ? 0 : 1;
-    if (layers < 1 || color_n != pass->color_n ||
-        resolve_n != pass->resolve_n || depth_n != pass->depth_n) {
+    if (layers < 1 || colors == NULL ||
+        (resolves == NULL && pass->resolve_n != 0) ||
+        (depth_stencil == NULL && pass->depth_n != 0)) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return NULL;
     }
@@ -250,7 +248,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
     tgt->pass = pass;
     tgt->dim = dim;
     tgt->layers = layers;
-    tgt->iview_n = color_n + resolve_n + depth_n;
+    tgt->iview_n = pass->color_n + pass->resolve_n + pass->depth_n;
     tgt->iviews = calloc(tgt->iview_n, sizeof *tgt->iviews);
     tgt->imgs = malloc(tgt->iview_n * sizeof *tgt->imgs);
     tgt->lays_base = malloc(tgt->iview_n * sizeof *tgt->lays_base);
@@ -278,7 +276,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
         return NULL;
     }
 
-    for (unsigned i = 0; i < color_n; i++) {
+    for (unsigned i = 0; i < pass->color_n; i++) {
         lay.i = colors[i].layer_base;
         r = yf_image_getiview(colors[i].img, lay, lvl, tgt->iviews+iview_i);
         if (r != 0) {
@@ -296,7 +294,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
         info_views[iview_i] = tgt->iviews[iview_i].view;
         iview_i++;
     }
-    for (unsigned i = 0; i < resolve_n; i++) {
+    for (unsigned i = 0; i < pass->resolve_n; i++) {
         lay.i = resolves[i].layer_base;
         r = yf_image_getiview(resolves[i].img, lay, lvl, tgt->iviews+iview_i);
         if (r != 0) {
