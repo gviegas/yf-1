@@ -145,7 +145,7 @@ static void init(void)
 
     for (size_t i = 0; i < pres_img_n; i++) {
         clr_atts[i] = (YF_attach){pres_imgs[i], 0};
-        tgts[i] = yf_pass_maketarget(pass, tgt_dim, 1, clr_atts+i, 1, NULL,
+        tgts[i] = yf_pass_maketarget(pass, tgt_dim, 1, clr_atts+i, NULL,
                                      &dep_att);
         assert(tgts[i] != NULL);
     }
