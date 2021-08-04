@@ -131,7 +131,7 @@ YF_view yf_view_init(YF_window win)
 
     for (size_t i = 0; i < pres_img_n; i++) {
         clr_atts[i] = (YF_attach){pres_imgs[i], 0};
-        view->tgts[i] = yf_pass_maketarget(view->pass, dim2, 1, clr_atts+i, 1,
+        view->tgts[i] = yf_pass_maketarget(view->pass, dim2, 1, clr_atts+i,
                                            NULL, &dep_att);
         if (view->tgts[i] == NULL) {
             yf_view_deinit(view);
