@@ -17,14 +17,14 @@
 YF_DECLS_BEGIN
 
 /**
- * Opaque type defining unformatted linear data.
+ * Opaque type defining unformatted linear data in device memory.
  */
 typedef struct YF_buffer_o *YF_buffer;
 
 /**
  * Initializes a new buffer.
  *
- * @param size: The size of the buffer to allocate.
+ * @param size: The size of the buffer to allocate, in bytes.
  * @return: On success, returns a new buffer. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
@@ -43,10 +43,10 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size);
 int yf_buffer_copy(YF_buffer buf, size_t offset, const void *data, size_t size);
 
 /**
- * Gets the buffer size.
+ * Gets the size of a buffer.
  *
  * @param buf: The buffer.
- * @return: The buffer size.
+ * @return: The buffer's size.
  */
 size_t yf_buffer_getsize(YF_buffer buf);
 
