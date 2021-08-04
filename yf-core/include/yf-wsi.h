@@ -26,8 +26,8 @@ typedef struct YF_wsi_o *YF_wsi;
  *
  * @param ctx: The context.
  * @param win: The window into which present results.
- * @return: On success, returns 0. Otherwise, 'NULL' is returned and the
- * global error is set to indicate the cause.
+ * @return: On success, returns a new wsi. Otherwise, 'NULL' is returned and
+ *  the global error is set to indicate the cause.
  */
 YF_wsi yf_wsi_init(YF_context ctx, YF_window win);
 
@@ -35,8 +35,8 @@ YF_wsi yf_wsi_init(YF_context ctx, YF_window win);
  * Gets the list of all images in the wsi's swapchain.
  *
  * @param wsi: The wsi.
- * @param n: The destination for the number of images in the returned array.
- * @return: On success, returns an array containing the wsi images. Otherwise,
+ * @param n: The destination for the number of images in the array.
+ * @return: On success, returns an array containing '*n' images. Otherwise,
  *  'NULL' is returned and the global error is set to indicate the cause.
  */
 const YF_image *yf_wsi_getimages(YF_wsi wsi, unsigned *n);
