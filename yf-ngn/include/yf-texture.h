@@ -14,7 +14,7 @@
 YF_DECLS_BEGIN
 
 /**
- * Opaque type defining a texture resource.
+ * Opaque type defining a texture.
  */
 typedef struct YF_texture_o *YF_texture;
 
