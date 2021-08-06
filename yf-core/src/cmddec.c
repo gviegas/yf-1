@@ -653,16 +653,16 @@ static int decode_sync(int cmdbuf)
         abort();
     }
 
-    VkMemoryBarrier mem_bar = {
+    VkMemoryBarrier barrier = {
         .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
         .pNext = NULL,
         .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
-        .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT
+        .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT
     };
 
     vkCmdPipelineBarrier(cmdr->pool_res, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
                          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                         VK_DEPENDENCY_BY_REGION_BIT, 1, &mem_bar,
+                         VK_DEPENDENCY_BY_REGION_BIT, 1, &barrier,
                          0, NULL, 0, NULL);
 
     return 0;
