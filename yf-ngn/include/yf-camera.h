@@ -40,7 +40,7 @@ YF_camera yf_camera_init(const YF_vec3 origin, const YF_vec3 target,
  * Places the camera at a given position.
  *
  * @param cam: The camera.
- * @param pos: The position to place thre camera at.
+ * @param pos: The position to place the camera at.
  */
 void yf_camera_place(YF_camera cam, const YF_vec3 pos);
 
@@ -141,7 +141,7 @@ void yf_camera_turnr(YF_camera cam, float d);
 void yf_camera_zoomi(YF_camera cam, float d);
 
 /**
- * Zooms the camera out
+ * Zooms the camera out.
  *
  * @param cam: The camera.
  * @param d: The amount to zoom.
