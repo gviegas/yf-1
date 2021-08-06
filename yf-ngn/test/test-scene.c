@@ -12,8 +12,8 @@
 
 #include "yf-ngn.h"
 
-#define YF_WINW 960
-#define YF_WINH 600
+#define YF_WINW 640
+#define YF_WINH 480
 #define YF_WINT "Scene"
 #define YF_FPS  60
 #define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}

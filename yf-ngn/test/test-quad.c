@@ -13,8 +13,8 @@
 
 #include "yf-ngn.h"
 
-#define YF_WINW 960
-#define YF_WINH 600
+#define YF_WINW 640
+#define YF_WINH 480
 #define YF_WINT "Quad"
 #define YF_FPS  60
 
