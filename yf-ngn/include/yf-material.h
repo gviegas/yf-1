@@ -16,7 +16,7 @@
 YF_DECLS_BEGIN
 
 /**
- * Opaque type defining a material resource.
+ * Opaque type defining a material.
  */
 typedef struct YF_material_o *YF_material;
 
@@ -72,7 +72,6 @@ typedef struct {
 
 /**
  * Initializes a new material.
- *
  *
  * @param prop: The 'YF_matlprop' to set on creation. Can be 'NULL'.
  * @return: On success, returns a new material. Otherwise, 'NULL' is returned
