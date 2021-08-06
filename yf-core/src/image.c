@@ -549,14 +549,22 @@ void yf_image_transition(YF_image img, VkCommandBuffer cbuffer)
     assert(img != NULL);
     assert(cbuffer != NULL);
 
+    /* XXX */
+    VkImageLayout from;
+    if (img->layout == VK_IMAGE_LAYOUT_GENERAL)
+        from = VK_IMAGE_LAYOUT_UNDEFINED;
+    else
+        from = img->layout;
+
     img->layout = VK_IMAGE_LAYOUT_GENERAL;
 
     VkImageMemoryBarrier barrier = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
         .pNext = NULL,
-        .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
-        .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT,
-        .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+        .srcAccessMask = 0,
+        .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT |
+                         VK_ACCESS_MEMORY_WRITE_BIT,
+        .oldLayout = from,
         .newLayout = VK_IMAGE_LAYOUT_GENERAL,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
