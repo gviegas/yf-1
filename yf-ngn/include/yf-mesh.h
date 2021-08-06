@@ -13,7 +13,7 @@
 YF_DECLS_BEGIN
 
 /**
- * Opaque type defining a mesh resource (geometry).
+ * Opaque type defining a mesh.
  */
 typedef struct YF_mesh_o *YF_mesh;
 
@@ -30,9 +30,9 @@ typedef struct YF_mesh_o *YF_mesh;
  * @param filetype: The 'YF_FILETYPE' value indicating the format of the mesh
  *  file.
  * @param pathname: The pathname of the mesh file.
+ * @param index: The index of the mesh to load.
  * @return: On success, returns a new mesh. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
- * @param index: The index of the mesh to load.
  */
 YF_mesh yf_mesh_init(int filetype, const char *pathname, size_t index);
 
