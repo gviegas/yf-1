@@ -601,13 +601,21 @@ int yf_image_chglayout(YF_image img, VkImageLayout layout)
     assert(img != NULL);
     assert(layout != VK_IMAGE_LAYOUT_UNDEFINED);
 
-    if (layout == img->layout)
-        /* TODO */
-        assert(0);
+    if (layout == img->next_layout)
+        /* requested layout change ongoing */
+        return 0;
 
-    const YF_cmdres *cmdr = yf_cmdpool_getprio(img->ctx, NULL, NULL);
+    if (img->layout != img->next_layout) {
+        /* different layout change pending */
+        yf_seterr(YF_ERR_OTHER, __func__);
+        return -1;
+    }
+
+    const YF_cmdres *cmdr = yf_cmdpool_getprio(img->ctx, set_layout, img);
     if (cmdr == NULL)
         return -1;
+
+    img->next_layout = layout;
 
     VkImageMemoryBarrier barrier = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -632,9 +640,6 @@ int yf_image_chglayout(YF_image img, VkImageLayout layout)
     vkCmdPipelineBarrier(cmdr->pool_res, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
                          0, NULL, 0, NULL, 1, &barrier);
-
-    /* XXX */
-    img->layout = layout;
 
     return 0;
 }
