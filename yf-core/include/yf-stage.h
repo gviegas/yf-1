@@ -25,40 +25,40 @@ YF_DECLS_BEGIN
 #define YF_STAGE_COMP 0x20
 
 /**
- * Type defining the identifier of a loaded module.
+ * Type defining the identifier of a loaded shader.
  *
- * Modules are context-managed objects representing executable code for a
+ * Shaders are context-managed objects representing executable code for a
  * programmable pipeline stage.
  */
-typedef size_t YF_modid;
+typedef unsigned long YF_shdid;
 
 /**
  * Type defining a single shader stage.
  */
 typedef struct {
     int stage;
-    YF_modid mod;
+    YF_shdid shd;
     const char entry_point[128];
 } YF_stage;
 
 /**
- * Loads a shader module.
+ * Loads a shader.
  *
  * @param ctx: The context.
  * @param pathname: The pathname of the shader code file.
- * @param mod: The destination for the module identifier.
+ * @param shd: The destination for the shader identifier.
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod);
+int yf_loadshd(YF_context ctx, const char *pathname, YF_shdid *shd);
 
 /**
- * Unloads a shader module.
+ * Unloads a shader.
  *
- * @param ctx: The context that owns the module to unload.
- * @param mod: The identifier of the module to unload.
+ * @param ctx: The context that owns the shader to unload.
+ * @param shd: The identifier of the shader to unload.
  */
-void yf_unldmod(YF_context ctx, YF_modid mod);
+void yf_unldshd(YF_context ctx, YF_shdid shd);
 
 YF_DECLS_END
 

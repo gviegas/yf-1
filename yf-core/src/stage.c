@@ -15,12 +15,10 @@
 #include "stage.h"
 #include "context.h"
 
-#define YF_MODWRD 4
-
 /* Type defining stage variables stored in a context. */
 typedef struct {
-    YF_dict mods;
-    YF_modid modid;
+    YF_dict shds;
+    YF_shdid cur;
 } T_priv;
 
 /* Destroys the 'T_priv' data stored in a given context. */
@@ -32,12 +30,12 @@ static void destroy_priv(YF_context ctx)
         return;
 
     T_priv *priv = ctx->stg.priv;
-    yf_dict_deinit(priv->mods);
+    yf_dict_deinit(priv->shds);
     free(priv);
     ctx->stg.priv = NULL;
 }
 
-int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod)
+int yf_loadshd(YF_context ctx, const char *pathname, YF_shdid *shd)
 {
     assert(ctx != NULL);
     assert(pathname != NULL);
@@ -52,13 +50,13 @@ int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod)
 
         priv = ctx->stg.priv;
 
-        if ((priv->mods = yf_dict_init(NULL, NULL)) == NULL) {
+        if ((priv->shds = yf_dict_init(NULL, NULL)) == NULL) {
             free(ctx->stg.priv);
             ctx->stg.priv = NULL;
             return -1;
         }
 
-        priv->modid = 0;
+        priv->cur = 0;
         ctx->stg.deinit_callb = destroy_priv;
     }
 
@@ -69,8 +67,7 @@ int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod)
     }
 
     long n = 0;
-    if (fseek(file, 0, SEEK_END) != 0 || (n = ftell(file)) <= 0 ||
-        n % YF_MODWRD != 0) {
+    if (fseek(file, 0, SEEK_END) != 0 || (n = ftell(file)) <= 0 || n & 3) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         fclose(file);
         return -1;
@@ -110,18 +107,18 @@ int yf_loadmod(YF_context ctx, const char *pathname, YF_modid *mod)
         return -1;
     }
 
-    const YF_modid key = ++priv->modid;
+    const YF_shdid key = ++priv->cur;
 
-    if (yf_dict_insert(priv->mods, (void *)key, (void *)val) != 0) {
-        *mod = 0;
+    if (yf_dict_insert(priv->shds, (void *)key, (void *)val) != 0) {
+        *shd = 0;
         return -1;
     }
 
-    *mod = key;
+    *shd = key;
     return 0;
 }
 
-void yf_unldmod(YF_context ctx, YF_modid mod)
+void yf_unldshd(YF_context ctx, YF_shdid shd)
 {
     assert(ctx != NULL);
 
@@ -130,13 +127,13 @@ void yf_unldmod(YF_context ctx, YF_modid mod)
 
     T_priv *priv = ctx->stg.priv;
 
-    if (yf_dict_contains(priv->mods, (void *)mod)) {
-        VkShaderModule val = yf_dict_remove(priv->mods, (void *)mod);
+    if (yf_dict_contains(priv->shds, (void *)shd)) {
+        VkShaderModule val = yf_dict_remove(priv->shds, (void *)shd);
         vkDestroyShaderModule(ctx->device, val, NULL);
     }
 }
 
-VkShaderModule yf_getmod(YF_context ctx, YF_modid mod)
+VkShaderModule yf_getshd(YF_context ctx, YF_shdid shd)
 {
     assert(ctx != NULL);
 
@@ -144,7 +141,7 @@ VkShaderModule yf_getmod(YF_context ctx, YF_modid mod)
         return VK_NULL_HANDLE;
 
     T_priv *priv = ctx->stg.priv;
-    void *val = yf_dict_search(priv->mods, (void *)mod);
+    void *val = yf_dict_search(priv->shds, (void *)shd);
 
     if (val != NULL)
         return (VkShaderModule)val;

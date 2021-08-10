@@ -95,7 +95,7 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
             .pNext = NULL,
             .flags = 0,
             .stage = VK_SHADER_STAGE_COMPUTE_BIT,
-            .module = yf_getmod(ctx, conf->stg.mod),
+            .module = yf_getshd(ctx, conf->stg.shd),
             .pName = conf->stg.entry_point,
             .pSpecializationInfo = NULL
         },
