@@ -36,6 +36,18 @@ static void dealloc_stgbuf(int res, void *arg)
     yf_buffer_deinit((YF_buffer)arg);
 }
 
+/* Sets image layout. */
+static void set_layout(int res, void *arg)
+{
+    YF_image img = arg;
+    if (res == 0)
+        /* succeeded */
+        img->layout = img->next_layout;
+    else
+        /* failed */
+        img->next_layout = img->layout;
+}
+
 /* Hashes a 'T_priv'. */
 static size_t hash_priv(const void *x)
 {
