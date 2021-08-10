@@ -304,26 +304,26 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
         return -1;
     }
 
+    if (img->next_layout != VK_IMAGE_LAYOUT_GENERAL &&
+        yf_image_chglayout(img, VK_IMAGE_LAYOUT_GENERAL) != 0)
+        return -1;
+
     size_t sz;
     YF_PIXFMT_SIZEOF(img->pixfmt, sz);
     sz *= dim.width * dim.height * dim.depth;
-    YF_buffer stg_buf = yf_buffer_init(img->ctx, sz);
 
+    YF_buffer stg_buf = yf_buffer_init(img->ctx, sz);
     if (stg_buf == NULL)
         return -1;
 
     memcpy(stg_buf->data, data, sz);
 
-    const YF_cmdres *cmdr;
-    cmdr = yf_cmdpool_getprio(img->ctx, dealloc_stgbuf, stg_buf);
-
+    const YF_cmdres *cmdr = yf_cmdpool_getprio(img->ctx, dealloc_stgbuf,
+                                               stg_buf);
     if (cmdr == NULL) {
         yf_buffer_deinit(stg_buf);
         return -1;
     }
-
-    if (img->layout != VK_IMAGE_LAYOUT_GENERAL)
-        yf_image_transition(img, cmdr->pool_res);
 
     VkBufferImageCopy region = {
         .bufferOffset = 0,
