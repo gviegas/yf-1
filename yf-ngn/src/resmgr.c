@@ -144,25 +144,25 @@ static int init_mdl(T_entry *entry, unsigned elements)
         return -1;
     }
 
-    YF_modid vert_mod;
-    if (yf_loadmod(ctx, vert_path, &vert_mod) != 0) {
+    YF_shdid vert_shd;
+    if (yf_loadshd(ctx, vert_path, &vert_shd) != 0) {
         free(vert_path);
         free(frag_path);
         return -1;
     }
     free(vert_path);
 
-    YF_modid frag_mod;
-    if (yf_loadmod(ctx, frag_path, &frag_mod) != 0) {
-        yf_unldmod(ctx, vert_mod);
+    YF_shdid frag_shd;
+    if (yf_loadshd(ctx, frag_path, &frag_shd) != 0) {
+        yf_unldshd(ctx, vert_shd);
         free(frag_path);
         return -1;
     }
     free(frag_path);
 
     const YF_stage stgs[] = {
-        {YF_STAGE_VERT, vert_mod, "main"},
-        {YF_STAGE_FRAG, frag_mod, "main"}
+        {YF_STAGE_VERT, vert_shd, "main"},
+        {YF_STAGE_FRAG, frag_shd, "main"}
     };
     const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
@@ -176,8 +176,8 @@ static int init_mdl(T_entry *entry, unsigned elements)
                                         sizeof inst_ents / sizeof inst_ents[0]);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
-        yf_unldmod(ctx, vert_mod);
-        yf_unldmod(ctx, frag_mod);
+        yf_unldshd(ctx, vert_shd);
+        yf_unldshd(ctx, frag_shd);
         yf_dtable_deinit(inst_dtb);
         return -1;
     }
@@ -215,8 +215,8 @@ static int init_mdl(T_entry *entry, unsigned elements)
 
     entry->gst = yf_gstate_init(ctx, &conf);
     if (entry->gst == NULL) {
-        yf_unldmod(ctx, vert_mod);
-        yf_unldmod(ctx, frag_mod);
+        yf_unldshd(ctx, vert_shd);
+        yf_unldshd(ctx, frag_shd);
         yf_dtable_deinit(inst_dtb);
         return -1;
     }
@@ -241,25 +241,25 @@ static int init_terr(T_entry *entry)
         return -1;
     }
 
-    YF_modid vert_mod;
-    if (yf_loadmod(ctx, vert_path, &vert_mod) != 0) {
+    YF_shdid vert_shd;
+    if (yf_loadshd(ctx, vert_path, &vert_shd) != 0) {
         free(vert_path);
         free(frag_path);
         return -1;
     }
     free(vert_path);
 
-    YF_modid frag_mod;
-    if (yf_loadmod(ctx, frag_path, &frag_mod) != 0) {
-        yf_unldmod(ctx, vert_mod);
+    YF_shdid frag_shd;
+    if (yf_loadshd(ctx, frag_path, &frag_shd) != 0) {
+        yf_unldshd(ctx, vert_shd);
         free(frag_path);
         return -1;
     }
     free(frag_path);
 
     const YF_stage stgs[] = {
-        {YF_STAGE_VERT, vert_mod, "main"},
-        {YF_STAGE_FRAG, frag_mod, "main"}
+        {YF_STAGE_VERT, vert_shd, "main"},
+        {YF_STAGE_FRAG, frag_shd, "main"}
     };
     const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
@@ -274,8 +274,8 @@ static int init_terr(T_entry *entry)
                                         sizeof inst_ents / sizeof inst_ents[0]);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
-        yf_unldmod(ctx, vert_mod);
-        yf_unldmod(ctx, frag_mod);
+        yf_unldshd(ctx, vert_shd);
+        yf_unldshd(ctx, frag_shd);
         yf_dtable_deinit(inst_dtb);
         return -1;
     }
@@ -311,8 +311,8 @@ static int init_terr(T_entry *entry)
 
     entry->gst = yf_gstate_init(ctx, &conf);
     if (entry->gst == NULL) {
-        yf_unldmod(ctx, vert_mod);
-        yf_unldmod(ctx, frag_mod);
+        yf_unldshd(ctx, vert_shd);
+        yf_unldshd(ctx, frag_shd);
         yf_dtable_deinit(inst_dtb);
         return -1;
     }
@@ -337,25 +337,25 @@ static int init_part(T_entry *entry)
         return -1;
     }
 
-    YF_modid vert_mod;
-    if (yf_loadmod(ctx, vert_path, &vert_mod) != 0) {
+    YF_shdid vert_shd;
+    if (yf_loadshd(ctx, vert_path, &vert_shd) != 0) {
         free(vert_path);
         free(frag_path);
         return -1;
     }
     free(vert_path);
 
-    YF_modid frag_mod;
-    if (yf_loadmod(ctx, frag_path, &frag_mod) != 0) {
-        yf_unldmod(ctx, vert_mod);
+    YF_shdid frag_shd;
+    if (yf_loadshd(ctx, frag_path, &frag_shd) != 0) {
+        yf_unldshd(ctx, vert_shd);
         free(frag_path);
         return -1;
     }
     free(frag_path);
 
     const YF_stage stgs[] = {
-        {YF_STAGE_VERT, vert_mod, "main"},
-        {YF_STAGE_FRAG, frag_mod, "main"}
+        {YF_STAGE_VERT, vert_shd, "main"},
+        {YF_STAGE_FRAG, frag_shd, "main"}
     };
     const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
@@ -369,8 +369,8 @@ static int init_part(T_entry *entry)
                                         sizeof inst_ents / sizeof inst_ents[0]);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
-        yf_unldmod(ctx, vert_mod);
-        yf_unldmod(ctx, frag_mod);
+        yf_unldshd(ctx, vert_shd);
+        yf_unldshd(ctx, frag_shd);
         yf_dtable_deinit(inst_dtb);
         return -1;
     }
@@ -405,8 +405,8 @@ static int init_part(T_entry *entry)
 
     entry->gst = yf_gstate_init(ctx, &conf);
     if (entry->gst == NULL) {
-        yf_unldmod(ctx, vert_mod);
-        yf_unldmod(ctx, frag_mod);
+        yf_unldshd(ctx, vert_shd);
+        yf_unldshd(ctx, frag_shd);
         yf_dtable_deinit(inst_dtb);
         return -1;
     }
@@ -431,25 +431,25 @@ static int init_quad(T_entry *entry)
         return -1;
     }
 
-    YF_modid vert_mod;
-    if (yf_loadmod(ctx, vert_path, &vert_mod) != 0) {
+    YF_shdid vert_shd;
+    if (yf_loadshd(ctx, vert_path, &vert_shd) != 0) {
         free(vert_path);
         free(frag_path);
         return -1;
     }
     free(vert_path);
 
-    YF_modid frag_mod;
-    if (yf_loadmod(ctx, frag_path, &frag_mod) != 0) {
-        yf_unldmod(ctx, vert_mod);
+    YF_shdid frag_shd;
+    if (yf_loadshd(ctx, frag_path, &frag_shd) != 0) {
+        yf_unldshd(ctx, vert_shd);
         free(frag_path);
         return -1;
     }
     free(frag_path);
 
     const YF_stage stgs[] = {
-        {YF_STAGE_VERT, vert_mod, "main"},
-        {YF_STAGE_FRAG, frag_mod, "main"}
+        {YF_STAGE_VERT, vert_shd, "main"},
+        {YF_STAGE_FRAG, frag_shd, "main"}
     };
     const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
@@ -463,8 +463,8 @@ static int init_quad(T_entry *entry)
                                         sizeof inst_ents / sizeof inst_ents[0]);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
-        yf_unldmod(ctx, vert_mod);
-        yf_unldmod(ctx, frag_mod);
+        yf_unldshd(ctx, vert_shd);
+        yf_unldshd(ctx, frag_shd);
         yf_dtable_deinit(inst_dtb);
         return -1;
     }
@@ -500,8 +500,8 @@ static int init_quad(T_entry *entry)
 
     entry->gst = yf_gstate_init(ctx, &conf);
     if (entry->gst == NULL) {
-        yf_unldmod(ctx, vert_mod);
-        yf_unldmod(ctx, frag_mod);
+        yf_unldshd(ctx, vert_shd);
+        yf_unldshd(ctx, frag_shd);
         yf_dtable_deinit(inst_dtb);
         return -1;
     }
@@ -526,25 +526,25 @@ static int init_labl(T_entry *entry)
         return -1;
     }
 
-    YF_modid vert_mod;
-    if (yf_loadmod(ctx, vert_path, &vert_mod) != 0) {
+    YF_shdid vert_shd;
+    if (yf_loadshd(ctx, vert_path, &vert_shd) != 0) {
         free(vert_path);
         free(frag_path);
         return -1;
     }
     free(vert_path);
 
-    YF_modid frag_mod;
-    if (yf_loadmod(ctx, frag_path, &frag_mod) != 0) {
-        yf_unldmod(ctx, vert_mod);
+    YF_shdid frag_shd;
+    if (yf_loadshd(ctx, frag_path, &frag_shd) != 0) {
+        yf_unldshd(ctx, vert_shd);
         free(frag_path);
         return -1;
     }
     free(frag_path);
 
     const YF_stage stgs[] = {
-        {YF_STAGE_VERT, vert_mod, "main"},
-        {YF_STAGE_FRAG, frag_mod, "main"}
+        {YF_STAGE_VERT, vert_shd, "main"},
+        {YF_STAGE_FRAG, frag_shd, "main"}
     };
     const unsigned stg_n = sizeof stgs / sizeof stgs[0];
 
@@ -558,8 +558,8 @@ static int init_labl(T_entry *entry)
                                         sizeof inst_ents / sizeof inst_ents[0]);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
-        yf_unldmod(ctx, vert_mod);
-        yf_unldmod(ctx, frag_mod);
+        yf_unldshd(ctx, vert_shd);
+        yf_unldshd(ctx, frag_shd);
         yf_dtable_deinit(inst_dtb);
         return -1;
     }
@@ -595,8 +595,8 @@ static int init_labl(T_entry *entry)
 
     entry->gst = yf_gstate_init(ctx, &conf);
     if (entry->gst == NULL) {
-        yf_unldmod(ctx, vert_mod);
-        yf_unldmod(ctx, frag_mod);
+        yf_unldshd(ctx, vert_shd);
+        yf_unldshd(ctx, frag_shd);
         yf_dtable_deinit(inst_dtb);
         return -1;
     }
@@ -671,7 +671,7 @@ static void deinit_entry(int resrq)
     for (size_t i = 0; i < (sizeof stages / sizeof stages[0]); i++) {
         const YF_stage *stg = yf_gstate_getstg(l_entries[resrq].gst, stages[i]);
         if (stg != NULL)
-            yf_unldmod(yf_getctx(), stg->mod);
+            yf_unldshd(yf_getctx(), stg->shd);
     }
 
     yf_dtable_deinit(yf_gstate_getdtb(l_entries[resrq].gst, YF_RESIDX_INST));
