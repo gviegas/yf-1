@@ -265,6 +265,7 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     }
 
     img->layout = info.initialLayout;
+    img->next_layout = info.initialLayout;
 
     if (yf_image_alloc(img) != 0) {
         yf_image_deinit(img);
