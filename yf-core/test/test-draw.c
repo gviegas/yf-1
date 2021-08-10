@@ -61,16 +61,16 @@ static void init(void)
     assert(buf != NULL);
 
     /* Stages */
-    YF_modid vmod, fmod;
+    YF_shdid vshd, fshd;
 
-    if (yf_loadmod(ctx, "tmp/vert", &vmod) != 0)
+    if (yf_loadshd(ctx, "tmp/vert", &vshd) != 0)
         assert(0);
-    if (yf_loadmod(ctx, "tmp/frag", &fmod) != 0)
+    if (yf_loadshd(ctx, "tmp/frag", &fshd) != 0)
         assert(0);
 
     const YF_stage stgs[] = {
-        {YF_STAGE_VERT, vmod, "main"},
-        {YF_STAGE_FRAG, fmod, "main"}
+        {YF_STAGE_VERT, vshd, "main"},
+        {YF_STAGE_FRAG, fshd, "main"}
     };
 
     /* DTable */
