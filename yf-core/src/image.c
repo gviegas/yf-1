@@ -556,46 +556,6 @@ void yf_image_ungetiview(YF_image img, YF_iview *iview)
     }
 }
 
-/* TODO: Provide more parameters for this function. */
-void yf_image_transition(YF_image img, VkCommandBuffer cbuffer)
-{
-    assert(img != NULL);
-    assert(cbuffer != NULL);
-
-    /* XXX */
-    VkImageLayout from;
-    if (img->layout == VK_IMAGE_LAYOUT_GENERAL)
-        from = VK_IMAGE_LAYOUT_UNDEFINED;
-    else
-        from = img->layout;
-
-    img->layout = VK_IMAGE_LAYOUT_GENERAL;
-
-    VkImageMemoryBarrier barrier = {
-        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
-        .pNext = NULL,
-        .srcAccessMask = 0,
-        .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT |
-                         VK_ACCESS_MEMORY_WRITE_BIT,
-        .oldLayout = from,
-        .newLayout = VK_IMAGE_LAYOUT_GENERAL,
-        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .image = img->image,
-        .subresourceRange = {
-            .aspectMask = img->aspect,
-            .baseMipLevel = 0,
-            .levelCount = img->levels,
-            .baseArrayLayer = 0,
-            .layerCount = img->layers
-        }
-    };
-
-    vkCmdPipelineBarrier(cbuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                         VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
-                         0, NULL, 0, NULL, 1, &barrier);
-}
-
 int yf_image_chglayout(YF_image img, VkImageLayout layout)
 {
     assert(img != NULL);

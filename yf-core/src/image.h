@@ -59,10 +59,6 @@ int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
    This function must be called when a 'YF_iview' is not needed anymore. */
 void yf_image_ungetiview(YF_image img, YF_iview *iview);
 
-/* Encodes a general layout transition in the given command buffer.
-   The command buffer is neither started nor finished by this function. */
-void yf_image_transition(YF_image img, VkCommandBuffer cbuffer);
-
 /* Changes the layout of an image.
    The layout change is encoded in the priority command buffer provided by
    'cmdpool_getprio()'. */
