@@ -25,19 +25,19 @@ YF_DECLS_BEGIN
 #define YF_STAGE_COMP 0x20
 
 /**
- * Type defining the identifier of a loaded module.
+ * Type defining the identifier of a loaded shader.
  *
- * Modules are context-managed objects representing executable code for a
+ * Shaders are context-managed objects representing executable code for a
  * programmable pipeline stage.
  */
-typedef size_t YF_modid;
+typedef unsigned long YF_shdid;
 
 /**
  * Type defining a single shader stage.
  */
 typedef struct {
     int stage;
-    YF_modid mod;
+    YF_shdid shd;
     const char entry_point[128];
 } YF_stage;
 
