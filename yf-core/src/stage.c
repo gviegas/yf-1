@@ -118,7 +118,7 @@ int yf_loadshd(YF_context ctx, const char *pathname, YF_shdid *shd)
     return 0;
 }
 
-void yf_unldmod(YF_context ctx, YF_modid mod)
+void yf_unldshd(YF_context ctx, YF_shdid shd)
 {
     assert(ctx != NULL);
 
@@ -127,8 +127,8 @@ void yf_unldmod(YF_context ctx, YF_modid mod)
 
     T_priv *priv = ctx->stg.priv;
 
-    if (yf_dict_contains(priv->mods, (void *)mod)) {
-        VkShaderModule val = yf_dict_remove(priv->mods, (void *)mod);
+    if (yf_dict_contains(priv->shds, (void *)shd)) {
+        VkShaderModule val = yf_dict_remove(priv->shds, (void *)shd);
         vkDestroyShaderModule(ctx->device, val, NULL);
     }
 }
