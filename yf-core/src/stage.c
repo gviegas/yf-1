@@ -19,8 +19,8 @@
 
 /* Type defining stage variables stored in a context. */
 typedef struct {
-    YF_dict mods;
-    YF_modid modid;
+    YF_dict shds;
+    YF_shdid cur;
 } T_priv;
 
 /* Destroys the 'T_priv' data stored in a given context. */
