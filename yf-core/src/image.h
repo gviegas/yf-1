@@ -62,6 +62,11 @@ void yf_image_ungetiview(YF_image img, YF_iview *iview);
    The command buffer is neither started nor finished by this function. */
 void yf_image_transition(YF_image img, VkCommandBuffer cbuffer);
 
+/* Changes the layout of an image.
+   The layout change is encoded in the priority command buffer provided by
+   'cmdpool_getprio()'. */
+int yf_image_chglayout(YF_image img, VkImageLayout layout);
+
 /* Converts from a 'YF_PIXFMT' value. */
 #define YF_PIXFMT_FROM(pf, to) do { \
     switch (pf) { \
