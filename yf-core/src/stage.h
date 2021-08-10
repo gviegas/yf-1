@@ -42,7 +42,7 @@
     if (((st) & YF_STAGE_COMP) != 0) \
         to |= VK_SHADER_STAGE_COMPUTE_BIT; } while (0)
 
-/* Gets the underlying module for a given 'YF_modid'. */
-VkShaderModule yf_getmod(YF_context ctx, YF_modid mod);
+/* Gets the underlying shader module for a given 'YF_shdid'. */
+VkShaderModule yf_getshd(YF_context ctx, YF_shdid shd);
 
 #endif /* YF_STAGE_H */
