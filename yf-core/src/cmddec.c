@@ -589,10 +589,13 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd)
         abort();
     }
 
-    if (cmd->cpyimg.dst->layout != VK_IMAGE_LAYOUT_GENERAL)
-        yf_image_transition(cmd->cpyimg.dst, cmdr->pool_res);
-    if (cmd->cpyimg.src->layout != VK_IMAGE_LAYOUT_GENERAL)
-        yf_image_transition(cmd->cpyimg.src, cmdr->pool_res);
+    /* FIXME: These layout changes happen in the priority command buffer. */
+    if (cmd->cpyimg.dst->next_layout != VK_IMAGE_LAYOUT_GENERAL &&
+        yf_image_chglayout(cmd->cpyimg.dst, VK_IMAGE_LAYOUT_GENERAL) != 0)
+        return -1;
+    if (cmd->cpyimg.src->next_layout != VK_IMAGE_LAYOUT_GENERAL &&
+        yf_image_chglayout(cmd->cpyimg.src, VK_IMAGE_LAYOUT_GENERAL) != 0)
+        return -1;
 
     VkImageCopy region = {
         .srcSubresource = {
