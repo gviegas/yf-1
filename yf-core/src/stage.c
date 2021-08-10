@@ -30,7 +30,7 @@ static void destroy_priv(YF_context ctx)
         return;
 
     T_priv *priv = ctx->stg.priv;
-    yf_dict_deinit(priv->mods);
+    yf_dict_deinit(priv->shds);
     free(priv);
     ctx->stg.priv = NULL;
 }
