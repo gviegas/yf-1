@@ -133,7 +133,7 @@ void yf_unldshd(YF_context ctx, YF_shdid shd)
     }
 }
 
-VkShaderModule yf_getmod(YF_context ctx, YF_modid mod)
+VkShaderModule yf_getshd(YF_context ctx, YF_shdid shd)
 {
     assert(ctx != NULL);
 
@@ -141,7 +141,7 @@ VkShaderModule yf_getmod(YF_context ctx, YF_modid mod)
         return VK_NULL_HANDLE;
 
     T_priv *priv = ctx->stg.priv;
-    void *val = yf_dict_search(priv->mods, (void *)mod);
+    void *val = yf_dict_search(priv->shds, (void *)shd);
 
     if (val != NULL)
         return (VkShaderModule)val;
