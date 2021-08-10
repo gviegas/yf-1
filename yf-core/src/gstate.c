@@ -129,7 +129,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
 
     unsigned stg_mask = 0;
     for (unsigned i = 0; i < conf->stg_n; i++) {
-        VkShaderModule module = yf_getmod(ctx, conf->stgs[i].mod);
+        VkShaderModule module = yf_getshd(ctx, conf->stgs[i].shd);
         if (module == VK_NULL_HANDLE ||
             !YF_STAGE_ONE(conf->stgs[i].stage) ||
             (conf->stgs[i].stage & stg_mask) != 0) {
