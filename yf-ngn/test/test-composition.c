@@ -114,8 +114,7 @@ static void on_motion(int x, int y, YF_UNUSED void *arg)
 }
 
 /* Handles button events. */
-static void on_button(int btn, int state,
-                      YF_UNUSED int x, YF_UNUSED int y, YF_UNUSED void *arg)
+static void on_button(int btn, int state, int x, int y, YF_UNUSED void *arg)
 {
     switch (btn) {
     case YF_BTN_LEFT:
@@ -125,6 +124,11 @@ static void on_button(int btn, int state,
         l_vars.input.secondary = state;
         break;
     }
+
+    l_vars.input.x[0] = l_vars.input.x[1];
+    l_vars.input.y[0] = l_vars.input.y[1];
+    l_vars.input.x[1] = x;
+    l_vars.input.y[1] = y;
 }
 
 /* Updates content. */
@@ -137,8 +141,32 @@ static void update(double elapsed_time)
         yf_view_stop(l_vars.view);
     }
 
+    YF_camera cam = yf_scene_getcam(l_vars.scn);
+
+    if (l_vars.input.primary) {
+        const float ld = 0.25 * elapsed_time;
+        const int x0 = l_vars.input.x[0];
+        const int x1 = l_vars.input.x[1];
+        const int y0 = l_vars.input.y[0];
+        const int y1 = l_vars.input.y[1];
+
+        if (x1 < x0) {
+            yf_camera_turnl(cam, (x0 - x1) * ld);
+            l_vars.input.x[0] = x1;
+        } else if (x1 > x0) {
+            yf_camera_turnr(cam, (x1 - x0) * ld);
+            l_vars.input.x[0] = x1;
+        }
+        if (y1 < y0) {
+            yf_camera_turnu(cam, (y0 - y1) * ld);
+            l_vars.input.y[0] = y1;
+        } else if (y1 > y0) {
+            yf_camera_turnd(cam, (y1 - y0) * ld);
+            l_vars.input.y[0] = y1;
+        }
+    }
+
     if (l_vars.input.camera) {
-        YF_camera cam = yf_scene_getcam(l_vars.scn);
         const float md = 16.0 * elapsed_time;
         const float td = 2.0 * elapsed_time;
 
@@ -166,29 +194,6 @@ static void update(double elapsed_time)
             yf_camera_turnl(cam, td);
         if (l_vars.input.turn[3])
             yf_camera_turnr(cam, td);
-
-        if (l_vars.input.primary) {
-            const float ld = 0.75 * elapsed_time;
-            const int x0 = l_vars.input.x[0];
-            const int x1 = l_vars.input.x[1];
-            const int y0 = l_vars.input.y[0];
-            const int y1 = l_vars.input.y[1];
-
-            if (x1 < x0) {
-                yf_camera_turnl(cam, ld);
-                l_vars.input.x[0] = x1;
-            } else if (x1 > x0) {
-                yf_camera_turnr(cam, ld);
-                l_vars.input.x[0] = x1;
-            }
-            if (y1 < y0) {
-                yf_camera_turnu(cam, ld);
-                l_vars.input.y[0] = y1;
-            } else if (y1 > y0) {
-                yf_camera_turnd(cam, ld);
-                l_vars.input.y[0] = y1;
-            }
-        }
 
     } else {
         const float md = 10.0 * elapsed_time;
@@ -365,7 +370,7 @@ int yf_test_composition(void)
         case 0:
             yf_label_setstr(l_vars.labls[i], L"MODE: Object");
             yf_label_setpt(l_vars.labls[i], 24);
-            (*m)[12] = -0.75;
+            (*m)[12] = -0.7;
             (*m)[13] = -0.9;
             break;
 
@@ -373,7 +378,7 @@ int yf_test_composition(void)
             yf_label_setstr(l_vars.labls[i], L"test-composition");
             yf_label_setpt(l_vars.labls[i], 18);
             yf_label_setcolor(l_vars.labls[i], YF_CORNER_ALL, YF_COLOR_BLACK);
-            (*m)[12] = 0.85;
+            (*m)[12] = 0.75;
             (*m)[13] = 0.9;
             break;
 
