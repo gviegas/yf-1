@@ -39,6 +39,7 @@
 # define YF_APP_VERSION 0
 #endif
 
+/* TODO: Should be defined elsewhere. */
 #define YF_CMDPCAP 16
 #define YF_CMDECAP YF_CMDPCAP
 
@@ -486,7 +487,7 @@ static int init_device(YF_context ctx)
     if (ctx->pres_queue_i != -1 && ctx->pres_queue_i != ctx->queue_i) {
         queue_infos[queue_info_n] = queue_infos[0];
         queue_infos[queue_info_n].queueFamilyIndex = ctx->pres_queue_i;
-        ++queue_info_n;
+        queue_info_n++;
     }
 
     if (set_dev_exts(ctx) != 0 || set_features(ctx) != 0)
@@ -501,7 +502,7 @@ static int init_device(YF_context ctx)
         .enabledLayerCount = 0,
         .ppEnabledLayerNames = NULL,
         .enabledExtensionCount = ctx->dev_ext_n,
-        .ppEnabledExtensionNames = (const char * const *)ctx->dev_exts,
+        .ppEnabledExtensionNames = (const char *const *)ctx->dev_exts,
         .pEnabledFeatures = &ctx->features
     };
 
