@@ -37,16 +37,15 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size)
     buf->ctx = ctx;
     buf->size = size;
 
-    VkFlags usage =
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
-        VK_BUFFER_USAGE_TRANSFER_DST_BIT |
-        VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT |
-        VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |
-        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
-        VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-        VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
-        VK_BUFFER_USAGE_VERTEX_BUFFER_BIT |
-        VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
+    VkFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+                    VK_BUFFER_USAGE_TRANSFER_DST_BIT |
+                    /*VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT |*/
+                    /*VK_BUFFER_USAGE_STORAGE_TEXEL_BUFFER_BIT |*/
+                    VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT |
+                    VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                    VK_BUFFER_USAGE_INDEX_BUFFER_BIT |
+                    VK_BUFFER_USAGE_VERTEX_BUFFER_BIT/* |
+                    VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT*/;
 
     VkBufferCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
