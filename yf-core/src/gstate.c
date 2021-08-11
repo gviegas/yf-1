@@ -133,18 +133,25 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         if (module == VK_NULL_HANDLE ||
             !YF_STAGE_ONE(conf->stgs[i].stage) ||
             (conf->stgs[i].stage & stg_mask) != 0) {
+
             yf_seterr(YF_ERR_INVARG, __func__);
             yf_gstate_deinit(gst);
             free(ss);
             return NULL;
         }
+
         ss[i].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         ss[i].pNext = NULL;
         ss[i].flags = 0;
         YF_STAGE_FROM(conf->stgs[i].stage, ss[i].stage);
         ss[i].module = module;
-        /* TODO: Make sure this string is null-terminated. */
-        ss[i].pName = conf->stgs[i].entry_point;
+
+        const size_t entry_sz = sizeof conf->stgs[i].entry_point;
+        char entry[entry_sz];
+        memcpy(entry, conf->stgs[i].entry_point, entry_sz);
+        entry[entry_sz-1] = '\0';
+        ss[i].pName = entry;
+
         ss[i].pSpecializationInfo = NULL;
         stg_mask |= conf->stgs[i].stage;
     }
@@ -340,11 +347,10 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         cb_atts[0].srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
         cb_atts[0].dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
         cb_atts[0].alphaBlendOp = VK_BLEND_OP_ADD;
-        cb_atts[0].colorWriteMask =
-            VK_COLOR_COMPONENT_R_BIT |
-            VK_COLOR_COMPONENT_G_BIT |
-            VK_COLOR_COMPONENT_B_BIT |
-            VK_COLOR_COMPONENT_A_BIT;
+        cb_atts[0].colorWriteMask = VK_COLOR_COMPONENT_R_BIT |
+                                    VK_COLOR_COMPONENT_G_BIT |
+                                    VK_COLOR_COMPONENT_B_BIT |
+                                    VK_COLOR_COMPONENT_A_BIT;
 
         for (unsigned i = 1; i < conf->pass->color_n; i++)
             memcpy(&cb_atts[i], &cb_atts[0], sizeof cb_atts[0]);
