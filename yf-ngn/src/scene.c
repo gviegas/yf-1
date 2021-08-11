@@ -22,6 +22,8 @@
 #include "coreobj.h"
 #include "resmgr.h"
 #include "node.h"
+#include "mesh.h"
+#include "texture.h"
 #include "yf-model.h"
 #include "yf-terrain.h"
 #include "yf-particle.h"
