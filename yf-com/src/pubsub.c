@@ -49,7 +49,6 @@ int yf_setpub(const void *pub, unsigned pubsub_mask)
 
             YF_iter it = YF_NILIT;
             T_sub *sub;
-
             while ((sub = yf_dict_next(val->subs, &it, NULL)) != NULL)
                 free(sub);
 
@@ -68,7 +67,6 @@ int yf_setpub(const void *pub, unsigned pubsub_mask)
         }
 
         val->subs = yf_dict_init(NULL, NULL);
-
         if (val->subs == NULL) {
             free(val);
             return -1;
@@ -110,7 +108,6 @@ void yf_publish(const void *pub, int pubsub)
 
     YF_iter it = YF_NILIT;
     T_sub *sub;
-
     while ((sub = yf_dict_next(val->subs, &it, NULL)) != NULL) {
         if (sub->pubsub_mask & pubsub)
             sub->callb((void *)pub, pubsub, sub->arg);
