@@ -134,6 +134,7 @@ static int init_layout(YF_dtable dtb)
         dtb->count.ispl > lim->dtable.ispl_max ||
         (dtb->count.unif + dtb->count.mut + dtb->count.img + dtb->count.spld +
          dtb->count.splr + dtb->count.ispl) > lim->dtable.stg_res_max) {
+
         yf_seterr(YF_ERR_LIMIT, __func__);
         free(bindings);
         return -1;
@@ -540,7 +541,6 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         kv->val[elem_i].iview = iview;
         kv->val[elem_i].img = imgs[i];
 
-        /*img_infos[i].sampler = VK_NULL_HANDLE;*/
         img_infos[i].imageView = iview.view;
         img_infos[i].imageLayout = VK_IMAGE_LAYOUT_GENERAL;
     }
