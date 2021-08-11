@@ -28,7 +28,7 @@
 #include "yf-quad.h"
 #include "yf-label.h"
 
-#ifdef YF_DEVEL
+#if defined(YF_DEVEL) && defined(YF_PRINT)
 # include <stdio.h>
 # include "../test/print.h"
 #endif
@@ -265,7 +265,7 @@ static int traverse_scn(YF_node node, void *arg)
     yf_mat4_inv(*inv, *wld);
     yf_mat4_xpose(*norm, *inv);
 
-#ifdef YF_DEVEL
+#if defined(YF_DEVEL) && defined(YF_PRINT)
     yf_print_nodeobj(node);
 #endif
     return 0;
@@ -569,8 +569,8 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
                 yf_mat4_xpose(jm[YF_JOINTN + j], inv);
             }
         }
-        /* FIXME: Setting the first joint and normal matrices when skin is
-           not provided should suffice. */
+        /* FIXME: Setting the first set of joint and normal matrices when
+           skin is not provided should suffice. */
         for (unsigned j = jnt_n; j < YF_JOINTN; j++) {
             yf_mat4_iden(jm[j]);
             yf_mat4_iden(jm[YF_JOINTN + j]);
@@ -1313,7 +1313,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
 
     yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOBL, 0);
 
-#ifdef YF_DEVEL
+#if defined(YF_DEVEL) && defined(YF_PRINT)
     printf("\n[YF] OUTPUT (%s):\nresource allocations:\n", __func__);
     printf(" RESRQ_MDL:   %u\n", l_vars.insts[YF_RESRQ_MDL]);
     printf(" RESRQ_MDL2:  %u\n", l_vars.insts[YF_RESRQ_MDL2]);
@@ -1408,7 +1408,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
             return -1;
         }
 
-#ifdef YF_DEVEL
+#if defined(YF_DEVEL) && defined(YF_PRINT)
         exec_n++;
 #endif
 
@@ -1425,7 +1425,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
         }
     }
 
-#ifdef YF_DEVEL
+#if defined(YF_DEVEL) && defined(YF_PRINT)
     printf("\n[YF] OUTPUT (%s):\nnumber of executions: %u\n\n",
            __func__, exec_n);
 #endif
