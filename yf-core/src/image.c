@@ -205,8 +205,8 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
             usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     } else {
         /* XXX: Not in v1.0, assume its valid. */
-        usage |=
-            VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+        usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                 VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     }
 
     /* TODO: Further validation. */
@@ -400,7 +400,6 @@ YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
     assert(layers > 0 && levels > 0);
 
     YF_image img = calloc(1, sizeof(YF_image_o));
-
     if (img == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -417,16 +416,15 @@ YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
     img->layers = layers;
     img->levels = levels;
     img->layout = layout;
+    img->next_layout = layout;
 
     img->iviews = yf_dict_init(hash_priv, cmp_priv);
-
     if (img->iviews == NULL) {
         free(img);
         return NULL;
     }
 
     YF_PIXFMT_TO(format, img->pixfmt);
-
     if (img->pixfmt == YF_PIXFMT_UNDEF) {
         yf_seterr(YF_ERR_INVARG, __func__);
         yf_image_deinit(img);
@@ -437,12 +435,12 @@ YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
 
     switch (type) {
     case VK_IMAGE_TYPE_1D:
-        img->view_type =
-            layers > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY : VK_IMAGE_VIEW_TYPE_1D;
+        img->view_type = layers > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY :
+                                      VK_IMAGE_VIEW_TYPE_1D;
         break;
     case VK_IMAGE_TYPE_2D:
-        img->view_type =
-            layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY : VK_IMAGE_VIEW_TYPE_2D;
+        img->view_type = layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY :
+                                      VK_IMAGE_VIEW_TYPE_2D;
         break;
     case VK_IMAGE_TYPE_3D:
         if (layers > 1) {
@@ -474,14 +472,12 @@ int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
 
     if (iv == NULL) {
         iv = malloc(sizeof *iv);
-
         if (iv == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return -1;
         }
 
         iv->priv = malloc(sizeof priv);
-
         if (iv->priv == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             free(iv);
@@ -514,7 +510,6 @@ int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
 
         VkResult res = vkCreateImageView(img->ctx->device, &info, NULL,
                                          &iv->view);
-
         if (res != VK_SUCCESS) {
             yf_seterr(YF_ERR_DEVGEN, __func__);
             free(iv->priv);
