@@ -451,35 +451,10 @@ int yf_wsi_present(YF_wsi wsi, unsigned index)
         return -1;
     }
 
-    const YF_cmdres *cmdr;
-    cmdr = yf_cmdpool_getprio(wsi->ctx, NULL, NULL);
-    if (cmdr == NULL)
+    if (yf_image_chglayout(wsi->imgs[index],
+                           VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) != 0)
         /* TODO: May need to release the image somehow. */
         return -1;
-
-    VkImageMemoryBarrier barrier = {
-        .sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
-        .pNext = NULL,
-        .srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT,
-        .dstAccessMask = 0,
-        /* TODO: Make sure that the image is keeping the layout up to date. */
-        .oldLayout = wsi->imgs[index]->layout,
-        .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-        .image = wsi->imgs[index]->image,
-        .subresourceRange = {
-            .aspectMask = wsi->imgs[index]->aspect,
-            .baseMipLevel = 0,
-            .levelCount = 1,
-            .baseArrayLayer = 0,
-            .layerCount = 1
-        }
-    };
-
-    vkCmdPipelineBarrier(cmdr->pool_res, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-                         VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0,
-                         0, NULL, 0, NULL, 1, &barrier);
 
     VkPresentInfoKHR info = {
         .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
@@ -495,7 +470,6 @@ int yf_wsi_present(YF_wsi wsi, unsigned index)
     int exec = yf_cmdexec_execprio(wsi->ctx);
     VkResult res = vkQueuePresentKHR(wsi->ctx->pres_queue, &info);
 
-    wsi->imgs[index]->layout = barrier.newLayout;
     wsi->imgs_acq[index] = 0;
 
     if (exec != 0)

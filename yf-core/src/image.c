@@ -36,6 +36,18 @@ static void dealloc_stgbuf(int res, void *arg)
     yf_buffer_deinit((YF_buffer)arg);
 }
 
+/* Sets image layout. */
+static void set_layout(int res, void *arg)
+{
+    YF_image img = arg;
+    if (res == 0)
+        /* succeeded */
+        img->layout = img->next_layout;
+    else
+        /* failed */
+        img->next_layout = img->layout;
+}
+
 /* Hashes a 'T_priv'. */
 static size_t hash_priv(const void *x)
 {
@@ -265,6 +277,7 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     }
 
     img->layout = info.initialLayout;
+    img->next_layout = info.initialLayout;
 
     if (yf_image_alloc(img) != 0) {
         yf_image_deinit(img);
@@ -291,26 +304,26 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
         return -1;
     }
 
+    if (img->next_layout != VK_IMAGE_LAYOUT_GENERAL &&
+        yf_image_chglayout(img, VK_IMAGE_LAYOUT_GENERAL) != 0)
+        return -1;
+
     size_t sz;
     YF_PIXFMT_SIZEOF(img->pixfmt, sz);
     sz *= dim.width * dim.height * dim.depth;
-    YF_buffer stg_buf = yf_buffer_init(img->ctx, sz);
 
+    YF_buffer stg_buf = yf_buffer_init(img->ctx, sz);
     if (stg_buf == NULL)
         return -1;
 
     memcpy(stg_buf->data, data, sz);
 
-    const YF_cmdres *cmdr;
-    cmdr = yf_cmdpool_getprio(img->ctx, dealloc_stgbuf, stg_buf);
-
+    const YF_cmdres *cmdr = yf_cmdpool_getprio(img->ctx, dealloc_stgbuf,
+                                               stg_buf);
     if (cmdr == NULL) {
         yf_buffer_deinit(stg_buf);
         return -1;
     }
-
-    if (img->layout != VK_IMAGE_LAYOUT_GENERAL)
-        yf_image_transition(img, cmdr->pool_res);
 
     VkBufferImageCopy region = {
         .bufferOffset = 0,
@@ -543,20 +556,26 @@ void yf_image_ungetiview(YF_image img, YF_iview *iview)
     }
 }
 
-/* TODO: Provide more parameters for this function. */
-void yf_image_transition(YF_image img, VkCommandBuffer cbuffer)
+int yf_image_chglayout(YF_image img, VkImageLayout layout)
 {
     assert(img != NULL);
-    assert(cbuffer != NULL);
+    assert(layout != VK_IMAGE_LAYOUT_UNDEFINED);
 
-    /* XXX */
-    VkImageLayout from;
-    if (img->layout == VK_IMAGE_LAYOUT_GENERAL)
-        from = VK_IMAGE_LAYOUT_UNDEFINED;
-    else
-        from = img->layout;
+    if (layout == img->next_layout)
+        /* requested layout change ongoing */
+        return 0;
 
-    img->layout = VK_IMAGE_LAYOUT_GENERAL;
+    if (img->layout != img->next_layout) {
+        /* different layout change pending */
+        yf_seterr(YF_ERR_OTHER, __func__);
+        return -1;
+    }
+
+    const YF_cmdres *cmdr = yf_cmdpool_getprio(img->ctx, set_layout, img);
+    if (cmdr == NULL)
+        return -1;
+
+    img->next_layout = layout;
 
     VkImageMemoryBarrier barrier = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
@@ -564,8 +583,8 @@ void yf_image_transition(YF_image img, VkCommandBuffer cbuffer)
         .srcAccessMask = 0,
         .dstAccessMask = VK_ACCESS_MEMORY_READ_BIT |
                          VK_ACCESS_MEMORY_WRITE_BIT,
-        .oldLayout = from,
-        .newLayout = VK_IMAGE_LAYOUT_GENERAL,
+        .oldLayout = img->layout,
+        .newLayout = layout,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .image = img->image,
@@ -578,7 +597,9 @@ void yf_image_transition(YF_image img, VkCommandBuffer cbuffer)
         }
     };
 
-    vkCmdPipelineBarrier(cbuffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+    vkCmdPipelineBarrier(cmdr->pool_res, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
                          VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, 0,
                          0, NULL, 0, NULL, 1, &barrier);
+
+    return 0;
 }

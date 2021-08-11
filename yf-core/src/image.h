@@ -32,6 +32,7 @@ typedef struct YF_image_o {
     VkImageAspectFlags aspect;
     VkImageViewType view_type;
     VkImageLayout layout;
+    VkImageLayout next_layout;
 } YF_image_o;
 
 /* Type defining an image view. */
@@ -58,9 +59,10 @@ int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
    This function must be called when a 'YF_iview' is not needed anymore. */
 void yf_image_ungetiview(YF_image img, YF_iview *iview);
 
-/* Encodes a general layout transition in the given command buffer.
-   The command buffer is neither started nor finished by this function. */
-void yf_image_transition(YF_image img, VkCommandBuffer cbuffer);
+/* Changes the layout of an image.
+   The layout change is encoded in the priority command buffer provided by
+   'cmdpool_getprio()'. */
+int yf_image_chglayout(YF_image img, VkImageLayout layout);
 
 /* Converts from a 'YF_PIXFMT' value. */
 #define YF_PIXFMT_FROM(pf, to) do { \
