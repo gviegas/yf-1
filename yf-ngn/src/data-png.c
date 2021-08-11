@@ -14,8 +14,7 @@
 #ifndef __STDC_NO_ATOMICS__
 # include <stdatomic.h>
 #else
-/* TODO */
-# error "Missing C11 atomics"
+# error "C11 atomics required"
 #endif
 
 #ifdef _DEFAULT_SOURCE
@@ -574,7 +573,8 @@ static int load_texdt(const T_png *png, YF_texdt *data)
 
     /* decompression */
     const size_t scln_sz = png->ihdr->color_type & 1 ?
-        1+width : 1+((width*channels*bit_depth+7)>>3);
+                           1+width :
+                           1+((width*channels*bit_depth+7)>>3);
     const size_t buf_sz = scln_sz*height;
 
     uint8_t *buf = malloc(buf_sz);
