@@ -16,6 +16,7 @@
 #include "cmdbuf.h"
 #include "context.h"
 
+/* TODO: Should be defined elsewhere. */
 #define YF_CMDPMIN 1
 #define YF_CMDPMAX 32
 
