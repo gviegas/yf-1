@@ -475,18 +475,17 @@ static void *init_win(unsigned width, unsigned height, const char *title,
     uint32_t val_mask = XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK;
     uint32_t val_list[2];
     val_list[0] = yf_g_varsxcb.black_px;
-    val_list[1] =
-        XCB_EVENT_MASK_KEY_PRESS |
-        XCB_EVENT_MASK_KEY_RELEASE |
-        XCB_EVENT_MASK_BUTTON_PRESS |
-        XCB_EVENT_MASK_BUTTON_RELEASE |
-        XCB_EVENT_MASK_ENTER_WINDOW |
-        XCB_EVENT_MASK_LEAVE_WINDOW |
-        XCB_EVENT_MASK_POINTER_MOTION |
-        XCB_EVENT_MASK_BUTTON_MOTION |
-        XCB_EVENT_MASK_EXPOSURE |
-        XCB_EVENT_MASK_STRUCTURE_NOTIFY |
-        XCB_EVENT_MASK_FOCUS_CHANGE;
+    val_list[1] = XCB_EVENT_MASK_KEY_PRESS |
+                  XCB_EVENT_MASK_KEY_RELEASE |
+                  XCB_EVENT_MASK_BUTTON_PRESS |
+                  XCB_EVENT_MASK_BUTTON_RELEASE |
+                  XCB_EVENT_MASK_ENTER_WINDOW |
+                  XCB_EVENT_MASK_LEAVE_WINDOW |
+                  XCB_EVENT_MASK_POINTER_MOTION |
+                  XCB_EVENT_MASK_BUTTON_MOTION |
+                  XCB_EVENT_MASK_EXPOSURE |
+                  XCB_EVENT_MASK_STRUCTURE_NOTIFY |
+                  XCB_EVENT_MASK_FOCUS_CHANGE;
 
     YF_XCB_CREATE_WINDOW_CHECKED(cookie, yf_g_varsxcb.conn, 0, win->win_id,
                                  yf_g_varsxcb.root_win, 0, 0, width, height,
@@ -781,8 +780,8 @@ static int poll_evt(unsigned evt_mask)
         case XCB_CONFIGURE_NOTIFY: {
             if (!(mask & YF_EVT_RESIZEWD))
                 break;
-            xcb_configure_notify_event_t *conf_evt;
-            conf_evt = (xcb_configure_notify_event_t *)event;
+            xcb_configure_notify_event_t *conf_evt =
+                (xcb_configure_notify_event_t *)event;
 
             T_win *win;
             YF_GETWINDATA(win, conf_evt->window);
@@ -804,8 +803,8 @@ static int poll_evt(unsigned evt_mask)
         case XCB_CLIENT_MESSAGE: {
             if (!(mask & YF_EVT_CLOSEWD))
                 break;
-            xcb_client_message_event_t *cli_evt;
-            cli_evt = (xcb_client_message_event_t *)event;
+            xcb_client_message_event_t *cli_evt =
+                (xcb_client_message_event_t *)event;
 
             if (cli_evt->type != yf_g_varsxcb.atom.proto ||
                 cli_evt->data.data32[0] != yf_g_varsxcb.atom.del)
