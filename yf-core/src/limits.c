@@ -36,9 +36,8 @@ const YF_limits *yf_getlimits(YF_context ctx)
         abort();
 
     const VkPhysicalDeviceLimits *dl = &ctx->dev_prop.limits;
-    const VkFlags req_mem =
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+    const VkFlags req_mem = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     const VkFlags opt_mem = req_mem | VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
     lim->memory.obj_max = dl->maxMemoryAllocationCount;
