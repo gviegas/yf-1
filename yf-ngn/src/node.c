@@ -51,10 +51,10 @@ YF_node yf_node_init(void)
     node->n = 1;
 
     yf_mat4_iden(node->xform);
-    yf_vec3_set(node->t, 0.0);
-    yf_vec3_set(node->r, 0.0);
-    node->r[3] = 1.0;
-    yf_vec3_set(node->s, 1.0);
+    yf_vec3_set(node->t, 0.0f);
+    yf_vec3_set(node->r, 0.0f);
+    node->r[3] = 1.0f;
+    yf_vec3_set(node->s, 1.0f);
     node->pending = 0;
     node->name = NULL;
 
@@ -155,6 +155,7 @@ int yf_node_traverse(YF_node node, int (*fn)(YF_node descendant, void *arg),
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
+
     queue[0] = node;
     YF_node next = NULL;
     size_t last_i = 0;
@@ -171,6 +172,7 @@ int yf_node_traverse(YF_node node, int (*fn)(YF_node descendant, void *arg),
             next = next->next_sibl;
         }
     } while (++cur_i <= last_i);
+
     free(queue);
     return 0;
 }
