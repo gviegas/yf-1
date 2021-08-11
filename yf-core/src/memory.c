@@ -41,9 +41,8 @@ static VkDeviceMemory alloc_memory(YF_context ctx,
     int mem_type = -1;
 
     if (host_visible)
-        prop |=
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        prop |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
     mem_type = select_memory(ctx, requirements->memoryTypeBits, prop);
     if (mem_type == -1) {
