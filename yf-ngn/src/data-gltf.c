@@ -310,11 +310,7 @@ static int parse_num(FILE *file, T_token *token, T_num *num)
 
     errno = 0;
     char *end;
-#ifdef YF_USE_FLOAT64
-    *num = strtod(token->data, &end);
-#else
     *num = strtof(token->data, &end);
-#endif
     if (errno != 0 || *end != '\0') {
         yf_seterr(YF_ERR_OTHER, __func__);
         return -1;
