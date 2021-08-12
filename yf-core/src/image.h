@@ -35,6 +35,7 @@ typedef struct YF_image_o {
     VkImageViewType view_type;
     VkImageLayout layout;
     VkImageLayout next_layout;
+    void *data;
 } YF_image_o;
 
 /* Type defining an image view. */
