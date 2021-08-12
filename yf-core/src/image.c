@@ -69,6 +69,86 @@ static int cmp_priv(const void *a, const void *b)
            pv1->key.levels.n != pv2->key.levels.n;
 }
 
+/* Sets usage for a given image tiling. */
+static int set_usage(YF_image img, VkImageTiling tiling)
+{
+    assert(img != NULL);
+    assert(tiling == VK_IMAGE_TILING_LINEAR ||
+           tiling == VK_IMAGE_TILING_OPTIMAL);
+
+    VkFormatProperties prop;
+    vkGetPhysicalDeviceFormatProperties(img->ctx->phy_dev, img->format, &prop);
+
+    VkImageUsageFlags usage = 0;
+    VkFormatFeatureFlags feat = tiling == VK_IMAGE_TILING_LINEAR ?
+                                prop.linearTilingFeatures :
+                                prop.optimalTilingFeatures;
+
+    if (feat & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
+        usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    if (feat & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)
+        usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    if (feat & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+        usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    /* XXX: This assumes that multisample storage is not supported. */
+    if (img->samples == VK_SAMPLE_COUNT_1_BIT &&
+        (feat & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT))
+        usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+
+    if (usage == 0) {
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+    }
+
+    /* XXX: This may prevent writes to image with optimal tiling. */
+    if (img->ctx->dev_prop.apiVersion >= VK_API_VERSION_1_1) {
+        if (feat & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)
+            usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        if (feat & VK_FORMAT_FEATURE_TRANSFER_DST_BIT)
+            usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    } else {
+        /* XXX: Not in v1.0, assume its valid. */
+        usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                 VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
+
+    /* TODO: Consider providing image usage param. for 'image_init()',
+       since usage may restrict available sample counts. */
+    if (img->samples != VK_SAMPLE_COUNT_1_BIT) {
+        const YF_limits *lim = yf_getlimits(img->ctx);
+        unsigned mask = 0x7f;
+
+        if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
+            if (img->aspect & VK_IMAGE_ASPECT_COLOR_BIT) {
+                mask &= lim->image.sample_mask_clr;
+            } else {
+                if (img->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
+                    mask &= lim->image.sample_mask_dep;
+                if (img->aspect & VK_IMAGE_ASPECT_STENCIL_BIT)
+                    mask &= lim->image.sample_mask_sten;
+            }
+        }
+
+        if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
+            mask &= lim->pass.sample_mask_clr;
+        } else if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
+            if (img->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
+                mask &= lim->pass.sample_mask_dep;
+            if (img->aspect & VK_IMAGE_ASPECT_STENCIL_BIT)
+                mask &= lim->pass.sample_mask_sten;
+        }
+
+        if (!(mask & img->samples)) {
+            yf_seterr(YF_ERR_LIMIT, __func__);
+            return -1;
+        }
+    }
+
+    img->usage = usage;
+    return 0;
+}
+
 YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
                        unsigned layers, unsigned levels, unsigned samples)
 {
