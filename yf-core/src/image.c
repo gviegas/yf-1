@@ -149,6 +149,46 @@ static int set_usage(YF_image img, VkImageTiling tiling)
     return 0;
 }
 
+/* Sets image tiling. */
+static int set_tiling(YF_image img, VkImageTiling tiling)
+{
+    assert(img != NULL);
+    assert(tiling == VK_IMAGE_TILING_LINEAR ||
+           tiling == VK_IMAGE_TILING_OPTIMAL);
+
+    VkImageFormatProperties prop;
+    VkResult res;
+    res = vkGetPhysicalDeviceImageFormatProperties(img->ctx->phy_dev,
+                                                   img->format, img->type,
+                                                   tiling, img->usage, 0,
+                                                   &prop);
+    switch (res) {
+    case VK_SUCCESS:
+        if (prop.maxExtent.width < img->dim.width ||
+            prop.maxExtent.height < img->dim.height ||
+            prop.maxExtent.depth < img->dim.depth ||
+            prop.maxMipLevels < img->levels ||
+            prop.maxArrayLayers < img->layers ||
+            !(prop.sampleCounts & img->samples)) {
+
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            return -1;
+        }
+        img->tiling = tiling;
+        break;
+
+    case VK_ERROR_FORMAT_NOT_SUPPORTED:
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+
+    default:
+        yf_seterr(YF_ERR_DEVGEN, __func__);
+        return -1;
+    }
+
+    return 0;
+}
+
 YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
                        unsigned layers, unsigned levels, unsigned samples)
 {

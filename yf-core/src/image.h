@@ -31,6 +31,7 @@ typedef struct YF_image_o {
     VkSampleCountFlagBits samples;
     VkImageAspectFlags aspect;
     VkImageUsageFlags usage;
+    VkImageTiling tiling;
     VkImageViewType view_type;
     VkImageLayout layout;
     VkImageLayout next_layout;
