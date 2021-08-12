@@ -16,6 +16,7 @@
 #include "context.h"
 #include "memory.h"
 #include "cmdpool.h"
+#include "cmdexec.h"
 #include "cmdbuf.h"
 #include "buffer.h"
 #include "yf-limits.h"
@@ -367,42 +368,91 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
         return -1;
     }
 
-    if (img->next_layout != VK_IMAGE_LAYOUT_GENERAL &&
-        yf_image_chglayout(img, VK_IMAGE_LAYOUT_GENERAL) != 0)
-        return -1;
+    if (img->tiling == VK_IMAGE_TILING_LINEAR) {
+        switch (img->next_layout) {
+        case VK_IMAGE_LAYOUT_PREINITIALIZED:
+        case VK_IMAGE_LAYOUT_GENERAL:
+            break;
+        default:
+            /* must be host-visible */
+            if (yf_image_chglayout(img, VK_IMAGE_LAYOUT_GENERAL) != 0 ||
+                yf_cmdexec_execprio(img->ctx) != 0)
+                return -1;
+        }
 
-    size_t sz;
-    YF_PIXFMT_SIZEOF(img->pixfmt, sz);
-    sz *= dim.width * dim.height * dim.depth;
-
-    YF_buffer stg_buf = yf_buffer_init(img->ctx, sz);
-    if (stg_buf == NULL)
-        return -1;
-
-    memcpy(stg_buf->data, data, sz);
-
-    const YF_cmdres *cmdr = yf_cmdpool_getprio(img->ctx, dealloc_stgbuf,
-                                               stg_buf);
-    if (cmdr == NULL) {
-        yf_buffer_deinit(stg_buf);
-        return -1;
-    }
-
-    VkBufferImageCopy region = {
-        .bufferOffset = 0,
-        .bufferRowLength = 0,
-        .imageSubresource = {
+        VkImageSubresource subres = {
             .aspectMask = img->aspect,
             .mipLevel = level,
-            .baseArrayLayer = layer,
-            .layerCount = 1
-        },
-        .imageOffset = {off.x, off.y, off.z},
-        .imageExtent = {dim.width, dim.height, dim.depth}
-    };
+            .arrayLayer = 0
+        };
+        if (subres.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT &&
+            subres.aspectMask != VK_IMAGE_ASPECT_DEPTH_BIT &&
+            subres.aspectMask != VK_IMAGE_ASPECT_STENCIL_BIT) {
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            return -1;
+        }
 
-    vkCmdCopyBufferToImage(cmdr->pool_res, stg_buf->buffer, img->image,
-                           VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+        VkSubresourceLayout layout;
+        vkGetImageSubresourceLayout(img->ctx->device, img->image, &subres,
+                                    &layout);
+
+        size_t tx_sz;
+        YF_PIXFMT_SIZEOF(img->pixfmt, tx_sz);
+
+        unsigned char *dst = img->data;
+        dst += layout.offset +
+               layer * layout.arrayPitch +
+               off.z * layout.depthPitch +
+               off.y * layout.rowPitch +
+               off.x * tx_sz;
+
+        const unsigned char *src = data;
+        const size_t row_sz = dim.width * tx_sz;
+
+        for (unsigned i = 0; i < dim.height; i++) {
+            memcpy(dst, src, row_sz);
+            dst += layout.rowPitch;
+            src += row_sz;
+        }
+
+    } else {
+        if (img->next_layout != VK_IMAGE_LAYOUT_GENERAL &&
+            yf_image_chglayout(img, VK_IMAGE_LAYOUT_GENERAL) != 0)
+            return -1;
+
+        size_t sz;
+        YF_PIXFMT_SIZEOF(img->pixfmt, sz);
+        sz *= dim.width * dim.height * dim.depth;
+
+        YF_buffer stg_buf = yf_buffer_init(img->ctx, sz);
+        if (stg_buf == NULL)
+            return -1;
+
+        memcpy(stg_buf->data, data, sz);
+
+        const YF_cmdres *cmdr = yf_cmdpool_getprio(img->ctx, dealloc_stgbuf,
+                                                   stg_buf);
+        if (cmdr == NULL) {
+            yf_buffer_deinit(stg_buf);
+            return -1;
+        }
+
+        VkBufferImageCopy region = {
+            .bufferOffset = 0,
+            .bufferRowLength = 0,
+            .imageSubresource = {
+                .aspectMask = img->aspect,
+                .mipLevel = level,
+                .baseArrayLayer = layer,
+                .layerCount = 1
+            },
+            .imageOffset = {off.x, off.y, off.z},
+            .imageExtent = {dim.width, dim.height, dim.depth}
+        };
+
+        vkCmdCopyBufferToImage(cmdr->pool_res, stg_buf->buffer, img->image,
+                               VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    }
 
     return 0;
 }
