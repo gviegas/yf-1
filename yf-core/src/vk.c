@@ -175,6 +175,7 @@ int yf_setdprocvk(VkDevice device)
     YF_DPROCVK(device, vkDestroyBufferView);
     YF_DPROCVK(device, vkCreateImage);
     YF_DPROCVK(device, vkDestroyImage);
+    YF_DPROCVK(device, vkGetImageSubresourceLayout);
     YF_DPROCVK(device, vkCreateImageView);
     YF_DPROCVK(device, vkDestroyImageView);
     YF_DPROCVK(device, vkGetBufferMemoryRequirements);
@@ -338,6 +339,7 @@ YF_DEFVK(vkCreateBufferView);
 YF_DEFVK(vkDestroyBufferView);
 YF_DEFVK(vkCreateImage);
 YF_DEFVK(vkDestroyImage);
+YF_DEFVK(vkGetImageSubresourceLayout);
 YF_DEFVK(vkCreateImageView);
 YF_DEFVK(vkDestroyImageView);
 YF_DEFVK(vkGetBufferMemoryRequirements);
