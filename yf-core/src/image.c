@@ -667,7 +667,8 @@ void yf_image_ungetiview(YF_image img, YF_iview *iview)
 int yf_image_chglayout(YF_image img, VkImageLayout layout)
 {
     assert(img != NULL);
-    assert(layout != VK_IMAGE_LAYOUT_UNDEFINED);
+    assert(layout != VK_IMAGE_LAYOUT_UNDEFINED &&
+           layout != VK_IMAGE_LAYOUT_PREINITIALIZED);
 
     if (layout == img->next_layout)
         /* requested layout change ongoing */
