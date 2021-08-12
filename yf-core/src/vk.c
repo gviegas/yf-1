@@ -79,6 +79,7 @@ int yf_setiprocvk(VkInstance instance)
         YF_IPROCVK(instance, vkGetPhysicalDeviceQueueFamilyProperties);
         YF_IPROCVK(instance, vkGetPhysicalDeviceMemoryProperties);
         YF_IPROCVK(instance, vkGetPhysicalDeviceFormatProperties);
+        YF_IPROCVK(instance, vkGetPhysicalDeviceImageFormatProperties);
         YF_IPROCVK(instance, vkGetPhysicalDeviceFeatures);
         YF_IPROCVK(instance, vkGetPhysicalDeviceProperties2);
         YF_IPROCVK(instance, vkGetPhysicalDeviceQueueFamilyProperties2);
@@ -250,6 +251,7 @@ YF_DEFVK(vkGetPhysicalDeviceProperties);
 YF_DEFVK(vkGetPhysicalDeviceQueueFamilyProperties);
 YF_DEFVK(vkGetPhysicalDeviceMemoryProperties);
 YF_DEFVK(vkGetPhysicalDeviceFormatProperties);
+YF_DEFVK(vkGetPhysicalDeviceImageFormatProperties);
 YF_DEFVK(vkGetPhysicalDeviceFeatures);
 YF_DEFVK(vkGetPhysicalDeviceProperties2); /* 1.1 */
 YF_DEFVK(vkGetPhysicalDeviceQueueFamilyProperties2); /* 1.1 */
