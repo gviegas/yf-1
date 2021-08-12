@@ -114,38 +114,6 @@ static int set_usage(YF_image img, VkImageTiling tiling)
                  VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     }
 
-    /* TODO: Consider providing image usage param. for 'image_init()',
-       since usage may restrict available sample counts. */
-    if (img->samples != VK_SAMPLE_COUNT_1_BIT) {
-        const YF_limits *lim = yf_getlimits(img->ctx);
-        unsigned mask = 0x7f;
-
-        if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
-            if (img->aspect & VK_IMAGE_ASPECT_COLOR_BIT) {
-                mask &= lim->image.sample_mask_clr;
-            } else {
-                if (img->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
-                    mask &= lim->image.sample_mask_dep;
-                if (img->aspect & VK_IMAGE_ASPECT_STENCIL_BIT)
-                    mask &= lim->image.sample_mask_sten;
-            }
-        }
-
-        if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
-            mask &= lim->pass.sample_mask_clr;
-        } else if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-            if (img->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
-                mask &= lim->pass.sample_mask_dep;
-            if (img->aspect & VK_IMAGE_ASPECT_STENCIL_BIT)
-                mask &= lim->pass.sample_mask_sten;
-        }
-
-        if (!(mask & img->samples)) {
-            yf_seterr(YF_ERR_LIMIT, __func__);
-            return -1;
-        }
-    }
-
     img->usage = usage;
     return 0;
 }
@@ -196,13 +164,6 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     assert(ctx != NULL);
     assert(dim.width > 0 && dim.height > 0 && dim.depth > 0);
     assert(layers > 0 && levels > 0 && samples > 0);
-
-    const YF_limits *lim = yf_getlimits(ctx);
-
-    if (layers > lim->image.layer_max) {
-        yf_seterr(YF_ERR_LIMIT, __func__);
-        return NULL;
-    }
 
     YF_image img = calloc(1, sizeof(YF_image_o));
     if (img == NULL) {
@@ -272,32 +233,6 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
             img->view_type = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
         else
             img->view_type = VK_IMAGE_VIEW_TYPE_1D;
-    }
-
-    int limit = 0;
-
-    switch (img->type) {
-    case VK_IMAGE_TYPE_1D:
-        limit = dim.width > lim->image.dim_1d_max;
-        break;
-    case VK_IMAGE_TYPE_2D:
-        /* TODO: Check limit for cube-compatible images. */
-        limit = dim.width > lim->image.dim_2d_max ||
-                dim.height > lim->image.dim_2d_max;
-        break;
-    case VK_IMAGE_TYPE_3D:
-        limit = dim.width > lim->image.dim_3d_max ||
-                dim.height > lim->image.dim_3d_max ||
-                dim.depth > lim->image.dim_3d_max;
-        break;
-    default:
-        break;
-    }
-
-    if (limit) {
-        yf_seterr(YF_ERR_LIMIT, __func__);
-        yf_image_deinit(img);
-        return NULL;
     }
 
     if (samples != 1 || set_usage(img, VK_IMAGE_TILING_LINEAR) != 0 ||
