@@ -114,14 +114,11 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
             const unsigned new_lay_cap = layers << 1;
             YF_image new_img = yf_image_init(l_ctx, pixfmt, dim, new_lay_cap,
                                              levels, samples);
-
             if (new_img == NULL)
                 return -1;
 
-            YF_cmdbuf cb;
-
-            if ((cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_GRAPH)) == NULL &&
-                (cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_COMP)) == NULL) {
+            YF_cmdbuf cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_XFER);
+            if (cb == NULL) {
                 yf_image_deinit(new_img);
                 return -1;
             }
