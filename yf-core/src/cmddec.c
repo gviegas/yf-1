@@ -85,9 +85,16 @@ typedef struct {
     } dtb;
 } T_cdec;
 
-/* The current decoding states for graphics and compute. */
+/* Type defining transfer decoding state. */
+typedef struct {
+    YF_context ctx;
+    const YF_cmdres *cmdr;
+} T_xdec;
+
+/* The current decoding states for graph/comp/xfer. */
 static _Thread_local T_gdec *l_gdec = NULL;
 static _Thread_local T_cdec *l_cdec = NULL;
+static _Thread_local T_xdec *l_xdec = NULL;
 
 /* Decodes a 'set gstate' command. */
 static int decode_gst(const YF_cmd *cmd)
@@ -509,28 +516,11 @@ static int decode_disp(const YF_cmd *cmd)
 }
 
 /* Decodes a 'copy buffer' command. */
-static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd)
+static int decode_cpybuf(const YF_cmd *cmd)
 {
     assert(cmd->cpybuf.dst->size >= cmd->cpybuf.dst_offs + cmd->cpybuf.size);
     assert(cmd->cpybuf.src->size >= cmd->cpybuf.src_offs + cmd->cpybuf.size);
     assert(cmd->cpybuf.size > 0);
-
-    const YF_cmdres *cmdr;
-    switch (cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-        if (l_gdec->pass != NULL) {
-            vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
-            l_gdec->pass = NULL;
-        }
-        cmdr = l_gdec->cmdr;
-        break;
-    case YF_CMDBUF_COMP:
-        cmdr = l_cdec->cmdr;
-        break;
-    default:
-        assert(0);
-        abort();
-    }
 
     VkBufferCopy region = {
         .srcOffset = cmd->cpybuf.src_offs,
@@ -538,14 +528,14 @@ static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd)
         .size = cmd->cpybuf.size
     };
 
-    vkCmdCopyBuffer(cmdr->pool_res, cmd->cpybuf.src->buffer,
+    vkCmdCopyBuffer(l_xdec->cmdr->pool_res, cmd->cpybuf.src->buffer,
                     cmd->cpybuf.dst->buffer, 1, &region);
 
     return 0;
 }
 
 /* Decodes a 'copy image' command. */
-static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd)
+static int decode_cpyimg(const YF_cmd *cmd)
 {
     assert(cmd->cpyimg.dst->dim.width >=
            cmd->cpyimg.dst_off.x + cmd->cpyimg.dim.width);
@@ -571,23 +561,6 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd)
     assert(cmd->cpyimg.dim.height > 0);
     assert(cmd->cpyimg.dim.depth > 0);
     assert(cmd->cpyimg.layer_n > 0);
-
-    const YF_cmdres *cmdr;
-    switch (cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-        if (l_gdec->pass != NULL) {
-            vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
-            l_gdec->pass = NULL;
-        }
-        cmdr = l_gdec->cmdr;
-        break;
-    case YF_CMDBUF_COMP:
-        cmdr = l_cdec->cmdr;
-        break;
-    default:
-        assert(0);
-        abort();
-    }
 
     /* FIXME: These layout changes happen in the priority command buffer. */
     if (cmd->cpyimg.dst->next_layout != VK_IMAGE_LAYOUT_GENERAL &&
@@ -627,7 +600,7 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd)
         }
     };
 
-    vkCmdCopyImage(cmdr->pool_res,
+    vkCmdCopyImage(l_xdec->cmdr->pool_res,
                    cmd->cpyimg.src->image, VK_IMAGE_LAYOUT_GENERAL,
                    cmd->cpyimg.dst->image, VK_IMAGE_LAYOUT_GENERAL,
                    1, &region);
@@ -639,6 +612,7 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd)
 static int decode_sync(int cmdbuf)
 {
     /* TODO: Provide sync. parameters to avoid such dramatic solution. */
+
     const YF_cmdres *cmdr;
     switch (cmdbuf) {
     case YF_CMDBUF_GRAPH:
@@ -650,6 +624,9 @@ static int decode_sync(int cmdbuf)
         break;
     case YF_CMDBUF_COMP:
         cmdr = l_cdec->cmdr;
+        break;
+    case YF_CMDBUF_XFER:
+        cmdr = l_xdec->cmdr;
         break;
     default:
         assert(0);
@@ -740,12 +717,6 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
         case YF_CMD_DRAW:
         case YF_CMD_DRAWI:
             r = decode_draw(cmd);
-            break;
-        case YF_CMD_CPYBUF:
-            r = decode_cpybuf(YF_CMDBUF_GRAPH, cmd);
-            break;
-        case YF_CMD_CPYIMG:
-            r = decode_cpyimg(YF_CMDBUF_GRAPH, cmd);
             break;
         case YF_CMD_SYNC:
             r = decode_sync(YF_CMDBUF_GRAPH);
@@ -875,12 +846,6 @@ static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
         case YF_CMD_DISP:
             r = decode_disp(cmd);
             break;
-        case YF_CMD_CPYBUF:
-            r = decode_cpybuf(YF_CMDBUF_COMP, cmd);
-            break;
-        case YF_CMD_CPYIMG:
-            r = decode_cpyimg(YF_CMDBUF_COMP, cmd);
-            break;
         case YF_CMD_SYNC:
             r = decode_sync(YF_CMDBUF_COMP);
             break;
@@ -897,6 +862,45 @@ static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
     free(l_cdec->dtb.used);
     free(l_cdec);
     l_cdec = NULL;
+    return r;
+}
+
+/* Decodes a transfer command buffer. */
+static int decode_xfer(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
+{
+    l_xdec = calloc(1, sizeof *l_xdec);
+    if (l_xdec == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+    l_xdec->ctx = cmdb->ctx;
+    l_xdec->cmdr = cmdr;
+
+    int r = 0;
+    for (unsigned i = 0; i < cmdb->cmd_n; i++) {
+        YF_cmd *cmd = &cmdb->cmds[i];
+
+        switch (cmd->cmd) {
+        case YF_CMD_CPYBUF:
+            r = decode_cpybuf(cmd);
+            break;
+        case YF_CMD_CPYIMG:
+            r = decode_cpyimg(cmd);
+            break;
+        case YF_CMD_SYNC:
+            r = decode_sync(YF_CMDBUF_XFER);
+            break;
+        default:
+            assert(0);
+            abort();
+        }
+
+        if (r != 0)
+            break;
+    }
+
+    free(l_xdec);
+    l_xdec = NULL;
     return r;
 }
 
@@ -942,6 +946,14 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb)
             break;
         }
         r = decode_comp(cmdb, &cmdr);
+        break;
+    case YF_CMDBUF_XFER:
+        if (l_xdec != NULL) {
+            yf_seterr(YF_ERR_INUSE, __func__);
+            r = -1;
+            break;
+        }
+        r = decode_xfer(cmdb, &cmdr);
         break;
     default:
         assert(0);

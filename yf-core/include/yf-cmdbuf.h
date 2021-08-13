@@ -32,6 +32,7 @@ typedef struct YF_cmdbuf_o *YF_cmdbuf;
  */
 #define YF_CMDBUF_GRAPH 0
 #define YF_CMDBUF_COMP  1
+#define YF_CMDBUF_XFER  2
 
 /**
  * Gets a command buffer of a given type.
