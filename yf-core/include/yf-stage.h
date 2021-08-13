@@ -38,7 +38,7 @@ typedef unsigned long YF_shdid;
 typedef struct {
     int stage;
     YF_shdid shd;
-    const char entry_point[128];
+    char entry_point[64];
 } YF_stage;
 
 /**
