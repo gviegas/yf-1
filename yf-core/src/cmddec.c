@@ -947,6 +947,14 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb)
         }
         r = decode_comp(cmdb, &cmdr);
         break;
+    case YF_CMDBUF_XFER:
+        if (l_xdec != NULL) {
+            yf_seterr(YF_ERR_INUSE, __func__);
+            r = -1;
+            break;
+        }
+        r = decode_xfer(cmdb, &cmdr);
+        break;
     default:
         assert(0);
         abort();
