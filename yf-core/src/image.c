@@ -200,41 +200,35 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
 
     YF_PIXFMT_ASPECT(pixfmt, img->aspect);
 
-    img->flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-
+    img->flags = 0;
     if (dim.depth > 1) {
+        /* 3D */
         if (layers != 1) {
-            yf_image_deinit(img);
             yf_seterr(YF_ERR_INVARG, __func__);
+            yf_image_deinit(img);
             return NULL;
         }
-
         img->type = VK_IMAGE_TYPE_3D;
         img->view_type = VK_IMAGE_VIEW_TYPE_3D;
-
         if (ctx->dev_prop.apiVersion >= VK_API_VERSION_1_1)
             img->flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 
     } else if (dim.height > 1) {
+        /* 2D */
         img->type = VK_IMAGE_TYPE_2D;
-
-        if (layers > 1)
-            img->view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        else
-            img->view_type = VK_IMAGE_VIEW_TYPE_2D;
-
+        img->view_type = layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY :
+                                      VK_IMAGE_VIEW_TYPE_2D;
         if (dim.width == dim.height && dim.width >= 6)
             img->flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
     } else {
+        /* 1D */
         img->type = VK_IMAGE_TYPE_1D;
-
-        if (layers > 1)
-            img->view_type = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-        else
-            img->view_type = VK_IMAGE_VIEW_TYPE_1D;
+        img->view_type = layers > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY :
+                                      VK_IMAGE_VIEW_TYPE_1D;
     }
 
+    /* prefer linear tiling */
     if (samples != 1 || set_usage(img, VK_IMAGE_TILING_LINEAR) != 0 ||
         set_tiling(img, VK_IMAGE_TILING_LINEAR) != 0) {
 
