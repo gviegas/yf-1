@@ -227,14 +227,23 @@ void yf_cmdbuf_setdtable(YF_cmdbuf cmdb, unsigned index, unsigned alloc_i)
     if (cmdb->invalid)
         return;
 
-    unsigned i = cmdb->cmd_n++;
-    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
+    unsigned i;
+    switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_GRAPH:
+    case YF_CMDBUF_COMP:
+        i = cmdb->cmd_n++;
+        if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
+            cmdb->invalid = 1;
+            return;
+        }
+        cmdb->cmds[i].cmd = YF_CMD_DTB;
+        cmdb->cmds[i].dtb.index = index;
+        cmdb->cmds[i].dtb.alloc_i = alloc_i;
+        break;
+    default:
+        yf_seterr(YF_ERR_INVARG, __func__);
         cmdb->invalid = 1;
-        return;
     }
-    cmdb->cmds[i].cmd = YF_CMD_DTB;
-    cmdb->cmds[i].dtb.index = index;
-    cmdb->cmds[i].dtb.alloc_i = alloc_i;
 }
 
 void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
