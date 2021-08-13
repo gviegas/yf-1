@@ -865,6 +865,45 @@ static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
     return r;
 }
 
+/* Decodes a transfer command buffer. */
+static int decode_xfer(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
+{
+    l_xdec = calloc(1, sizeof *l_xdec);
+    if (l_xdec == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+    l_xdec->ctx = cmdb->ctx;
+    l_xdec->cmdr = cmdr;
+
+    int r = 0;
+    for (unsigned i = 0; i < cmdb->cmd_n; i++) {
+        YF_cmd *cmd = &cmdb->cmds[i];
+
+        switch (cmd->cmd) {
+        case YF_CMD_CPYBUF:
+            r = decode_cpybuf(cmd);
+            break;
+        case YF_CMD_CPYIMG:
+            r = decode_cpyimg(cmd);
+            break;
+        case YF_CMD_SYNC:
+            r = decode_sync(YF_CMDBUF_XFER);
+            break;
+        default:
+            assert(0);
+            abort();
+        }
+
+        if (r != 0)
+            break;
+    }
+
+    free(l_xdec);
+    l_xdec = NULL;
+    return r;
+}
+
 int yf_cmdbuf_decode(YF_cmdbuf cmdb)
 {
     assert(cmdb != NULL);
