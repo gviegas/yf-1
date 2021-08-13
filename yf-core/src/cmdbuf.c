@@ -499,22 +499,30 @@ void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, YF_off3 dst_off,
     if (cmdb->invalid)
         return;
 
-    unsigned i = cmdb->cmd_n++;
-    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
+    unsigned i;
+    switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_XFER:
+        i = cmdb->cmd_n++;
+        if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
+            cmdb->invalid = 1;
+            return;
+        }
+        cmdb->cmds[i].cmd = YF_CMD_CPYIMG;
+        cmdb->cmds[i].cpyimg.dst = dst;
+        cmdb->cmds[i].cpyimg.dst_off = dst_off;
+        cmdb->cmds[i].cpyimg.dst_layer = dst_layer;
+        cmdb->cmds[i].cpyimg.dst_level = dst_level;
+        cmdb->cmds[i].cpyimg.src = src;
+        cmdb->cmds[i].cpyimg.src_off = src_off;
+        cmdb->cmds[i].cpyimg.src_layer = src_layer;
+        cmdb->cmds[i].cpyimg.src_level = src_level;
+        cmdb->cmds[i].cpyimg.dim = dim;
+        cmdb->cmds[i].cpyimg.layer_n = layer_n;
+        break;
+    default:
+        yf_seterr(YF_ERR_INVARG, __func__);
         cmdb->invalid = 1;
-        return;
     }
-    cmdb->cmds[i].cmd = YF_CMD_CPYIMG;
-    cmdb->cmds[i].cpyimg.dst = dst;
-    cmdb->cmds[i].cpyimg.dst_off = dst_off;
-    cmdb->cmds[i].cpyimg.dst_layer = dst_layer;
-    cmdb->cmds[i].cpyimg.dst_level = dst_level;
-    cmdb->cmds[i].cpyimg.src = src;
-    cmdb->cmds[i].cpyimg.src_off = src_off;
-    cmdb->cmds[i].cpyimg.src_layer = src_layer;
-    cmdb->cmds[i].cpyimg.src_level = src_level;
-    cmdb->cmds[i].cpyimg.dim = dim;
-    cmdb->cmds[i].cpyimg.layer_n = layer_n;
 }
 
 void yf_cmdbuf_sync(YF_cmdbuf cmdb)
