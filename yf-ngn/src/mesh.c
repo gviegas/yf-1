@@ -74,8 +74,8 @@ static size_t resize_buf(size_t new_len)
                 sz = new_len;
         }
 
-        YF_cmdbuf cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_GRAPH);
-        if (cb == NULL && (cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_COMP)) == NULL) {
+        YF_cmdbuf cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_XFER);
+        if (cb == NULL) {
             yf_buffer_deinit(new_buf);
             return buf_len;
         }
