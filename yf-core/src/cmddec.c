@@ -85,9 +85,16 @@ typedef struct {
     } dtb;
 } T_cdec;
 
-/* The current decoding states for graphics and compute. */
+/* Type defining transfer decoding state. */
+typedef struct {
+    YF_context ctx;
+    const YF_cmdres *cmdr;
+} T_xdec;
+
+/* The current decoding states for graph/comp/xfer. */
 static _Thread_local T_gdec *l_gdec = NULL;
 static _Thread_local T_cdec *l_cdec = NULL;
+static _Thread_local T_xdec *l_xdec = NULL;
 
 /* Decodes a 'set gstate' command. */
 static int decode_gst(const YF_cmd *cmd)
