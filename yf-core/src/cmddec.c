@@ -748,12 +748,6 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
         case YF_CMD_DRAWI:
             r = decode_draw(cmd);
             break;
-        case YF_CMD_CPYBUF:
-            r = decode_cpybuf(YF_CMDBUF_GRAPH, cmd);
-            break;
-        case YF_CMD_CPYIMG:
-            r = decode_cpyimg(YF_CMDBUF_GRAPH, cmd);
-            break;
         case YF_CMD_SYNC:
             r = decode_sync(YF_CMDBUF_GRAPH);
             break;
@@ -881,12 +875,6 @@ static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
             break;
         case YF_CMD_DISP:
             r = decode_disp(cmd);
-            break;
-        case YF_CMD_CPYBUF:
-            r = decode_cpybuf(YF_CMDBUF_COMP, cmd);
-            break;
-        case YF_CMD_CPYIMG:
-            r = decode_cpyimg(YF_CMDBUF_COMP, cmd);
             break;
         case YF_CMD_SYNC:
             r = decode_sync(YF_CMDBUF_COMP);
