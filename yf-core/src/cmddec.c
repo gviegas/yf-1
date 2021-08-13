@@ -612,6 +612,7 @@ static int decode_cpyimg(const YF_cmd *cmd)
 static int decode_sync(int cmdbuf)
 {
     /* TODO: Provide sync. parameters to avoid such dramatic solution. */
+
     const YF_cmdres *cmdr;
     switch (cmdbuf) {
     case YF_CMDBUF_GRAPH:
@@ -623,6 +624,9 @@ static int decode_sync(int cmdbuf)
         break;
     case YF_CMDBUF_COMP:
         cmdr = l_cdec->cmdr;
+        break;
+    case YF_CMDBUF_XFER:
+        cmdr = l_xdec->cmdr;
         break;
     default:
         assert(0);
