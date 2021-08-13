@@ -535,7 +535,7 @@ static int decode_cpybuf(const YF_cmd *cmd)
 }
 
 /* Decodes a 'copy image' command. */
-static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd)
+static int decode_cpyimg(const YF_cmd *cmd)
 {
     assert(cmd->cpyimg.dst->dim.width >=
            cmd->cpyimg.dst_off.x + cmd->cpyimg.dim.width);
@@ -561,23 +561,6 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd)
     assert(cmd->cpyimg.dim.height > 0);
     assert(cmd->cpyimg.dim.depth > 0);
     assert(cmd->cpyimg.layer_n > 0);
-
-    const YF_cmdres *cmdr;
-    switch (cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-        if (l_gdec->pass != NULL) {
-            vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
-            l_gdec->pass = NULL;
-        }
-        cmdr = l_gdec->cmdr;
-        break;
-    case YF_CMDBUF_COMP:
-        cmdr = l_cdec->cmdr;
-        break;
-    default:
-        assert(0);
-        abort();
-    }
 
     /* FIXME: These layout changes happen in the priority command buffer. */
     if (cmd->cpyimg.dst->next_layout != VK_IMAGE_LAYOUT_GENERAL &&
@@ -617,7 +600,7 @@ static int decode_cpyimg(int cmdbuf, const YF_cmd *cmd)
         }
     };
 
-    vkCmdCopyImage(cmdr->pool_res,
+    vkCmdCopyImage(l_xdec->cmdr->pool_res,
                    cmd->cpyimg.src->image, VK_IMAGE_LAYOUT_GENERAL,
                    cmd->cpyimg.dst->image, VK_IMAGE_LAYOUT_GENERAL,
                    1, &region);
