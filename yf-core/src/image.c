@@ -439,7 +439,7 @@ void yf_image_deinit(YF_image img)
 YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
                        VkImageType type, YF_dim3 dim, unsigned layers,
                        unsigned levels, VkSampleCountFlagBits samples,
-                       VkImageLayout layout)
+                       VkImageUsageFlags usage, VkImageLayout layout)
 {
     assert(ctx != NULL);
     assert(image != NULL);
@@ -459,12 +459,16 @@ YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
     img->memory = NULL;
     img->format = format;
     img->type = type;
-    img->samples = samples;
     img->dim = dim;
     img->layers = layers;
     img->levels = levels;
+    img->samples = samples;
+    img->flags = 0;
+    img->usage = usage;
+    img->tiling = VK_IMAGE_TILING_OPTIMAL;
     img->layout = layout;
     img->next_layout = layout;
+    img->data = NULL;
 
     img->iviews = yf_dict_init(hash_priv, cmp_priv);
     if (img->iviews == NULL) {
