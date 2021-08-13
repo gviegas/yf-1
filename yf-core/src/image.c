@@ -16,6 +16,7 @@
 #include "context.h"
 #include "memory.h"
 #include "cmdpool.h"
+#include "cmdexec.h"
 #include "cmdbuf.h"
 #include "buffer.h"
 #include "yf-limits.h"
@@ -69,19 +70,100 @@ static int cmp_priv(const void *a, const void *b)
            pv1->key.levels.n != pv2->key.levels.n;
 }
 
+/* Sets usage for a given image tiling. */
+static int set_usage(YF_image img, VkImageTiling tiling)
+{
+    assert(img != NULL);
+    assert(tiling == VK_IMAGE_TILING_LINEAR ||
+           tiling == VK_IMAGE_TILING_OPTIMAL);
+
+    VkFormatProperties prop;
+    vkGetPhysicalDeviceFormatProperties(img->ctx->phy_dev, img->format, &prop);
+
+    VkImageUsageFlags usage = 0;
+    VkFormatFeatureFlags feat = tiling == VK_IMAGE_TILING_LINEAR ?
+                                prop.linearTilingFeatures :
+                                prop.optimalTilingFeatures;
+
+    if (feat & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
+        usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+    if (feat & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)
+        usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    if (feat & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+        usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    /* XXX: This assumes that multisample storage is not supported. */
+    if (img->samples == VK_SAMPLE_COUNT_1_BIT &&
+        (feat & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT))
+        usage |= VK_IMAGE_USAGE_STORAGE_BIT;
+
+    if (usage == 0) {
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+    }
+
+    /* XXX: This may prevent writes to image with optimal tiling. */
+    if (img->ctx->dev_prop.apiVersion >= VK_API_VERSION_1_1) {
+        if (feat & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)
+            usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        if (feat & VK_FORMAT_FEATURE_TRANSFER_DST_BIT)
+            usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    } else {
+        /* XXX: Not in v1.0, assume its valid. */
+        usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                 VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
+
+    img->usage = usage;
+    return 0;
+}
+
+/* Sets image tiling. */
+static int set_tiling(YF_image img, VkImageTiling tiling)
+{
+    assert(img != NULL);
+    assert(tiling == VK_IMAGE_TILING_LINEAR ||
+           tiling == VK_IMAGE_TILING_OPTIMAL);
+
+    VkImageFormatProperties prop;
+    VkResult res;
+    res = vkGetPhysicalDeviceImageFormatProperties(img->ctx->phy_dev,
+                                                   img->format, img->type,
+                                                   tiling, img->usage,
+                                                   img->flags, &prop);
+    switch (res) {
+    case VK_SUCCESS:
+        if (prop.maxExtent.width < img->dim.width ||
+            prop.maxExtent.height < img->dim.height ||
+            prop.maxExtent.depth < img->dim.depth ||
+            prop.maxMipLevels < img->levels ||
+            prop.maxArrayLayers < img->layers ||
+            !(prop.sampleCounts & img->samples)) {
+
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            return -1;
+        }
+        img->tiling = tiling;
+        break;
+
+    case VK_ERROR_FORMAT_NOT_SUPPORTED:
+        yf_seterr(YF_ERR_UNSUP, __func__);
+        return -1;
+
+    default:
+        yf_seterr(YF_ERR_DEVGEN, __func__);
+        return -1;
+    }
+
+    return 0;
+}
+
 YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
                        unsigned layers, unsigned levels, unsigned samples)
 {
     assert(ctx != NULL);
     assert(dim.width > 0 && dim.height > 0 && dim.depth > 0);
     assert(layers > 0 && levels > 0 && samples > 0);
-
-    const YF_limits *lim = yf_getlimits(ctx);
-
-    if (layers > lim->image.layer_max) {
-        yf_seterr(YF_ERR_LIMIT, __func__);
-        return NULL;
-    }
 
     YF_image img = calloc(1, sizeof(YF_image_o));
     if (img == NULL) {
@@ -118,155 +200,69 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
 
     YF_PIXFMT_ASPECT(pixfmt, img->aspect);
 
-    VkFlags flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
-
+    img->flags = 0;
     if (dim.depth > 1) {
+        /* 3D */
         if (layers != 1) {
-            yf_image_deinit(img);
             yf_seterr(YF_ERR_INVARG, __func__);
+            yf_image_deinit(img);
             return NULL;
         }
-
         img->type = VK_IMAGE_TYPE_3D;
         img->view_type = VK_IMAGE_VIEW_TYPE_3D;
-
         if (ctx->dev_prop.apiVersion >= VK_API_VERSION_1_1)
-            flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+            img->flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 
     } else if (dim.height > 1) {
+        /* 2D */
         img->type = VK_IMAGE_TYPE_2D;
-
-        if (layers > 1)
-            img->view_type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        else
-            img->view_type = VK_IMAGE_VIEW_TYPE_2D;
-
+        img->view_type = layers > 1 ? VK_IMAGE_VIEW_TYPE_2D_ARRAY :
+                                      VK_IMAGE_VIEW_TYPE_2D;
         if (dim.width == dim.height && dim.width >= 6)
-            flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+            img->flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
     } else {
+        /* 1D */
         img->type = VK_IMAGE_TYPE_1D;
-
-        if (layers > 1)
-            img->view_type = VK_IMAGE_VIEW_TYPE_1D_ARRAY;
-        else
-            img->view_type = VK_IMAGE_VIEW_TYPE_1D;
+        img->view_type = layers > 1 ? VK_IMAGE_VIEW_TYPE_1D_ARRAY :
+                                      VK_IMAGE_VIEW_TYPE_1D;
     }
 
-    int limit = 0;
+    /* prefer linear tiling */
+    if (samples != 1 || set_usage(img, VK_IMAGE_TILING_LINEAR) != 0 ||
+        set_tiling(img, VK_IMAGE_TILING_LINEAR) != 0) {
 
-    switch (img->type) {
-    case VK_IMAGE_TYPE_1D:
-        limit = dim.width > lim->image.dim_1d_max;
-        break;
-    case VK_IMAGE_TYPE_2D:
-        /* TODO: Check limit for cube-compatible images. */
-        limit =
-            dim.width > lim->image.dim_2d_max ||
-            dim.height > lim->image.dim_2d_max;
-        break;
-    case VK_IMAGE_TYPE_3D:
-        limit =
-            dim.width > lim->image.dim_3d_max ||
-            dim.height > lim->image.dim_3d_max ||
-            dim.depth > lim->image.dim_3d_max;
-        break;
-    default:
-        break;
-    }
+        /* linear tiling won't work, try optimal tiling */
+        if (set_usage(img, VK_IMAGE_TILING_OPTIMAL) != 0 ||
+            set_tiling(img, VK_IMAGE_TILING_OPTIMAL) != 0) {
 
-    if (limit) {
-        yf_seterr(YF_ERR_LIMIT, __func__);
-        yf_image_deinit(img);
-        return NULL;
-    }
-
-    /* TODO: Store format properties somewhere and use it to validate usage. */
-    VkFlags usage = 0;
-    VkFormatFeatureFlags fmt_feat;
-    VkFormatProperties fmt_prop;
-    vkGetPhysicalDeviceFormatProperties(ctx->phy_dev, img->format, &fmt_prop);
-    fmt_feat = fmt_prop.optimalTilingFeatures;
-
-    if (fmt_feat & VK_FORMAT_FEATURE_SAMPLED_IMAGE_BIT)
-        usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
-    if (fmt_feat & VK_FORMAT_FEATURE_STORAGE_IMAGE_BIT)
-        usage |= VK_IMAGE_USAGE_STORAGE_BIT;
-    if (fmt_feat & VK_FORMAT_FEATURE_COLOR_ATTACHMENT_BIT)
-        usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    if (fmt_feat & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
-        usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-
-    /* XXX: This may prevent writes to image with optimal tiling. */
-    if (ctx->dev_prop.apiVersion >= VK_API_VERSION_1_1) {
-        if (fmt_feat & VK_FORMAT_FEATURE_TRANSFER_SRC_BIT)
-            usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-        if (fmt_feat & VK_FORMAT_FEATURE_TRANSFER_DST_BIT)
-            usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    } else {
-        /* XXX: Not in v1.0, assume its valid. */
-        usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                 VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    }
-
-    /* TODO: Further validation. */
-    if (usage == 0) {
-        yf_seterr(YF_ERR_UNSUP, __func__);
-        yf_image_deinit(img);
-        return NULL;
-    }
-
-    /* TODO: Consider providing image usage param. for init(), since usage
-       may restrict available sample counts. */
-    if (samples != 1) {
-        limit = 0x7f;
-
-        if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) {
-            if (img->aspect & VK_IMAGE_ASPECT_COLOR_BIT) {
-                limit &= lim->image.sample_mask_clr;
-            } else {
-                if (img->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
-                    limit &= lim->image.sample_mask_dep;
-                if (img->aspect & VK_IMAGE_ASPECT_STENCIL_BIT)
-                    limit &= lim->image.sample_mask_sten;
-            }
-        }
-
-        if (usage & VK_IMAGE_USAGE_STORAGE_BIT)
-            limit &= lim->image.sample_mask_img;
-
-        if (usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT) {
-            limit &= lim->pass.sample_mask_clr;
-        } else if (usage & VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT) {
-            if (img->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
-                limit &= lim->pass.sample_mask_dep;
-            if (img->aspect & VK_IMAGE_ASPECT_STENCIL_BIT)
-                limit &= lim->pass.sample_mask_sten;
-        }
-
-        if (!(limit & samples)) {
-            yf_seterr(YF_ERR_LIMIT, __func__);
             yf_image_deinit(img);
             return NULL;
         }
+        img->layout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    } else {
+        img->layout = VK_IMAGE_LAYOUT_PREINITIALIZED;
     }
+
+    img->next_layout = img->layout;
 
     VkImageCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .pNext = NULL,
-        .flags = flags,
+        .flags = img->flags,
         .imageType = img->type,
         .format = img->format,
         .extent = {img->dim.width, img->dim.height, img->dim.depth},
         .mipLevels = img->levels,
         .arrayLayers = img->layers,
         .samples = img->samples,
-        .tiling = VK_IMAGE_TILING_OPTIMAL,
-        .usage = usage,
+        .tiling = img->tiling,
+        .usage = img->usage,
         .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
         .queueFamilyIndexCount = 0,
         .pQueueFamilyIndices = NULL,
-        .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED
+        .initialLayout = img->layout
     };
 
     VkResult res = vkCreateImage(ctx->device, &info, NULL, &img->image);
@@ -275,9 +271,6 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
         yf_image_deinit(img);
         return NULL;
     }
-
-    img->layout = info.initialLayout;
-    img->next_layout = info.initialLayout;
 
     if (yf_image_alloc(img) != 0) {
         yf_image_deinit(img);
@@ -304,42 +297,91 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
         return -1;
     }
 
-    if (img->next_layout != VK_IMAGE_LAYOUT_GENERAL &&
-        yf_image_chglayout(img, VK_IMAGE_LAYOUT_GENERAL) != 0)
-        return -1;
+    if (img->tiling == VK_IMAGE_TILING_LINEAR) {
+        switch (img->next_layout) {
+        case VK_IMAGE_LAYOUT_PREINITIALIZED:
+        case VK_IMAGE_LAYOUT_GENERAL:
+            break;
+        default:
+            /* must be host-visible */
+            if (yf_image_chglayout(img, VK_IMAGE_LAYOUT_GENERAL) != 0 ||
+                yf_cmdexec_execprio(img->ctx) != 0)
+                return -1;
+        }
 
-    size_t sz;
-    YF_PIXFMT_SIZEOF(img->pixfmt, sz);
-    sz *= dim.width * dim.height * dim.depth;
-
-    YF_buffer stg_buf = yf_buffer_init(img->ctx, sz);
-    if (stg_buf == NULL)
-        return -1;
-
-    memcpy(stg_buf->data, data, sz);
-
-    const YF_cmdres *cmdr = yf_cmdpool_getprio(img->ctx, dealloc_stgbuf,
-                                               stg_buf);
-    if (cmdr == NULL) {
-        yf_buffer_deinit(stg_buf);
-        return -1;
-    }
-
-    VkBufferImageCopy region = {
-        .bufferOffset = 0,
-        .bufferRowLength = 0,
-        .imageSubresource = {
+        VkImageSubresource subres = {
             .aspectMask = img->aspect,
             .mipLevel = level,
-            .baseArrayLayer = layer,
-            .layerCount = 1
-        },
-        .imageOffset = {off.x, off.y, off.z},
-        .imageExtent = {dim.width, dim.height, dim.depth}
-    };
+            .arrayLayer = 0
+        };
+        if (subres.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT &&
+            subres.aspectMask != VK_IMAGE_ASPECT_DEPTH_BIT &&
+            subres.aspectMask != VK_IMAGE_ASPECT_STENCIL_BIT) {
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            return -1;
+        }
 
-    vkCmdCopyBufferToImage(cmdr->pool_res, stg_buf->buffer, img->image,
-                           VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+        VkSubresourceLayout layout;
+        vkGetImageSubresourceLayout(img->ctx->device, img->image, &subres,
+                                    &layout);
+
+        size_t tx_sz;
+        YF_PIXFMT_SIZEOF(img->pixfmt, tx_sz);
+
+        unsigned char *dst = img->data;
+        dst += layout.offset +
+               layer * layout.arrayPitch +
+               off.z * layout.depthPitch +
+               off.y * layout.rowPitch +
+               off.x * tx_sz;
+
+        const unsigned char *src = data;
+        const size_t row_sz = dim.width * tx_sz;
+
+        for (unsigned i = 0; i < dim.height; i++) {
+            memcpy(dst, src, row_sz);
+            dst += layout.rowPitch;
+            src += row_sz;
+        }
+
+    } else {
+        if (img->next_layout != VK_IMAGE_LAYOUT_GENERAL &&
+            yf_image_chglayout(img, VK_IMAGE_LAYOUT_GENERAL) != 0)
+            return -1;
+
+        size_t sz;
+        YF_PIXFMT_SIZEOF(img->pixfmt, sz);
+        sz *= dim.width * dim.height * dim.depth;
+
+        YF_buffer stg_buf = yf_buffer_init(img->ctx, sz);
+        if (stg_buf == NULL)
+            return -1;
+
+        memcpy(stg_buf->data, data, sz);
+
+        const YF_cmdres *cmdr = yf_cmdpool_getprio(img->ctx, dealloc_stgbuf,
+                                                   stg_buf);
+        if (cmdr == NULL) {
+            yf_buffer_deinit(stg_buf);
+            return -1;
+        }
+
+        VkBufferImageCopy region = {
+            .bufferOffset = 0,
+            .bufferRowLength = 0,
+            .imageSubresource = {
+                .aspectMask = img->aspect,
+                .mipLevel = level,
+                .baseArrayLayer = layer,
+                .layerCount = 1
+            },
+            .imageOffset = {off.x, off.y, off.z},
+            .imageExtent = {dim.width, dim.height, dim.depth}
+        };
+
+        vkCmdCopyBufferToImage(cmdr->pool_res, stg_buf->buffer, img->image,
+                               VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+    }
 
     return 0;
 }
@@ -391,7 +433,7 @@ void yf_image_deinit(YF_image img)
 YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
                        VkImageType type, YF_dim3 dim, unsigned layers,
                        unsigned levels, VkSampleCountFlagBits samples,
-                       VkImageLayout layout)
+                       VkImageUsageFlags usage, VkImageLayout layout)
 {
     assert(ctx != NULL);
     assert(image != NULL);
@@ -411,12 +453,16 @@ YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
     img->memory = NULL;
     img->format = format;
     img->type = type;
-    img->samples = samples;
     img->dim = dim;
     img->layers = layers;
     img->levels = levels;
+    img->samples = samples;
+    img->flags = 0;
+    img->usage = usage;
+    img->tiling = VK_IMAGE_TILING_OPTIMAL;
     img->layout = layout;
     img->next_layout = layout;
+    img->data = NULL;
 
     img->iviews = yf_dict_init(hash_priv, cmp_priv);
     if (img->iviews == NULL) {
@@ -554,7 +600,8 @@ void yf_image_ungetiview(YF_image img, YF_iview *iview)
 int yf_image_chglayout(YF_image img, VkImageLayout layout)
 {
     assert(img != NULL);
-    assert(layout != VK_IMAGE_LAYOUT_UNDEFINED);
+    assert(layout != VK_IMAGE_LAYOUT_UNDEFINED &&
+           layout != VK_IMAGE_LAYOUT_PREINITIALIZED);
 
     if (layout == img->next_layout)
         /* requested layout change ongoing */

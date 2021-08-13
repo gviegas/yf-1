@@ -312,6 +312,7 @@ static int create_swapchain(YF_wsi wsi)
         wsi->imgs[i] = yf_image_wrap(wsi->ctx, imgs[i],
                                      wsi->sc_info.imageFormat, VK_IMAGE_TYPE_2D,
                                      dim, 1, 1, VK_SAMPLE_COUNT_1_BIT,
+                                     wsi->sc_info.imageUsage,
                                      VK_IMAGE_LAYOUT_UNDEFINED);
         if (wsi->imgs[i] == NULL) {
             memset(wsi->imgs+i, 0, (img_n - i) * sizeof *wsi->imgs);

@@ -30,9 +30,13 @@ typedef struct YF_image_o {
     VkImageType type;
     VkSampleCountFlagBits samples;
     VkImageAspectFlags aspect;
+    VkImageCreateFlags flags;
+    VkImageUsageFlags usage;
+    VkImageTiling tiling;
     VkImageViewType view_type;
     VkImageLayout layout;
     VkImageLayout next_layout;
+    void *data;
 } YF_image_o;
 
 /* Type defining an image view. */
@@ -48,7 +52,7 @@ typedef struct {
 YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
                        VkImageType type, YF_dim3 dim, unsigned layers,
                        unsigned levels, VkSampleCountFlagBits samples,
-                       VkImageLayout layout);
+                       VkImageUsageFlags usage, VkImageLayout layout);
 
 /* Gets an image view.
    Every call to this function must be matched by a call to 'ungetiview()'. */

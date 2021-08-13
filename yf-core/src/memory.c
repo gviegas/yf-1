@@ -107,13 +107,11 @@ int yf_image_alloc(YF_image img)
     assert(img != NULL);
     assert(img->memory == NULL);
 
-    /* XXX: Since linear tiling is not being used for now, host-visible memory
-       is not necessary. As a consequence, the memory will not be mapped. This
-       will have to change when linear tiling is used. */
+    const int visible = img->tiling == VK_IMAGE_TILING_LINEAR;
 
     VkMemoryRequirements mem_req;
     vkGetImageMemoryRequirements(img->ctx->device, img->image, &mem_req);
-    img->memory = alloc_memory(img->ctx, &mem_req, 0);
+    img->memory = alloc_memory(img->ctx, &mem_req, visible);
     if (img->memory == NULL)
         return -1;
 
@@ -122,6 +120,15 @@ int yf_image_alloc(YF_image img)
     if (res != VK_SUCCESS) {
         free_memory(img->ctx, img->memory);
         return -1;
+    }
+
+    if (visible) {
+        res = vkMapMemory(img->ctx->device, img->memory, 0, VK_WHOLE_SIZE, 0,
+                          &img->data);
+        if (res != VK_SUCCESS) {
+            yf_image_free(img);
+            return -1;
+        }
     }
     return 0;
 }
@@ -140,5 +147,6 @@ void yf_image_free(YF_image img)
     if (img != NULL) {
         free_memory(img->ctx, img->memory);
         img->memory = NULL;
+        img->data = NULL;
     }
 }
