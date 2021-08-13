@@ -37,7 +37,9 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
         return NULL;
     }
     cst->ctx = ctx;
+
     memcpy(&cst->stg, &conf->stg, sizeof conf->stg);
+    cst->stg.entry_point[(sizeof cst->stg.entry_point) - 1] = '\0';
 
     cst->dtb_n = conf->dtb_n;
     if (cst->dtb_n > 0) {
@@ -96,7 +98,7 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
             .flags = 0,
             .stage = VK_SHADER_STAGE_COMPUTE_BIT,
             .module = yf_getshd(ctx, conf->stg.shd),
-            .pName = conf->stg.entry_point,
+            .pName = cst->stg.entry_point,
             .pSpecializationInfo = NULL
         },
         .layout = cst->layout,
