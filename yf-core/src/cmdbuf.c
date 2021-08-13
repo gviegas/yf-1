@@ -466,17 +466,25 @@ void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_offs,
     if (cmdb->invalid)
         return;
 
-    unsigned i = cmdb->cmd_n++;
-    if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
+    unsigned i;
+    switch (cmdb->cmdbuf) {
+    case YF_CMDBUF_XFER:
+        i = cmdb->cmd_n++;
+        if (i == cmdb->cmd_cap && grow_cmds(cmdb) != 0) {
+            cmdb->invalid = 1;
+            return;
+        }
+        cmdb->cmds[i].cmd = YF_CMD_CPYBUF;
+        cmdb->cmds[i].cpybuf.dst = dst;
+        cmdb->cmds[i].cpybuf.dst_offs = dst_offs;
+        cmdb->cmds[i].cpybuf.src = src;
+        cmdb->cmds[i].cpybuf.src_offs = src_offs;
+        cmdb->cmds[i].cpybuf.size = size;
+        break;
+    default:
+        yf_seterr(YF_ERR_INVARG, __func__);
         cmdb->invalid = 1;
-        return;
     }
-    cmdb->cmds[i].cmd = YF_CMD_CPYBUF;
-    cmdb->cmds[i].cpybuf.dst = dst;
-    cmdb->cmds[i].cpybuf.dst_offs = dst_offs;
-    cmdb->cmds[i].cpybuf.src = src;
-    cmdb->cmds[i].cpybuf.src_offs = src_offs;
-    cmdb->cmds[i].cpybuf.size = size;
 }
 
 void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, YF_off3 dst_off,
