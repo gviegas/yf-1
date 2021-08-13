@@ -516,28 +516,11 @@ static int decode_disp(const YF_cmd *cmd)
 }
 
 /* Decodes a 'copy buffer' command. */
-static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd)
+static int decode_cpybuf(const YF_cmd *cmd)
 {
     assert(cmd->cpybuf.dst->size >= cmd->cpybuf.dst_offs + cmd->cpybuf.size);
     assert(cmd->cpybuf.src->size >= cmd->cpybuf.src_offs + cmd->cpybuf.size);
     assert(cmd->cpybuf.size > 0);
-
-    const YF_cmdres *cmdr;
-    switch (cmdbuf) {
-    case YF_CMDBUF_GRAPH:
-        if (l_gdec->pass != NULL) {
-            vkCmdEndRenderPass(l_gdec->cmdr->pool_res);
-            l_gdec->pass = NULL;
-        }
-        cmdr = l_gdec->cmdr;
-        break;
-    case YF_CMDBUF_COMP:
-        cmdr = l_cdec->cmdr;
-        break;
-    default:
-        assert(0);
-        abort();
-    }
 
     VkBufferCopy region = {
         .srcOffset = cmd->cpybuf.src_offs,
@@ -545,7 +528,7 @@ static int decode_cpybuf(int cmdbuf, const YF_cmd *cmd)
         .size = cmd->cpybuf.size
     };
 
-    vkCmdCopyBuffer(cmdr->pool_res, cmd->cpybuf.src->buffer,
+    vkCmdCopyBuffer(l_xdec->cmdr->pool_res, cmd->cpybuf.src->buffer,
                     cmd->cpybuf.dst->buffer, 1, &region);
 
     return 0;
