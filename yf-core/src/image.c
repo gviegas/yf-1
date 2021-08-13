@@ -129,8 +129,8 @@ static int set_tiling(YF_image img, VkImageTiling tiling)
     VkResult res;
     res = vkGetPhysicalDeviceImageFormatProperties(img->ctx->phy_dev,
                                                    img->format, img->type,
-                                                   tiling, img->usage, 0,
-                                                   &prop);
+                                                   tiling, img->usage,
+                                                   img->flags, &prop);
     switch (res) {
     case VK_SUCCESS:
         if (prop.maxExtent.width < img->dim.width ||
@@ -200,7 +200,7 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
 
     YF_PIXFMT_ASPECT(pixfmt, img->aspect);
 
-    VkFlags flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
+    img->flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 
     if (dim.depth > 1) {
         if (layers != 1) {
@@ -213,7 +213,7 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
         img->view_type = VK_IMAGE_VIEW_TYPE_3D;
 
         if (ctx->dev_prop.apiVersion >= VK_API_VERSION_1_1)
-            flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
+            img->flags |= VK_IMAGE_CREATE_2D_ARRAY_COMPATIBLE_BIT;
 
     } else if (dim.height > 1) {
         img->type = VK_IMAGE_TYPE_2D;
@@ -224,7 +224,7 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
             img->view_type = VK_IMAGE_VIEW_TYPE_2D;
 
         if (dim.width == dim.height && dim.width >= 6)
-            flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+            img->flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
     } else {
         img->type = VK_IMAGE_TYPE_1D;
@@ -256,7 +256,7 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     VkImageCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
         .pNext = NULL,
-        .flags = flags,
+        .flags = img->flags,
         .imageType = img->type,
         .format = img->format,
         .extent = {img->dim.width, img->dim.height, img->dim.depth},
