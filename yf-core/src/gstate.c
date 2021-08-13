@@ -146,11 +146,8 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         YF_STAGE_FROM(conf->stgs[i].stage, ss[i].stage);
         ss[i].module = module;
 
-        const size_t entry_sz = sizeof conf->stgs[i].entry_point;
-        char entry[entry_sz];
-        memcpy(entry, conf->stgs[i].entry_point, entry_sz);
-        entry[entry_sz-1] = '\0';
-        ss[i].pName = entry;
+        gst->stgs[i].entry_point[(sizeof gst->stgs[i].entry_point) - 1] = '\0';
+        ss[i].pName = gst->stgs[i].entry_point;
 
         ss[i].pSpecializationInfo = NULL;
         stg_mask |= conf->stgs[i].stage;
