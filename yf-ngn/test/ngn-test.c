@@ -11,178 +11,59 @@
 
 #include "test.h"
 
+#define YF_TEST_DEF(id) \
+int yf_test_##id(void); \
+static int test_##id(void) { puts("\n["#id"]\n"); return yf_test_##id(); }
+
 #define YF_TEST_ALL "all"
-#define YF_TEST_SUBL "................................"
-#define YF_TEST_SUBT \
-    printf("%s\n%.*s\n", __func__, (int)strlen(__func__), YF_TEST_SUBL)
 
 /* Node test. */
 #define YF_TEST_NODE "node"
-
-int yf_test_node(void);
-
-static int test_node(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_node();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(node)
 
 /* Vector test. */
 #define YF_TEST_VECTOR "vector"
-
-int yf_test_vector(void);
-
-static int test_vector(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_vector();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(vector)
 
 /* Matrix test. */
 #define YF_TEST_MATRIX "matrix"
-
-int yf_test_matrix(void);
-
-static int test_matrix(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_matrix();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(matrix)
 
 /* Model test. */
 #define YF_TEST_MODEL "model"
-
-int yf_test_model(void);
-
-static int test_model(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_model();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(model)
 
 /* Terrain test. */
 #define YF_TEST_TERRAIN "terrain"
-
-int yf_test_terrain(void);
-
-static int test_terrain(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_terrain();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(terrain)
 
 /* Particle test. */
 #define YF_TEST_PARTICLE "particle"
-
-int yf_test_particle(void);
-
-static int test_particle(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_particle();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(particle)
 
 /* Quad test. */
 #define YF_TEST_QUAD "quad"
-
-int yf_test_quad(void);
-
-static int test_quad(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_quad();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(quad)
 
 /* Label test. */
 #define YF_TEST_LABEL "label"
-
-int yf_test_label(void);
-
-static int test_label(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_label();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(label)
 
 /* Scene test. */
 #define YF_TEST_SCENE "scene"
-
-int yf_test_scene(void);
-
-static int test_scene(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_scene();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(scene)
 
 /* Animation test. */
 #define YF_TEST_ANIMATION "animation"
-
-int yf_test_animation(void);
-
-static int test_animation(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_animation();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(animation)
 
 /* Rendering test. */
 #define YF_TEST_RENDERING "rendering"
-
-int yf_test_rendering(void);
-
-static int test_rendering(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_rendering();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(rendering)
 
 /* Composition test. */
 #define YF_TEST_COMPOSITION "composition"
-
-int yf_test_composition(void);
-
-static int test_composition(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_composition();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(composition)
 
 static const char *l_ids[] = {
     YF_TEST_NODE,
