@@ -44,6 +44,20 @@ static int test_vector(void)
     return r;
 }
 
+/* Matrix test. */
+#define YF_TEST_MATRIX "matrix"
+
+int yf_test_matrix(void);
+
+static int test_matrix(void)
+{
+    YF_TEST_SUBT;
+    puts("");
+    int r = yf_test_matrix();
+    puts("");
+    return r;
+}
+
 /* Vector/Matrix test. */
 #define YF_TEST_VECMAT "vecmat"
 
@@ -187,6 +201,7 @@ static int test_composition(void)
 static const char *l_ids[] = {
     YF_TEST_NODE,
     YF_TEST_VECTOR,
+    YF_TEST_MATRIX,
     YF_TEST_VECMAT,
     YF_TEST_MODEL,
     YF_TEST_TERRAIN,
@@ -214,6 +229,9 @@ static int test(int argc, char *argv[])
     } else if (strcmp(argv[0], YF_TEST_VECTOR) == 0) {
         test_n = 1;
         results = test_vector() == 0;
+    } else if (strcmp(argv[0], YF_TEST_MATRIX) == 0) {
+        test_n = 1;
+        results = test_matrix() == 0;
     } else if (strcmp(argv[0], YF_TEST_VECMAT) == 0) {
         test_n = 1;
         results = test_vecmat() == 0;
@@ -248,6 +266,7 @@ static int test(int argc, char *argv[])
         int (*const tests[])(void) = {
             test_node,
             test_vector,
+            test_matrix,
             test_vecmat,
             test_model,
             test_terrain,
