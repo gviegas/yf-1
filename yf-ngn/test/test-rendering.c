@@ -1,6 +1,6 @@
 /*
  * YF
- * test-render.c
+ * test-rendering.c
  *
  * Copyright © 2021 Gustavo C. Viegas.
  */
@@ -16,7 +16,7 @@
 
 #define YF_WINW 640
 #define YF_WINH 480
-#define YF_WINT "Render"
+#define YF_WINT "Rendering"
 #define YF_FPS  60
 #define YF_MDLN_1 10
 #define YF_MDLN_2 5
@@ -183,7 +183,7 @@ static void update(double elapsed_time)
 }
 
 /* Tests rendering. */
-int yf_test_render(void)
+int yf_test_rendering(void)
 {
     YF_evtfn evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);

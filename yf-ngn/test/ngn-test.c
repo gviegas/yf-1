@@ -156,16 +156,16 @@ static int test_animation(void)
     return r;
 }
 
-/* Render test. */
-#define YF_TEST_RENDER "render"
+/* Rendering test. */
+#define YF_TEST_RENDERING "rendering"
 
-int yf_test_render(void);
+int yf_test_rendering(void);
 
-static int test_render(void)
+static int test_rendering(void)
 {
     YF_TEST_SUBT;
     puts("");
-    int r = yf_test_render();
+    int r = yf_test_rendering();
     puts("");
     return r;
 }
@@ -195,7 +195,7 @@ static const char *l_ids[] = {
     YF_TEST_LABEL,
     YF_TEST_SCENE,
     YF_TEST_ANIMATION,
-    YF_TEST_RENDER,
+    YF_TEST_RENDERING,
     YF_TEST_COMPOSITION,
     YF_TEST_ALL
 };
@@ -238,9 +238,9 @@ static int test(int argc, char *argv[])
     } else if (strcmp(argv[0], YF_TEST_ANIMATION) == 0) {
         test_n = 1;
         results = test_animation() == 0;
-    } else if (strcmp(argv[0], YF_TEST_RENDER) == 0) {
+    } else if (strcmp(argv[0], YF_TEST_RENDERING) == 0) {
         test_n = 1;
-        results = test_render() == 0;
+        results = test_rendering() == 0;
     } else if (strcmp(argv[0], YF_TEST_COMPOSITION) == 0) {
         test_n = 1;
         results = test_composition() == 0;
@@ -256,7 +256,7 @@ static int test(int argc, char *argv[])
             test_label,
             test_scene,
             test_animation,
-            test_render,
+            test_rendering,
             test_composition
         };
         test_n = sizeof tests / sizeof tests[0];
