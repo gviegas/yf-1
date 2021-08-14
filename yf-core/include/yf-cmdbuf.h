@@ -86,6 +86,8 @@ void yf_cmdbuf_reset(YF_context ctx);
 /**
  * Sets the graphics state.
  *
+ * CMDBUF_GRAPH
+ *
  * @param cmdb: The command buffer.
  * @param gst: The state to set.
  */
@@ -93,6 +95,8 @@ void yf_cmdbuf_setgstate(YF_cmdbuf cmdb, YF_gstate gst);
 
 /**
  * Sets the compute state.
+ *
+ * CMDBUF_COMP
  *
  * @param cmdb: The command buffer.
  * @param cst: The state to set.
@@ -102,6 +106,8 @@ void yf_cmdbuf_setcstate(YF_cmdbuf cmdb, YF_cstate cst);
 /**
  * Sets the render target.
  *
+ * CMDBUF_GRAPH
+ *
  * @param cmdb: The command buffer.
  * @param tgt: The target to set.
  */
@@ -109,6 +115,8 @@ void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt);
 
 /**
  * Sets a viewport.
+ *
+ * CMDBUF_GRAPH
  *
  * @param cmdb: The command buffer.
  * @param index: The viewport index.
@@ -120,6 +128,8 @@ void yf_cmdbuf_setvport(YF_cmdbuf cmdb, unsigned index,
 /**
  * Sets the scissor of a viewport.
  *
+ * CMDBUF_GRAPH
+ *
  * @param cmdb: The command buffer.
  * @param index: The viewport index.
  * @param rect: The scissor rect.
@@ -129,6 +139,9 @@ void yf_cmdbuf_setsciss(YF_cmdbuf cmdb, unsigned index, YF_rect rect);
 /**
  * Sets a dtable resource allocation.
  *
+ * CMDBUF_GRAPH
+ * CMDBUF_COMP
+ *
  * @param cmdb: The command buffer.
  * @param index: The index of the table to set within the current state.
  * @param alloc_i: The index of the allocation within the table.
@@ -137,6 +150,8 @@ void yf_cmdbuf_setdtable(YF_cmdbuf cmdb, unsigned index, unsigned alloc_i);
 
 /**
  * Sets a vertex buffer binding.
+ *
+ * CMDBUF_GRAPH
  *
  * @param cmdb: The command buffer.
  * @param index: The index of the input binding.
@@ -148,6 +163,8 @@ void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
 
 /**
  * Sets the index buffer.
+ *
+ * CMDBUF_GRAPH
  *
  * @param cmdb: The command buffer.
  * @param buf: The index buffer.
@@ -165,6 +182,8 @@ void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset,
 /**
  * Clears the color aspect of the target's color image.
  *
+ * CMDBUF_GRAPH
+ *
  * @param cmdb: The command buffer.
  * @param index: The index of the attachment to clear.
  * @param value: The clear value.
@@ -174,6 +193,8 @@ void yf_cmdbuf_clearcolor(YF_cmdbuf cmdb, unsigned index, YF_color value);
 /**
  * Clears the depth aspect of the target's depth/stencil image.
  *
+ * CMDBUF_GRAPH
+ *
  * @param cmdb: The command buffer.
  * @param value: The clear value.
  */
@@ -181,6 +202,8 @@ void yf_cmdbuf_cleardepth(YF_cmdbuf cmdb, float value);
 
 /**
  * Clears the stencil aspect of the target's depth/stencil image.
+ *
+ * CMDBUF_GRAPH
  *
  * @param cmdb: The command buffer.
  * @param value: The clear value.
@@ -194,6 +217,8 @@ void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value);
 /**
  * Draws primitives.
  *
+ * CMDBUF_GRAPH
+ *
  * @param cmdb: The command buffer.
  * @param vert_id: The initial vertex ID for use in the shader.
  * @param vert_n: The number of vertices to draw.
@@ -205,6 +230,8 @@ void yf_cmdbuf_draw(YF_cmdbuf cmdb, unsigned vert_id, unsigned vert_n,
 
 /**
  * Draws primitives using indices.
+ *
+ * CMDBUF_GRAPH
  *
  * @param cmdb: The command buffer.
  * @param index_base: The base index for index buffer access.
@@ -223,6 +250,8 @@ void yf_cmdbuf_drawi(YF_cmdbuf cmdb, unsigned index_base, int vert_off,
 /**
  * Dispatches a global workgroup with the given dimensions.
  *
+ * CMDBUF_COMP
+ *
  * @param cmdb: The command buffer.
  * @param dim: The dimensions of the work group.
  */
@@ -234,6 +263,8 @@ void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim);
 
 /**
  * Copies data between buffers.
+ *
+ * CMDBUF_XFER
  *
  * @param cmdb: The command buffer.
  * @param dst: The destination buffer.
@@ -247,6 +278,8 @@ void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_offs,
 
 /**
  * Copies data between images.
+ *
+ * CMDBUF_XFER
  *
  * @param cmdb: The command buffer.
  * @param dst: The destination image.
@@ -271,6 +304,10 @@ void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, YF_off3 dst_off,
 
 /**
  * Synchronizes command buffer execution.
+ *
+ * CMDBUF_GRAPH
+ * CMDBUF_COMP
+ * CMDBUF_XFER
  *
  * @param cmdb: The command buffer.
  */
