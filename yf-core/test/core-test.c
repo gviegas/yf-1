@@ -11,24 +11,15 @@
 
 #include "test.h"
 
+#define YF_TEST_DEF(id) \
+int yf_test_##id(void); \
+static int test_##id(void) { puts("\n["#id"]\n"); return yf_test_##id(); }
+
 #define YF_TEST_ALL "all"
-#define YF_TEST_SUBL "................................"
-#define YF_TEST_SUBT \
-    printf("%s\n%.*s\n", __func__, (int)strlen(__func__), YF_TEST_SUBL)
 
 /* Draw test. */
 #define YF_TEST_DRAW "draw"
-
-int yf_test_draw(void);
-
-static int test_draw(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_draw();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(draw)
 
 static const char *l_ids[] = {YF_TEST_DRAW, YF_TEST_ALL};
 
