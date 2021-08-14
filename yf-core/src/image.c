@@ -229,7 +229,8 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     }
 
     /* prefer linear tiling */
-    if (samples != 1 || set_usage(img, VK_IMAGE_TILING_LINEAR) != 0 ||
+    if (samples != 1 ||
+        set_usage(img, VK_IMAGE_TILING_LINEAR) != 0 ||
         set_tiling(img, VK_IMAGE_TILING_LINEAR) != 0) {
 
         /* linear tiling won't work, try optimal tiling */
@@ -293,20 +294,29 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
         off.x + dim.width > img->dim.width ||
         off.y + dim.height > img->dim.height ||
         off.z + dim.depth > img->dim.depth) {
+
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }
 
     if (img->tiling == VK_IMAGE_TILING_LINEAR) {
+        /* write data to image memory directly */
         switch (img->next_layout) {
         case VK_IMAGE_LAYOUT_PREINITIALIZED:
         case VK_IMAGE_LAYOUT_GENERAL:
             break;
         default:
-            /* must be host-visible */
+            /* must be host-accessible */
             if (yf_image_chglayout(img, VK_IMAGE_LAYOUT_GENERAL) != 0 ||
                 yf_cmdexec_execprio(img->ctx) != 0)
                 return -1;
+        }
+
+        if (img->aspect != VK_IMAGE_ASPECT_COLOR_BIT &&
+            img->aspect != VK_IMAGE_ASPECT_DEPTH_BIT &&
+            img->aspect != VK_IMAGE_ASPECT_STENCIL_BIT) {
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            return -1;
         }
 
         VkImageSubresource subres = {
@@ -314,13 +324,6 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
             .mipLevel = level,
             .arrayLayer = 0
         };
-        if (subres.aspectMask != VK_IMAGE_ASPECT_COLOR_BIT &&
-            subres.aspectMask != VK_IMAGE_ASPECT_DEPTH_BIT &&
-            subres.aspectMask != VK_IMAGE_ASPECT_STENCIL_BIT) {
-            yf_seterr(YF_ERR_UNSUP, __func__);
-            return -1;
-        }
-
         VkSubresourceLayout layout;
         vkGetImageSubresourceLayout(img->ctx->device, img->image, &subres,
                                     &layout);
@@ -345,9 +348,15 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
         }
 
     } else {
-        if (img->next_layout != VK_IMAGE_LAYOUT_GENERAL &&
-            yf_image_chglayout(img, VK_IMAGE_LAYOUT_GENERAL) != 0)
-            return -1;
+        /* write data to buffer and then issue a copy to image command */
+        switch (img->next_layout) {
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+        case VK_IMAGE_LAYOUT_GENERAL:
+            break;
+        default:
+            if (yf_image_chglayout(img, VK_IMAGE_LAYOUT_GENERAL) != 0)
+                return -1;
+        }
 
         size_t sz;
         YF_PIXFMT_SIZEOF(img->pixfmt, sz);
@@ -380,7 +389,7 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
         };
 
         vkCmdCopyBufferToImage(cmdr->pool_res, stg_buf->buffer, img->image,
-                               VK_IMAGE_LAYOUT_GENERAL, 1, &region);
+                               img->next_layout, 1, &region);
     }
 
     return 0;
