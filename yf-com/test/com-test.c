@@ -36,29 +36,15 @@ static int test_error(void)
 /* Clock test. */
 #define YF_TEST_CLOCK "clock"
 
+int yf_test_clock(void);
+
 static int test_clock(void)
 {
     YF_TEST_SUBT;
-
-    double t1, t2;
-
-    t1 = yf_gettime();
-    printf("\ngettime() is %f\n", t1);
-    t2 = yf_gettime();
-    printf("\ngettime() is %f\n", t2);
-    printf("\n(%fs elapsed)\n", t2 - t1);
-
-    double ts[] = {1.0, 1.5, 0.1, 0.01, 3.125};
-
-    for (size_t i = 0; i < (sizeof ts / sizeof ts[0]); i++) {
-        printf("\nsleep(%f)\n", ts[i]);
-        t1 = yf_gettime();
-        yf_sleep(ts[i]);
-        printf("ret. (%fs elapsed)\n", yf_gettime()-t1);
-    }
-
     puts("");
-    return 0;
+    int r = yf_test_clock();
+    puts("");
+    return r;
 }
 
 /* List test. */
