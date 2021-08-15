@@ -22,52 +22,15 @@
 /* Error test. */
 #define YF_TEST_ERROR "error"
 
+int yf_test_error(void);
+
 static int test_error(void)
 {
     YF_TEST_SUBT;
-
-    int err;
-    const size_t n = 128;
-    char info[n];
-
-    if (yf_geterrinfo(info, n) != info)
-        return -1;
-
-    printf("\nerr code/info: %d/%s\n", yf_geterr(), info);
-
-    yf_seterr(YF_ERR_NOTFND, "test");
-    err = yf_geterr();
-    if (err != YF_ERR_NOTFND)
-        return -1;
-
-    if (yf_geterrinfo(info, n) != info)
-        return -1;
-
-    printf("err code/info: %d/%s\n", yf_geterr(), info);
-
-    yf_seterr(YF_ERR_LIMIT, NULL);
-    if (err == yf_geterr())
-        return -1;
-    if (yf_geterr() != YF_ERR_LIMIT)
-        return -1;
-
-    if (yf_geterrinfo(info, n) != info)
-        return -1;
-
-    printf("err code/info: %d/%s\n", yf_geterr(), info);
-
-    yf_seterr(YF_ERR_OTHER, "TEST");
-    err = yf_geterr();
-    if (err != YF_ERR_OTHER)
-        return -1;
-
-    if (yf_geterrinfo(info, n) != info)
-        return -1;
-
-    printf("err code/info: %d/%s\n", yf_geterr(), info);
-
     puts("");
-    return 0;
+    int r = yf_test_error();
+    puts("");
+    return r;
 }
 
 /* Clock test. */
