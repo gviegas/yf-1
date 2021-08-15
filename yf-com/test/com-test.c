@@ -6,88 +6,36 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include <time.h>
 #include <assert.h>
 
 #include "test.h"
-#include "yf-com.h"
+
+#define YF_TEST_DEF(id) \
+int yf_test_##id(void); \
+static int test_##id(void) { puts("\n["#id"]\n"); return yf_test_##id(); }
 
 #define YF_TEST_ALL "all"
-#define YF_TEST_SUBLN "..............................."
-#define YF_TEST_SUBT \
-    printf("%s\n%.*s\n", __func__, (int)strlen(__func__), YF_TEST_SUBLN)
 
 /* Error test. */
 #define YF_TEST_ERROR "error"
-
-int yf_test_error(void);
-
-static int test_error(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_error();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(error)
 
 /* Clock test. */
 #define YF_TEST_CLOCK "clock"
-
-int yf_test_clock(void);
-
-static int test_clock(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_clock();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(clock)
 
 /* List test. */
 #define YF_TEST_LIST "list"
-
-int yf_test_list(void);
-
-static int test_list(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_list();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(list)
 
 /* Dictionary test. */
 #define YF_TEST_DICT "dict"
-
-int yf_test_dict(void);
-
-static int test_dict(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_dict();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(dict)
 
 /* Publish-Subscribe test. */
 #define YF_TEST_PUBSUB "pubsub"
-
-int yf_test_pubsub(void);
-
-static int test_pubsub(void)
-{
-    YF_TEST_SUBT;
-    puts("");
-    int r = yf_test_pubsub();
-    puts("");
-    return r;
-}
+YF_TEST_DEF(pubsub)
 
 static const char *l_ids[] = {
     YF_TEST_ERROR,
