@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     size_t results = 0;
 
     if (argc == 1) {
-        printf("! Error: missing TEST_ID\n"
+        printf("\n! Error: missing TEST_ID\n"
                "! Usage: %s TEST_ID\n"
                "\nPossible values for TEST_ID:\n", argv[0]);
 
@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
                 }
             }
             if (test_n == 0) {
-                printf("! Error: unknown TEST_ID '%s'\n"
+                printf("\n! Error: unknown TEST_ID '%s'\n"
                        "\nPossible values for TEST_ID:\n", argv[1]);
 
                 for (size_t i = 0; i < yf_g_test.n; i++)
@@ -69,8 +69,8 @@ int main(int argc, char *argv[])
     else
         printf("\nDONE!\n"
                "\nNumber of tests executed: %zu\n"
-               "> #%zu passed\n"
-               "> #%zu failed\n"
+               " Passed: %zu\n"
+               " Failed: %zu\n"
                "\nCoverage: %.0f%%\n",
                test_n, results, test_n - results,
                (double)results / (double)test_n * 100.0);
