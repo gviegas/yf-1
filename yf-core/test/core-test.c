@@ -7,13 +7,16 @@
 
 #include "test.h"
 
+int yf_test_context(void);
 int yf_test_draw(void);
 
 static const char *l_ids[] = {
+    "context",
     "draw"
 };
 
 static int (*l_fns[])(void) = {
+    yf_test_context,
     yf_test_draw
 };
 
