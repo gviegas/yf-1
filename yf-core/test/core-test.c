@@ -8,15 +8,18 @@
 #include "test.h"
 
 int yf_test_context(void);
+int yf_test_buffer(void);
 int yf_test_draw(void);
 
 static const char *l_ids[] = {
     "context",
+    "buffer",
     "draw"
 };
 
 static int (*l_fns[])(void) = {
     yf_test_context,
+    yf_test_buffer,
     yf_test_draw
 };
 
