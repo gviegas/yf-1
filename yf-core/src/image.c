@@ -290,7 +290,7 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
     assert(data != NULL);
     assert(dim.width > 0 && dim.height > 0 && dim.depth > 0);
 
-    if (layer > img->layers || level > img->levels ||
+    if (layer >= img->layers || level >= img->levels ||
         off.x + dim.width > img->dim.width ||
         off.y + dim.height > img->dim.height ||
         off.z + dim.depth > img->dim.depth) {
