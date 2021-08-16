@@ -8,12 +8,16 @@
 #ifndef YF_TEST_H
 #define YF_TEST_H
 
-/* Type defining a single test to execute. */
+#include <stddef.h>
+
+#define YF_TEST_ALL "all"
+
+/* Type defining test(s) to execute. */
 typedef struct {
     char name[64];
-    int (*fn)(int argc, char *argv[]);
     const char *const *ids;
-    size_t id_n;
+    int (*const *fns)(void);
+    size_t n;
 } YF_test;
 
 extern const YF_test yf_g_test;
