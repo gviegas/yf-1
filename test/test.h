@@ -10,6 +10,10 @@
 
 #include <stddef.h>
 
+#define YF_TEST_PRINT(fn_name, params, ret) \
+    (*(ret) == '\0') ? (printf("\n%s(%s)\n", fn_name, params)) : \
+                       (printf("\n%s(%s)\n -> %s\n", fn_name, params, ret))
+
 #define YF_TEST_ALL "all"
 
 /* Type defining test(s) to execute. */
