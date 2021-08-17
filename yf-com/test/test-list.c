@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 
+#include "test.h"
 #include "yf-list.h"
 
 /* 'list_each()' callback. */
@@ -24,21 +25,21 @@ int yf_test_list(void)
     const int c = 'c';
     const int d = 'd';
 
-    puts("(init NULL)\n -> ls\n");
+    YF_TEST_PRINT("init", "NULL", "ls");
     YF_list ls = yf_list_init(NULL);
     if (yf_list_getlen(ls) != 0)
         return -1;
     if (yf_list_contains(ls, NULL))
         return -1;
 
-    puts("(insert ls,&a)\n");
+    YF_TEST_PRINT("insert", "ls, &a", "");
     yf_list_insert(ls, &a);
     if (yf_list_getlen(ls) != 1)
         return -1;
     if (!yf_list_contains(ls, &a))
         return -1;
 
-    puts("(insert ls,&b)\n");
+    YF_TEST_PRINT("insert", "ls, &b", "");
     yf_list_insert(ls, &b);
     if (yf_list_getlen(ls) != 2)
         return -1;
@@ -47,7 +48,7 @@ int yf_test_list(void)
     if (!yf_list_contains(ls, &a))
         return -1;
 
-    puts("(insert ls,&c)\n");
+    YF_TEST_PRINT("insert", "ls, &c", "");
     yf_list_insert(ls, &c);
     if (yf_list_getlen(ls) != 3)
         return -1;
@@ -60,7 +61,7 @@ int yf_test_list(void)
     if (yf_list_contains(ls, &d))
         return -1;
 
-    puts("(remove ls,&b)\n");
+    YF_TEST_PRINT("remove", "ls, &b", "");
     yf_list_remove(ls, &b);
     if (yf_list_getlen(ls) != 2)
         return -1;
@@ -71,7 +72,7 @@ int yf_test_list(void)
     if (!yf_list_contains(ls, &c))
         return -1;
 
-    puts("(remove ls,&a)\n");
+    YF_TEST_PRINT("remove", "ls, &a", "");
     yf_list_remove(ls, &a);
     if (yf_list_getlen(ls) != 1)
         return -1;
@@ -82,7 +83,7 @@ int yf_test_list(void)
     if (!yf_list_contains(ls, &c))
         return -1;
 
-    puts("(insert ls,&d)\n");
+    YF_TEST_PRINT("insert", "ls, &d", "");
     yf_list_insert(ls, &d);
     if (yf_list_getlen(ls) != 2)
         return -1;
@@ -95,7 +96,7 @@ int yf_test_list(void)
     if (yf_list_contains(ls, &b))
         return -1;
 
-    puts("(insert ls,&b)\n");
+    YF_TEST_PRINT("insert", "ls, &b", "");
     yf_list_insert(ls, &b);
     if (yf_list_getlen(ls) != 3)
         return -1;
@@ -110,7 +111,7 @@ int yf_test_list(void)
 
     YF_iter it;
 
-    puts("(next ls,&it)");
+    YF_TEST_PRINT("next", "ls, &it", "");
     it = YF_NILIT;
     for (;;) {
         int *v = yf_list_next(ls, &it);
@@ -118,16 +119,16 @@ int yf_test_list(void)
             break;
         printf(" %c", *v);
     }
-    puts("\n");
+    puts("");
 
-    puts("(each ls,list_cb,0x1f)");
+    YF_TEST_PRINT("each", "ls, list_cb, 0x01f", "");
     yf_list_each(ls, list_cb, (void*)0x1f);
-    puts("\n");
+    puts("");
 
-    puts("(remove ls,&c)\n");
+    YF_TEST_PRINT("remove", "ls, &c", "");
     yf_list_remove(ls, &c);
 
-    puts("(next ls,&it)");
+    YF_TEST_PRINT("next", "ls, &it", "");
     it = YF_NILIT;
     for (;;) {
         int *v = yf_list_next(ls, &it);
@@ -135,16 +136,16 @@ int yf_test_list(void)
             break;
         printf(" %c", *v);
     }
-    puts("\n");
+    puts("");
 
-    puts("(each ls,list_cb,NULL)");
+    YF_TEST_PRINT("each", "ls, list_cb, NULL", "");
     yf_list_each(ls, list_cb, NULL);
-    puts("\n");
+    puts("");
 
-    puts("(clear ls)\n");
+    YF_TEST_PRINT("clear", "ls", "");
     yf_list_clear(ls);
 
-    puts("(next ls,&it)");
+    YF_TEST_PRINT("next", "ls, &it", "");
     it = YF_NILIT;
     for (;;) {
         int *v = yf_list_next(ls, &it);
@@ -152,11 +153,11 @@ int yf_test_list(void)
             break;
         printf(" %c", *v);
     }
-    puts("\n");
+    puts("");
 
-    puts("(each ls,list_cb,NULL)");
+    YF_TEST_PRINT("each", "ls, list_cb, NULL", "");
     yf_list_each(ls, list_cb, NULL);
-    puts("\n");
+    puts("");
 
     if (yf_list_getlen(ls) != 0)
         return -1;
@@ -169,43 +170,43 @@ int yf_test_list(void)
     if (yf_list_contains(ls, &d))
         return -1;
 
-    puts("(insertat ls,NULL,&a)\n");
+    YF_TEST_PRINT("insertat", "ls, NULL, &a", "");
     yf_list_insertat(ls, NULL, &a);
     if (yf_list_getlen(ls) != 1)
         return -1;
-    puts("(insertat ls,NULL,&b)\n");
+    YF_TEST_PRINT("insertat", "ls, NULL, &b", "");
     yf_list_insertat(ls, NULL, &b);
-    puts("(insertat ls,NULL,&c)\n");
+    YF_TEST_PRINT("insertat", "ls, NULL, &c", "");
     yf_list_insertat(ls, NULL, &c);
-    puts("(insertat ls,NULL,&d)\n");
+    YF_TEST_PRINT("insertat", "ls, NULL, &d", "");
     yf_list_insertat(ls, NULL, &d);
     if (yf_list_getlen(ls) != 4)
         return -1;
 
-    puts("(each ls,list_cb,NULL)");
+    YF_TEST_PRINT("each", "ls, list_cb, NULL", "");
     yf_list_each(ls, list_cb, NULL);
-    puts("\n");
+    puts("");
 
-    puts("(clear ls)\n");
+    YF_TEST_PRINT("clear", "ls", "");
     yf_list_clear(ls);
 
     it = YF_NILIT;
-    puts("(insertat ls,&it,&a)\n");
+    YF_TEST_PRINT("insertat", "ls, &it, &a", "");
     yf_list_insertat(ls, &it, &a);
     if (yf_list_getlen(ls) != 1)
         return -1;
-    puts("(insertat ls,&it,&b)\n");
+    YF_TEST_PRINT("insertat", "ls, &it, &b", "");
     yf_list_insertat(ls, &it, &b);
-    puts("(insertat ls,&it,&c)\n");
+    YF_TEST_PRINT("insertat", "ls, &it, &c", "");
     yf_list_insertat(ls, &it, &c);
-    puts("(insertat ls,&it,&d)\n");
+    YF_TEST_PRINT("insertat", "ls, &it, &d", "");
     yf_list_insertat(ls, &it, &d);
     if (yf_list_getlen(ls) != 4)
         return -1;
 
-    puts("(each ls,list_cb,NULL)");
+    YF_TEST_PRINT("each", "ls, list_cb, NULL", "");
     yf_list_each(ls, list_cb, NULL);
-    puts("\n");
+    puts("");
 
     if (YF_IT_ISNIL(it))
         return -1;
@@ -216,69 +217,71 @@ int yf_test_list(void)
 
     int *v;
     while ((v = yf_list_next(ls, NULL)) != NULL) {
-        puts("(removeat ls,NULL)\n");
+        YF_TEST_PRINT("removeat", "ls, NULL", "");
         if (*v != *(int *)yf_list_removeat(ls, NULL))
             return -1;
-        puts("(each ls,list_cb,NULL)");
+        YF_TEST_PRINT("each", "ls, list_cb, NULL", "");
         yf_list_each(ls, list_cb, NULL);
-        puts("\n");
+        puts("");
     }
 
-    puts("(insert ls,&a)\n");
+    YF_TEST_PRINT("insert", "ls, &a", "");
     yf_list_insert(ls, &a);
-    puts("(insert ls,&b)\n");
+    YF_TEST_PRINT("insert", "ls, &b", "");
     yf_list_insert(ls, &b);
-    puts("(insert ls,&c)\n");
+    YF_TEST_PRINT("insert", "ls, &c", "");
     yf_list_insert(ls, &c);
-    puts("(insert ls,&d)\n");
+    YF_TEST_PRINT("insert", "ls, &d", "");
     yf_list_insert(ls, &d);
 
     it = YF_NILIT;
     while ((v = yf_list_next(ls, NULL)) != NULL) {
-        puts("(removeat ls,&it)\n");
+        YF_TEST_PRINT("removeat", "ls, &it", "");
         if (*v != *(int *)yf_list_removeat(ls, &it))
             return -1;
-        puts("(each ls,list_cb,NULL)");
+        YF_TEST_PRINT("each", "ls, list_cb, NULL", "");
         yf_list_each(ls, list_cb, NULL);
-        puts("\n");
+        puts("");
     }
 
     it = YF_NILIT;
-    puts("(insertat ls,&it,&a)\n");
+    YF_TEST_PRINT("insertat", "ls, &it, &a", "");
     yf_list_insertat(ls, &it, &a);
-    puts("(insertat ls,&it,&b)\n");
+    YF_TEST_PRINT("insertat", "ls, &it, &b", "");
     yf_list_insertat(ls, &it, &b);
-    puts("(insertat ls,&it,&c)\n");
+    YF_TEST_PRINT("insertat", "ls, &it, &c", "");
     yf_list_insertat(ls, &it, &c);
 
-    puts("(each ls,list_cb,NULL)");
+    YF_TEST_PRINT("each", "ls, list_cb, NULL", "");
     yf_list_each(ls, list_cb, NULL);
-    puts("\n");
+    puts("");
 
-    puts("(next ls,&it)");
+    YF_TEST_PRINT("next", "ls, &it", "");
     it = YF_NILIT;
     for (;;) {
         v = yf_list_next(ls, &it);
         printf(" %c", *v);
-        if (*v == b)
+        if (*v == b) {
+            printf(" <early break>");
             break;
+        }
     }
     if (!yf_list_contains(ls, &b))
         return -1;
-    puts("\n");
+    puts("");
 
-    puts("(removeat ls,&it)\n");
+    YF_TEST_PRINT("removeat", "ls, &it", "");
     yf_list_removeat(ls, &it);
     if (yf_list_contains(ls, &b))
         return -1;
     if (yf_list_getlen(ls) != 2)
         return -1;
 
-    puts("(each ls,list_cb,NULL)");
+    YF_TEST_PRINT("each", "ls, list_cb, NULL", "");
     yf_list_each(ls, list_cb, NULL);
-    puts("\n");
+    puts("");
 
-    puts("(deinit ls)");
+    YF_TEST_PRINT("deinit", "ls", "");
     yf_list_deinit(ls);
 
     return 0;
