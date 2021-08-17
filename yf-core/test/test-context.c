@@ -21,5 +21,5 @@ int yf_test_context(void)
     YF_TEST_PRINT("deinit", "ctx", "");
     yf_context_deinit(ctx);
 
-    return -1;
+    return 0;
 }
