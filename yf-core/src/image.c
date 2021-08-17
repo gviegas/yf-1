@@ -511,6 +511,8 @@ YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
         return NULL;
     }
 
+    yf_setpub(img, YF_PUBSUB_DEINIT);
+
     return img;
 }
 
