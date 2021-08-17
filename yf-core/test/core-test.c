@@ -13,6 +13,7 @@ int yf_test_image(void);
 int yf_test_pass(void);
 int yf_test_stage(void);
 int yf_test_dtable(void);
+int yf_test_gstate(void);
 int yf_test_draw(void);
 
 static const char *l_ids[] = {
@@ -22,6 +23,7 @@ static const char *l_ids[] = {
     "pass",
     "stage",
     "dtable",
+    "gstate",
     "draw"
 };
 
@@ -32,6 +34,7 @@ static int (*l_fns[])(void) = {
     yf_test_pass,
     yf_test_stage,
     yf_test_dtable,
+    yf_test_gstate,
     yf_test_draw
 };
 
