@@ -16,6 +16,7 @@ int yf_test_dtable(void);
 int yf_test_gstate(void);
 int yf_test_cstate(void);
 int yf_test_cmdbuf(void);
+int yf_test_wsi(void);
 int yf_test_draw(void);
 
 static const char *l_ids[] = {
@@ -28,6 +29,7 @@ static const char *l_ids[] = {
     "gstate",
     "cstate",
     "cmdbuf",
+    "wsi",
     "draw"
 };
 
@@ -41,6 +43,7 @@ static int (*l_fns[])(void) = {
     yf_test_gstate,
     yf_test_cstate,
     yf_test_cmdbuf,
+    yf_test_wsi,
     yf_test_draw
 };
 
