@@ -14,6 +14,7 @@ int yf_test_pass(void);
 int yf_test_stage(void);
 int yf_test_dtable(void);
 int yf_test_gstate(void);
+int yf_test_cstate(void);
 int yf_test_draw(void);
 
 static const char *l_ids[] = {
@@ -24,6 +25,7 @@ static const char *l_ids[] = {
     "stage",
     "dtable",
     "gstate",
+    "cstate",
     "draw"
 };
 
@@ -35,6 +37,7 @@ static int (*l_fns[])(void) = {
     yf_test_stage,
     yf_test_dtable,
     yf_test_gstate,
+    yf_test_cstate,
     yf_test_draw
 };
 
