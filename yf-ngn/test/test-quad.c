@@ -11,6 +11,7 @@
 #include "yf/wsys/yf-event.h"
 #include "yf/wsys/yf-keyboard.h"
 
+#include "test.h"
 #include "yf-ngn.h"
 
 #define YF_WINW 640
@@ -46,17 +47,14 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(double elapsed_time)
+static void update(YF_UNUSED double elapsed_time)
 {
-    printf("update (%.4f)\n", elapsed_time);
-
-    if (l_vars.input.quit) {
-        printf("quit\n");
+    if (l_vars.input.quit)
         yf_view_stop(l_vars.view);
-    }
 }
 
-/* Tests quad rendering. */
+/* Tests quad. */
+/* TODO: More tests. */
 int yf_test_quad(void)
 {
     YF_evtfn evtfn = {.key_kb = on_key};
@@ -71,24 +69,46 @@ int yf_test_quad(void)
     l_vars.scn = yf_scene_init();
     assert(l_vars.scn != NULL);
 
-    l_vars.quad = yf_quad_init();
-    assert(l_vars.quad != NULL);
-
     l_vars.tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/quad.png");
     assert(l_vars.tex != NULL);
 
+    YF_TEST_PRINT("init", "", "quad");
+    l_vars.quad = yf_quad_init();
+    if (l_vars.quad == NULL)
+        return -1;
+
+    YF_TEST_PRINT("getnode", "quad", "");
+    YF_node node = yf_quad_getnode(l_vars.quad);
+    if (node == NULL)
+        return -1;
+
+    YF_TEST_PRINT("getmesh", "quad", "");
+    if (yf_quad_getmesh(l_vars.quad) == NULL)
+        return -1;
+
+    YF_TEST_PRINT("gettex", "quad", "");
+    if (yf_quad_gettex(l_vars.quad) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("settex", "quad, tex", "");
     yf_quad_settex(l_vars.quad, l_vars.tex);
 
-    yf_node_insert(yf_scene_getnode(l_vars.scn), yf_quad_getnode(l_vars.quad));
+    YF_TEST_PRINT("gettex", "quad", "");
+    if (yf_quad_gettex(l_vars.quad) != l_vars.tex)
+        return -1;
+
+    yf_node_insert(yf_scene_getnode(l_vars.scn), node);
 
     yf_view_setscene(l_vars.view, l_vars.scn);
 
     if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
         assert(0);
 
+    YF_TEST_PRINT("deinit", "quad", "");
+    yf_quad_deinit(l_vars.quad);
+
     yf_view_deinit(l_vars.view);
     yf_scene_deinit(l_vars.scn);
-    yf_quad_deinit(l_vars.quad);
     yf_texture_deinit(l_vars.tex);
     yf_window_deinit(l_vars.win);
 
