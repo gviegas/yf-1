@@ -6,14 +6,12 @@
  */
 
 #include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
 #include <assert.h>
 
-#include "yf/com/yf-util.h"
 #include "yf/wsys/yf-event.h"
 #include "yf/wsys/yf-keyboard.h"
 
+#include "test.h"
 #include "yf-ngn.h"
 
 #define YF_WINW 640
@@ -27,119 +25,69 @@
 struct T_vars {
     YF_window win;
     YF_view view;
-
-#define YF_SCNN 2
-    YF_scene scn[YF_SCNN];
-
-#define YF_MDLN 12
-    YF_model mdl[YF_MDLN];
-    YF_mesh mesh[YF_MDLN];
-    YF_texture tex[YF_MDLN];
-    YF_material matl[YF_MDLN];
-    size_t uniq_res_n;
+    YF_scene scn;
+    YF_mesh mesh;
+    YF_material matl;
+    YF_model mdl;
 
     struct {
         int quit;
-        int swap;
         int place;
         int point;
         int move[6];
         int turn[4];
-        float speed;
+        int next;
+        int prev;
     } input;
 };
 static struct T_vars l_vars = {0};
 
-/* Transformation matrices for each model. */
+/* Model transforms. */
 static const YF_mat4 l_xforms[] = {
     {
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f
     },
     {
-        1.5, 0.0, 0.0, 0.0,
-        0.0, 1.5, 0.0, 0.0,
-        0.0, 0.0, 1.5, 0.0,
-        3.0, -3.0, 2.0, 1.0
+        1.5f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.5f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.5f, 0.0f,
+        3.0f, -3.0f, 2.0f, 1.0f
     },
     {
-        2.0, 0.0, 0.0, 0.0,
-        0.0, 2.0, 0.0, 0.0,
-        0.0, 0.0, 2.0, 0.0,
-        -6.0, -2.0, 4.0, 1.0
+        2.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 2.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 2.0f, 0.0f,
+        -6.0f, -2.0f, 4.0f, 1.0f
     },
     {
-        0.7, 0.0, 0.0, 0.0,
-        0.0, 0.7, 0.0, 0.0,
-        0.0, 0.0, 0.7, 0.0,
-        4.0, -2.0, -1.0, 1.0
+        0.7f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.7f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.7f, 0.0f,
+        4.0f, -2.0f, -1.0f, 1.0f
     },
     {
-        1.4, 0.0, 0.0, 0.0,
-        0.0, 1.4, 0.0, 0.0,
-        0.0, 0.0, 1.4, 0.0,
-        -5.5, 3.0, 5.0, 1.0
+        0.3f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.3f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.3f, 0.0f,
+        -2.5f, -2.5f, 0.0f, 1.0f
     },
     {
-        0.4, 0.0, 0.0, 0.0,
-        0.0, 0.4, 0.0, 0.0,
-        0.0, 0.0, 0.4, 0.0,
-        3.0, 2.0, -2.0, 1.0
-    },
-    {
-        0.1, 0.0, 0.0, 0.0,
-        0.0, 0.1, 0.0, 0.0,
-        0.0, 0.0, 0.1, 0.0,
-        0.0, 0.0, 0.0, 1.0
-    },
-    {
-        0.1, 0.0, 0.0, 0.0,
-        0.0, 0.1, 0.0, 0.0,
-        0.0, 0.0, 0.1, 0.0,
-        -2.5, -2.5, 0.0, 1.0
-    },
-    {
-        0.2, 0.0, 0.0, 0.0,
-        0.0, 0.2, 0.0, 0.0,
-        0.0, 0.0, 0.2, 0.0,
-        1.0, 3.0, 3.0, 1.0
-    },
-    {
-        0.2, 0.0, 0.0, 0.0,
-        0.0, 0.2, 0.0, 0.0,
-        0.0, 0.0, 0.2, 0.0,
-        2.5, 0.0, -1.0, 1.0
-    },
-    {
-        0.3, 0.0, 0.0, 0.0,
-        0.0, 0.3, 0.0, 0.0,
-        0.0, 0.0, 0.3, 0.0,
-        0.5, -4.0, 2.0, 1.0
-    },
-    {
-        1.2, 0.0, 0.0, 0.0,
-        0.0, 1.2, 0.0, 0.0,
-        0.0, 0.0, 1.2, 0.0,
-        -1.0, 2.0, 1.5, 1.0
+        0.1f, 0.0f, 0.0f, 0.0f,
+        0.0f, 0.1f, 0.0f, 0.0f,
+        0.0f, 0.0f, 0.1f, 0.0f,
+        2.5f, 0.0f, -1.0f, 1.0f
     }
 };
+#define YF_XFORMN (sizeof l_xforms / sizeof *l_xforms)
 
 /* Handles key events. */
 static void on_key(int key, int state,
                    YF_UNUSED unsigned mod_mask, YF_UNUSED void *arg)
 {
     switch (key) {
-    case YF_KEY_TAB:
-        l_vars.input.swap = state;
-        break;
-    case YF_KEY_1:
-        l_vars.input.speed -= 0.25f;
-        break;
-    case YF_KEY_2:
-        l_vars.input.speed += 0.25f;
-        break;
     case YF_KEY_RETURN:
         l_vars.input.place = state;
         break;
@@ -176,6 +124,12 @@ static void on_key(int key, int state,
     case YF_KEY_RIGHT:
         l_vars.input.turn[3] = state;
         break;
+    case YF_KEY_DOT:
+        l_vars.input.next = state;
+        break;
+    case YF_KEY_COMMA:
+        l_vars.input.prev = state;
+        break;
     default:
         l_vars.input.quit |= state;
     }
@@ -184,37 +138,10 @@ static void on_key(int key, int state,
 /* Updates content. */
 static void update(double elapsed_time)
 {
-    static double tm = 0.0;
-    tm += elapsed_time;
-    printf("update (%.6f)\n", elapsed_time);
-
-    /* Stop view's rendering loop when requested */
     if (l_vars.input.quit)
         yf_view_stop(l_vars.view);
 
-    /* Swap scenes after a while or when requested */
-    static unsigned scn_i = 0;
-    static double chg_tm = 0.0;
-    chg_tm += elapsed_time;
-    if (l_vars.input.swap || chg_tm >= 10.0) {
-        l_vars.input.swap = 0;
-        chg_tm = 0.0;
-        scn_i = (scn_i+1) % YF_SCNN;
-        yf_view_setscene(l_vars.view, l_vars.scn[scn_i]);
-    }
-
-    /* Rotate models */
-    static float ang = 0.0f;
-    ang += 0.01f * l_vars.input.speed;
-    YF_mat4 rot;
-    YF_vec3 axis = {0.7071f, -0.7071f, 0.0f};
-    yf_mat4_rot(rot, ang, axis);
-    for (unsigned i = 0; i < YF_MDLN; i++)
-        yf_mat4_mul(*yf_node_getxform(yf_model_getnode(l_vars.mdl[i])),
-                    l_xforms[i], rot);
-
-    /* Update camera */
-    YF_camera cam = yf_scene_getcam(l_vars.scn[scn_i]);
+    YF_camera cam = yf_scene_getcam(l_vars.scn);
     const float md = 16.0 * elapsed_time;
     const float td = 2.0 * elapsed_time;
 
@@ -242,134 +169,110 @@ static void update(double elapsed_time)
         yf_camera_turnl(cam, td);
     if (l_vars.input.turn[3])
         yf_camera_turnr(cam, td);
+
+    static size_t xform_i = 0;
+    if (l_vars.input.next) {
+        xform_i = (xform_i + 1) % YF_XFORMN;
+        yf_mat4_copy(*yf_node_getxform(yf_model_getnode(l_vars.mdl)),
+                     l_xforms[xform_i]);
+        l_vars.input.next = 0;
+    } else if (l_vars.input.prev) {
+        xform_i = xform_i > 0 ? (xform_i - 1) % YF_XFORMN : YF_XFORMN - 1;
+        yf_mat4_copy(*yf_node_getxform(yf_model_getnode(l_vars.mdl)),
+                     l_xforms[xform_i]);
+        l_vars.input.prev = 0;
+    }
 }
 
-/* Tests model rendering. */
+/* Tests model. */
 int yf_test_model(void)
 {
-    srand(time(NULL));
-    const int instanced = rand() & 1;
-    printf("(%s rendering, %u models)\n\n",
-           instanced ? "Instanced" : "Non-instanced", YF_MDLN);
-
     YF_evtfn evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
-    l_vars.input.quit = 0;
-    l_vars.input.swap = 0;
-    l_vars.input.speed = 1.0f;
 
-    /* Create view */
     l_vars.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
     assert(l_vars.win != NULL);
+
     l_vars.view = yf_view_init(l_vars.win);
     assert(l_vars.view != NULL);
 
-    /* Create scene */
-    for (unsigned i = 0; i < YF_SCNN; i++) {
-        l_vars.scn[i] = yf_scene_init();
-        assert(l_vars.scn[0] != NULL);
-        yf_scene_setcolor(l_vars.scn[i], YF_COLOR_LIGHTGREY);
-    }
+    l_vars.scn = yf_scene_init();
+    assert(l_vars.scn != NULL);
 
-    if (instanced) {
-        l_vars.uniq_res_n = 2;
+    l_vars.mesh = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.glb", 0);
+    assert(l_vars.mesh != NULL);
 
-        /* Create mesh */
-        l_vars.mesh[0] = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube.glb", 0);
-        l_vars.mesh[1] = yf_mesh_init(YF_FILETYPE_GLTF, "tmp/cube2.glb", 0);
-        assert(l_vars.mesh[0] != NULL);
-        assert(l_vars.mesh[1] != NULL);
+    YF_texture tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube.png");
+    assert(tex != NULL);
+    YF_matlprop mprop = {
+        .pbr = YF_PBR_METALROUGH,
+        .pbrmr = {tex, {1.0f, 1.0f, 1.0f, 1.0f}, NULL, 1.0f, 0.0f},
+        .normal = {0},
+        .occlusion = {0},
+        .emissive = {0},
+        .alphamode = YF_ALPHAMODE_OPAQUE
+    };
+    l_vars.matl = yf_material_init(&mprop);
+    assert(l_vars.matl != NULL);
 
-        /* Create texture */
-        l_vars.tex[0] = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube.png");
-        l_vars.tex[1] = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube2.png");
-        assert(l_vars.tex[0] != NULL);
-        assert(l_vars.tex[1] != NULL);
+    YF_TEST_PRINT("init", "", "mdl");
+    l_vars.mdl = yf_model_init();
+    if (l_vars.mdl == NULL)
+        return -1;
 
-        /* Create material */
-        l_vars.matl[0] = yf_material_init(NULL);
-        l_vars.matl[1] = yf_material_init(NULL);
-        assert(l_vars.matl[0] != NULL);
-        assert(l_vars.matl[1] != NULL);
-        for (unsigned i = 0; i < 2; i++) {
-            YF_matlprop *mprop = yf_material_getprop(l_vars.matl[i]);
-            mprop->pbr = YF_PBR_METALROUGH;
-            mprop->pbrmr.color_tex = l_vars.tex[i];
-        }
+    YF_TEST_PRINT("getnode", "mdl", "");
+    YF_node node = yf_model_getnode(l_vars.mdl);
+    if (node == NULL)
+        return -1;
 
-        /* Create model, assign resources and insert into a scene */
-        for (unsigned i = 0; i < YF_MDLN; i++) {
-            l_vars.mdl[i] = yf_model_init();
-            assert(l_vars.mdl[i] != NULL);
+    YF_TEST_PRINT("getmesh", "mdl", "");
+    if (yf_model_getmesh(l_vars.mdl) != NULL)
+        return -1;
 
-            yf_model_setmesh(l_vars.mdl[i], l_vars.mesh[i&1]);
-            yf_model_setmatl(l_vars.mdl[i], l_vars.matl[i&1]);
+    YF_TEST_PRINT("setmesh", "mdl, mesh", "");
+    yf_model_setmesh(l_vars.mdl, l_vars.mesh);
 
-            yf_node_insert(yf_scene_getnode(l_vars.scn[YF_MIN(i, YF_SCNN-1)]),
-                           yf_model_getnode(l_vars.mdl[i]));
-        }
-    } else {
-        l_vars.uniq_res_n = YF_MDLN;
+    YF_TEST_PRINT("getmesh", "mdl", "");
+    if (yf_model_getmesh(l_vars.mdl) != l_vars.mesh)
+        return -1;
 
-        /* Create mesh */
-        for (unsigned i = 0; i < YF_MDLN; i++) {
-            if (i&1)
-                l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_GLTF,
-                                              "tmp/cube.glb", 0);
-            else
-                l_vars.mesh[i] = yf_mesh_init(YF_FILETYPE_GLTF,
-                                              "tmp/cube2.glb", 0);
-            assert(l_vars.mesh[i] != NULL);
-        }
+    YF_skeleton skel;
 
-        /* Create texture */
-        for (unsigned i = 0; i < YF_MDLN; i++) {
-            if (i&1)
-                l_vars.tex[i] = yf_texture_init(YF_FILETYPE_PNG,
-                                                "tmp/cube.png");
-            else
-                l_vars.tex[i] = yf_texture_init(YF_FILETYPE_PNG,
-                                                "tmp/cube2.png");
-            assert(l_vars.tex[i] != NULL);
+    YF_TEST_PRINT("getskin", "mdl, &skel", "");
+    if (yf_model_getskin(l_vars.mdl, &skel) != NULL)
+        return -1;
 
-            l_vars.matl[i] = yf_material_init(NULL);
-            assert(l_vars.matl[i] != NULL);
-            YF_matlprop *mprop = yf_material_getprop(l_vars.matl[i]);
-            mprop->pbr = YF_PBR_METALROUGH;
-            mprop->pbrmr.color_tex = l_vars.tex[i];
-        }
+    YF_TEST_PRINT("setskin", "mdl, NULL, NULL", "");
+    yf_model_setskin(l_vars.mdl, NULL, NULL);
 
-        /* Create model, assign resources and insert into a scene */
-        for (unsigned i = 0; i < YF_MDLN; i++) {
-            l_vars.mdl[i] = yf_model_init();
-            assert(l_vars.mdl[i] != NULL);
+    YF_TEST_PRINT("getskin", "mdl, &skel", "");
+    if (yf_model_getskin(l_vars.mdl, &skel) != NULL)
+        return -1;
 
-            yf_model_setmesh(l_vars.mdl[i], l_vars.mesh[i]);
-            yf_model_setmatl(l_vars.mdl[i], l_vars.matl[i]);
+    YF_TEST_PRINT("getmatl", "mdl", "");
+    if (yf_model_getmatl(l_vars.mdl) != NULL)
+        return -1;
 
-            yf_node_insert(yf_scene_getnode(l_vars.scn[YF_MIN(i, YF_SCNN-1)]),
-                           yf_model_getnode(l_vars.mdl[i]));
-        }
-    }
+    YF_TEST_PRINT("setmatl", "mdl, matl", "");
+    yf_model_setmatl(l_vars.mdl, l_vars.matl);
 
-    /* Set which scene to render */
-    yf_view_setscene(l_vars.view, l_vars.scn[0]);
+    YF_TEST_PRINT("getmatl", "mdl", "");
+    if (yf_model_getmatl(l_vars.mdl) != l_vars.matl)
+        return -1;
 
-    /* Start the view's rendering loop */
+    yf_node_insert(yf_scene_getnode(l_vars.scn), node);
+    yf_view_setscene(l_vars.view, l_vars.scn);
     if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
         assert(0);
 
-    /* Deinitialize. */
+    YF_TEST_PRINT("deinit", "mdl", "");
+    yf_model_deinit(l_vars.mdl);
+
     yf_view_deinit(l_vars.view);
-    for (size_t i = 0; i < YF_SCNN; i++)
-        yf_scene_deinit(l_vars.scn[i]);
-    for (size_t i = 0; i < YF_MDLN; i++)
-        yf_model_deinit(l_vars.mdl[i]);
-    for (size_t i = 0; i < l_vars.uniq_res_n; i++) {
-        yf_mesh_deinit(l_vars.mesh[i]);
-        yf_texture_deinit(l_vars.tex[i]);
-        yf_material_deinit(l_vars.matl[i]);
-    }
+    yf_scene_deinit(l_vars.scn);
+    yf_mesh_deinit(l_vars.mesh);
+    yf_texture_deinit(tex);
+    yf_material_deinit(l_vars.matl);
     yf_window_deinit(l_vars.win);
 
     return 0;
