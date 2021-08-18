@@ -7,33 +7,38 @@
 
 #include <stdio.h>
 
+#include "test.h"
 #include "yf-vector.h"
 
 #define YF_PRINTVEC(v, n) do { \
-    printf("(vec"#n") '"#v"'\n [ "); \
+    printf("\nvec"#n" "#v"\n [ "); \
     for (int i = 0; i < n; i++) \
         printf("%.4f ", v[i]); \
-    puts("]\n"); } while (0)
+    puts("]"); } while (0)
 
-/* Tests vector functionality. */
+/* Tests vector. */
 /* TODO: More tests. */
 int yf_test_vector(void)
 {
-    YF_vec4 a = {2.0f, 4.0f, 2.0f, 5.0f};
-    float dot = yf_vec4_dot(a, a);
-    float len = yf_vec4_len(a);
+    char s[256];
 
+    YF_vec4 a = {2.0f, 4.0f, 2.0f, 5.0f};
     YF_PRINTVEC(a, 4);
-    printf("(dot a,a)\n %.4f\n\n", dot);
-    printf("(len a)\n %.4f\n\n", len);
+
+    float dot = yf_vec4_dot(a, a);
+    snprintf(s, sizeof s, "%.4f", dot);
+    YF_TEST_PRINT("dot", "a, a", s);
+
+    float len = yf_vec4_len(a);
+    snprintf(s, sizeof s, "%.4f", len);
+    YF_TEST_PRINT("len", "a", s);
 
     if (dot != 49.0f || len != 7.0f)
         return -1;
 
     YF_vec4 b;
     yf_vec4_norm(b, a);
-
-    puts("(norm b,a)\n");
+    YF_TEST_PRINT("norm", "b, a", "");
     YF_PRINTVEC(b, 4);
 
     if (b[0] != a[0]/len || b[1] != a[1]/len || b[2] != a[2]/len ||
@@ -44,10 +49,9 @@ int yf_test_vector(void)
     YF_vec3 d = {0.0f, 1.0f, 0.0f};
     YF_vec3 e;
     yf_vec3_cross(e, d, c);
-
     YF_PRINTVEC(c, 3);
     YF_PRINTVEC(d, 3);
-    puts("(cross e,d,c)\n");
+    YF_TEST_PRINT("cross", "e, d, c", "");
     YF_PRINTVEC(e, 3);
 
     if (c[0] != 1 || c[1] != 0 || c[2] != 0 ||
@@ -58,43 +62,39 @@ int yf_test_vector(void)
     YF_vec2 f = {-1.0f, -100.2f};
     YF_vec3 g = {-1.0f, -100.2f, 5.9987f};
     int iseq = yf_vec2_iseq(f, g);
-
     YF_PRINTVEC(f, 2);
     YF_PRINTVEC(g, 3);
-    printf("(iseq f,g)\n %s\n\n", iseq ? "yes" : "no");
+    YF_TEST_PRINT("iseq", "f, g", (iseq ? "yes" : "no"));
 
     if (!iseq)
         return -1;
 
     int iszero = yf_vec3_iszero(g);
-
-    printf("(iszero g)\n %s\n\n", iszero ? "yes" : "no");
+    YF_TEST_PRINT("iszero", "g", (iszero ? "yes" : "no"));
 
     if (iszero)
         return -1;
 
     yf_vec3_set(g, 0.0f);
     iszero = yf_vec3_iszero(g);
-
-    puts("(set g,0.0f)\n");
+    YF_TEST_PRINT("set", "g, 0.0f", "");
     YF_PRINTVEC(g, 3);
-    printf("(iszero g)\n %s\n\n", iszero ? "yes" : "no");
+    YF_TEST_PRINT("iszero", "g", (iszero ? "yes" : "no"));
 
     if (!iszero)
         return -1;
 
     iseq = yf_vec2_iseq(g, f);
-    printf("(iseq g,f)\n %s\n\n", iseq ? "yes" : "no");
+    YF_TEST_PRINT("iseq", "g, f", (iseq ? "yes" : "no"));
 
     if (iseq)
         return -1;
 
     yf_vec2_copy(f, g);
-    puts("(copy f,g)\n");
+    YF_TEST_PRINT("copy", "f, g", "");
     YF_PRINTVEC(f, 2);
-
     iseq = yf_vec2_iseq(g, f);
-    printf("(iseq g,f)\n %s\n", iseq ? "yes" : "no");
+    YF_TEST_PRINT("iseq", "g, f", (iseq ? "yes" : "no"));
 
     if (!iseq)
         return -1;
