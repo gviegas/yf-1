@@ -6,10 +6,13 @@
  */
 
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 
-#include "yf/wsys/yf-wsys.h"
+#include "yf/wsys/yf-event.h"
+#include "yf/wsys/yf-keyboard.h"
 
+#include "test.h"
 #include "yf-ngn.h"
 
 #define YF_WINW 640
@@ -88,13 +91,8 @@ static void on_key(int key, int state,
 /* Updates content. */
 static void update(double elapsed_time)
 {
-    printf("update (%.4f)\n", elapsed_time);
-
-    if (l_vars.input.quit) {
-        puts("quit");
+    if (l_vars.input.quit)
         yf_view_stop(l_vars.view);
-    }
-
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
     const float md = 16.0 * elapsed_time;
@@ -130,14 +128,14 @@ static int traverse(YF_node node, YF_UNUSED void *arg)
 {
     char name[2][256];
     size_t n[2] = {256, 256};
-    printf("> node '%s' is child of '%s'\n",
+    printf(" node '%s' is child of '%s'\n",
            yf_node_getname(node, name[0], n),
            yf_node_getname(yf_node_getparent(node), name[1], n+1));
 
     return 0;
 }
 
-/* Tests scene loading and rendering. */
+/* Tests scene. */
 int yf_test_scene(void)
 {
     YF_evtfn evtfn = {.key_kb = on_key};
@@ -149,22 +147,62 @@ int yf_test_scene(void)
     l_vars.view = yf_view_init(l_vars.win);
     assert(l_vars.view != NULL);
 
+    YF_TEST_PRINT("init", "", "scn");
+    YF_scene scn = yf_scene_init();
+    if (scn == NULL)
+        return -1;
+
+    YF_TEST_PRINT("getnode", "scn", "");
+    if (yf_scene_getnode(scn) == NULL)
+        return -1;
+
+    YF_TEST_PRINT("getcam", "scn", "");
+    if (yf_scene_getcam(scn) == NULL)
+        return -1;
+
+    YF_TEST_PRINT("getcolor", "scn", "");
+    YF_color color = yf_scene_getcolor(scn);
+    if (memcmp(&color, &YF_COLOR_BLACK, sizeof color) != 0)
+        return -1;
+
+    YF_TEST_PRINT("setcolor", "scn, COLOR_YELLOW", "");
+    yf_scene_setcolor(scn, YF_COLOR_YELLOW);
+
+    YF_TEST_PRINT("getcolor", "scn", "");
+    color = yf_scene_getcolor(scn);
+    if (memcmp(&color, &YF_COLOR_YELLOW, sizeof color) != 0)
+        return -1;
+
+    YF_TEST_PRINT("deinit", "scn", "");
+    yf_scene_deinit(scn);
+
+    puts("\n- collection scene loading -\n");
+
     l_vars.coll = yf_collection_init("tmp/scene.glb");
     assert(l_vars.coll != NULL);
 
     l_vars.scn = yf_collection_getitem(l_vars.coll, YF_CITEM_SCENE, "Scene");
     assert(l_vars.scn != NULL);
 
-    yf_node_traverse(yf_scene_getnode(l_vars.scn), traverse, NULL);
+    YF_TEST_PRINT("getnode", "scn", "node");
+    YF_node node = yf_scene_getnode(l_vars.scn);
+    if (node == NULL)
+        return -1;
 
-    yf_scene_setcolor(l_vars.scn, YF_COLOR_LIGHTGREY);
+    YF_TEST_PRINT("traverse", "node, traverse, NULL", "");
+    yf_node_traverse(node, traverse, NULL);
+
+    YF_TEST_PRINT("setcolor", "scn, COLOR_DARKGREY", "");
+    yf_scene_setcolor(l_vars.scn, YF_COLOR_DARKGREY);
+
     yf_view_setscene(l_vars.view, l_vars.scn);
     yf_view_start(l_vars.view, YF_FPS, update);
 
-    /* managed... */
-    /*yf_scene_deinit(l_vars.scn);*/
+    puts("\n- no explicit 'deinit()' call for managed scene -\n");
+
     yf_collection_deinit(l_vars.coll);
     yf_view_deinit(l_vars.view);
     yf_window_deinit(l_vars.win);
+
     return 0;
 }
