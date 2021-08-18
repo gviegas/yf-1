@@ -11,6 +11,7 @@
 
 #include "yf/com/yf-clock.h"
 
+#include "test.h"
 #include "yf-event.h"
 #include "yf-window.h"
 #include "yf-pointer.h"
@@ -23,7 +24,7 @@ static int l_close = 1;
 
 static void close_wd(YF_window win, void *data)
 {
-    printf("close_wd: %p, %p\n", (void *)win, data);
+    printf("- close_wd: %p, %p -\n", (void *)win, data);
     yf_sleep(1.0);
     l_quit = 1;
 }
@@ -31,7 +32,7 @@ static void close_wd(YF_window win, void *data)
 static void resize_wd(YF_window win, unsigned width, unsigned height,
                       void *data)
 {
-    printf("resize_wd: %p, %u, %u, %p\n", (void *)win, width, height, data);
+    printf("- resize_wd: %p, %u, %u, %p -\n", (void *)win, width, height, data);
     unsigned w, h;
     yf_window_getsize(win, &w, &h);
     assert(w == width && h == height);
@@ -39,49 +40,49 @@ static void resize_wd(YF_window win, unsigned width, unsigned height,
 
 static void enter_kb(YF_window win, void *data)
 {
-    printf("enter_kb: %p, %p\n", (void *)win, data);
+    printf("- enter_kb: %p, %p -\n", (void *)win, data);
 }
 
 static void leave_kb(YF_window win, void *data)
 {
-    printf("leave_kb: %p, %p\n", (void *)win, data);
+    printf("- leave_kb: %p, %p -\n", (void *)win, data);
 }
 
 static void key_kb(int key, int state, unsigned mod_mask, void *data)
 {
-    printf("key_kb: %d, %d, %xh, %p\n", key, state, mod_mask, data);
+    printf("- key_kb: %d, %d, %xh, %p -\n", key, state, mod_mask, data);
 
     if (state == YF_KEYSTATE_PRESSED)
         return;
 
     switch (key) {
     case YF_KEY_ESC:
-        puts("<quit>\n");
+        puts("<quit>");
         l_quit = 1;
         break;
     case YF_KEY_BACKSPACE:
-        puts("<close>\n");
+        puts("<close>");
         l_close = 1;
         break;
     case YF_KEY_1:
-        puts("<mask: close/resize wd>\n");
+        puts("<mask: close/resize wd>");
         l_mask = YF_EVT_CLOSEWD | YF_EVT_RESIZEWD;
         break;
     case YF_KEY_2:
-        puts("<mask: enter/leve/key kb>\n");
+        puts("<mask: enter/leve/key kb>");
         l_mask = YF_EVT_ENTERKB | YF_EVT_LEAVEKB | YF_EVT_KEYKB;
         break;
     case YF_KEY_3:
-        puts("<mask: enter/leave/motion/button pt>\n");
+        puts("<mask: enter/leave/motion/button pt>");
         l_mask =
             YF_EVT_ENTERPT | YF_EVT_LEAVEPT | YF_EVT_MOTIONPT | YF_EVT_BUTTONPT;
         break;
     case YF_KEY_9:
-        puts("<mask: any>\n");
+        puts("<mask: any>");
         l_mask = YF_EVT_ANY;
         break;
     case YF_KEY_0:
-        puts("<mask: none>\n");
+        puts("<mask: none>");
         l_mask = YF_EVT_NONE;
         break;
     }
@@ -89,22 +90,22 @@ static void key_kb(int key, int state, unsigned mod_mask, void *data)
 
 static void enter_pt(YF_window win, int x, int y, void *data)
 {
-    printf("enter_pt: %p, %d, %d, %p\n", (void *)win, x, y, data);
+    printf("- enter_pt: %p, %d, %d, %p -\n", (void *)win, x, y, data);
 }
 
 static void leave_pt(YF_window win, void *data)
 {
-    printf("leave_pt: %p, %p\n", (void *)win, data);
+    printf("- leave_pt: %p, %p -\n", (void *)win, data);
 }
 
 static void motion_pt(int x, int y, void *data)
 {
-    printf("motion_pt: %d, %d, %p\n", x, y, data);
+    printf("- motion_pt: %d, %d, %p -\n", x, y, data);
 }
 
 static void button_pt(int btn, int state, int x, int y, void *data)
 {
-    printf("button_pt: %d, %d, %d, %d, %p\n", btn, state, x, y, data);
+    printf("- button_pt: %d, %d, %d, %d, %p -\n", btn, state, x, y, data);
 
     if (state == YF_BTNSTATE_PRESSED)
         return;
@@ -132,15 +133,19 @@ static const struct T_fn l_fns[] = {
 int yf_test_event(void)
 {
     YF_window win1 = yf_window_init(400, 240, "EVT1", YF_WINCREAT_HIDDEN);
+    assert(win1 != NULL);
     YF_window win2 = yf_window_init(360, 360, "EVT2", YF_WINCREAT_HIDDEN);
+    assert(win2 != NULL);
 
-    const unsigned mask = yf_getevtmask();
-    printf("(getevtmask)\n 0x%x\n\n", mask);
-    if (mask != YF_EVT_NONE)
+    char s[64] = {0};
+    snprintf(s, sizeof s, "0x%x", yf_getevtmask());
+    YF_TEST_PRINT("getevtmask", "", s);
+    if (yf_getevtmask() != YF_EVT_NONE)
         return -1;
 
-    for (size_t i = 0; i < (sizeof l_fns / sizeof l_fns[0]); i++) {
-        printf("(setevtfn %d, ...)\n\n", l_fns[i].evt);
+    for (size_t i = 0; i < (sizeof l_fns / sizeof *l_fns); i++) {
+        snprintf(s, sizeof s, "0x%x, <fn>, 0x%x", l_fns[i].evt, l_fns[i].evt);
+        YF_TEST_PRINT("setevtfn", s, "");
         if (yf_getevtmask() & l_fns[i].evt)
             return -1;
         yf_setevtfn(l_fns[i].evt, l_fns[i].fn,
@@ -149,10 +154,11 @@ int yf_test_event(void)
             return -1;
     }
 
-    printf("win1 is %p\nwin2 is %p\n\n", (void *)win1, (void *)win2);
+    printf("\nwin1 is %p\nwin2 is %p\n", (void *)win1, (void *)win2);
 
     while (!l_quit) {
-        printf("(pollevt 0x%x)\n\n", l_mask);
+        snprintf(s, sizeof s, "0x%x", l_mask);
+        YF_TEST_PRINT("pollevt", s, "");
         yf_pollevt(l_mask);
         yf_sleep(0.0333);
 
