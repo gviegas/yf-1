@@ -13,6 +13,7 @@
 #include "yf/wsys/yf-event.h"
 #include "yf/wsys/yf-keyboard.h"
 
+#include "test.h"
 #include "yf-ngn.h"
 
 #define YF_WINW 640
@@ -106,12 +107,8 @@ static void on_key(int key, int state,
 /* Updates content. */
 static void update(double elapsed_time)
 {
-    printf("update (%.4f)\n", elapsed_time);
-
-    if (l_vars.input.quit) {
-        printf("quit\n");
+    if (l_vars.input.quit)
         yf_view_stop(l_vars.view);
-    }
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
     const float md = 16.0 * elapsed_time;;
@@ -148,10 +145,13 @@ static void update(double elapsed_time)
     sys->color.max[1] = l_vars.input.rgb[1] ? 0.0f : 1.0f;
     sys->color.max[2] = l_vars.input.rgb[2] ? 0.0f : 1.0f;
 
+    char s[64];
+    snprintf(s, sizeof s, "part, %.6f", elapsed_time);
+    YF_TEST_PRINT("simulate", s, "");
     yf_particle_simulate(l_vars.part, elapsed_time);
 }
 
-/* Tests particle rendering. */
+/* Tests particle. */
 int yf_test_particle(void)
 {
     srand(time(NULL));
@@ -168,17 +168,18 @@ int yf_test_particle(void)
     l_vars.scn = yf_scene_init();
     assert(l_vars.scn != NULL);
 
-    l_vars.part = yf_particle_init(1000);
-    assert(l_vars.part != NULL);
-
     l_vars.tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/sprite.png");
     assert(l_vars.tex != NULL);
 
-    yf_particle_settex(l_vars.part, l_vars.tex);
-    yf_mat4_scale(*yf_node_getxform(yf_particle_getnode(l_vars.part)),
-                  0.5f, 1.0f, 0.25f);
+    YF_TEST_PRINT("init", "1000", "part");
+    l_vars.part = yf_particle_init(1000);
+    if (l_vars.part == NULL)
+        return -1;
 
+    YF_TEST_PRINT("getsys", "part", "");
     YF_psys *sys = yf_particle_getsys(l_vars.part);
+    if (sys == NULL)
+        return -1;
     sys->velocity.min[1] = -0.001f;
     sys->velocity.max[1] = 0.25f;
     sys->lifetime.spawn_min = 0.1f;
@@ -186,8 +187,29 @@ int yf_test_particle(void)
     sys->lifetime.duration_min = 0.75f;
     sys->lifetime.duration_max = 2.5f;
 
-    yf_node_insert(yf_scene_getnode(l_vars.scn),
-                   yf_particle_getnode(l_vars.part));
+    YF_TEST_PRINT("getnode", "part", "");
+    YF_node node = yf_particle_getnode(l_vars.part);
+    if (node == NULL)
+        return -1;
+
+    yf_mat4_scale(*yf_node_getxform(node), 0.5f, 1.0f, 0.25f);
+
+    YF_TEST_PRINT("getmesh", "part", "");
+    if (yf_particle_getmesh(l_vars.part) == NULL)
+        return -1;
+
+    YF_TEST_PRINT("gettex", "part", "");
+    if (yf_particle_gettex(l_vars.part) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("settex", "part, tex", "");
+    yf_particle_settex(l_vars.part, l_vars.tex);
+
+    YF_TEST_PRINT("gettex", "part", "");
+    if (yf_particle_gettex(l_vars.part) != l_vars.tex)
+        return -1;
+
+    yf_node_insert(yf_scene_getnode(l_vars.scn), node);
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
     const YF_vec3 pos = {0.0f, 0.0f, 20.0f};
@@ -200,9 +222,11 @@ int yf_test_particle(void)
     if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
         assert(0);
 
+    YF_TEST_PRINT("deinit", "part", "");
+    yf_particle_deinit(l_vars.part);
+
     yf_view_deinit(l_vars.view);
     yf_scene_deinit(l_vars.scn);
-    yf_particle_deinit(l_vars.part);
     yf_texture_deinit(l_vars.tex);
     yf_window_deinit(l_vars.win);
 
