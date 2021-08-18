@@ -11,6 +11,7 @@
 #include "yf/wsys/yf-event.h"
 #include "yf/wsys/yf-keyboard.h"
 
+#include "test.h"
 #include "yf-ngn.h"
 
 #define YF_WINW 640
@@ -228,17 +229,14 @@ static void on_key(int key, int state, unsigned mod_mask,
 }
 
 /* Updates content. */
-static void update(double elapsed_time)
+static void update(YF_UNUSED double elapsed_time)
 {
-    printf("update (%.4f)\n", elapsed_time);
-
-    if (l_vars.input.quit) {
-        printf("quit\n");
+    if (l_vars.input.quit)
         yf_view_stop(l_vars.view);
-    }
 }
 
-/* Tests label rendering. */
+/* Tests label. */
+/* TODO: More tests. */
 int yf_test_label(void)
 {
     YF_evtfn evtfn = {.key_kb = on_key};
@@ -253,26 +251,59 @@ int yf_test_label(void)
     l_vars.scn = yf_scene_init();
     assert(l_vars.scn != NULL);
 
-    l_vars.labl = yf_label_init();
-    assert(l_vars.labl != NULL);
-
     l_vars.font = yf_font_init(YF_FILETYPE_TTF, "tmp/font.ttf");
     assert(l_vars.font != NULL);
 
+    YF_TEST_PRINT("init", "", "labl");
+    l_vars.labl = yf_label_init();
+    if (l_vars.labl == NULL)
+        return -1;
+
+    YF_TEST_PRINT("getnode", "labl", "");
+    YF_node node = yf_label_getnode(l_vars.labl);
+    if (node == NULL)
+        return -1;
+
+    YF_TEST_PRINT("getfont", "labl", "");
+    if (yf_label_getfont(l_vars.labl) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("setfont", "labl, font", "");
     yf_label_setfont(l_vars.labl, l_vars.font);
+
+    YF_TEST_PRINT("getfont", "labl", "");
+    if (yf_label_getfont(l_vars.labl) != l_vars.font)
+        return -1;
+
+    /* XXX: Requires a valid font. */
+
+    YF_TEST_PRINT("getmesh", "labl", "");
+    if (yf_label_getmesh(l_vars.labl) == NULL)
+        return -1;
+
+    YF_TEST_PRINT("gettex", "labl", "");
+    if (yf_label_gettex(l_vars.labl) == NULL)
+        return -1;
+
+    YF_TEST_PRINT("setstr",
+                  "labl, L\"Press 'I' to insert text\\n'ESC' to quit\"", "");
     yf_label_setstr(l_vars.labl, L"Press 'I' to insert text\n'ESC' to quit");
+
+    YF_TEST_PRINT("setpt", "labl, 40", "");
     yf_label_setpt(l_vars.labl, 40);
 
-    yf_node_insert(yf_scene_getnode(l_vars.scn), yf_label_getnode(l_vars.labl));
+    yf_node_insert(yf_scene_getnode(l_vars.scn), node);
 
     yf_view_setscene(l_vars.view, l_vars.scn);
 
     if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
         assert(0);
 
+    YF_TEST_PRINT("deinit", "labl", "");
+    yf_label_deinit(l_vars.labl);
+
     yf_view_deinit(l_vars.view);
     yf_scene_deinit(l_vars.scn);
-    yf_label_deinit(l_vars.labl);
     yf_font_deinit(l_vars.font);
     yf_window_deinit(l_vars.win);
 
