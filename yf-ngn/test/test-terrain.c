@@ -11,6 +11,7 @@
 #include "yf/wsys/yf-event.h"
 #include "yf/wsys/yf-keyboard.h"
 
+#include "test.h"
 #include "yf-ngn.h"
 
 #define YF_WINW 640
@@ -88,12 +89,8 @@ static void on_key(int key, int state,
 /* Updates content. */
 static void update(double elapsed_time)
 {
-    printf("update (%.4f)\n", elapsed_time);
-
-    if (l_vars.input.quit) {
-        printf("quit\n");
+    if (l_vars.input.quit)
         yf_view_stop(l_vars.view);
-    }
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
     const float md = 16.0 * elapsed_time;
@@ -125,7 +122,7 @@ static void update(double elapsed_time)
         yf_camera_turnr(cam, td);
 }
 
-/* Tests terrain rendering. */
+/* Tests terrain. */
 int yf_test_terrain(void)
 {
     YF_evtfn evtfn = {.key_kb = on_key};
@@ -140,22 +137,51 @@ int yf_test_terrain(void)
     l_vars.scn = yf_scene_init();
     assert(l_vars.scn != NULL);
 
-    l_vars.terr = yf_terrain_init(160, 160);
-    assert(l_vars.terr != NULL);
-
     l_vars.hmap = yf_texture_init(YF_FILETYPE_PNG, "tmp/hmap.png");
     assert(l_vars.hmap != NULL);
 
     l_vars.tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/terrain.png");
     assert(l_vars.tex != NULL);
 
-    yf_terrain_sethmap(l_vars.terr, l_vars.hmap);
-    yf_terrain_settex(l_vars.terr, l_vars.tex);
-    yf_mat4_scale(*yf_node_getxform(yf_terrain_getnode(l_vars.terr)),
-                  3.0f, 3.0f, 3.0f);
+    YF_TEST_PRINT("init", "160, 160", "terr");
+    l_vars.terr = yf_terrain_init(160, 160);
+    if (l_vars.terr == NULL)
+        return -1;
 
-    yf_node_insert(yf_scene_getnode(l_vars.scn),
-                   yf_terrain_getnode(l_vars.terr));
+    YF_TEST_PRINT("getnode", "terr", "");
+    YF_node node = yf_terrain_getnode(l_vars.terr);
+    if (node == NULL)
+        return -1;
+
+    yf_mat4_scale(*yf_node_getxform(node), 3.0f, 3.0f, 3.0f);
+
+    YF_TEST_PRINT("getmesh", "terr", "");
+    if (yf_terrain_getmesh(l_vars.terr) == NULL)
+        return -1;
+
+    YF_TEST_PRINT("gethmap", "terr", "");
+    if (yf_terrain_gethmap(l_vars.terr) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("sethmap", "terr, hmap", "");
+    yf_terrain_sethmap(l_vars.terr, l_vars.hmap);
+
+    YF_TEST_PRINT("gethmap", "terr", "");
+    if (yf_terrain_gethmap(l_vars.terr) != l_vars.hmap)
+        return -1;
+
+    YF_TEST_PRINT("gettex", "terr", "");
+    if (yf_terrain_gettex(l_vars.terr) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("settex", "terr, tex", "");
+    yf_terrain_settex(l_vars.terr, l_vars.tex);
+
+    YF_TEST_PRINT("gettex", "terr", "");
+    if (yf_terrain_gettex(l_vars.terr) != l_vars.tex)
+        return -1;
+
+    yf_node_insert(yf_scene_getnode(l_vars.scn), node);
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
     const YF_vec3 pos = {-2.0f, 20.0f, 10.0f};
@@ -168,9 +194,11 @@ int yf_test_terrain(void)
     if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
         assert(0);
 
+    YF_TEST_PRINT("deinit", "terr", "");
+    yf_terrain_deinit(l_vars.terr);
+
     yf_view_deinit(l_vars.view);
     yf_scene_deinit(l_vars.scn);
-    yf_terrain_deinit(l_vars.terr);
     yf_texture_deinit(l_vars.hmap);
     yf_texture_deinit(l_vars.tex);
     yf_window_deinit(l_vars.win);
