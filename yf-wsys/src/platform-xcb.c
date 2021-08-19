@@ -32,10 +32,10 @@
 #define YF_LIBXCB "libxcb.so"
 
 /* Shared object handle. */
-static void *l_handle = NULL;
+static void *handle_ = NULL;
 
 /* Symbol names. */
-static const char *l_names[] = {
+static const char *names_[] = {
 #define YF_SYM_CONNECT 0
     "xcb_connect",
 #define YF_SYM_DISCONNECT 1
@@ -75,52 +75,52 @@ static const char *l_names[] = {
 };
 
 /* Symbol addresses. */
-static void *l_addrs[sizeof l_names / sizeof l_names[0]] = {0};
+static void *addrs_[sizeof names_ / sizeof *names_] = {0};
 
 /* Wrappers. */
 #define YF_XCB_CONNECT(res, name, screen) do { \
     xcb_connection_t *(*fn)(const char *, int *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_CONNECT]; \
+    *(void **)(&fn) = addrs_[YF_SYM_CONNECT]; \
     res = fn(name, screen); } while (0)
 
 #define YF_XCB_DISCONNECT(connection) do { \
     void (*fn)(xcb_connection_t *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_DISCONNECT]; \
+    *(void **)(&fn) = addrs_[YF_SYM_DISCONNECT]; \
     fn(connection); } while (0)
 
 #define YF_XCB_FLUSH(res, connection) do { \
     int (*fn)(xcb_connection_t *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_FLUSH]; \
+    *(void **)(&fn) = addrs_[YF_SYM_FLUSH]; \
     res = fn(connection); } while (0)
 
 #define YF_XCB_CONNECTION_HAS_ERROR(res, connection) do { \
     int (*fn)(xcb_connection_t *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_CONNECTION_HAS_ERROR]; \
+    *(void **)(&fn) = addrs_[YF_SYM_CONNECTION_HAS_ERROR]; \
     res = fn(connection); } while (0)
 
 #define YF_XCB_GENERATE_ID(res, connection) do { \
     uint32_t (*fn)(xcb_connection_t *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_GENERATE_ID]; \
+    *(void **)(&fn) = addrs_[YF_SYM_GENERATE_ID]; \
     res = fn(connection); } while (0)
 
 #define YF_XCB_POLL_FOR_EVENT(res, connection) do { \
     xcb_generic_event_t *(*fn)(xcb_connection_t *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_POLL_FOR_EVENT]; \
+    *(void **)(&fn) = addrs_[YF_SYM_POLL_FOR_EVENT]; \
     res = fn(connection); } while (0)
 
 #define YF_XCB_REQUEST_CHECK(res, connection, cookie) do { \
     xcb_generic_error_t *(*fn)(xcb_connection_t *, xcb_void_cookie_t); \
-    *(void **)(&fn) = l_addrs[YF_SYM_REQUEST_CHECK]; \
+    *(void **)(&fn) = addrs_[YF_SYM_REQUEST_CHECK]; \
     res = fn(connection, cookie); } while (0)
 
 #define YF_XCB_GET_SETUP(res, connection) do { \
     const struct xcb_setup_t *(*fn)(xcb_connection_t *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_GET_SETUP]; \
+    *(void **)(&fn) = addrs_[YF_SYM_GET_SETUP]; \
     res = fn(connection); } while (0)
 
 #define YF_XCB_SETUP_ROOTS_ITERATOR(res, setup) do { \
     xcb_screen_iterator_t (*fn)(const xcb_setup_t *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_SETUP_ROOTS_ITERATOR]; \
+    *(void **)(&fn) = addrs_[YF_SYM_SETUP_ROOTS_ITERATOR]; \
     res = fn(setup); } while (0)
 
 #define YF_XCB_CREATE_WINDOW_CHECKED(res, connection, depth, id, parent, \
@@ -130,43 +130,43 @@ static void *l_addrs[sizeof l_names / sizeof l_names[0]] = {0};
                             xcb_window_t, int16_t, int16_t, uint16_t, \
                             uint16_t, uint16_t, uint16_t, xcb_visualid_t, \
                             uint32_t, const void *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_CREATE_WINDOW_CHECKED]; \
+    *(void **)(&fn) = addrs_[YF_SYM_CREATE_WINDOW_CHECKED]; \
     res = fn(connection, depth, id, parent, x, y, w, h, border_w, class, \
              visual, value_mask, value_list); } while (0)
 
 #define YF_XCB_DESTROY_WINDOW(res, connection, window) do { \
     xcb_void_cookie_t (*fn)(xcb_connection_t *, xcb_window_t); \
-    *(void **)(&fn) = l_addrs[YF_SYM_DESTROY_WINDOW]; \
+    *(void **)(&fn) = addrs_[YF_SYM_DESTROY_WINDOW]; \
     res = fn(connection, window); } while (0)
 
 #define YF_XCB_MAP_WINDOW_CHECKED(res, connection, window) do { \
     xcb_void_cookie_t (*fn)(xcb_connection_t *, xcb_window_t); \
-    *(void **)(&fn) = l_addrs[YF_SYM_MAP_WINDOW_CHECKED]; \
+    *(void **)(&fn) = addrs_[YF_SYM_MAP_WINDOW_CHECKED]; \
     res = fn(connection, window); } while (0)
 
 #define YF_XCB_UNMAP_WINDOW_CHECKED(res, connection, window) do { \
     xcb_void_cookie_t (*fn)(xcb_connection_t *, xcb_window_t); \
-    *(void **)(&fn) = l_addrs[YF_SYM_UNMAP_WINDOW_CHECKED]; \
+    *(void **)(&fn) = addrs_[YF_SYM_UNMAP_WINDOW_CHECKED]; \
     res = fn(connection, window); } while (0)
 
 #define YF_XCB_CONFIGURE_WINDOW_CHECKED(res, connection, window, value_mask, \
                                         value_list) do { \
     xcb_void_cookie_t (*fn)(xcb_connection_t *, xcb_window_t, uint32_t, \
                             const void *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_CONFIGURE_WINDOW_CHECKED]; \
+    *(void **)(&fn) = addrs_[YF_SYM_CONFIGURE_WINDOW_CHECKED]; \
     res = fn(connection, window, value_mask, value_list); } while (0)
 
 #define YF_XCB_INTERN_ATOM(res, connection, dont_create, name_len, name) do { \
     xcb_intern_atom_cookie_t (*fn)(xcb_connection_t *, uint8_t, uint16_t, \
                                    const char *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_INTERN_ATOM]; \
+    *(void **)(&fn) = addrs_[YF_SYM_INTERN_ATOM]; \
     res = fn(connection, dont_create, name_len, name); } while (0)
 
 #define YF_XCB_INTERN_ATOM_REPLY(res, connection, cookie, error) do { \
     xcb_intern_atom_reply_t *(*fn)(xcb_connection_t *, \
                                    xcb_intern_atom_cookie_t, \
                                    xcb_generic_error_t **); \
-    *(void **)(&fn) = l_addrs[YF_SYM_INTERN_ATOM_REPLY]; \
+    *(void **)(&fn) = addrs_[YF_SYM_INTERN_ATOM_REPLY]; \
     res = fn(connection, cookie, error); } while (0)
 
 #define YF_XCB_CHANGE_PROPERTY_CHECKED(res, connection, mode, window, \
@@ -175,14 +175,14 @@ static void *l_addrs[sizeof l_names / sizeof l_names[0]] = {0};
     xcb_void_cookie_t (*fn)(xcb_connection_t *, uint8_t, xcb_window_t, \
                             xcb_atom_t, xcb_atom_t, uint8_t, uint32_t, \
                             const void *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_CHANGE_PROPERTY_CHECKED]; \
+    *(void **)(&fn) = addrs_[YF_SYM_CHANGE_PROPERTY_CHECKED]; \
     res = fn(connection, mode, window, property, type, format, data_len, \
              data); } while (0)
 
 #define YF_XCB_CHANGE_KEYBOARD_CONTROL_CHECKED(res, connection, value_mask, \
                                                value_list) do { \
     xcb_void_cookie_t (*fn)(xcb_connection_t *, uint32_t, const void *); \
-    *(void **)(&fn) = l_addrs[YF_SYM_CHANGE_KEYBOARD_CONTROL_CHECKED]; \
+    *(void **)(&fn) = addrs_[YF_SYM_CHANGE_KEYBOARD_CONTROL_CHECKED]; \
     res = fn(connection, value_mask, value_list); } while (0)
 
 /* Type defining the data of a window object. */
@@ -197,15 +197,15 @@ typedef struct {
 } T_win;
 
 /* List containing the 'T_win' data of all created windows. */
-static YF_list l_wins = NULL;
+static YF_list wins_ = NULL;
 
 /* Gets the 'T_win' data for a given xcb window ID.
    If not found, 'data' will contain the null value. */
 #define YF_GETWINDATA(data, id) do { \
-    assert(l_wins != NULL && yf_list_getlen(l_wins) > 0); \
+    assert(wins_ != NULL && yf_list_getlen(wins_) > 0); \
     YF_iter it = YF_NILIT; \
     for (;;) { \
-        data = yf_list_next(l_wins, &it); \
+        data = yf_list_next(wins_, &it); \
         if ((data) == NULL || (data)->win_id == (id)) break; \
     }} while (0)
 
@@ -214,7 +214,7 @@ YF_varsxcb yf_g_varsxcb = {0};
 /* Sets global variables. */
 static int set_vars(void)
 {
-    assert(l_handle != NULL);
+    assert(handle_ != NULL);
     assert(yf_g_varsxcb.conn == NULL);
 
     int res;
@@ -299,20 +299,20 @@ static int set_vars(void)
 /* Implementation for 'win_imp.deinit'. */
 static void deinit_win(void *win)
 {
-    if (l_handle != NULL && yf_g_varsxcb.conn != NULL) {
+    if (handle_ != NULL && yf_g_varsxcb.conn != NULL) {
         YF_UNUSED xcb_void_cookie_t unused;
         YF_XCB_DESTROY_WINDOW(unused, yf_g_varsxcb.conn,
                               ((T_win *)win)->win_id);
     }
 
-    yf_list_remove(l_wins, win);
+    yf_list_remove(wins_, win);
     free(win);
 }
 
 /* Implementation for 'win_imp.getsize'. */
 static void getsize_win(void *win, unsigned *width, unsigned *height)
 {
-    assert(l_handle != NULL);
+    assert(handle_ != NULL);
     assert(yf_g_varsxcb.conn != NULL);
     assert(win != NULL);
     assert(width != NULL && height != NULL);
@@ -324,7 +324,7 @@ static void getsize_win(void *win, unsigned *width, unsigned *height)
 /* Implementation for 'win_imp.settitle'. */
 static int settitle_win(void *win, const char *title)
 {
-    assert(l_handle != NULL);
+    assert(handle_ != NULL);
     assert(yf_g_varsxcb.conn != NULL);
     assert(win != NULL);
 
@@ -350,7 +350,7 @@ static int settitle_win(void *win, const char *title)
 /* Implementation for 'win_imp.toggle'. */
 static int toggle_win(void *win)
 {
-    assert(l_handle != NULL);
+    assert(handle_ != NULL);
     assert(yf_g_varsxcb.conn != NULL);
     assert(win != NULL);
 
@@ -362,7 +362,7 @@ static int toggle_win(void *win)
 /* Implementation for 'win_imp.resize'. */
 static int resize_win(void *win, unsigned width, unsigned height)
 {
-    assert(l_handle != NULL);
+    assert(handle_ != NULL);
     assert(yf_g_varsxcb.conn != NULL);
     assert(win != NULL);
 
@@ -394,7 +394,7 @@ static int resize_win(void *win, unsigned width, unsigned height)
 /* Implementation for 'win_imp.close'. */
 static int close_win(void *win)
 {
-    assert(l_handle != NULL);
+    assert(handle_ != NULL);
     assert(yf_g_varsxcb.conn != NULL);
     assert(win != NULL);
 
@@ -420,7 +420,7 @@ static int close_win(void *win)
 /* Implementation for 'win_imp.open'. */
 static int open_win(void *win)
 {
-    assert(l_handle != NULL);
+    assert(handle_ != NULL);
     assert(yf_g_varsxcb.conn != NULL);
     assert(win != NULL);
 
@@ -447,7 +447,7 @@ static int open_win(void *win)
 static void *init_win(unsigned width, unsigned height, const char *title,
                       unsigned creat_mask, YF_window wrapper)
 {
-    assert(l_handle != NULL);
+    assert(handle_ != NULL);
     assert(yf_g_varsxcb.conn != NULL);
 
     if (width == 0 || height == 0) {
@@ -573,7 +573,7 @@ static void *init_win(unsigned width, unsigned height, const char *title,
         }
     }
 
-    yf_list_insert(l_wins, win);
+    yf_list_insert(wins_, win);
     return win;
 }
 
@@ -591,7 +591,7 @@ const YF_win_imp yf_g_winxcb = {
 /* Implementation for 'evt_imp.poll'. */
 static int poll_evt(unsigned evt_mask)
 {
-    assert(l_handle != NULL);
+    assert(handle_ != NULL);
     assert(yf_g_varsxcb.conn != NULL);
 
     const unsigned mask = evt_mask & yf_getevtmask();
@@ -841,19 +841,19 @@ const YF_evt_imp yf_g_evtxcb = {.poll = poll_evt, .changed = changed_evt};
 
 int yf_loadxcb(void)
 {
-    if (l_handle != NULL)
+    if (handle_ != NULL)
         return 0;
 
-    l_handle = dlopen(YF_LIBXCB, RTLD_LAZY);
-    if (l_handle == NULL) {
+    handle_ = dlopen(YF_LIBXCB, RTLD_LAZY);
+    if (handle_ == NULL) {
         yf_seterr(YF_ERR_OTHER, __func__);
         return -1;
     }
 
     char *err;
-    for (size_t i = 0; i < (sizeof l_names / sizeof l_names[0]); i++) {
+    for (size_t i = 0; i < (sizeof names_ / sizeof *names_); i++) {
         dlerror();
-        l_addrs[i] = dlsym(l_handle, l_names[i]);
+        addrs_[i] = dlsym(handle_, names_[i]);
         err = dlerror();
         if (err != NULL) {
             yf_unldxcb();
@@ -867,7 +867,7 @@ int yf_loadxcb(void)
         return -1;
     }
 
-    if ((l_wins = yf_list_init(NULL)) == NULL) {
+    if ((wins_ = yf_list_init(NULL)) == NULL) {
         yf_unldxcb();
         return -1;
     }
@@ -877,19 +877,19 @@ int yf_loadxcb(void)
 
 void yf_unldxcb(void)
 {
-    if (l_wins != NULL) {
+    if (wins_ != NULL) {
         T_win *win;
         YF_iter it = YF_NILIT;
 
         for (;;) {
-            win = yf_list_next(l_wins, &it);
+            win = yf_list_next(wins_, &it);
             if (YF_IT_ISNIL(it))
                 break;
             deinit_win(win);
         }
 
-        yf_list_deinit(l_wins);
-        l_wins = NULL;
+        yf_list_deinit(wins_);
+        wins_ = NULL;
     }
 
     if (yf_g_varsxcb.conn != NULL) {
@@ -897,10 +897,10 @@ void yf_unldxcb(void)
         memset(&yf_g_varsxcb, 0, sizeof yf_g_varsxcb);
     }
 
-    if (l_handle != NULL) {
-        dlclose(l_handle);
-        l_handle = NULL;
-        memset(l_addrs, 0, sizeof l_addrs);
+    if (handle_ != NULL) {
+        dlclose(handle_);
+        handle_ = NULL;
+        memset(addrs_, 0, sizeof addrs_);
     }
 }
 
@@ -922,7 +922,7 @@ xcb_window_t yf_getwindowxcb(YF_window win)
     YF_iter it = YF_NILIT;
     T_win *data;
     do
-        data = yf_list_next(l_wins, &it);
+        data = yf_list_next(wins_, &it);
     while (data->wrapper != win);
 
     return data->win_id;

@@ -21,80 +21,80 @@ static int dummy_poll(unsigned evt_mask);
 static void dummy_changed(int evt);
 
 /* Event implementation instance. */
-static YF_evt_imp l_imp = {dummy_poll, dummy_changed};
+static YF_evt_imp imp_ = {dummy_poll, dummy_changed};
 
 /* Event handlers. */
-static T_evtfn l_closewd  = { {.close_wd  = NULL}, NULL };
-static T_evtfn l_resizewd = { {.resize_wd = NULL}, NULL };
-static T_evtfn l_enterkb  = { {.enter_kb  = NULL}, NULL };
-static T_evtfn l_leavekb  = { {.leave_kb  = NULL}, NULL };
-static T_evtfn l_keykb    = { {.key_kb    = NULL}, NULL };
-static T_evtfn l_enterpt  = { {.enter_pt  = NULL}, NULL };
-static T_evtfn l_leavept  = { {.leave_pt  = NULL}, NULL };
-static T_evtfn l_motionpt = { {.motion_pt = NULL}, NULL };
-static T_evtfn l_buttonpt = { {.button_pt = NULL}, NULL };
+static T_evtfn closewd_  = { {.close_wd  = NULL}, NULL };
+static T_evtfn resizewd_ = { {.resize_wd = NULL}, NULL };
+static T_evtfn enterkb_  = { {.enter_kb  = NULL}, NULL };
+static T_evtfn leavekb_  = { {.leave_kb  = NULL}, NULL };
+static T_evtfn keykb_    = { {.key_kb    = NULL}, NULL };
+static T_evtfn enterpt_  = { {.enter_pt  = NULL}, NULL };
+static T_evtfn leavept_  = { {.leave_pt  = NULL}, NULL };
+static T_evtfn motionpt_ = { {.motion_pt = NULL}, NULL };
+static T_evtfn buttonpt_ = { {.button_pt = NULL}, NULL };
 
 /* Mask of installed handlers. */
-static int l_mask = YF_EVT_NONE;
+static int mask_ = YF_EVT_NONE;
 
 int yf_pollevt(unsigned evt_mask)
 {
-    return l_imp.poll(evt_mask);
+    return imp_.poll(evt_mask);
 }
 
 void yf_setevtfn(int evt, YF_evtfn fn, void *arg)
 {
     switch (evt) {
     case YF_EVT_CLOSEWD:
-        l_closewd.fn.close_wd = fn.close_wd;
-        l_closewd.arg = arg;
-        l_mask = fn.close_wd != NULL ? (l_mask | evt) : (l_mask & ~evt);
+        closewd_.fn.close_wd = fn.close_wd;
+        closewd_.arg = arg;
+        mask_ = fn.close_wd != NULL ? (mask_ | evt) : (mask_ & ~evt);
         break;
     case YF_EVT_RESIZEWD:
-        l_resizewd.fn.resize_wd = fn.resize_wd;
-        l_resizewd.arg = arg;
-        l_mask = fn.resize_wd != NULL ? (l_mask | evt) : (l_mask & ~evt);
+        resizewd_.fn.resize_wd = fn.resize_wd;
+        resizewd_.arg = arg;
+        mask_ = fn.resize_wd != NULL ? (mask_ | evt) : (mask_ & ~evt);
         break;
     case YF_EVT_ENTERKB:
-        l_enterkb.fn.enter_kb = fn.enter_kb;
-        l_enterkb.arg = arg;
-        l_mask = fn.enter_kb != NULL ? (l_mask | evt) : (l_mask & ~evt);
+        enterkb_.fn.enter_kb = fn.enter_kb;
+        enterkb_.arg = arg;
+        mask_ = fn.enter_kb != NULL ? (mask_ | evt) : (mask_ & ~evt);
         break;
     case YF_EVT_LEAVEKB:
-        l_leavekb.fn.leave_kb = fn.leave_kb;
-        l_leavekb.arg = arg;
-        l_mask = fn.leave_kb != NULL ? (l_mask | evt) : (l_mask & ~evt);
+        leavekb_.fn.leave_kb = fn.leave_kb;
+        leavekb_.arg = arg;
+        mask_ = fn.leave_kb != NULL ? (mask_ | evt) : (mask_ & ~evt);
         break;
     case YF_EVT_KEYKB:
-        l_keykb.fn.key_kb = fn.key_kb;
-        l_keykb.arg = arg;
-        l_mask = fn.key_kb != NULL ? (l_mask | evt) : (l_mask & ~evt);
+        keykb_.fn.key_kb = fn.key_kb;
+        keykb_.arg = arg;
+        mask_ = fn.key_kb != NULL ? (mask_ | evt) : (mask_ & ~evt);
         break;
     case YF_EVT_ENTERPT:
-        l_enterpt.fn.enter_pt = fn.enter_pt;
-        l_enterpt.arg = arg;
-        l_mask = fn.enter_pt != NULL ? (l_mask | evt) : (l_mask & ~evt);
+        enterpt_.fn.enter_pt = fn.enter_pt;
+        enterpt_.arg = arg;
+        mask_ = fn.enter_pt != NULL ? (mask_ | evt) : (mask_ & ~evt);
         break;
     case YF_EVT_LEAVEPT:
-        l_leavept.fn.leave_pt = fn.leave_pt;
-        l_leavept.arg = arg;
-        l_mask = fn.leave_pt != NULL ? (l_mask | evt) : (l_mask & ~evt);
+        leavept_.fn.leave_pt = fn.leave_pt;
+        leavept_.arg = arg;
+        mask_ = fn.leave_pt != NULL ? (mask_ | evt) : (mask_ & ~evt);
         break;
     case YF_EVT_MOTIONPT:
-        l_motionpt.fn.motion_pt = fn.motion_pt;
-        l_motionpt.arg = arg;
-        l_mask = fn.motion_pt != NULL ? (l_mask | evt) : (l_mask & ~evt);
+        motionpt_.fn.motion_pt = fn.motion_pt;
+        motionpt_.arg = arg;
+        mask_ = fn.motion_pt != NULL ? (mask_ | evt) : (mask_ & ~evt);
         break;
     case YF_EVT_BUTTONPT:
-        l_buttonpt.fn.button_pt = fn.button_pt;
-        l_buttonpt.arg = arg;
-        l_mask = fn.button_pt != NULL ? (l_mask | evt) : (l_mask & ~evt);
+        buttonpt_.fn.button_pt = fn.button_pt;
+        buttonpt_.arg = arg;
+        mask_ = fn.button_pt != NULL ? (mask_ | evt) : (mask_ & ~evt);
         break;
     default:
         assert(0);
     }
 
-    l_imp.changed(evt);
+    imp_.changed(evt);
 }
 
 void yf_getevtfn(int evt, YF_evtfn *fn, void **arg)
@@ -103,40 +103,40 @@ void yf_getevtfn(int evt, YF_evtfn *fn, void **arg)
 
     switch (evt) {
     case YF_EVT_CLOSEWD:
-        fn->close_wd = l_closewd.fn.close_wd;
-        *arg = l_closewd.arg;
+        fn->close_wd = closewd_.fn.close_wd;
+        *arg = closewd_.arg;
         break;
     case YF_EVT_RESIZEWD:
-        fn->resize_wd = l_resizewd.fn.resize_wd;
-        *arg = l_resizewd.arg;
+        fn->resize_wd = resizewd_.fn.resize_wd;
+        *arg = resizewd_.arg;
         break;
     case YF_EVT_ENTERKB:
-        fn->enter_kb = l_enterkb.fn.enter_kb;
-        *arg = l_enterkb.arg;
+        fn->enter_kb = enterkb_.fn.enter_kb;
+        *arg = enterkb_.arg;
         break;
     case YF_EVT_LEAVEKB:
-        fn->leave_kb = l_leavekb.fn.leave_kb;
-        *arg = l_leavekb.arg;
+        fn->leave_kb = leavekb_.fn.leave_kb;
+        *arg = leavekb_.arg;
         break;
     case YF_EVT_KEYKB:
-        fn->key_kb = l_keykb.fn.key_kb;
-        *arg = l_keykb.arg;
+        fn->key_kb = keykb_.fn.key_kb;
+        *arg = keykb_.arg;
         break;
     case YF_EVT_ENTERPT:
-        fn->enter_pt = l_enterpt.fn.enter_pt;
-        *arg = l_enterpt.arg;
+        fn->enter_pt = enterpt_.fn.enter_pt;
+        *arg = enterpt_.arg;
         break;
     case YF_EVT_LEAVEPT:
-        fn->leave_pt = l_leavept.fn.leave_pt;
-        *arg = l_leavept.arg;
+        fn->leave_pt = leavept_.fn.leave_pt;
+        *arg = leavept_.arg;
         break;
     case YF_EVT_MOTIONPT:
-        fn->motion_pt = l_motionpt.fn.motion_pt;
-        *arg = l_motionpt.arg;
+        fn->motion_pt = motionpt_.fn.motion_pt;
+        *arg = motionpt_.arg;
         break;
     case YF_EVT_BUTTONPT:
-        fn->button_pt = l_buttonpt.fn.button_pt;
-        *arg = l_buttonpt.arg;
+        fn->button_pt = buttonpt_.fn.button_pt;
+        *arg = buttonpt_.arg;
         break;
     default:
         assert(0);
@@ -147,19 +147,19 @@ void yf_getevtfn(int evt, YF_evtfn *fn, void **arg)
 
 unsigned yf_getevtmask(void)
 {
-    return l_mask;
+    return mask_;
 }
 
 static int dummy_poll(unsigned evt_mask)
 {
-    yf_getevtimp(&l_imp);
-    return l_imp.poll(evt_mask);
+    yf_getevtimp(&imp_);
+    return imp_.poll(evt_mask);
     /* never called again */
 }
 
 static void dummy_changed(int evt)
 {
-    yf_getevtimp(&l_imp);
-    l_imp.changed(evt);
+    yf_getevtimp(&imp_);
+    imp_.changed(evt);
     /* never called again */
 }
