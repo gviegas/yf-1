@@ -34,7 +34,7 @@ layout(set=0, binding=0) uniform U_globl {
     mat4 o;
     mat4 vp;
     T_vport vport[VPORT_N];
-} u_globl;
+} globl_;
 
 /**
  * Instance's uniform data.
@@ -44,23 +44,24 @@ layout(set=1, binding=0) uniform U_inst {
     mat4 mv;
     float wdt;
     float hgt;
-} u_inst;
+} inst_;
 
-layout(location=0) in vec3 in_pos;
-layout(location=1) in vec2 in_tc;
-layout(location=4) in vec4 in_clr;
+layout(location=0) in vec3 pos_;
+layout(location=1) in vec2 tc_;
+layout(location=4) in vec4 clr_;
 
 layout(location=0) out IO_v {
     vec2 tc;
     vec4 clr;
-} out_v;
+} v_;
 
 void main()
 {
-    vec2 s = vec2(u_inst.wdt / u_globl.vport[0].wdt,
-                  u_inst.hgt / u_globl.vport[0].hgt);
-    gl_Position = u_globl.o * u_inst.m * vec4(in_pos.xy * s, in_pos.z, 1.0);
+    vec2 s = vec2(inst_.wdt / globl_.vport[0].wdt,
+                  inst_.hgt / globl_.vport[0].hgt);
 
-    out_v.tc = in_tc;
-    out_v.clr = in_clr;
+    gl_Position = globl_.o * inst_.m * vec4(pos_.xy * s, pos_.z, 1.0);
+
+    v_.tc = tc_;
+    v_.clr = clr_;
 }
