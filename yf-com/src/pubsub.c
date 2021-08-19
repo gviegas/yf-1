@@ -28,7 +28,7 @@ typedef struct {
 } T_sub;
 
 /* Dictionary containing all publishers. */
-static YF_dict l_pubs = NULL;
+static YF_dict pubs_ = NULL;
 
 int yf_setpub(const void *pub, unsigned pubsub_mask)
 {
@@ -37,15 +37,15 @@ int yf_setpub(const void *pub, unsigned pubsub_mask)
         return -1;
     }
 
-    if (l_pubs == NULL && (l_pubs = yf_dict_init(NULL, NULL)) == NULL)
+    if (pubs_ == NULL && (pubs_ = yf_dict_init(NULL, NULL)) == NULL)
         return -1;
 
-    T_pub *val = yf_dict_search(l_pubs, pub);
+    T_pub *val = yf_dict_search(pubs_, pub);
 
     /* removal */
     if (pubsub_mask == YF_PUBSUB_NONE) {
         if (val != NULL) {
-            yf_dict_remove(l_pubs, pub);
+            yf_dict_remove(pubs_, pub);
 
             YF_iter it = YF_NILIT;
             T_sub *sub;
@@ -72,7 +72,7 @@ int yf_setpub(const void *pub, unsigned pubsub_mask)
             return -1;
         }
 
-        if (yf_dict_insert(l_pubs, pub, val) != 0) {
+        if (yf_dict_insert(pubs_, pub, val) != 0) {
             yf_dict_deinit(val->subs);
             free(val);
             return -1;
@@ -88,10 +88,10 @@ unsigned yf_checkpub(const void *pub)
 {
     assert(pub != NULL);
 
-    if (l_pubs == NULL)
+    if (pubs_ == NULL)
         return YF_PUBSUB_NONE;
 
-    T_pub *val = yf_dict_search(l_pubs, pub);
+    T_pub *val = yf_dict_search(pubs_, pub);
 
     return val != NULL ? val->pubsub_mask : YF_PUBSUB_NONE;
 }
@@ -99,9 +99,9 @@ unsigned yf_checkpub(const void *pub)
 void yf_publish(const void *pub, int pubsub)
 {
     assert(pub != NULL);
-    assert(l_pubs != NULL);
+    assert(pubs_ != NULL);
 
-    T_pub *val = yf_dict_search(l_pubs, pub);
+    T_pub *val = yf_dict_search(pubs_, pub);
 
     if (val == NULL)
         return;
@@ -120,12 +120,12 @@ int yf_subscribe(const void *pub, const void *sub, unsigned pubsub_mask,
     assert(pub != NULL);
     assert(pubsub_mask == YF_PUBSUB_NONE || callb != NULL);
 
-    if (sub == NULL || l_pubs == NULL) {
+    if (sub == NULL || pubs_ == NULL) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }
 
-    T_pub *pv = yf_dict_search(l_pubs, pub);
+    T_pub *pv = yf_dict_search(pubs_, pub);
 
     if (pv == NULL)
         return -1;

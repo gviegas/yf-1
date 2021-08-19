@@ -13,7 +13,7 @@ int yf_test_list(void);
 int yf_test_dict(void);
 int yf_test_pubsub(void);
 
-static const char *l_ids[] = {
+static const char *ids_[] = {
     "error",
     "clock",
     "list",
@@ -21,7 +21,7 @@ static const char *l_ids[] = {
     "pubsub"
 };
 
-static int (*l_fns[])(void) = {
+static int (*fns_[])(void) = {
     yf_test_error,
     yf_test_clock,
     yf_test_list,
@@ -29,12 +29,12 @@ static int (*l_fns[])(void) = {
     yf_test_pubsub
 };
 
-_Static_assert(sizeof l_ids / sizeof *l_ids == sizeof l_fns / sizeof *l_fns,
+_Static_assert(sizeof ids_ / sizeof *ids_ == sizeof fns_ / sizeof *fns_,
                "!sizeof");
 
 const YF_test yf_g_test = {
     .name = "com",
-    .ids = l_ids,
-    .fns = l_fns,
-    .n = sizeof l_ids / sizeof *l_ids
+    .ids = ids_,
+    .fns = fns_,
+    .n = sizeof ids_ / sizeof *ids_
 };
