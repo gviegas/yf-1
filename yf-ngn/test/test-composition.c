@@ -134,12 +134,8 @@ static void on_button(int btn, int state, int x, int y, YF_UNUSED void *arg)
 /* Updates content. */
 static void update(double elapsed_time)
 {
-    printf("update (%.4f)\n", elapsed_time);
-
-    if (l_vars.input.quit) {
-        puts("quit");
+    if (l_vars.input.quit)
         yf_view_stop(l_vars.view);
-    }
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
 
