@@ -10,16 +10,16 @@
 /**
  * Primary texture.
  */
-layout(set=1, binding=4) uniform sampler2D u_tex;
+layout(set=1, binding=4) uniform sampler2D tex_;
 
 layout(location=0) in IO_v {
     vec2 tc;
     vec3 norm;
-} in_v;
+} v_;
 
-layout(location=0) out vec4 out_clr;
+layout(location=0) out vec4 clr_;
 
 void main()
 {
-    out_clr = textureLod(u_tex, in_v.tc, 0.0);
+    clr_ = textureLod(tex_, v_.tc, 0.0);
 }

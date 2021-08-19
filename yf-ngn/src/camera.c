@@ -38,14 +38,14 @@ struct YF_camera_o {
 };
 
 /* World's 'up' vector. */
-static const YF_vec3 l_wld_u = {0.0, 1.0, 0.0};
+static const YF_vec3 wld_up_ = {0.0, 1.0, 0.0};
 
 /* Updates the camera's view matrix. */
 static void update_view(YF_camera cam)
 {
     YF_vec3 center;
     yf_vec3_add(center, cam->pos, cam->dir);
-    yf_mat4_lookat(cam->view, cam->pos, center, l_wld_u);
+    yf_mat4_lookat(cam->view, cam->pos, center, wld_up_);
 
     cam->pend_mask &= ~YF_PEND_V;
     cam->pend_mask |= YF_PEND_VP;
@@ -83,7 +83,7 @@ YF_camera yf_camera_init(const YF_vec3 origin, const YF_vec3 target,
     yf_vec3_sub(cam->dir, target, origin);
     yf_vec3_normi(cam->dir);
 
-    cam->turn_x = acosf(yf_vec3_dot(cam->dir, l_wld_u));
+    cam->turn_x = acosf(yf_vec3_dot(cam->dir, wld_up_));
     if (cam->turn_x < YF_TURNX_MIN || cam->turn_x > YF_TURNX_MAX) {
         yf_seterr(YF_ERR_INVARG, __func__);
         free(cam);
@@ -119,7 +119,7 @@ void yf_camera_point(YF_camera cam, const YF_vec3 pos)
     YF_vec3 dir;
     yf_vec3_sub(dir, pos, cam->pos);
     yf_vec3_normi(dir);
-    float ang = acosf(yf_vec3_dot(dir, l_wld_u));
+    float ang = acosf(yf_vec3_dot(dir, wld_up_));
 
     if (ang >= YF_TURNX_MIN && ang <= YF_TURNX_MAX) {
         yf_vec3_copy(cam->dir, dir);
@@ -129,7 +129,7 @@ void yf_camera_point(YF_camera cam, const YF_vec3 pos)
         YF_vec3 side, front;
         YF_vec4 q;
         YF_mat3 rot;
-        yf_vec3_cross(side, cam->dir, l_wld_u);
+        yf_vec3_cross(side, cam->dir, wld_up_);
         yf_vec4_rotq(q, ang, side);
         yf_mat3_rotq(rot, q);
         yf_mat3_mulv(front, rot, cam->dir);
@@ -160,7 +160,7 @@ void yf_camera_moveu(YF_camera cam, float d)
     assert(cam != NULL);
 
     YF_vec3 off;
-    yf_vec3_muls(off, l_wld_u, d);
+    yf_vec3_muls(off, wld_up_, d);
     yf_vec3_addi(cam->pos, off);
 
     cam->pend_mask |= YF_PEND_V;
@@ -176,7 +176,7 @@ void yf_camera_movel(YF_camera cam, float d)
     assert(cam != NULL);
 
     YF_vec3 side, off;
-    yf_vec3_cross(side, cam->dir, l_wld_u);
+    yf_vec3_cross(side, cam->dir, wld_up_);
     yf_vec3_muls(off, side, d);
     yf_vec3_subi(cam->pos, off);
 
@@ -203,7 +203,7 @@ void yf_camera_turnu(YF_camera cam, float d)
     YF_vec3 side, front;
     YF_vec4 q;
     YF_mat3 rot;
-    yf_vec3_cross(side, cam->dir, l_wld_u);
+    yf_vec3_cross(side, cam->dir, wld_up_);
     yf_vec4_rotq(q, -ang, side);
     yf_mat3_rotq(rot, q);
     yf_mat3_mulv(front, rot, cam->dir);
@@ -225,7 +225,7 @@ void yf_camera_turnl(YF_camera cam, float d)
     YF_vec3 front;
     YF_vec4 q;
     YF_mat3 rot;
-    yf_vec4_rotq(q, d, l_wld_u);
+    yf_vec4_rotq(q, d, wld_up_);
     yf_mat3_rotq(rot, q);
     yf_mat3_mulv(front, rot, cam->dir);
     yf_vec3_norm(cam->dir, front);

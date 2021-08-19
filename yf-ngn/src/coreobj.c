@@ -18,7 +18,7 @@
 #include "error.h"
 
 /* Context instance. */
-static YF_context l_ctx = NULL;
+static YF_context ctx_ = NULL;
 
 /* Pass instance (managed somewhere else). */
 extern YF_pass yf_g_pass;
@@ -31,7 +31,7 @@ static void handle_exit(void)
 {
     yf_unsetscn();
     yf_pass_deinit(yf_g_pass);
-    yf_context_deinit(l_ctx);
+    yf_context_deinit(ctx_);
 }
 
 /* Exits with failure. */
@@ -55,14 +55,14 @@ YF_context yf_getctx(void)
     static atomic_flag flag = ATOMIC_FLAG_INIT;
 
     if (atomic_flag_test_and_set(&flag)) {
-        while (l_ctx == NULL)
+        while (ctx_ == NULL)
             ;
-    } else if (l_ctx == NULL) {
-        if (atexit(handle_exit) != 0 || (l_ctx = yf_context_init()) == NULL)
+    } else if (ctx_ == NULL) {
+        if (atexit(handle_exit) != 0 || (ctx_ = yf_context_init()) == NULL)
             exit_fatal(__func__);
     }
 
-    return l_ctx;
+    return ctx_;
 }
 
 YF_pass yf_getpass(void)

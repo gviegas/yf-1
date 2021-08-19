@@ -50,16 +50,16 @@ struct YF_texture_o {
 };
 
 /* Global context. */
-static YF_context l_ctx = NULL;
+static YF_context ctx_ = NULL;
 
 /* Dictionary containing all created images. */
-static YF_dict l_imges = NULL;
+static YF_dict imges_ = NULL;
 
 /* Copies texture data to image and updates texture object. */
 static int copy_data(YF_texture tex, const YF_texdt *data)
 {
     const T_key key = {data->pixfmt, data->dim};
-    T_kv *kv = yf_dict_search(l_imges, &key);
+    T_kv *kv = yf_dict_search(imges_, &key);
 
     YF_dim3 dim;
     unsigned layers;
@@ -75,7 +75,7 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
         val = &kv->val;
         dim = (YF_dim3){data->dim.width, data->dim.height, 1};
 
-        val->img = yf_image_init(l_ctx, data->pixfmt, dim, YF_LAYCAP, 1, 1);
+        val->img = yf_image_init(ctx_, data->pixfmt, dim, YF_LAYCAP, 1, 1);
         if (val->img == NULL) {
             free(kv);
             return -1;
@@ -93,7 +93,7 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
         val->lay_i = 0;
         kv->key = key;
 
-        if (yf_dict_insert(l_imges, &kv->key, kv) != 0) {
+        if (yf_dict_insert(imges_, &kv->key, kv) != 0) {
             yf_image_deinit(val->img);
             free(val->lay_used);
             free(kv);
@@ -112,12 +112,12 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
 
         if (val->lay_n == layers) {
             const unsigned new_lay_cap = layers << 1;
-            YF_image new_img = yf_image_init(l_ctx, pixfmt, dim, new_lay_cap,
+            YF_image new_img = yf_image_init(ctx_, pixfmt, dim, new_lay_cap,
                                              levels, samples);
             if (new_img == NULL)
                 return -1;
 
-            YF_cmdbuf cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_XFER);
+            YF_cmdbuf cb = yf_cmdbuf_get(ctx_, YF_CMDBUF_XFER);
             if (cb == NULL) {
                 yf_image_deinit(new_img);
                 return -1;
@@ -127,7 +127,7 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
             yf_cmdbuf_copyimg(cb, new_img, off, 0, 0, val->img, off, 0, 0,
                               dim, layers);
 
-            if (yf_cmdbuf_end(cb) != 0 || yf_cmdbuf_exec(l_ctx) != 0) {
+            if (yf_cmdbuf_end(cb) != 0 || yf_cmdbuf_exec(ctx_) != 0) {
                 yf_image_deinit(new_img);
                 return -1;
             }
@@ -157,7 +157,7 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
     const YF_off3 off = {0};
     if (yf_image_copy(val->img, off, dim, layer, 0, data->data) != 0) {
         if (val->lay_n == 0) {
-            yf_dict_remove(l_imges, &key);
+            yf_dict_remove(imges_, &key);
             yf_image_deinit(val->img);
             free(val->lay_used);
             free(kv);
@@ -235,7 +235,7 @@ void yf_texture_deinit(YF_texture tex)
     yf_image_getval(tex->imge->img, &pixfmt, &dim, NULL, NULL, NULL);
 
     const T_key key = {pixfmt, {dim.width, dim.height}};
-    T_kv *kv = yf_dict_search(l_imges, &key);
+    T_kv *kv = yf_dict_search(imges_, &key);
 
     assert(kv != NULL);
 
@@ -243,7 +243,7 @@ void yf_texture_deinit(YF_texture tex)
         kv->val.lay_used[tex->layer] = 0;
         kv->val.lay_n--;
     } else {
-        yf_dict_remove(l_imges, &key);
+        yf_dict_remove(imges_, &key);
         yf_image_deinit(kv->val.img);
         free(kv->val.lay_used);
         free(kv);
@@ -256,9 +256,9 @@ YF_texture yf_texture_initdt(const YF_texdt *data)
 {
     assert(data != NULL);
 
-    if (l_ctx == NULL && (l_ctx = yf_getctx()) == NULL)
+    if (ctx_ == NULL && (ctx_ = yf_getctx()) == NULL)
         return NULL;
-    if (l_imges == NULL && (l_imges = yf_dict_init(hash_key, cmp_key)) == NULL)
+    if (imges_ == NULL && (imges_ = yf_dict_init(hash_key, cmp_key)) == NULL)
         return NULL;
 
     YF_texture tex = calloc(1, sizeof(struct YF_texture_o));

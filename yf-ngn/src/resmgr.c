@@ -33,13 +33,13 @@ typedef struct {
 } T_entry;
 
 /* List of resources, indexed by 'resrq' values. */
-static T_entry l_entries[YF_RESRQ_N] = {0};
+static T_entry entries_[YF_RESRQ_N] = {0};
 
 /* Global descriptor table. */
-static YF_dtable l_globl = NULL;
+static YF_dtable globl_ = NULL;
 
 /* Sizes used for instance allocations, indexed by 'resrq' values. */
-static unsigned l_allocn[YF_RESRQ_N] = {0};
+static unsigned allocn_[YF_RESRQ_N] = {0};
 
 /* Makes a string to use as the pathname of a shader module.
    The caller is responsible for deallocating the returned string. */
@@ -100,7 +100,7 @@ static char *make_shdpath(int nodeobj, int stage, unsigned elements)
 
     char elem_str[8] = {'\0'};
     if (elements > 1) {
-        int sz = sizeof elem_str / sizeof elem_str[0];
+        int sz = sizeof elem_str;
         int r = snprintf(elem_str, sz, "%u", elements);
         if (r >= sz || r < 0) {
             yf_seterr(YF_ERR_OTHER, __func__);
@@ -164,7 +164,7 @@ static int init_mdl(T_entry *entry, unsigned elements)
         {YF_STAGE_VERT, vert_shd, "main"},
         {YF_STAGE_FRAG, frag_shd, "main"}
     };
-    const unsigned stg_n = sizeof stgs / sizeof stgs[0];
+    const unsigned stg_n = sizeof stgs / sizeof *stgs;
 
     /* descriptor table */
     const YF_dentry inst_ents[] = {
@@ -173,7 +173,7 @@ static int init_mdl(T_entry *entry, unsigned elements)
     };
 
     YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
-                                        sizeof inst_ents / sizeof inst_ents[0]);
+                                        sizeof inst_ents / sizeof *inst_ents);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
         yf_unldshd(ctx, vert_shd);
@@ -182,8 +182,8 @@ static int init_mdl(T_entry *entry, unsigned elements)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {l_globl, inst_dtb};
-    const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
+    const YF_dtable dtbs[] = {globl_, inst_dtb};
+    const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
     const YF_vattr attrs[] = {
@@ -194,9 +194,9 @@ static int init_mdl(T_entry *entry, unsigned elements)
         {YF_RESLOC_WGTS, YF_VFMT_FLOAT4, offsetof(YF_vmdl, wgts)}
     };
     const YF_vinput vins[] = {
-        {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vmdl), YF_VRATE_VERT}
+        {attrs, sizeof attrs / sizeof *attrs, sizeof(YF_vmdl), YF_VRATE_VERT}
     };
-    const unsigned vin_n = sizeof vins / sizeof vins[0];
+    const unsigned vin_n = sizeof vins / sizeof *vins;
 
     /* graphics state */
     const YF_gconf conf = {
@@ -261,7 +261,7 @@ static int init_terr(T_entry *entry)
         {YF_STAGE_VERT, vert_shd, "main"},
         {YF_STAGE_FRAG, frag_shd, "main"}
     };
-    const unsigned stg_n = sizeof stgs / sizeof stgs[0];
+    const unsigned stg_n = sizeof stgs / sizeof *stgs;
 
     /* descriptor table */
     const YF_dentry inst_ents[] = {
@@ -271,7 +271,7 @@ static int init_terr(T_entry *entry)
     };
 
     YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
-                                        sizeof inst_ents / sizeof inst_ents[0]);
+                                        sizeof inst_ents / sizeof *inst_ents);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
         yf_unldshd(ctx, vert_shd);
@@ -280,8 +280,8 @@ static int init_terr(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {l_globl, inst_dtb};
-    const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
+    const YF_dtable dtbs[] = {globl_, inst_dtb};
+    const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
     const YF_vattr attrs[] = {
@@ -290,9 +290,9 @@ static int init_terr(T_entry *entry)
         {YF_RESLOC_NORM, YF_VFMT_FLOAT3, offsetof(YF_vterr, norm)}
     };
     const YF_vinput vins[] = {
-        {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vterr), YF_VRATE_VERT}
+        {attrs, sizeof attrs / sizeof *attrs, sizeof(YF_vterr), YF_VRATE_VERT}
     };
-    const unsigned vin_n = sizeof vins / sizeof vins[0];
+    const unsigned vin_n = sizeof vins / sizeof *vins;
 
     /* graphics state */
     const YF_gconf conf = {
@@ -357,7 +357,7 @@ static int init_part(T_entry *entry)
         {YF_STAGE_VERT, vert_shd, "main"},
         {YF_STAGE_FRAG, frag_shd, "main"}
     };
-    const unsigned stg_n = sizeof stgs / sizeof stgs[0];
+    const unsigned stg_n = sizeof stgs / sizeof *stgs;
 
     /* descriptor table */
     const YF_dentry inst_ents[] = {
@@ -366,7 +366,7 @@ static int init_part(T_entry *entry)
     };
 
     YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
-                                        sizeof inst_ents / sizeof inst_ents[0]);
+                                        sizeof inst_ents / sizeof *inst_ents);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
         yf_unldshd(ctx, vert_shd);
@@ -375,8 +375,8 @@ static int init_part(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {l_globl, inst_dtb};
-    const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
+    const YF_dtable dtbs[] = {globl_, inst_dtb};
+    const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
     const YF_vattr attrs[] = {
@@ -384,9 +384,9 @@ static int init_part(T_entry *entry)
         {YF_RESLOC_CLR, YF_VFMT_FLOAT4, offsetof(YF_vpart, clr)}
     };
     const YF_vinput vins[] = {
-        {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vpart), YF_VRATE_VERT}
+        {attrs, sizeof attrs / sizeof *attrs, sizeof(YF_vpart), YF_VRATE_VERT}
     };
-    const unsigned vin_n = sizeof vins / sizeof vins[0];
+    const unsigned vin_n = sizeof vins / sizeof *vins;
 
     /* graphics state */
     const YF_gconf conf = {
@@ -451,7 +451,7 @@ static int init_quad(T_entry *entry)
         {YF_STAGE_VERT, vert_shd, "main"},
         {YF_STAGE_FRAG, frag_shd, "main"}
     };
-    const unsigned stg_n = sizeof stgs / sizeof stgs[0];
+    const unsigned stg_n = sizeof stgs / sizeof *stgs;
 
     /* descriptor table */
     const YF_dentry inst_ents[] = {
@@ -460,7 +460,7 @@ static int init_quad(T_entry *entry)
     };
 
     YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
-                                        sizeof inst_ents / sizeof inst_ents[0]);
+                                        sizeof inst_ents / sizeof *inst_ents);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
         yf_unldshd(ctx, vert_shd);
@@ -469,8 +469,8 @@ static int init_quad(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {l_globl, inst_dtb};
-    const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
+    const YF_dtable dtbs[] = {globl_, inst_dtb};
+    const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
     const YF_vattr attrs[] = {
@@ -479,9 +479,9 @@ static int init_quad(T_entry *entry)
         {YF_RESLOC_CLR, YF_VFMT_FLOAT4, offsetof(YF_vquad, clr)}
     };
     const YF_vinput vins[] = {
-        {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vquad), YF_VRATE_VERT}
+        {attrs, sizeof attrs / sizeof *attrs, sizeof(YF_vquad), YF_VRATE_VERT}
     };
-    const unsigned vin_n = sizeof vins / sizeof vins[0];
+    const unsigned vin_n = sizeof vins / sizeof *vins;
 
     /* graphics state */
     const YF_gconf conf = {
@@ -546,7 +546,7 @@ static int init_labl(T_entry *entry)
         {YF_STAGE_VERT, vert_shd, "main"},
         {YF_STAGE_FRAG, frag_shd, "main"}
     };
-    const unsigned stg_n = sizeof stgs / sizeof stgs[0];
+    const unsigned stg_n = sizeof stgs / sizeof *stgs;
 
     /* descriptor table */
     const YF_dentry inst_ents[] = {
@@ -555,7 +555,7 @@ static int init_labl(T_entry *entry)
     };
 
     YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
-                                        sizeof inst_ents / sizeof inst_ents[0]);
+                                        sizeof inst_ents / sizeof *inst_ents);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
         yf_unldshd(ctx, vert_shd);
@@ -564,8 +564,8 @@ static int init_labl(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {l_globl, inst_dtb};
-    const unsigned dtb_n = sizeof dtbs / sizeof dtbs[0];
+    const YF_dtable dtbs[] = {globl_, inst_dtb};
+    const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
     const YF_vattr attrs[] = {
@@ -574,9 +574,9 @@ static int init_labl(T_entry *entry)
         {YF_RESLOC_CLR, YF_VFMT_FLOAT4, offsetof(YF_vlabl, clr)}
     };
     const YF_vinput vins[] = {
-        {attrs, sizeof attrs / sizeof attrs[0], sizeof(YF_vlabl), YF_VRATE_VERT}
+        {attrs, sizeof attrs / sizeof *attrs, sizeof(YF_vlabl), YF_VRATE_VERT}
     };
-    const unsigned vin_n = sizeof vins / sizeof vins[0];
+    const unsigned vin_n = sizeof vins / sizeof *vins;
 
     /* graphics state */
     const YF_gconf conf = {
@@ -608,44 +608,44 @@ static int init_labl(T_entry *entry)
 static int init_entry(int resrq)
 {
     assert(resrq >= 0 && resrq < YF_RESRQ_N);
-    assert(l_allocn[resrq] > 0);
+    assert(allocn_[resrq] > 0);
 
     if (yf_resmgr_getglobl() == NULL)
         return -1;
 
-    const unsigned n = l_allocn[resrq];
-    l_entries[resrq].obtained = calloc(n, sizeof *l_entries[resrq].obtained);
-    if (l_entries[resrq].obtained == NULL) {
+    const unsigned n = allocn_[resrq];
+    entries_[resrq].obtained = calloc(n, sizeof *entries_[resrq].obtained);
+    if (entries_[resrq].obtained == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
-    l_entries[resrq].n = n;
-    l_entries[resrq].i = 0;
+    entries_[resrq].n = n;
+    entries_[resrq].i = 0;
 
     /* TODO: Consider using spec. constants to set the number of elements. */
     switch (resrq) {
     case YF_RESRQ_MDL:
-        return init_mdl(l_entries+resrq, 1);
+        return init_mdl(entries_+resrq, 1);
     case YF_RESRQ_MDL2:
-        return init_mdl(l_entries+resrq, 2);
+        return init_mdl(entries_+resrq, 2);
     case YF_RESRQ_MDL4:
-        return init_mdl(l_entries+resrq, 4);
+        return init_mdl(entries_+resrq, 4);
     case YF_RESRQ_MDL8:
-        return init_mdl(l_entries+resrq, 8);
+        return init_mdl(entries_+resrq, 8);
     case YF_RESRQ_MDL16:
-        return init_mdl(l_entries+resrq, 16);
+        return init_mdl(entries_+resrq, 16);
     case YF_RESRQ_MDL32:
-        return init_mdl(l_entries+resrq, 32);
+        return init_mdl(entries_+resrq, 32);
     case YF_RESRQ_MDL64:
-        return init_mdl(l_entries+resrq, 64);
+        return init_mdl(entries_+resrq, 64);
     case YF_RESRQ_TERR:
-        return init_terr(l_entries+resrq);
+        return init_terr(entries_+resrq);
     case YF_RESRQ_PART:
-        return init_part(l_entries+resrq);
+        return init_part(entries_+resrq);
     case YF_RESRQ_QUAD:
-        return init_quad(l_entries+resrq);
+        return init_quad(entries_+resrq);
     case YF_RESRQ_LABL:
-        return init_labl(l_entries+resrq);
+        return init_labl(entries_+resrq);
     default:
         assert(0);
         abort();
@@ -656,7 +656,7 @@ static int init_entry(int resrq)
 static void deinit_entry(int resrq)
 {
     assert(resrq >= 0 && resrq < YF_RESRQ_N);
-    assert(l_entries[resrq].gst != NULL);
+    assert(entries_[resrq].gst != NULL);
     assert(yf_getctx() != NULL);
 
     const int stages[] = {
@@ -668,16 +668,16 @@ static void deinit_entry(int resrq)
         YF_STAGE_COMP
     };
 
-    for (size_t i = 0; i < (sizeof stages / sizeof stages[0]); i++) {
-        const YF_stage *stg = yf_gstate_getstg(l_entries[resrq].gst, stages[i]);
+    for (size_t i = 0; i < (sizeof stages / sizeof *stages); i++) {
+        const YF_stage *stg = yf_gstate_getstg(entries_[resrq].gst, stages[i]);
         if (stg != NULL)
             yf_unldshd(yf_getctx(), stg->shd);
     }
 
-    yf_dtable_deinit(yf_gstate_getdtb(l_entries[resrq].gst, YF_RESIDX_INST));
-    yf_gstate_deinit(l_entries[resrq].gst);
-    free(l_entries[resrq].obtained);
-    memset(l_entries+resrq, 0, sizeof(T_entry));
+    yf_dtable_deinit(yf_gstate_getdtb(entries_[resrq].gst, YF_RESIDX_INST));
+    yf_gstate_deinit(entries_[resrq].gst);
+    free(entries_[resrq].obtained);
+    memset(entries_+resrq, 0, sizeof(T_entry));
 }
 
 YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc)
@@ -685,28 +685,28 @@ YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc)
     assert(resrq >= 0 && resrq < YF_RESRQ_N);
     assert(inst_alloc != NULL);
 
-    if (l_allocn[resrq] == 0) {
+    if (allocn_[resrq] == 0) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return NULL;
     }
 
     YF_gstate gst = NULL;
-    if (l_entries[resrq].gst == NULL) {
+    if (entries_[resrq].gst == NULL) {
         if (init_entry(resrq) == 0) {
-            gst = l_entries[resrq].gst;
+            gst = entries_[resrq].gst;
             *inst_alloc = 0;
-            l_entries[resrq].obtained[0] = 1;
-            l_entries[resrq].i = 1 % l_entries[resrq].n;
+            entries_[resrq].obtained[0] = 1;
+            entries_[resrq].i = 1 % entries_[resrq].n;
         }
     } else {
         unsigned j;
-        for (unsigned i = 0; i < l_entries[resrq].n; i++) {
-            j = (l_entries[resrq].i + i) % l_entries[resrq].n;
-            if (!l_entries[resrq].obtained[j]) {
-                gst = l_entries[resrq].gst;
+        for (unsigned i = 0; i < entries_[resrq].n; i++) {
+            j = (entries_[resrq].i + i) % entries_[resrq].n;
+            if (!entries_[resrq].obtained[j]) {
+                gst = entries_[resrq].gst;
                 *inst_alloc = j;
-                l_entries[resrq].obtained[j] = 1;
-                l_entries[resrq].i = (j + 1) % l_entries[resrq].n;
+                entries_[resrq].obtained[j] = 1;
+                entries_[resrq].i = (j + 1) % entries_[resrq].n;
                 break;
             }
         }
@@ -719,66 +719,66 @@ YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc)
 void yf_resmgr_yield(int resrq, unsigned inst_alloc)
 {
     assert(resrq >= 0 && resrq < YF_RESRQ_N);
-    assert(inst_alloc < l_entries[resrq].n);
+    assert(inst_alloc < entries_[resrq].n);
 
-    l_entries[resrq].obtained[inst_alloc] = 0;
-    l_entries[resrq].i = inst_alloc;
+    entries_[resrq].obtained[inst_alloc] = 0;
+    entries_[resrq].i = inst_alloc;
 }
 
 YF_dtable yf_resmgr_getglobl(void)
 {
-    if (l_globl != NULL)
-        return l_globl;
+    if (globl_ != NULL)
+        return globl_;
 
     YF_context ctx = yf_getctx();
     assert(ctx != NULL);
 
     const YF_dentry ents[] = {{YF_RESIDX_GLOBL, YF_DTYPE_UNIFORM, 1, NULL}};
-    l_globl = yf_dtable_init(ctx, ents, sizeof ents / sizeof ents[0]);
-    if (l_globl == NULL || yf_dtable_alloc(l_globl, 1) != 0) {
-        yf_dtable_deinit(l_globl);
-        l_globl = NULL;
+    globl_ = yf_dtable_init(ctx, ents, sizeof ents / sizeof *ents);
+    if (globl_ == NULL || yf_dtable_alloc(globl_, 1) != 0) {
+        yf_dtable_deinit(globl_);
+        globl_ = NULL;
     }
-    return l_globl;
+    return globl_;
 }
 
 unsigned yf_resmgr_getallocn(int resrq)
 {
     assert(resrq >= 0 && resrq < YF_RESRQ_N);
-    return l_entries[resrq].n;
+    return entries_[resrq].n;
 }
 
 int yf_resmgr_setallocn(int resrq, unsigned n)
 {
     assert(resrq >= 0 && resrq < YF_RESRQ_N);
 
-    if (n == l_allocn[resrq])
+    if (n == allocn_[resrq])
         return 0;
 
-    if (l_entries[resrq].gst != NULL) {
+    if (entries_[resrq].gst != NULL) {
         if (n > 0) {
-            YF_dtable dtb = yf_gstate_getdtb(l_entries[resrq].gst,
+            YF_dtable dtb = yf_gstate_getdtb(entries_[resrq].gst,
                                              YF_RESIDX_INST);
             if (yf_dtable_alloc(dtb, n) != 0) {
                 deinit_entry(resrq);
                 return -1;
             }
-            char *tmp = realloc(l_entries[resrq].obtained, n);
+            char *tmp = realloc(entries_[resrq].obtained, n);
             if (tmp == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 deinit_entry(resrq);
                 return -1;
             }
             memset(tmp, 0, n);
-            l_entries[resrq].obtained = tmp;
-            l_entries[resrq].n = n;
-            l_entries[resrq].i = 0;
+            entries_[resrq].obtained = tmp;
+            entries_[resrq].n = n;
+            entries_[resrq].i = 0;
         } else {
             deinit_entry(resrq);
         }
     }
 
-    l_allocn[resrq] = n;
+    allocn_[resrq] = n;
     return 0;
 }
 
@@ -786,10 +786,10 @@ int yf_resmgr_prealloc(int resrq)
 {
     assert(resrq >= 0 && resrq < YF_RESRQ_N);
 
-    if (l_allocn[resrq] == 0)
+    if (allocn_[resrq] == 0)
         return 0;
 
-    if (l_entries[resrq].gst != NULL) {
+    if (entries_[resrq].gst != NULL) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }
@@ -801,16 +801,16 @@ void yf_resmgr_dealloc(int resrq)
 {
     assert(resrq >= 0 && resrq < YF_RESRQ_N);
 
-    if (l_entries[resrq].gst != NULL)
+    if (entries_[resrq].gst != NULL)
         deinit_entry(resrq);
 }
 
 void yf_resmgr_clear(void)
 {
     for (unsigned i = 0; i < YF_RESRQ_N; i++) {
-        if (l_entries[i].gst != NULL)
+        if (entries_[i].gst != NULL)
             deinit_entry(i);
     }
-    yf_dtable_deinit(l_globl);
-    l_globl = NULL;
+    yf_dtable_deinit(globl_);
+    globl_ = NULL;
 }

@@ -32,7 +32,7 @@ struct T_vars {
         int quit;
     } input;
 };
-static struct T_vars l_vars = {0};
+static struct T_vars vars_ = {0};
 
 /* Inserts wide-characters. */
 static void insert_wc(wchar_t wc)
@@ -44,11 +44,11 @@ static void insert_wc(wchar_t wc)
     if (wc == L'\b') {
         if (n != 0) {
             wcs[--n] = L'\0';
-            yf_label_setstr(l_vars.labl, wcs);
+            yf_label_setstr(vars_.labl, wcs);
         }
     } else if (n < YF_MAXN) {
         wcs[n++] = wc;
-        yf_label_setstr(l_vars.labl, wcs);
+        yf_label_setstr(vars_.labl, wcs);
     }
 }
 
@@ -59,12 +59,12 @@ static void on_key(int key, int state, unsigned mod_mask,
     if (state == YF_KEYSTATE_RELEASED)
         return;
 
-    if (l_vars.input.insert) {
+    if (vars_.input.insert) {
         const int shft = mod_mask & YF_KEYMOD_SHIFT;
         const int caps = mod_mask & YF_KEYMOD_CAPSLOCK ? !shft : shft;
         switch (key) {
         case YF_KEY_ESC:
-            l_vars.input.insert = 0;
+            vars_.input.insert = 0;
             break;
         case YF_KEY_BACKSPACE:
             insert_wc(L'\b');
@@ -220,10 +220,10 @@ static void on_key(int key, int state, unsigned mod_mask,
     } else {
         switch (key) {
         case YF_KEY_I:
-            l_vars.input.insert = 1;
+            vars_.input.insert = 1;
             break;
         default:
-            l_vars.input.quit = 1;
+            vars_.input.quit = 1;
         }
     }
 }
@@ -231,8 +231,8 @@ static void on_key(int key, int state, unsigned mod_mask,
 /* Updates content. */
 static void update(YF_UNUSED double elapsed_time)
 {
-    if (l_vars.input.quit)
-        yf_view_stop(l_vars.view);
+    if (vars_.input.quit)
+        yf_view_stop(vars_.view);
 }
 
 /* Tests label. */
@@ -242,70 +242,70 @@ int yf_test_label(void)
     YF_evtfn evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
-    l_vars.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
-    assert(l_vars.win != NULL);
+    vars_.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
+    assert(vars_.win != NULL);
 
-    l_vars.view = yf_view_init(l_vars.win);
-    assert(l_vars.view != NULL);
+    vars_.view = yf_view_init(vars_.win);
+    assert(vars_.view != NULL);
 
-    l_vars.scn = yf_scene_init();
-    assert(l_vars.scn != NULL);
+    vars_.scn = yf_scene_init();
+    assert(vars_.scn != NULL);
 
-    l_vars.font = yf_font_init(YF_FILETYPE_TTF, "tmp/font.ttf");
-    assert(l_vars.font != NULL);
+    vars_.font = yf_font_init(YF_FILETYPE_TTF, "tmp/font.ttf");
+    assert(vars_.font != NULL);
 
     YF_TEST_PRINT("init", "", "labl");
-    l_vars.labl = yf_label_init();
-    if (l_vars.labl == NULL)
+    vars_.labl = yf_label_init();
+    if (vars_.labl == NULL)
         return -1;
 
     YF_TEST_PRINT("getnode", "labl", "");
-    YF_node node = yf_label_getnode(l_vars.labl);
+    YF_node node = yf_label_getnode(vars_.labl);
     if (node == NULL)
         return -1;
 
     YF_TEST_PRINT("getfont", "labl", "");
-    if (yf_label_getfont(l_vars.labl) != NULL)
+    if (yf_label_getfont(vars_.labl) != NULL)
         return -1;
 
     YF_TEST_PRINT("setfont", "labl, font", "");
-    yf_label_setfont(l_vars.labl, l_vars.font);
+    yf_label_setfont(vars_.labl, vars_.font);
 
     YF_TEST_PRINT("getfont", "labl", "");
-    if (yf_label_getfont(l_vars.labl) != l_vars.font)
+    if (yf_label_getfont(vars_.labl) != vars_.font)
         return -1;
 
     /* XXX: Requires a valid font. */
 
     YF_TEST_PRINT("getmesh", "labl", "");
-    if (yf_label_getmesh(l_vars.labl) == NULL)
+    if (yf_label_getmesh(vars_.labl) == NULL)
         return -1;
 
     YF_TEST_PRINT("gettex", "labl", "");
-    if (yf_label_gettex(l_vars.labl) == NULL)
+    if (yf_label_gettex(vars_.labl) == NULL)
         return -1;
 
     YF_TEST_PRINT("setstr",
                   "labl, L\"Press 'I' to insert text\\n'ESC' to quit\"", "");
-    yf_label_setstr(l_vars.labl, L"Press 'I' to insert text\n'ESC' to quit");
+    yf_label_setstr(vars_.labl, L"Press 'I' to insert text\n'ESC' to quit");
 
     YF_TEST_PRINT("setpt", "labl, 40", "");
-    yf_label_setpt(l_vars.labl, 40);
+    yf_label_setpt(vars_.labl, 40);
 
-    yf_node_insert(yf_scene_getnode(l_vars.scn), node);
+    yf_node_insert(yf_scene_getnode(vars_.scn), node);
 
-    yf_view_setscene(l_vars.view, l_vars.scn);
+    yf_view_setscene(vars_.view, vars_.scn);
 
-    if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
+    if (yf_view_start(vars_.view, YF_FPS, update) != 0)
         assert(0);
 
     YF_TEST_PRINT("deinit", "labl", "");
-    yf_label_deinit(l_vars.labl);
+    yf_label_deinit(vars_.labl);
 
-    yf_view_deinit(l_vars.view);
-    yf_scene_deinit(l_vars.scn);
-    yf_font_deinit(l_vars.font);
-    yf_window_deinit(l_vars.win);
+    yf_view_deinit(vars_.view);
+    yf_scene_deinit(vars_.scn);
+    yf_font_deinit(vars_.font);
+    yf_window_deinit(vars_.win);
 
     return 0;
 }

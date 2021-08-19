@@ -69,31 +69,31 @@ static_assert(offsetof(T_ihdr, interlace) == YF_PNG_IHDRSZ-1, "!offsetof");
 #define YF_PNG_IEND YF_PNG_MAKETYPE('I', 'E', 'N', 'D')
 
 /* PNG file signature. */
-static const uint8_t l_sign[8] = {137, 80, 78, 71, 13, 10, 26, 10};
+static const uint8_t sign_[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 
 /* CRC table. */
-static uint32_t l_crctab[256] = {0};
-static atomic_flag l_crcflag = ATOMIC_FLAG_INIT;
-static int l_crcspin = 1;
+static uint32_t crctab_[256] = {0};
+static atomic_flag crcflag_ = ATOMIC_FLAG_INIT;
+static int crcspin_ = 1;
 
 #define YF_PNG_INITCRC() do { \
-    if (atomic_flag_test_and_set(&l_crcflag)) { \
-        while (l_crcspin) \
+    if (atomic_flag_test_and_set(&crcflag_)) { \
+        while (crcspin_) \
             ; \
     } else { \
         for (uint32_t i = 0; i < 256; i++) { \
             uint32_t crc = i, j = 8; \
             while (j--) \
                 crc = (crc & 1) ? (0xedb88320 ^ (crc >> 1)) : (crc >> 1); \
-            l_crctab[i] = crc; \
+            crctab_[i] = crc; \
         } \
-        l_crcspin = 0; \
+        crcspin_ = 0; \
     } } while (0)
 
 #define YF_PNG_CALCCRC(crc, data, len) do { \
     crc = ~0U; \
     for (size_t i = 0; i < (len); i++) \
-        crc = l_crctab[((crc) ^ (data)[i]) & 0xff] ^ ((crc) >> 8); \
+        crc = crctab_[((crc) ^ (data)[i]) & 0xff] ^ ((crc) >> 8); \
     crc ^= ~0U; } while (0)
 
 /* Processed PNG chunks. */
@@ -781,9 +781,9 @@ static int load_png(FILE *file, YF_texdt *data)
     assert(file != NULL && !feof(file));
     assert(data != NULL);
 
-    uint8_t sign[sizeof l_sign];
+    uint8_t sign[sizeof sign_];
     if (fread(sign, sizeof sign, 1, file) < 1 ||
-        memcmp(l_sign, sign, sizeof sign) != 0) {
+        memcmp(sign_, sign, sizeof sign) != 0) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
