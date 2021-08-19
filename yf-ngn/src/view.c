@@ -40,13 +40,13 @@ struct YF_view_o {
 YF_pass yf_g_pass = NULL;
 
 /* Flag to disallow the creation of multiple views. */
-static atomic_flag l_flag = ATOMIC_FLAG_INIT;
+static atomic_flag flag_ = ATOMIC_FLAG_INIT;
 
 YF_view yf_view_init(YF_window win)
 {
     assert(win != NULL);
 
-    if (atomic_flag_test_and_set(&l_flag)) {
+    if (atomic_flag_test_and_set(&flag_)) {
         yf_seterr(YF_ERR_EXIST, __func__);
         return NULL;
     }
@@ -245,5 +245,5 @@ void yf_view_deinit(YF_view view)
 
     free(view);
 
-    atomic_flag_clear(&l_flag);
+    atomic_flag_clear(&flag_);
 }

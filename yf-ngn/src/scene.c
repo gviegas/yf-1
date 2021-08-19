@@ -146,7 +146,7 @@ typedef struct {
 } T_kv_mdl;
 
 /* Variables' instance. */
-static T_vars l_vars = {0};
+static T_vars vars_ = {0};
 
 /* Traverses a scene graph to process its objects. */
 static int traverse_scn(YF_node node, void *arg)
@@ -161,7 +161,7 @@ static int traverse_scn(YF_node node, void *arg)
         YF_material matl = yf_model_getmatl(mdl);
 
         T_kv_mdl key = {{mesh, matl}, {NULL}, 0, 0};
-        T_kv_mdl *val = yf_dict_search(l_vars.mdls, &key);
+        T_kv_mdl *val = yf_dict_search(vars_.mdls, &key);
 
         if (val == NULL) {
             /* new unique model */
@@ -173,7 +173,7 @@ static int traverse_scn(YF_node node, void *arg)
             }
 
             *val = key;
-            if (yf_dict_insert(l_vars.mdls, val, val) != 0) {
+            if (yf_dict_insert(vars_.mdls, val, val) != 0) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 *(int *)arg = -1;
                 return -1;
@@ -217,28 +217,28 @@ static int traverse_scn(YF_node node, void *arg)
     } break;
 
     case YF_NODEOBJ_TERRAIN:
-        if (yf_list_insert(l_vars.terrs, obj) != 0) {
+        if (yf_list_insert(vars_.terrs, obj) != 0) {
             *(int *)arg = -1;
             return -1;
         }
         break;
 
     case YF_NODEOBJ_PARTICLE:
-        if (yf_list_insert(l_vars.parts, obj) != 0) {
+        if (yf_list_insert(vars_.parts, obj) != 0) {
             *(int *)arg = -1;
             return -1;
         }
         break;
 
     case YF_NODEOBJ_QUAD:
-        if (yf_list_insert(l_vars.quads, obj) != 0) {
+        if (yf_list_insert(vars_.quads, obj) != 0) {
             *(int *)arg = -1;
             return -1;
         }
         break;
 
     case YF_NODEOBJ_LABEL:
-        if (yf_list_insert(l_vars.labls, obj) != 0) {
+        if (yf_list_insert(vars_.labls, obj) != 0) {
             *(int *)arg = -1;
             return -1;
         }
@@ -276,79 +276,79 @@ static int traverse_scn(YF_node node, void *arg)
 /* Creates uniform buffer and sets required resources. */
 static int prepare_res(void)
 {
-    assert(l_vars.ctx != NULL);
+    assert(vars_.ctx != NULL);
 
     /* TODO: Check limits. */
 
 #ifdef YF_SCN_DYNAMIC
     /* dynamically allocate resources based on processed objects */
-    l_vars.insts[YF_RESRQ_MDL]   = 0;
-    l_vars.insts[YF_RESRQ_MDL2]  = 0;
-    l_vars.insts[YF_RESRQ_MDL4]  = 0;
-    l_vars.insts[YF_RESRQ_MDL8]  = 0;
-    l_vars.insts[YF_RESRQ_MDL16] = 0;
-    l_vars.insts[YF_RESRQ_MDL32] = 0;
-    l_vars.insts[YF_RESRQ_MDL64] = 0;
-    l_vars.insts[YF_RESRQ_TERR]  = yf_list_getlen(l_vars.terrs);
-    l_vars.insts[YF_RESRQ_PART]  = yf_list_getlen(l_vars.parts);
-    l_vars.insts[YF_RESRQ_QUAD]  = yf_list_getlen(l_vars.quads);
-    l_vars.insts[YF_RESRQ_LABL]  = yf_list_getlen(l_vars.labls);
+    vars_.insts[YF_RESRQ_MDL]   = 0;
+    vars_.insts[YF_RESRQ_MDL2]  = 0;
+    vars_.insts[YF_RESRQ_MDL4]  = 0;
+    vars_.insts[YF_RESRQ_MDL8]  = 0;
+    vars_.insts[YF_RESRQ_MDL16] = 0;
+    vars_.insts[YF_RESRQ_MDL32] = 0;
+    vars_.insts[YF_RESRQ_MDL64] = 0;
+    vars_.insts[YF_RESRQ_TERR]  = yf_list_getlen(vars_.terrs);
+    vars_.insts[YF_RESRQ_PART]  = yf_list_getlen(vars_.parts);
+    vars_.insts[YF_RESRQ_QUAD]  = yf_list_getlen(vars_.quads);
+    vars_.insts[YF_RESRQ_LABL]  = yf_list_getlen(vars_.labls);
 
     YF_iter it = YF_NILIT;
     T_kv_mdl *kv_mdl;
 
-    while ((kv_mdl = yf_dict_next(l_vars.mdls, &it, NULL)) != NULL) {
+    while ((kv_mdl = yf_dict_next(vars_.mdls, &it, NULL)) != NULL) {
         unsigned n = kv_mdl->mdl_n;
         while (n >= 64) {
-            l_vars.insts[YF_RESRQ_MDL64]++;
+            vars_.insts[YF_RESRQ_MDL64]++;
             n -= 64;
         }
         if (n >= 32) {
-            l_vars.insts[YF_RESRQ_MDL32]++;
+            vars_.insts[YF_RESRQ_MDL32]++;
             n -= 32;
         }
         if (n >= 16) {
-            l_vars.insts[YF_RESRQ_MDL16]++;
+            vars_.insts[YF_RESRQ_MDL16]++;
             n -= 16;
         }
         if (n >= 8) {
-            l_vars.insts[YF_RESRQ_MDL8]++;
+            vars_.insts[YF_RESRQ_MDL8]++;
             n -= 8;
         }
         if (n >= 4) {
-            l_vars.insts[YF_RESRQ_MDL4]++;
+            vars_.insts[YF_RESRQ_MDL4]++;
             n -= 4;
         }
         if (n >= 2) {
-            l_vars.insts[YF_RESRQ_MDL2]++;
+            vars_.insts[YF_RESRQ_MDL2]++;
             n -= 2;
         }
         if (n == 1) {
-            l_vars.insts[YF_RESRQ_MDL]++;
+            vars_.insts[YF_RESRQ_MDL]++;
             n--;
         }
         assert(n == 0);
     }
 #else
     /* use predefined number of resource allocations */
-    l_vars.insts[YF_RESRQ_MDL]   = YF_SCN_MDLN;
-    l_vars.insts[YF_RESRQ_MDL2]  = YF_SCN_MDL2N;
-    l_vars.insts[YF_RESRQ_MDL4]  = YF_SCN_MDL4N;
-    l_vars.insts[YF_RESRQ_MDL8]  = YF_SCN_MDL8N;
-    l_vars.insts[YF_RESRQ_MDL16] = YF_SCN_MDL16N;
-    l_vars.insts[YF_RESRQ_MDL32] = YF_SCN_MDL32N;
-    l_vars.insts[YF_RESRQ_MDL64] = YF_SCN_MDL64N;
-    l_vars.insts[YF_RESRQ_TERR]  = YF_SCN_TERRN;
-    l_vars.insts[YF_RESRQ_PART]  = YF_SCN_PARTN;
-    l_vars.insts[YF_RESRQ_QUAD]  = YF_SCN_QUADN;
-    l_vars.insts[YF_RESRQ_LABL]  = YF_SCN_LABLN;
+    vars_.insts[YF_RESRQ_MDL]   = YF_SCN_MDLN;
+    vars_.insts[YF_RESRQ_MDL2]  = YF_SCN_MDL2N;
+    vars_.insts[YF_RESRQ_MDL4]  = YF_SCN_MDL4N;
+    vars_.insts[YF_RESRQ_MDL8]  = YF_SCN_MDL8N;
+    vars_.insts[YF_RESRQ_MDL16] = YF_SCN_MDL16N;
+    vars_.insts[YF_RESRQ_MDL32] = YF_SCN_MDL32N;
+    vars_.insts[YF_RESRQ_MDL64] = YF_SCN_MDL64N;
+    vars_.insts[YF_RESRQ_TERR]  = YF_SCN_TERRN;
+    vars_.insts[YF_RESRQ_PART]  = YF_SCN_PARTN;
+    vars_.insts[YF_RESRQ_QUAD]  = YF_SCN_QUADN;
+    vars_.insts[YF_RESRQ_LABL]  = YF_SCN_LABLN;
 #endif /* YF_SCN_DYNAMIC */
 
     size_t inst_min = 0;
     size_t inst_sum = 0;
     for (unsigned i = 0; i < YF_RESRQ_N; i++) {
-        inst_min += l_vars.insts[i] != 0;
-        inst_sum += l_vars.insts[i];
+        inst_min += vars_.insts[i] != 0;
+        inst_sum += vars_.insts[i];
     }
     assert(inst_min > 0);
 
@@ -356,60 +356,60 @@ static int prepare_res(void)
 
     while (1) {
         int failed = 0;
-        buf_sz = YF_GLOBLSZ + l_vars.globlpd;
+        buf_sz = YF_GLOBLSZ + vars_.globlpd;
 
         for (unsigned i = 0; i < YF_RESRQ_N; i++) {
-            if (yf_resmgr_setallocn(i, l_vars.insts[i]) != 0) {
+            if (yf_resmgr_setallocn(i, vars_.insts[i]) != 0) {
                 yf_resmgr_clear();
                 failed = 1;
                 break;
             }
 
-            if (l_vars.insts[i] == 0)
+            if (vars_.insts[i] == 0)
                 continue;
 
             size_t inst_sz;
 
             switch (i) {
             case YF_RESRQ_MDL:
-                inst_sz = YF_INSTSZ_MDL + l_vars.instpd_mdl;
+                inst_sz = YF_INSTSZ_MDL + vars_.instpd_mdl;
                 break;
             case YF_RESRQ_MDL2:
-                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 1;
+                inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 1;
                 break;
             case YF_RESRQ_MDL4:
-                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 2;
+                inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 2;
                 break;
             case YF_RESRQ_MDL8:
-                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 3;
+                inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 3;
                 break;
             case YF_RESRQ_MDL16:
-                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 4;
+                inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 4;
                 break;
             case YF_RESRQ_MDL32:
-                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 5;
+                inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 5;
                 break;
             case YF_RESRQ_MDL64:
-                inst_sz = (YF_INSTSZ_MDL + l_vars.instpd_mdl) << 6;
+                inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 6;
                 break;
             case YF_RESRQ_TERR:
-                inst_sz = YF_INSTSZ_TERR + l_vars.instpd_terr;
+                inst_sz = YF_INSTSZ_TERR + vars_.instpd_terr;
                 break;
             case YF_RESRQ_PART:
-                inst_sz = YF_INSTSZ_PART + l_vars.instpd_part;
+                inst_sz = YF_INSTSZ_PART + vars_.instpd_part;
                 break;
             case YF_RESRQ_QUAD:
-                inst_sz = YF_INSTSZ_QUAD + l_vars.instpd_quad;
+                inst_sz = YF_INSTSZ_QUAD + vars_.instpd_quad;
                 break;
             case YF_RESRQ_LABL:
-                inst_sz = YF_INSTSZ_LABL + l_vars.instpd_labl;
+                inst_sz = YF_INSTSZ_LABL + vars_.instpd_labl;
                 break;
             default:
                 assert(0);
                 abort();
             }
 
-            buf_sz += l_vars.insts[i] * inst_sz;
+            buf_sz += vars_.insts[i] * inst_sz;
         }
 
         /* proceed if all allocations succeed */
@@ -423,24 +423,24 @@ static int prepare_res(void)
         /* try again with reduced number of instances */
         inst_sum = 0;
         for (unsigned i = 0; i < YF_RESRQ_N; i++) {
-            if (l_vars.insts[i] > 0) {
-                l_vars.insts[i] = YF_MAX(1, l_vars.insts[i] >> 1);
-                inst_sum += l_vars.insts[i];
+            if (vars_.insts[i] > 0) {
+                vars_.insts[i] = YF_MAX(1, vars_.insts[i] >> 1);
+                inst_sum += vars_.insts[i];
             }
         }
     }
 
-    if (l_vars.buf != NULL) {
-        size_t cur_sz = yf_buffer_getsize(l_vars.buf);
+    if (vars_.buf != NULL) {
+        size_t cur_sz = yf_buffer_getsize(vars_.buf);
         if (cur_sz < buf_sz || (cur_sz >> 1) > buf_sz) {
-            yf_buffer_deinit(l_vars.buf);
-            l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz);
+            yf_buffer_deinit(vars_.buf);
+            vars_.buf = yf_buffer_init(vars_.ctx, buf_sz);
         }
     } else {
-        l_vars.buf = yf_buffer_init(l_vars.ctx, buf_sz);
+        vars_.buf = yf_buffer_init(vars_.ctx, buf_sz);
     }
 
-    if (l_vars.buf == NULL)
+    if (vars_.buf == NULL)
         return -1;
 
     return 0;
@@ -454,7 +454,7 @@ static YF_gstate obtain_res(int resrq, unsigned *inst_alloc)
         return NULL;
 
     T_reso *reso = malloc(sizeof *reso);
-    if (reso == NULL || yf_list_insert(l_vars.res_obtd, reso) != 0) {
+    if (reso == NULL || yf_list_insert(vars_.res_obtd, reso) != 0) {
         if (reso == NULL)
             yf_seterr(YF_ERR_NOMEM, __func__);
         else
@@ -477,44 +477,44 @@ static int copy_globl(YF_scene scn)
 
     const YF_slice elems = {0, 1};
     const size_t sz = YF_GLOBLSZ;
-    size_t off = l_vars.buf_off;
+    size_t off = vars_.buf_off;
 
     /* view matrix */
-    if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+    if (yf_buffer_copy(vars_.buf, vars_.buf_off,
                        *yf_camera_getview(scn->cam), sizeof(YF_mat4)) != 0)
         return -1;
-    l_vars.buf_off += sizeof(YF_mat4);
+    vars_.buf_off += sizeof(YF_mat4);
 
     /* projection matrix (persp.) */
-    if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+    if (yf_buffer_copy(vars_.buf, vars_.buf_off,
                        *yf_camera_getproj(scn->cam), sizeof(YF_mat4)) != 0)
         return -1;
-    l_vars.buf_off += sizeof(YF_mat4);
+    vars_.buf_off += sizeof(YF_mat4);
 
     /* projection matrix (ortho.) */
     /* TODO: This matrix should be taken from the camera. */
     YF_mat4 ortho;
     yf_mat4_ortho(ortho, 1.0f, 1.0f, 0.0f, -1.0f);
-    if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, ortho, sizeof ortho) != 0)
+    if (yf_buffer_copy(vars_.buf, vars_.buf_off, ortho, sizeof ortho) != 0)
         return -1;
-    l_vars.buf_off += sizeof(YF_mat4);
+    vars_.buf_off += sizeof(YF_mat4);
 
     /* view-projection matrix */
-    if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+    if (yf_buffer_copy(vars_.buf, vars_.buf_off,
                        *yf_camera_getxform(scn->cam), sizeof(YF_mat4)) != 0)
         return -1;
-    l_vars.buf_off += sizeof(YF_mat4);
+    vars_.buf_off += sizeof(YF_mat4);
 
     /* viewport #0 */
-    if (yf_buffer_copy(l_vars.buf, l_vars.buf_off,
+    if (yf_buffer_copy(vars_.buf, vars_.buf_off,
                        &scn->vport, sizeof scn->vport) != 0)
         return -1;
-    l_vars.buf_off += 32;
+    vars_.buf_off += 32;
 
     /* copy */
-    l_vars.buf_off += l_vars.globlpd;
+    vars_.buf_off += vars_.globlpd;
     if (yf_dtable_copybuf(dtb, 0, YF_RESBIND_GLOBL, elems,
-                          &l_vars.buf, &off, &sz) != 0)
+                          &vars_.buf, &off, &sz) != 0)
         return -1;
 
     return 0;
@@ -528,7 +528,7 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
     YF_node node;
     YF_mat4 mv, *m, *norm;
 
-    const size_t off = l_vars.buf_off;
+    const size_t off = vars_.buf_off;
 
     for (unsigned i = 0; i < mdl_n; i++) {
         node = yf_model_getnode(mdls[i]);
@@ -537,20 +537,20 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
         yf_mat4_mul(mv, *v, *m);
 
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, *m, sizeof *m) != 0)
             return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(YF_mat4);
 
         /* normal matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *norm,
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, *norm,
                            sizeof *norm) != 0)
             return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(YF_mat4);
 
         /* model-view matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, mv, sizeof mv) != 0)
             return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(YF_mat4);
 
         /* skinning matrices */
         YF_skeleton skel;
@@ -577,18 +577,18 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
             yf_mat4_iden(jm[j]);
             yf_mat4_iden(jm[YF_JOINTN + j]);
         }
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, jm, sizeof jm) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, jm, sizeof jm) != 0)
             return -1;
-        l_vars.buf_off += sizeof jm;
+        vars_.buf_off += sizeof jm;
     }
 
     const YF_slice elems = {0, 1};
     const size_t sz = mdl_n * YF_INSTSZ_MDL;
 
     /* copy */
-    l_vars.buf_off += l_vars.instpd_mdl * mdl_n;
+    vars_.buf_off += vars_.instpd_mdl * mdl_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
-                          &l_vars.buf, &off, &sz) != 0)
+                          &vars_.buf, &off, &sz) != 0)
         return -1;
 
     return 0;
@@ -602,7 +602,7 @@ static int copy_inst_terr(YF_scene scn, YF_terrain *terrs, unsigned terr_n,
     YF_node node;
     YF_mat4 mv, *m;
 
-    const size_t off = l_vars.buf_off;
+    const size_t off = vars_.buf_off;
 
     for (unsigned i = 0; i < terr_n; i++) {
         node = yf_terrain_getnode(terrs[i]);
@@ -610,23 +610,23 @@ static int copy_inst_terr(YF_scene scn, YF_terrain *terrs, unsigned terr_n,
         yf_mat4_mul(mv, *v, *m);
 
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, *m, sizeof *m) != 0)
             return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(YF_mat4);
 
         /* model-view matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, mv, sizeof mv) != 0)
             return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(YF_mat4);
     }
 
     const YF_slice elems = {0, 1};
     const size_t sz = terr_n * YF_INSTSZ_TERR;
 
     /* copy */
-    l_vars.buf_off += l_vars.instpd_terr * terr_n;
+    vars_.buf_off += vars_.instpd_terr * terr_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
-                          &l_vars.buf, &off, &sz) != 0)
+                          &vars_.buf, &off, &sz) != 0)
         return -1;
 
     return 0;
@@ -640,7 +640,7 @@ static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
     YF_node node;
     YF_mat4 mv, *m;
 
-    const size_t off = l_vars.buf_off;
+    const size_t off = vars_.buf_off;
 
     for (unsigned i = 0; i < part_n; i++) {
         node = yf_particle_getnode(parts[i]);
@@ -648,23 +648,23 @@ static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
         yf_mat4_mul(mv, *v, *m);
 
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, *m, sizeof *m) != 0)
             return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(YF_mat4);
 
         /* model-view matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, mv, sizeof mv) != 0)
             return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(YF_mat4);
     }
 
     const YF_slice elems = {0, 1};
     const size_t sz = part_n * YF_INSTSZ_PART;
 
     /* copy */
-    l_vars.buf_off += l_vars.instpd_part * part_n;
+    vars_.buf_off += vars_.instpd_part * part_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
-                          &l_vars.buf, &off, &sz) != 0)
+                          &vars_.buf, &off, &sz) != 0)
         return -1;
 
     return 0;
@@ -680,7 +680,7 @@ static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
     const YF_rect *rect;
     float dim[2];
 
-    const size_t off = l_vars.buf_off;
+    const size_t off = vars_.buf_off;
 
     for (unsigned i = 0; i < quad_n; i++) {
         node = yf_quad_getnode(quads[i]);
@@ -691,28 +691,28 @@ static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
         dim[1] = rect->size.height;
 
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, *m, sizeof *m) != 0)
             return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(YF_mat4);
 
         /* model-view matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, mv, sizeof mv) != 0)
             return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(YF_mat4);
 
         /* dimensions */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim, sizeof dim) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, dim, sizeof dim) != 0)
             return -1;
-        l_vars.buf_off += 16;
+        vars_.buf_off += 16;
     }
 
     const YF_slice elems = {0, 1};
     const size_t sz = quad_n * YF_INSTSZ_QUAD;
 
     /* copy */
-    l_vars.buf_off += l_vars.instpd_quad * quad_n;
+    vars_.buf_off += vars_.instpd_quad * quad_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
-                          &l_vars.buf, &off, &sz) != 0)
+                          &vars_.buf, &off, &sz) != 0)
         return -1;
 
     return 0;
@@ -728,7 +728,7 @@ static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
     YF_dim2 udim;
     float dim[2];
 
-    const size_t off = l_vars.buf_off;
+    const size_t off = vars_.buf_off;
 
     for (unsigned i = 0; i < labl_n; i++) {
         node = yf_label_getnode(labls[i]);
@@ -739,28 +739,28 @@ static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
         dim[1] = udim.height;
 
         /* model matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, *m, sizeof *m) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, *m, sizeof *m) != 0)
             return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(YF_mat4);
 
         /* model-view matrix */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, mv, sizeof mv) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, mv, sizeof mv) != 0)
             return -1;
-        l_vars.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(YF_mat4);
 
         /* dimensions */
-        if (yf_buffer_copy(l_vars.buf, l_vars.buf_off, dim, sizeof dim) != 0)
+        if (yf_buffer_copy(vars_.buf, vars_.buf_off, dim, sizeof dim) != 0)
             return -1;
-        l_vars.buf_off += 16;
+        vars_.buf_off += 16;
     }
 
     const YF_slice elems = {0, 1};
     const size_t sz = labl_n * YF_INSTSZ_LABL;
 
     /* copy */
-    l_vars.buf_off += l_vars.instpd_labl * labl_n;
+    vars_.buf_off += vars_.instpd_labl * labl_n;
     if (yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_INST, elems,
-                          &l_vars.buf, &off, &sz) != 0)
+                          &vars_.buf, &off, &sz) != 0)
         return -1;
 
     return 0;
@@ -777,7 +777,7 @@ static int render_mdl(YF_scene scn)
     unsigned insts[YF_RESRQ_N];
     unsigned rq_n = 0;
     for (int i = 0; i < YF_RESRQ_MDL64 + 1; i++) {
-        if (l_vars.insts[i] != 0) {
+        if (vars_.insts[i] != 0) {
             resrq[rq_n] = i;
             insts[rq_n] = 1 << i;
             rq_n++;
@@ -792,7 +792,7 @@ static int render_mdl(YF_scene scn)
     T_kv_mdl *val;
 
     while (1) {
-        val = yf_dict_next(l_vars.mdls, &it, NULL);
+        val = yf_dict_next(vars_.mdls, &it, NULL);
         if (YF_IT_ISNIL(it))
             break;
 
@@ -859,12 +859,12 @@ static int render_mdl(YF_scene scn)
                 abort();
             }
 
-            yf_cmdbuf_setgstate(l_vars.cb, gst);
-            yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
+            yf_cmdbuf_setgstate(vars_.cb, gst);
+            yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_INST, inst_alloc);
 
             YF_mesh mesh = yf_model_getmesh(mdls[rem]);
             if (mesh != NULL) {
-                yf_mesh_draw(mesh, l_vars.cb, n);
+                yf_mesh_draw(mesh, vars_.cb, n);
             } else {
                 /* TODO */
                 assert(0);
@@ -882,7 +882,7 @@ static int render_mdl(YF_scene scn)
     }
 
     while ((val = yf_list_removeat(done, NULL)) != NULL)
-        yf_dict_remove(l_vars.mdls, val);
+        yf_dict_remove(vars_.mdls, val);
 
     yf_list_deinit(done);
 
@@ -895,7 +895,7 @@ static int render_terr(YF_scene scn)
     YF_iter it = YF_NILIT;
 
     while (1) {
-        YF_terrain terr = yf_list_next(l_vars.terrs, &it);
+        YF_terrain terr = yf_list_next(vars_.terrs, &it);
         if (YF_IT_ISNIL(it))
             break;
 
@@ -933,13 +933,13 @@ static int render_terr(YF_scene scn)
             abort();
         }
 
-        yf_cmdbuf_setgstate(l_vars.cb, gst);
-        yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
+        yf_cmdbuf_setgstate(vars_.cb, gst);
+        yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_INST, inst_alloc);
 
         YF_mesh mesh = yf_terrain_getmesh(terr);
-        yf_mesh_draw(mesh, l_vars.cb, 1);
+        yf_mesh_draw(mesh, vars_.cb, 1);
 
-        yf_list_removeat(l_vars.terrs, &it);
+        yf_list_removeat(vars_.terrs, &it);
         it = YF_NILIT;
     }
 
@@ -952,7 +952,7 @@ static int render_part(YF_scene scn)
     YF_iter it = YF_NILIT;
 
     while (1) {
-        YF_particle part = yf_list_next(l_vars.parts, &it);
+        YF_particle part = yf_list_next(vars_.parts, &it);
         if (YF_IT_ISNIL(it))
             break;
 
@@ -981,13 +981,13 @@ static int render_part(YF_scene scn)
             abort();
         }
 
-        yf_cmdbuf_setgstate(l_vars.cb, gst);
-        yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
+        yf_cmdbuf_setgstate(vars_.cb, gst);
+        yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_INST, inst_alloc);
 
         YF_mesh mesh = yf_particle_getmesh(part);
-        yf_mesh_draw(mesh, l_vars.cb, 1);
+        yf_mesh_draw(mesh, vars_.cb, 1);
 
-        yf_list_removeat(l_vars.parts, &it);
+        yf_list_removeat(vars_.parts, &it);
         it = YF_NILIT;
     }
 
@@ -1000,7 +1000,7 @@ static int render_quad(YF_scene scn)
     YF_iter it = YF_NILIT;
 
     while (1) {
-        YF_quad quad = yf_list_next(l_vars.quads, &it);
+        YF_quad quad = yf_list_next(vars_.quads, &it);
         if (YF_IT_ISNIL(it))
             break;
 
@@ -1029,13 +1029,13 @@ static int render_quad(YF_scene scn)
             abort();
         }
 
-        yf_cmdbuf_setgstate(l_vars.cb, gst);
-        yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
+        yf_cmdbuf_setgstate(vars_.cb, gst);
+        yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_INST, inst_alloc);
 
         YF_mesh mesh = yf_quad_getmesh(quad);
-        yf_mesh_draw(mesh, l_vars.cb, 1);
+        yf_mesh_draw(mesh, vars_.cb, 1);
 
-        yf_list_removeat(l_vars.quads, &it);
+        yf_list_removeat(vars_.quads, &it);
         it = YF_NILIT;
     }
 
@@ -1048,7 +1048,7 @@ static int render_labl(YF_scene scn)
     YF_iter it = YF_NILIT;
 
     while (1) {
-        YF_label labl = yf_list_next(l_vars.labls, &it);
+        YF_label labl = yf_list_next(vars_.labls, &it);
         if (YF_IT_ISNIL(it))
             break;
 
@@ -1072,13 +1072,13 @@ static int render_labl(YF_scene scn)
         YF_texture tex = yf_label_gettex(labl);
         yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
 
-        yf_cmdbuf_setgstate(l_vars.cb, gst);
-        yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_INST, inst_alloc);
+        yf_cmdbuf_setgstate(vars_.cb, gst);
+        yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_INST, inst_alloc);
 
         YF_mesh mesh = yf_label_getmesh(labl);
-        yf_mesh_draw(mesh, l_vars.cb, 1);
+        yf_mesh_draw(mesh, vars_.cb, 1);
 
-        yf_list_removeat(l_vars.labls, &it);
+        yf_list_removeat(vars_.labls, &it);
         it = YF_NILIT;
     }
 
@@ -1119,7 +1119,7 @@ static int dealloc_mdl(YF_UNUSED void *key, void *val, YF_UNUSED void *arg)
 static void yield_res(void)
 {
     T_reso *val;
-    while ((val = yf_list_removeat(l_vars.res_obtd, NULL)) != NULL) {
+    while ((val = yf_list_removeat(vars_.res_obtd, NULL)) != NULL) {
         yf_resmgr_yield(val->resrq, val->inst_alloc);
         free(val);
     }
@@ -1128,72 +1128,72 @@ static void yield_res(void)
 /* Clears data structures of all objects. */
 static void clear_obj(void)
 {
-    if (yf_dict_getlen(l_vars.mdls) != 0) {
-        yf_dict_each(l_vars.mdls, dealloc_mdl, NULL);
-        yf_dict_clear(l_vars.mdls);
+    if (yf_dict_getlen(vars_.mdls) != 0) {
+        yf_dict_each(vars_.mdls, dealloc_mdl, NULL);
+        yf_dict_clear(vars_.mdls);
     }
-    yf_list_clear(l_vars.terrs);
-    yf_list_clear(l_vars.parts);
-    yf_list_clear(l_vars.quads);
-    yf_list_clear(l_vars.labls);
+    yf_list_clear(vars_.terrs);
+    yf_list_clear(vars_.parts);
+    yf_list_clear(vars_.quads);
+    yf_list_clear(vars_.labls);
 }
 
 /* Deinitializes shared variables and releases resources. */
 static void deinit_vars(void)
 {
-    if (l_vars.ctx == NULL)
+    if (vars_.ctx == NULL)
         return;
 
     yf_resmgr_clear();
-    yf_buffer_deinit(l_vars.buf);
-    yf_list_deinit(l_vars.res_obtd);
+    yf_buffer_deinit(vars_.buf);
+    yf_list_deinit(vars_.res_obtd);
 
-    if (l_vars.mdls != NULL) {
-        yf_dict_each(l_vars.mdls, dealloc_mdl, NULL);
-        yf_dict_deinit(l_vars.mdls);
+    if (vars_.mdls != NULL) {
+        yf_dict_each(vars_.mdls, dealloc_mdl, NULL);
+        yf_dict_deinit(vars_.mdls);
     }
-    yf_list_deinit(l_vars.terrs);
-    yf_list_deinit(l_vars.parts);
-    yf_list_deinit(l_vars.quads);
-    yf_list_deinit(l_vars.labls);
+    yf_list_deinit(vars_.terrs);
+    yf_list_deinit(vars_.parts);
+    yf_list_deinit(vars_.quads);
+    yf_list_deinit(vars_.labls);
 
-    memset(&l_vars, 0, sizeof l_vars);
+    memset(&vars_, 0, sizeof vars_);
 }
 
 /* Initializes shared variables and prepares static resources. */
 static int init_vars(void)
 {
-    assert(l_vars.ctx == NULL);
+    assert(vars_.ctx == NULL);
 
-    if ((l_vars.ctx = yf_getctx()) == NULL)
+    if ((vars_.ctx = yf_getctx()) == NULL)
         return -1;
 
-    if ((l_vars.res_obtd = yf_list_init(NULL)) == NULL ||
-        (l_vars.mdls = yf_dict_init(hash_mdl, cmp_mdl)) == NULL ||
-        (l_vars.terrs = yf_list_init(NULL)) == NULL ||
-        (l_vars.parts = yf_list_init(NULL)) == NULL ||
-        (l_vars.quads = yf_list_init(NULL)) == NULL ||
-        (l_vars.labls = yf_list_init(NULL)) == NULL) {
+    if ((vars_.res_obtd = yf_list_init(NULL)) == NULL ||
+        (vars_.mdls = yf_dict_init(hash_mdl, cmp_mdl)) == NULL ||
+        (vars_.terrs = yf_list_init(NULL)) == NULL ||
+        (vars_.parts = yf_list_init(NULL)) == NULL ||
+        (vars_.quads = yf_list_init(NULL)) == NULL ||
+        (vars_.labls = yf_list_init(NULL)) == NULL) {
 
         deinit_vars();
         return -1;
     }
 
-    const unsigned align = yf_getlimits(l_vars.ctx)->dtable.cpy_unif_align_min;
+    const unsigned align = yf_getlimits(vars_.ctx)->dtable.cpy_unif_align_min;
     unsigned mod;
 
     if ((mod = YF_GLOBLSZ % align) != 0)
-        l_vars.globlpd = align - mod;
+        vars_.globlpd = align - mod;
     if ((mod = YF_INSTSZ_MDL % align) != 0)
-        l_vars.instpd_mdl = align - mod;
+        vars_.instpd_mdl = align - mod;
     if ((mod = YF_INSTSZ_TERR % align) != 0)
-        l_vars.instpd_terr = align - mod;
+        vars_.instpd_terr = align - mod;
     if ((mod = YF_INSTSZ_PART % align) != 0)
-        l_vars.instpd_part = align - mod;
+        vars_.instpd_part = align - mod;
     if ((mod = YF_INSTSZ_QUAD % align) != 0)
-        l_vars.instpd_quad = align - mod;
+        vars_.instpd_quad = align - mod;
     if ((mod = YF_INSTSZ_LABL % align) != 0)
-        l_vars.instpd_labl = align - mod;
+        vars_.instpd_labl = align - mod;
 
 #ifndef YF_SCN_DYNAMIC
     if (prepare_res() != 0) {
@@ -1266,7 +1266,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     assert(tgt != NULL);
 
     /* XXX: This is done here because 'resmgr' needs a valid 'pass'. */
-    if (l_vars.ctx == NULL && init_vars() != 0)
+    if (vars_.ctx == NULL && init_vars() != 0)
         return -1;
 
     yf_camera_adjust(scn->cam, (float)dim.width / (float)dim.height);
@@ -1288,123 +1288,123 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
 #endif
 
     unsigned pend = YF_PEND_NONE;
-    if (yf_dict_getlen(l_vars.mdls) != 0)
+    if (yf_dict_getlen(vars_.mdls) != 0)
         pend |= YF_PEND_MDL;
-    if (yf_list_getlen(l_vars.terrs) != 0)
+    if (yf_list_getlen(vars_.terrs) != 0)
         pend |= YF_PEND_TERR;
-    if (yf_list_getlen(l_vars.parts) != 0)
+    if (yf_list_getlen(vars_.parts) != 0)
         pend |= YF_PEND_PART;
-    if (yf_list_getlen(l_vars.quads) != 0)
+    if (yf_list_getlen(vars_.quads) != 0)
         pend |= YF_PEND_QUAD;
-    if (yf_list_getlen(l_vars.labls) != 0)
+    if (yf_list_getlen(vars_.labls) != 0)
         pend |= YF_PEND_LABL;
 
-    l_vars.buf_off = 0;
-    if ((l_vars.cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH)) == NULL) {
+    vars_.buf_off = 0;
+    if ((vars_.cb = yf_cmdbuf_get(vars_.ctx, YF_CMDBUF_GRAPH)) == NULL) {
         clear_obj();
         return -1;
     }
 
-    yf_cmdbuf_clearcolor(l_vars.cb, 0, scn->color);
-    yf_cmdbuf_cleardepth(l_vars.cb, 1.0f);
+    yf_cmdbuf_clearcolor(vars_.cb, 0, scn->color);
+    yf_cmdbuf_cleardepth(vars_.cb, 1.0f);
 
     if (copy_globl(scn) != 0) {
         clear_obj();
         return -1;
     }
 
-    yf_cmdbuf_setdtable(l_vars.cb, YF_RESIDX_GLOBL, 0);
+    yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_GLOBL, 0);
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
     printf("\n[YF] OUTPUT (%s):\nresource allocations:\n", __func__);
-    printf(" RESRQ_MDL:   %u\n", l_vars.insts[YF_RESRQ_MDL]);
-    printf(" RESRQ_MDL2:  %u\n", l_vars.insts[YF_RESRQ_MDL2]);
-    printf(" RESRQ_MDL4:  %u\n", l_vars.insts[YF_RESRQ_MDL4]);
-    printf(" RESRQ_MDL8:  %u\n", l_vars.insts[YF_RESRQ_MDL8]);
-    printf(" RESRQ_MDL16: %u\n", l_vars.insts[YF_RESRQ_MDL16]);
-    printf(" RESRQ_MDL32: %u\n", l_vars.insts[YF_RESRQ_MDL32]);
-    printf(" RESRQ_MDL64: %u\n", l_vars.insts[YF_RESRQ_MDL64]);
-    printf(" RESRQ_TERR:  %u\n", l_vars.insts[YF_RESRQ_TERR]);
-    printf(" RESRQ_PART:  %u\n", l_vars.insts[YF_RESRQ_PART]);
-    printf(" RESRQ_QUAD:  %u\n", l_vars.insts[YF_RESRQ_QUAD]);
-    printf(" RESRQ_LABL:  %u\n\n", l_vars.insts[YF_RESRQ_LABL]);
+    printf(" RESRQ_MDL:   %u\n", vars_.insts[YF_RESRQ_MDL]);
+    printf(" RESRQ_MDL2:  %u\n", vars_.insts[YF_RESRQ_MDL2]);
+    printf(" RESRQ_MDL4:  %u\n", vars_.insts[YF_RESRQ_MDL4]);
+    printf(" RESRQ_MDL8:  %u\n", vars_.insts[YF_RESRQ_MDL8]);
+    printf(" RESRQ_MDL16: %u\n", vars_.insts[YF_RESRQ_MDL16]);
+    printf(" RESRQ_MDL32: %u\n", vars_.insts[YF_RESRQ_MDL32]);
+    printf(" RESRQ_MDL64: %u\n", vars_.insts[YF_RESRQ_MDL64]);
+    printf(" RESRQ_TERR:  %u\n", vars_.insts[YF_RESRQ_TERR]);
+    printf(" RESRQ_PART:  %u\n", vars_.insts[YF_RESRQ_PART]);
+    printf(" RESRQ_QUAD:  %u\n", vars_.insts[YF_RESRQ_QUAD]);
+    printf(" RESRQ_LABL:  %u\n\n", vars_.insts[YF_RESRQ_LABL]);
 
     unsigned exec_n = 0;
 #endif
 
     while (1) {
-        yf_cmdbuf_settarget(l_vars.cb, tgt);
-        yf_cmdbuf_setvport(l_vars.cb, 0, &scn->vport);
-        yf_cmdbuf_setsciss(l_vars.cb, 0, scn->sciss);
+        yf_cmdbuf_settarget(vars_.cb, tgt);
+        yf_cmdbuf_setvport(vars_.cb, 0, &scn->vport);
+        yf_cmdbuf_setsciss(vars_.cb, 0, scn->sciss);
 
         if (pend & YF_PEND_MDL) {
             if (render_mdl(scn) != 0) {
-                yf_cmdbuf_end(l_vars.cb);
-                yf_cmdbuf_reset(l_vars.ctx);
+                yf_cmdbuf_end(vars_.cb);
+                yf_cmdbuf_reset(vars_.ctx);
                 yield_res();
                 clear_obj();
                 return -1;
             }
-            if (yf_dict_getlen(l_vars.mdls) == 0)
+            if (yf_dict_getlen(vars_.mdls) == 0)
                 pend &= ~YF_PEND_MDL;
         }
 
         if (pend & YF_PEND_TERR) {
             if (render_terr(scn) != 0) {
-                yf_cmdbuf_end(l_vars.cb);
-                yf_cmdbuf_reset(l_vars.ctx);
+                yf_cmdbuf_end(vars_.cb);
+                yf_cmdbuf_reset(vars_.ctx);
                 yield_res();
                 clear_obj();
                 return -1;
             }
-            if (yf_list_getlen(l_vars.terrs) == 0)
+            if (yf_list_getlen(vars_.terrs) == 0)
                 pend &= ~YF_PEND_TERR;
         }
 
         if (pend & YF_PEND_PART) {
             if (render_part(scn) != 0) {
-                yf_cmdbuf_end(l_vars.cb);
-                yf_cmdbuf_reset(l_vars.ctx);
+                yf_cmdbuf_end(vars_.cb);
+                yf_cmdbuf_reset(vars_.ctx);
                 yield_res();
                 clear_obj();
                 return -1;
             }
-            if (yf_list_getlen(l_vars.parts) == 0)
+            if (yf_list_getlen(vars_.parts) == 0)
                 pend &= ~YF_PEND_PART;
         }
 
         if (pend & YF_PEND_QUAD) {
             if (render_quad(scn) != 0) {
-                yf_cmdbuf_end(l_vars.cb);
-                yf_cmdbuf_reset(l_vars.ctx);
+                yf_cmdbuf_end(vars_.cb);
+                yf_cmdbuf_reset(vars_.ctx);
                 yield_res();
                 clear_obj();
                 return -1;
             }
-            if (yf_list_getlen(l_vars.quads) == 0)
+            if (yf_list_getlen(vars_.quads) == 0)
                 pend &= ~YF_PEND_QUAD;
         }
 
         if (pend & YF_PEND_LABL) {
             if (render_labl(scn) != 0) {
-                yf_cmdbuf_end(l_vars.cb);
-                yf_cmdbuf_reset(l_vars.ctx);
+                yf_cmdbuf_end(vars_.cb);
+                yf_cmdbuf_reset(vars_.ctx);
                 yield_res();
                 clear_obj();
                 return -1;
             }
-            if (yf_list_getlen(l_vars.labls) == 0)
+            if (yf_list_getlen(vars_.labls) == 0)
                 pend &= ~YF_PEND_LABL;
         }
 
-        if (yf_cmdbuf_end(l_vars.cb) == 0) {
-            if (yf_cmdbuf_exec(l_vars.ctx) != 0) {
+        if (yf_cmdbuf_end(vars_.cb) == 0) {
+            if (yf_cmdbuf_exec(vars_.ctx) != 0) {
                 yield_res();
                 clear_obj();
                 return -1;
             }
         } else {
-            yf_cmdbuf_reset(l_vars.ctx);
+            yf_cmdbuf_reset(vars_.ctx);
             yield_res();
             clear_obj();
             return -1;
@@ -1417,8 +1417,8 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
         yield_res();
 
         if (pend != YF_PEND_NONE) {
-            l_vars.cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH);
-            if (l_vars.cb == NULL) {
+            vars_.cb = yf_cmdbuf_get(vars_.ctx, YF_CMDBUF_GRAPH);
+            if (vars_.cb == NULL) {
                 clear_obj();
                 return -1;
             }

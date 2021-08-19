@@ -46,15 +46,15 @@ typedef struct {
 } T_memblk;
 
 /* Global context. */
-static YF_context l_ctx = NULL;
+static YF_context ctx_ = NULL;
 
 /* Buffer instance. */
-static YF_buffer l_buf = NULL;
+static YF_buffer buf_ = NULL;
 
 /* Ordered list of unused memory block ranges. */
-static T_memblk *l_blks = NULL;
-static size_t l_blk_n = 1;
-static size_t l_blk_cap = YF_BLKCAP;
+static T_memblk *blks_ = NULL;
+static size_t blk_n_ = 1;
+static size_t blk_cap_ = YF_BLKCAP;
 
 /* Resizes the buffer instance. */
 static size_t resize_buf(size_t new_len)
@@ -63,36 +63,36 @@ static size_t resize_buf(size_t new_len)
     while (sz < new_len)
         sz <<= 1;
 
-    size_t buf_len = yf_buffer_getsize(l_buf);
+    size_t buf_len = yf_buffer_getsize(buf_);
 
     if (sz != buf_len) {
         YF_buffer new_buf;
-        if ((new_buf = yf_buffer_init(l_ctx, sz)) == NULL) {
-            if ((new_buf = yf_buffer_init(l_ctx, new_len)) == NULL)
+        if ((new_buf = yf_buffer_init(ctx_, sz)) == NULL) {
+            if ((new_buf = yf_buffer_init(ctx_, new_len)) == NULL)
                 return buf_len;
             else
                 sz = new_len;
         }
 
-        YF_cmdbuf cb = yf_cmdbuf_get(l_ctx, YF_CMDBUF_XFER);
+        YF_cmdbuf cb = yf_cmdbuf_get(ctx_, YF_CMDBUF_XFER);
         if (cb == NULL) {
             yf_buffer_deinit(new_buf);
             return buf_len;
         }
         /* TODO: Copy used range only, not the whole buffer. */
-        yf_cmdbuf_copybuf(cb, new_buf, 0, l_buf, 0, YF_MIN(sz, buf_len));
+        yf_cmdbuf_copybuf(cb, new_buf, 0, buf_, 0, YF_MIN(sz, buf_len));
         if (yf_cmdbuf_end(cb) != 0) {
             yf_buffer_deinit(new_buf);
             return buf_len;
         }
 
-        if (yf_cmdbuf_exec(l_ctx) != 0) {
-            yf_cmdbuf_reset(l_ctx);
+        if (yf_cmdbuf_exec(ctx_) != 0) {
+            yf_cmdbuf_reset(ctx_);
             yf_buffer_deinit(new_buf);
             return buf_len;
         }
-        yf_buffer_deinit(l_buf);
-        l_buf = new_buf;
+        yf_buffer_deinit(buf_);
+        buf_ = new_buf;
     }
 
     return sz;
@@ -103,21 +103,21 @@ static size_t resize_blks(size_t new_cap)
 {
     if (new_cap > SIZE_MAX / sizeof(T_memblk)) {
         yf_seterr(YF_ERR_OFLOW, __func__);
-        return l_blk_cap;
+        return blk_cap_;
     }
 
-    size_t n = new_cap * sizeof(T_memblk) < SIZE_MAX ? YF_BLKCAP : new_cap;
+    size_t n = (new_cap*sizeof(T_memblk) < SIZE_MAX) ? YF_BLKCAP : new_cap;
     while (n < new_cap)
         n <<= 1;
 
-    if (n != l_blk_cap) {
-        T_memblk *tmp = realloc(l_blks, n * sizeof(T_memblk));
+    if (n != blk_cap_) {
+        T_memblk *tmp = realloc(blks_, n * sizeof *tmp);
         if (tmp == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            n = l_blk_cap;
+            n = blk_cap_;
         } else {
-            l_blks = tmp;
-            l_blk_cap = n;
+            blks_ = tmp;
+            blk_cap_ = n;
         }
     }
 
@@ -166,26 +166,26 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
     const size_t vtx_sz = data->v.n * mesh->v.stride;
     const size_t idx_sz = data->i.n * mesh->i.stride;
     const size_t sz = vtx_sz + idx_sz;
-    size_t blk_i = l_blk_n;
+    size_t blk_i = blk_n_;
 
-    for (size_t i = 0; i < l_blk_n; i++) {
-        if (l_blks[i].size >= sz) {
+    for (size_t i = 0; i < blk_n_; i++) {
+        if (blks_[i].size >= sz) {
             blk_i = i;
             break;
         }
     }
 
-    if (blk_i == l_blk_n) {
-        if (l_blk_n == l_blk_cap) {
-            size_t new_cap = l_blk_cap + 1;
+    if (blk_i == blk_n_) {
+        if (blk_n_ == blk_cap_) {
+            size_t new_cap = blk_cap_ + 1;
             if (resize_blks(new_cap) < new_cap)
                 return -1;
         }
-        size_t buf_len = yf_buffer_getsize(l_buf);
+        size_t buf_len = yf_buffer_getsize(buf_);
         size_t new_len = buf_len + sz;
         int merge_last = 0;
-        if (l_blk_n > 0) {
-            T_memblk *last = l_blks+blk_i-1;
+        if (blk_n_ > 0) {
+            T_memblk *last = blks_+blk_i-1;
             if (last->offset + last->size == buf_len) {
                 new_len -= last->size;
                 merge_last = 1;
@@ -194,19 +194,19 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
         if (resize_buf(new_len) < new_len)
             return -1;
         if (merge_last) {
-            l_blks[--blk_i].size += new_len - buf_len;
+            blks_[--blk_i].size += new_len - buf_len;
         } else {
-            l_blks[blk_i].offset = buf_len;
-            l_blks[blk_i].size = new_len - buf_len;
-            l_blk_n++;
+            blks_[blk_i].offset = buf_len;
+            blks_[blk_i].size = new_len - buf_len;
+            blk_n_++;
         }
     }
 
-    const size_t off = l_blks[blk_i].offset;
-    if (yf_buffer_copy(l_buf, off, data->v.data, vtx_sz) != 0)
+    const size_t off = blks_[blk_i].offset;
+    if (yf_buffer_copy(buf_, off, data->v.data, vtx_sz) != 0)
         return -1;
     if (idx_sz > 0) {
-        if (yf_buffer_copy(l_buf, off + vtx_sz, data->i.data, idx_sz) != 0)
+        if (yf_buffer_copy(buf_, off + vtx_sz, data->i.data, idx_sz) != 0)
             return -1;
     }
     mesh->v.offset = off;
@@ -214,16 +214,16 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
     mesh->i.offset = off + vtx_sz;
     mesh->i.n = data->i.n;
 
-    if (l_blks[blk_i].size > sz) {
-        l_blks[blk_i].offset += sz;
-        l_blks[blk_i].size -= sz;
+    if (blks_[blk_i].size > sz) {
+        blks_[blk_i].offset += sz;
+        blks_[blk_i].size -= sz;
     } else {
-        if (blk_i + 1 != l_blk_n) {
-            void *dst = l_blks+blk_i;
-            void *src = l_blks+blk_i+1;
-            memmove(dst, src, (l_blk_n - blk_i - 1) * sizeof *l_blks);
+        if (blk_i + 1 != blk_n_) {
+            void *dst = blks_+blk_i;
+            void *src = blks_+blk_i+1;
+            memmove(dst, src, (blk_n_ - blk_i - 1) * sizeof *blks_);
         }
-        l_blk_n--;
+        blk_n_--;
     }
 
     return 0;
@@ -259,55 +259,55 @@ void yf_mesh_deinit(YF_mesh mesh)
     const size_t idx_sz = mesh->i.n * mesh->i.stride;
     const size_t sz = vtx_sz + idx_sz;
     const size_t off = mesh->v.offset;
-    size_t blk_i = l_blk_n;
+    size_t blk_i = blk_n_;
 
-    for (size_t i = 0; i < l_blk_n; i++) {
-        if (l_blks[i].offset > off) {
+    for (size_t i = 0; i < blk_n_; i++) {
+        if (blks_[i].offset > off) {
             blk_i = i;
             break;
         }
     }
 
-    if (l_blk_n == 0) {
+    if (blk_n_ == 0) {
         /* no blocks */
-        l_blks[0].offset = off;
-        l_blks[0].size = sz;
-        l_blk_n++;
+        blks_[0].offset = off;
+        blks_[0].size = sz;
+        blk_n_++;
 
-    } else if (blk_i == l_blk_n) {
+    } else if (blk_i == blk_n_) {
         /* no next blocks */
-        T_memblk *prev = l_blks+blk_i-1;
+        T_memblk *prev = blks_+blk_i-1;
         if (prev->offset + prev->size == off) {
             prev->size += sz;
         } else {
-            if (l_blk_n == l_blk_cap && resize_blks(blk_i+1) < blk_i+1)
+            if (blk_n_ == blk_cap_ && resize_blks(blk_i+1) < blk_i+1)
                 /* TODO */
                 assert(0);
-            l_blks[blk_i].offset = off;
-            l_blks[blk_i].size = sz;
-            l_blk_n++;
+            blks_[blk_i].offset = off;
+            blks_[blk_i].size = sz;
+            blk_n_++;
         }
 
     } else if (blk_i == 0) {
         /* no previous blocks */
-        T_memblk *next = l_blks;
+        T_memblk *next = blks_;
         if (off + sz == next->offset) {
             next->offset = off;
             next->size += sz;
         } else {
-            if (l_blk_n == l_blk_cap && resize_blks(l_blk_n+1) < l_blk_n+1)
+            if (blk_n_ == blk_cap_ && resize_blks(blk_n_+1) < blk_n_+1)
                 /* TODO */
                 assert(0);
-            memmove(next+1, next, l_blk_n * sizeof *l_blks);
-            l_blks[0].offset = off;
-            l_blks[0].size = sz;
-            l_blk_n++;
+            memmove(next+1, next, blk_n_ * sizeof *blks_);
+            blks_[0].offset = off;
+            blks_[0].size = sz;
+            blk_n_++;
         }
 
     } else {
         /* previous & next blocks */
-        T_memblk *prev = l_blks+blk_i-1;
-        T_memblk *next = l_blks+blk_i;
+        T_memblk *prev = blks_+blk_i-1;
+        T_memblk *next = blks_+blk_i;
         int prev_merged = 0;
         int next_merged = 0;
         if (prev->offset + prev->size == off) {
@@ -324,17 +324,17 @@ void yf_mesh_deinit(YF_mesh mesh)
             next_merged = 1;
         }
         if (!prev_merged && !next_merged) {
-            if (l_blk_n == l_blk_cap && resize_blks(l_blk_n+1) < l_blk_n+1)
+            if (blk_n_ == blk_cap_ && resize_blks(blk_n_+1) < blk_n_+1)
                 /* TODO */
                 assert(0);
-            memmove(next+1, next, (l_blk_n - blk_i) * sizeof *l_blks);
-            l_blks[blk_i].offset = off;
-            l_blks[blk_i].size = sz;
-            l_blk_n++;
+            memmove(next+1, next, (blk_n_ - blk_i) * sizeof *blks_);
+            blks_[blk_i].offset = off;
+            blks_[blk_i].size = sz;
+            blk_n_++;
         } else if (prev_merged && next_merged) {
-            if (blk_i + 1 < l_blk_n)
-                memmove(next, next+1, (l_blk_n - blk_i) * sizeof *l_blks);
-            l_blk_n--;
+            if (blk_i + 1 < blk_n_)
+                memmove(next, next+1, (blk_n_ - blk_i) * sizeof *blks_);
+            blk_n_--;
         }
     }
 
@@ -345,24 +345,24 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
 {
     assert(data != NULL);
 
-    if (l_ctx == NULL) {
-        assert(l_buf == NULL);
-        assert(l_blks == NULL);
-        if ((l_ctx = yf_getctx()) == NULL)
+    if (ctx_ == NULL) {
+        assert(buf_ == NULL);
+        assert(blks_ == NULL);
+        if ((ctx_ = yf_getctx()) == NULL)
             return NULL;
-        if ((l_buf = yf_buffer_init(l_ctx, YF_BUFLEN)) == NULL) {
-            l_ctx = NULL;
+        if ((buf_ = yf_buffer_init(ctx_, YF_BUFLEN)) == NULL) {
+            ctx_ = NULL;
             return NULL;
         }
-        if ((l_blks = malloc(YF_BLKCAP * sizeof *l_blks)) == NULL) {
+        if ((blks_ = malloc(YF_BLKCAP * sizeof *blks_)) == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            l_ctx = NULL;
-            yf_buffer_deinit(l_buf);
-            l_buf = NULL;
+            ctx_ = NULL;
+            yf_buffer_deinit(buf_);
+            buf_ = NULL;
             return NULL;
         }
-        l_blks[0].offset = 0;
-        l_blks[0].size = yf_buffer_getsize(l_buf);
+        blks_[0].offset = 0;
+        blks_[0].size = yf_buffer_getsize(buf_);
     }
 
     YF_mesh mesh = calloc(1, sizeof(struct YF_mesh_o));
@@ -390,7 +390,7 @@ int yf_mesh_setvtx(YF_mesh mesh, YF_slice range, const void *data)
 
     size_t off = mesh->v.offset + mesh->v.stride * range.i;
     size_t sz = mesh->v.stride * range.n;
-    return yf_buffer_copy(l_buf, off, data, sz);
+    return yf_buffer_copy(buf_, off, data, sz);
 }
 
 void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
@@ -398,9 +398,9 @@ void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
     assert(mesh != NULL);
     assert(cmdb != NULL);
 
-    yf_cmdbuf_setvbuf(cmdb, 0, l_buf, mesh->v.offset);
+    yf_cmdbuf_setvbuf(cmdb, 0, buf_, mesh->v.offset);
     if (mesh->i.n != 0) {
-        yf_cmdbuf_setibuf(cmdb, l_buf, mesh->i.offset, mesh->i.stride);
+        yf_cmdbuf_setibuf(cmdb, buf_, mesh->i.offset, mesh->i.stride);
         yf_cmdbuf_drawi(cmdb, 0, 0, mesh->i.n, 0, inst_n);
     } else {
         yf_cmdbuf_draw(cmdb, 0, mesh->v.n, 0, inst_n);
