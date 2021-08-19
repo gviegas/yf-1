@@ -112,12 +112,8 @@ static void on_key(int key, int state,
 /* Updates content. */
 static void update(double elapsed_time)
 {
-    printf("update (%.4f)\n", elapsed_time);
-
-    if (l_vars.input.quit) {
-        puts("quit");
+    if (l_vars.input.quit)
         yf_view_stop(l_vars.view);
-    }
 
     static unsigned scn_i = 1;
     if (l_vars.input.swap) {
