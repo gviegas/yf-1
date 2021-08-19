@@ -38,7 +38,7 @@ struct T_vars {
         int play;
     } input;
 };
-static struct T_vars l_vars = {0};
+static struct T_vars vars_ = {0};
 
 /* Handles key events. */
 static void on_key(int key, int state,
@@ -46,47 +46,47 @@ static void on_key(int key, int state,
 {
     switch (key) {
     case YF_KEY_W:
-        l_vars.input.move[0] = state;
+        vars_.input.move[0] = state;
         break;
     case YF_KEY_S:
-        l_vars.input.move[1] = state;
+        vars_.input.move[1] = state;
         break;
     case YF_KEY_A:
-        l_vars.input.move[2] = state;
+        vars_.input.move[2] = state;
         break;
     case YF_KEY_D:
-        l_vars.input.move[3] = state;
+        vars_.input.move[3] = state;
         break;
     case YF_KEY_R:
-        l_vars.input.move[4] = state;
+        vars_.input.move[4] = state;
         break;
     case YF_KEY_F:
-        l_vars.input.move[5] = state;
+        vars_.input.move[5] = state;
         break;
     case YF_KEY_UP:
-        l_vars.input.turn[0] = state;
+        vars_.input.turn[0] = state;
         break;
     case YF_KEY_DOWN:
-        l_vars.input.turn[1] = state;
+        vars_.input.turn[1] = state;
         break;
     case YF_KEY_LEFT:
-        l_vars.input.turn[2] = state;
+        vars_.input.turn[2] = state;
         break;
     case YF_KEY_RIGHT:
-        l_vars.input.turn[3] = state;
+        vars_.input.turn[3] = state;
         break;
     case YF_KEY_RETURN:
-        l_vars.input.place = state;
+        vars_.input.place = state;
         break;
     case YF_KEY_SPACE:
-        l_vars.input.point = state;
+        vars_.input.point = state;
         break;
     case YF_KEY_TAB:
         if (state == YF_KEYSTATE_PRESSED)
-            l_vars.input.play = !l_vars.input.play;
+            vars_.input.play = !vars_.input.play;
         break;
     case YF_KEY_ESC:
-        l_vars.input.quit |= state;
+        vars_.input.quit |= state;
         break;
     default:
         break;
@@ -96,42 +96,42 @@ static void on_key(int key, int state,
 /* Updates content. */
 static void update(double elapsed_time)
 {
-    if (l_vars.input.quit)
-        yf_view_stop(l_vars.view);
+    if (vars_.input.quit)
+        yf_view_stop(vars_.view);
 
-    YF_camera cam = yf_scene_getcam(l_vars.scn);
+    YF_camera cam = yf_scene_getcam(vars_.scn);
     const float md = 16.0 * elapsed_time;
     const float td = 2.0 * elapsed_time;
 
-    if (l_vars.input.place)
+    if (vars_.input.place)
         yf_camera_place(cam, YF_PLACE);
-    if (l_vars.input.point)
+    if (vars_.input.point)
         yf_camera_point(cam, YF_POINT);
-    if (l_vars.input.move[0])
+    if (vars_.input.move[0])
         yf_camera_movef(cam, md);
-    if (l_vars.input.move[1])
+    if (vars_.input.move[1])
         yf_camera_moveb(cam, md);
-    if (l_vars.input.move[2])
+    if (vars_.input.move[2])
         yf_camera_movel(cam, md);
-    if (l_vars.input.move[3])
+    if (vars_.input.move[3])
         yf_camera_mover(cam, md);
-    if (l_vars.input.move[4])
+    if (vars_.input.move[4])
         yf_camera_moveu(cam, md);
-    if (l_vars.input.move[5])
+    if (vars_.input.move[5])
         yf_camera_moved(cam, md);
-    if (l_vars.input.turn[0])
+    if (vars_.input.turn[0])
         yf_camera_turnu(cam, td);
-    if (l_vars.input.turn[1])
+    if (vars_.input.turn[1])
         yf_camera_turnd(cam, td);
-    if (l_vars.input.turn[2])
+    if (vars_.input.turn[2])
         yf_camera_turnl(cam, td);
-    if (l_vars.input.turn[3])
+    if (vars_.input.turn[3])
         yf_camera_turnr(cam, td);
 
-    if (l_vars.input.play) {
+    if (vars_.input.play) {
         static float dt = 0.0f;
         char s[128];
-        float rem = yf_animation_apply(l_vars.anim, dt);
+        float rem = yf_animation_apply(vars_.anim, dt);
 
         snprintf(s, sizeof s >> 1, "anim, %.6f", dt);
         snprintf(s+(sizeof s >> 1), sizeof s >> 1, "%.6f", rem);
@@ -244,41 +244,41 @@ int yf_test_animation(void)
     YF_evtfn evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
-    l_vars.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
-    assert(l_vars.win != NULL);
+    vars_.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
+    assert(vars_.win != NULL);
 
-    l_vars.view = yf_view_init(l_vars.win);
-    assert(l_vars.view != NULL);
+    vars_.view = yf_view_init(vars_.win);
+    assert(vars_.view != NULL);
 
     puts("\n- collection animation loading -\n");
 
-    l_vars.coll = yf_collection_init("tmp/animation.glb");
-    assert(l_vars.coll != NULL);
+    vars_.coll = yf_collection_init("tmp/animation.glb");
+    assert(vars_.coll != NULL);
 
-    yf_collection_each(l_vars.coll, YF_CITEM_ANIMATION, each_anim, NULL);
+    yf_collection_each(vars_.coll, YF_CITEM_ANIMATION, each_anim, NULL);
 
 #if 1
-    l_vars.anim = yf_collection_getitem(l_vars.coll, YF_CITEM_ANIMATION,
-                                        "Animation");
-    assert(l_vars.anim != NULL);
+    vars_.anim = yf_collection_getitem(vars_.coll, YF_CITEM_ANIMATION,
+                                       "Animation");
+    assert(vars_.anim != NULL);
 
-    l_vars.scn = yf_collection_getitem(l_vars.coll, YF_CITEM_SCENE, "Scene");
-    assert(l_vars.scn != NULL);
+    vars_.scn = yf_collection_getitem(vars_.coll, YF_CITEM_SCENE, "Scene");
+    assert(vars_.scn != NULL);
 
-    yf_node_traverse(yf_scene_getnode(l_vars.scn), traverse, NULL);
+    yf_node_traverse(yf_scene_getnode(vars_.scn), traverse, NULL);
 
-    yf_scene_setcolor(l_vars.scn, YF_COLOR_DARKGREY);
-    yf_view_setscene(l_vars.view, l_vars.scn);
-    yf_view_start(l_vars.view, YF_FPS, update);
+    yf_scene_setcolor(vars_.scn, YF_COLOR_DARKGREY);
+    yf_view_setscene(vars_.view, vars_.scn);
+    yf_view_start(vars_.view, YF_FPS, update);
 #endif
 
     puts("\n- no explicit 'deinit()' call for managed animation -\n");
 
     /* managed... */
-    /*yf_animation_deinit(l_vars.anim);*/
-    /*yf_scene_deinit(l_vars.scn);*/
-    yf_collection_deinit(l_vars.coll);
-    yf_view_deinit(l_vars.view);
-    yf_window_deinit(l_vars.win);
+    /*yf_animation_deinit(vars_.anim);*/
+    /*yf_scene_deinit(vars_.scn);*/
+    yf_collection_deinit(vars_.coll);
+    yf_view_deinit(vars_.view);
+    yf_window_deinit(vars_.win);
     return 0;
 }

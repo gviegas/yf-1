@@ -38,7 +38,7 @@ struct T_vars {
         int turn[4];
     } input;
 };
-static struct T_vars l_vars = {0};
+static struct T_vars vars_ = {0};
 
 /* Handles key events. */
 static void on_key(int key, int state,
@@ -46,79 +46,79 @@ static void on_key(int key, int state,
 {
     switch (key) {
     case YF_KEY_RETURN:
-        l_vars.input.place = state;
+        vars_.input.place = state;
         break;
     case YF_KEY_SPACE:
-        l_vars.input.point = state;
+        vars_.input.point = state;
         break;
     case YF_KEY_W:
-        l_vars.input.move[0] = state;
+        vars_.input.move[0] = state;
         break;
     case YF_KEY_S:
-        l_vars.input.move[1] = state;
+        vars_.input.move[1] = state;
         break;
     case YF_KEY_A:
-        l_vars.input.move[2] = state;
+        vars_.input.move[2] = state;
         break;
     case YF_KEY_D:
-        l_vars.input.move[3] = state;
+        vars_.input.move[3] = state;
         break;
     case YF_KEY_R:
-        l_vars.input.move[4] = state;
+        vars_.input.move[4] = state;
         break;
     case YF_KEY_F:
-        l_vars.input.move[5] = state;
+        vars_.input.move[5] = state;
         break;
     case YF_KEY_UP:
-        l_vars.input.turn[0] = state;
+        vars_.input.turn[0] = state;
         break;
     case YF_KEY_DOWN:
-        l_vars.input.turn[1] = state;
+        vars_.input.turn[1] = state;
         break;
     case YF_KEY_LEFT:
-        l_vars.input.turn[2] = state;
+        vars_.input.turn[2] = state;
         break;
     case YF_KEY_RIGHT:
-        l_vars.input.turn[3] = state;
+        vars_.input.turn[3] = state;
         break;
     default:
-        l_vars.input.quit |= state;
+        vars_.input.quit |= state;
     }
 }
 
 /* Updates content. */
 static void update(double elapsed_time)
 {
-    if (l_vars.input.quit)
-        yf_view_stop(l_vars.view);
+    if (vars_.input.quit)
+        yf_view_stop(vars_.view);
 
-    YF_camera cam = yf_scene_getcam(l_vars.scn);
+    YF_camera cam = yf_scene_getcam(vars_.scn);
     const float md = 16.0 * elapsed_time;
     const float td = 2.0 * elapsed_time;
 
-    if (l_vars.input.place)
+    if (vars_.input.place)
         yf_camera_place(cam, YF_PLACE);
-    if (l_vars.input.point)
+    if (vars_.input.point)
         yf_camera_point(cam, YF_POINT);
-    if (l_vars.input.move[0])
+    if (vars_.input.move[0])
         yf_camera_movef(cam, md);
-    if (l_vars.input.move[1])
+    if (vars_.input.move[1])
         yf_camera_moveb(cam, md);
-    if (l_vars.input.move[2])
+    if (vars_.input.move[2])
         yf_camera_movel(cam, md);
-    if (l_vars.input.move[3])
+    if (vars_.input.move[3])
         yf_camera_mover(cam, md);
-    if (l_vars.input.move[4])
+    if (vars_.input.move[4])
         yf_camera_moveu(cam, md);
-    if (l_vars.input.move[5])
+    if (vars_.input.move[5])
         yf_camera_moved(cam, md);
-    if (l_vars.input.turn[0])
+    if (vars_.input.turn[0])
         yf_camera_turnu(cam, td);
-    if (l_vars.input.turn[1])
+    if (vars_.input.turn[1])
         yf_camera_turnd(cam, td);
-    if (l_vars.input.turn[2])
+    if (vars_.input.turn[2])
         yf_camera_turnl(cam, td);
-    if (l_vars.input.turn[3])
+    if (vars_.input.turn[3])
         yf_camera_turnr(cam, td);
 }
 
@@ -128,80 +128,80 @@ int yf_test_terrain(void)
     YF_evtfn evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
-    l_vars.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
-    assert(l_vars.win != NULL);
+    vars_.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
+    assert(vars_.win != NULL);
 
-    l_vars.view = yf_view_init(l_vars.win);
-    assert(l_vars.view != NULL);
+    vars_.view = yf_view_init(vars_.win);
+    assert(vars_.view != NULL);
 
-    l_vars.scn = yf_scene_init();
-    assert(l_vars.scn != NULL);
+    vars_.scn = yf_scene_init();
+    assert(vars_.scn != NULL);
 
-    l_vars.hmap = yf_texture_init(YF_FILETYPE_PNG, "tmp/hmap.png");
-    assert(l_vars.hmap != NULL);
+    vars_.hmap = yf_texture_init(YF_FILETYPE_PNG, "tmp/hmap.png");
+    assert(vars_.hmap != NULL);
 
-    l_vars.tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/terrain.png");
-    assert(l_vars.tex != NULL);
+    vars_.tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/terrain.png");
+    assert(vars_.tex != NULL);
 
     YF_TEST_PRINT("init", "160, 160", "terr");
-    l_vars.terr = yf_terrain_init(160, 160);
-    if (l_vars.terr == NULL)
+    vars_.terr = yf_terrain_init(160, 160);
+    if (vars_.terr == NULL)
         return -1;
 
     YF_TEST_PRINT("getnode", "terr", "");
-    YF_node node = yf_terrain_getnode(l_vars.terr);
+    YF_node node = yf_terrain_getnode(vars_.terr);
     if (node == NULL)
         return -1;
 
     yf_mat4_scale(*yf_node_getxform(node), 3.0f, 3.0f, 3.0f);
 
     YF_TEST_PRINT("getmesh", "terr", "");
-    if (yf_terrain_getmesh(l_vars.terr) == NULL)
+    if (yf_terrain_getmesh(vars_.terr) == NULL)
         return -1;
 
     YF_TEST_PRINT("gethmap", "terr", "");
-    if (yf_terrain_gethmap(l_vars.terr) != NULL)
+    if (yf_terrain_gethmap(vars_.terr) != NULL)
         return -1;
 
     YF_TEST_PRINT("sethmap", "terr, hmap", "");
-    yf_terrain_sethmap(l_vars.terr, l_vars.hmap);
+    yf_terrain_sethmap(vars_.terr, vars_.hmap);
 
     YF_TEST_PRINT("gethmap", "terr", "");
-    if (yf_terrain_gethmap(l_vars.terr) != l_vars.hmap)
+    if (yf_terrain_gethmap(vars_.terr) != vars_.hmap)
         return -1;
 
     YF_TEST_PRINT("gettex", "terr", "");
-    if (yf_terrain_gettex(l_vars.terr) != NULL)
+    if (yf_terrain_gettex(vars_.terr) != NULL)
         return -1;
 
     YF_TEST_PRINT("settex", "terr, tex", "");
-    yf_terrain_settex(l_vars.terr, l_vars.tex);
+    yf_terrain_settex(vars_.terr, vars_.tex);
 
     YF_TEST_PRINT("gettex", "terr", "");
-    if (yf_terrain_gettex(l_vars.terr) != l_vars.tex)
+    if (yf_terrain_gettex(vars_.terr) != vars_.tex)
         return -1;
 
-    yf_node_insert(yf_scene_getnode(l_vars.scn), node);
+    yf_node_insert(yf_scene_getnode(vars_.scn), node);
 
-    YF_camera cam = yf_scene_getcam(l_vars.scn);
+    YF_camera cam = yf_scene_getcam(vars_.scn);
     const YF_vec3 pos = {-2.0f, 20.0f, 10.0f};
     const YF_vec3 tgt = {0};
     yf_camera_place(cam, pos);
     yf_camera_point(cam, tgt);
 
-    yf_view_setscene(l_vars.view, l_vars.scn);
+    yf_view_setscene(vars_.view, vars_.scn);
 
-    if (yf_view_start(l_vars.view, YF_FPS, update) != 0)
+    if (yf_view_start(vars_.view, YF_FPS, update) != 0)
         assert(0);
 
     YF_TEST_PRINT("deinit", "terr", "");
-    yf_terrain_deinit(l_vars.terr);
+    yf_terrain_deinit(vars_.terr);
 
-    yf_view_deinit(l_vars.view);
-    yf_scene_deinit(l_vars.scn);
-    yf_texture_deinit(l_vars.hmap);
-    yf_texture_deinit(l_vars.tex);
-    yf_window_deinit(l_vars.win);
+    yf_view_deinit(vars_.view);
+    yf_scene_deinit(vars_.scn);
+    yf_texture_deinit(vars_.hmap);
+    yf_texture_deinit(vars_.tex);
+    yf_window_deinit(vars_.win);
 
     return 0;
 }
