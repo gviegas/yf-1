@@ -19,7 +19,7 @@ int yf_test_cmdbuf(void);
 int yf_test_wsi(void);
 int yf_test_draw(void);
 
-static const char *l_ids[] = {
+static const char *ids_[] = {
     "context",
     "buffer",
     "image",
@@ -33,7 +33,7 @@ static const char *l_ids[] = {
     "draw"
 };
 
-static int (*l_fns[])(void) = {
+static int (*fns_[])(void) = {
     yf_test_context,
     yf_test_buffer,
     yf_test_image,
@@ -47,12 +47,12 @@ static int (*l_fns[])(void) = {
     yf_test_draw
 };
 
-_Static_assert(sizeof l_ids / sizeof *l_ids == sizeof l_fns / sizeof *l_fns,
+_Static_assert(sizeof ids_ / sizeof *ids_ == sizeof fns_ / sizeof *fns_,
                "!sizeof");
 
 const YF_test yf_g_test = {
     .name = "core",
-    .ids = l_ids,
-    .fns = l_fns,
-    .n = sizeof l_ids / sizeof *l_ids
+    .ids = ids_,
+    .fns = fns_,
+    .n = sizeof ids_ / sizeof *ids_
 };
