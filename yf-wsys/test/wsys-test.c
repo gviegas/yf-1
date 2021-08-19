@@ -10,22 +10,22 @@
 int yf_test_window(void);
 int yf_test_event(void);
 
-static const char *l_ids[] = {
+static const char *ids_[] = {
     "window",
     "event"
 };
 
-static int (*l_fns[])(void) = {
+static int (*fns_[])(void) = {
     yf_test_window,
     yf_test_event
 };
 
-_Static_assert(sizeof l_ids / sizeof *l_ids == sizeof l_fns / sizeof *l_fns,
+_Static_assert(sizeof ids_ / sizeof *ids_ == sizeof fns_ / sizeof *fns_,
                "!sizeof");
 
 const YF_test yf_g_test = {
     .name = "wsys",
-    .ids = l_ids,
-    .fns = l_fns,
-    .n = sizeof l_ids / sizeof *l_ids
+    .ids = ids_,
+    .fns = fns_,
+    .n = sizeof ids_ / sizeof *ids_
 };
