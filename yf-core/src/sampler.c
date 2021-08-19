@@ -17,7 +17,7 @@
 #include "context.h"
 
 /* Default sampler. */
-static const YF_sampler l_splr = {
+static const YF_sampler splr_ = {
     .wrapmode = {
         .u = YF_WRAPMODE_REPEAT,
         .v = YF_WRAPMODE_REPEAT,
@@ -126,7 +126,7 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
     }
 
     if (splr == NULL)
-        splr = &l_splr;
+        splr = &splr_;
 
     if (subs != NULL) {
         if (cmp_splr(splr, &subs->splr) == 0)
