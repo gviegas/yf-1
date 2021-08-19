@@ -21,19 +21,19 @@
 #endif /* defined(__linux__) */
 
 /* The platform in use. */
-static int l_plat = YF_PLATFORM_NONE;
+static int plat_ = YF_PLATFORM_NONE;
 
 #if defined(__linux__)
 int yf_getplatform(void)
 {
-    if (l_plat != YF_PLATFORM_NONE)
-        return l_plat;
+    if (plat_ != YF_PLATFORM_NONE)
+        return plat_;
 
     if (getenv("WAYLAND_DISPLAY") != NULL) {
         /* TODO: Wayland imp. */
         /*
         if (yf_loadwayland() == 0 && atexit(yf_unldwayland) == 0)
-            l_plat = YF_PLATFORM_WAYLAND;
+            plat_ = YF_PLATFORM_WAYLAND;
         else
             yf_unldwayland();
          */
@@ -41,12 +41,12 @@ int yf_getplatform(void)
     } else if (getenv("DISPLAY") != NULL) {
 x11:
         if (yf_loadxcb() == 0 && atexit(yf_unldxcb) == 0)
-            l_plat = YF_PLATFORM_XCB;
+            plat_ = YF_PLATFORM_XCB;
         else
             yf_unldxcb();
     }
 
-    return l_plat;
+    return plat_;
 }
 
 void yf_getwinimp(YF_win_imp *imp)
