@@ -14,7 +14,7 @@
 /* XXX: VK-specific. */
 
 /* Context instance. */
-static YF_context l_ctx = NULL;
+static YF_context ctx_ = NULL;
 
 /* Prints extension-related info. */
 static void print_extensions(void)
@@ -40,7 +40,7 @@ static void print_extensions(void)
     for (;;) {
         VkExtensionProperties exts[100];
         unsigned ext_n = sizeof exts / sizeof exts[0];
-        VkResult res = vkEnumerateDeviceExtensionProperties(l_ctx->phy_dev,
+        VkResult res = vkEnumerateDeviceExtensionProperties(ctx_->phy_dev,
                                                             NULL, &ext_n, exts);
         assert(res == VK_SUCCESS || res == VK_INCOMPLETE);
         for (size_t i = 0; i < ext_n; i++)
@@ -81,7 +81,7 @@ static void print_extensions(void)
 static void print_features(void)
 {
     VkPhysicalDeviceFeatures feat;
-    vkGetPhysicalDeviceFeatures(l_ctx->phy_dev, &feat);
+    vkGetPhysicalDeviceFeatures(ctx_->phy_dev, &feat);
     const char *av[2] = {"NO", "YES"};
 
     puts("");
@@ -160,7 +160,7 @@ static void print_features(void)
 /* Prints device limits. */
 static void print_limits()
 {
-    VkPhysicalDeviceLimits *lim = &l_ctx->dev_prop.limits;
+    VkPhysicalDeviceLimits *lim = &ctx_->dev_prop.limits;
 
     puts("");
 
@@ -331,8 +331,8 @@ static void print_limits()
 /* Prints capabilities. */
 void yf_print_capab(void)
 {
-    l_ctx = yf_context_init();
-    if (l_ctx == NULL) {
+    ctx_ = yf_context_init();
+    if (ctx_ == NULL) {
         assert(0);
         abort();
     }
@@ -341,5 +341,5 @@ void yf_print_capab(void)
     print_features();
     print_limits();
 
-    yf_context_deinit(l_ctx);
+    yf_context_deinit(ctx_);
 }

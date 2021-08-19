@@ -46,7 +46,7 @@
 /* Flag to disallow creation of multiple contexts.
    Multiple contexts are not allowed currently because many VK symbols,
    which are loaded as globals, refer to a specific instance handle. */
-static atomic_flag l_flag = ATOMIC_FLAG_INIT;
+static atomic_flag flag_ = ATOMIC_FLAG_INIT;
 
 /* Sets layers. */
 #if defined(YF_DEVEL) && !defined(YF_NO_VALIDATION)
@@ -545,13 +545,13 @@ static int init_cache(YF_context ctx)
 
 YF_context yf_context_init(void)
 {
-    if (atomic_flag_test_and_set(&l_flag)) {
+    if (atomic_flag_test_and_set(&flag_)) {
         yf_seterr(YF_ERR_EXIST, __func__);
         return NULL;
     }
 
     if (yf_loadvk() != 0) {
-        atomic_flag_clear(&l_flag);
+        atomic_flag_clear(&flag_);
         return NULL;
     }
 
@@ -559,7 +559,7 @@ YF_context yf_context_init(void)
     if (ctx == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         yf_unldvk();
-        atomic_flag_clear(&l_flag);
+        atomic_flag_clear(&flag_);
         return NULL;
     }
 
@@ -622,5 +622,5 @@ void yf_context_deinit(YF_context ctx)
 
     yf_unldvk();
 
-    atomic_flag_clear(&l_flag);
+    atomic_flag_clear(&flag_);
 }

@@ -23,21 +23,21 @@
 #endif /* defined(__linux__) */
 
 /* Shared object handle. */
-static void *l_handle = NULL;
+static void *handle_ = NULL;
 
 #if defined(__linux__) || defined(__APPLE__)
 int yf_loadvk(void)
 {
-    if (l_handle != NULL)
+    if (handle_ != NULL)
         return 0;
 
-    l_handle = dlopen(YF_LIBVK, RTLD_LAZY);
-    if (l_handle == NULL) {
+    handle_ = dlopen(YF_LIBVK, RTLD_LAZY);
+    if (handle_ == NULL) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
         return -1;
     }
 
-    *(void **)(&vkGetInstanceProcAddr) = dlsym(l_handle,
+    *(void **)(&vkGetInstanceProcAddr) = dlsym(handle_,
                                                "vkGetInstanceProcAddr");
     if (vkGetInstanceProcAddr == NULL) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
@@ -50,9 +50,9 @@ int yf_loadvk(void)
 
 void yf_unldvk(void)
 {
-    if (l_handle != NULL) {
-        dlclose(l_handle);
-        l_handle = NULL;
+    if (handle_ != NULL) {
+        dlclose(handle_);
+        handle_ = NULL;
     }
 }
 #elif defined(_WIN32)
@@ -63,7 +63,7 @@ void yf_unldvk(void)
 
 int yf_setiprocvk(VkInstance instance)
 {
-    if (l_handle == NULL && yf_loadvk() != 0)
+    if (handle_ == NULL && yf_loadvk() != 0)
         return -1;
 
     if (instance == NULL) {
@@ -116,7 +116,7 @@ int yf_setiprocvk(VkInstance instance)
 
 int yf_setdprocvk(VkDevice device)
 {
-    if (l_handle == NULL || device == NULL) {
+    if (handle_ == NULL || device == NULL) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }

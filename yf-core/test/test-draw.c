@@ -33,7 +33,7 @@ struct T_vars {
     YF_window win;
     int key;
 };
-static struct T_vars l_vars = {0};
+static struct T_vars vars_ = {0};
 
 /* Vertex type. */
 struct T_vertex {
@@ -46,7 +46,7 @@ static void key_kb(int key, int state,
                    YF_UNUSED unsigned mod_mask, YF_UNUSED void *data)
 {
     if (state == YF_KEYSTATE_PRESSED)
-        l_vars.key = key;
+        vars_.key = key;
 }
 
 /* Initializes content. */
@@ -195,17 +195,17 @@ static void init(void)
     if (yf_dtable_copybuf(dtb, 0, 0, elems, &buf, &buf_off, &buf_sz) != 0)
         assert(0);
 
-    l_vars.ctx = ctx;
-    l_vars.wsi = wsi;
-    l_vars.buf = buf;
-    l_vars.img = img;
-    l_vars.dtb = dtb;
-    l_vars.pass = pass;
-    l_vars.tgts = tgts;
-    l_vars.gst = gst;
+    vars_.ctx = ctx;
+    vars_.wsi = wsi;
+    vars_.buf = buf;
+    vars_.img = img;
+    vars_.dtb = dtb;
+    vars_.pass = pass;
+    vars_.tgts = tgts;
+    vars_.gst = gst;
 
-    l_vars.win = win;
-    l_vars.key = YF_KEY_UNKNOWN;
+    vars_.win = win;
+    vars_.key = YF_KEY_UNKNOWN;
 
     YF_evtfn fn = {.key_kb = key_kb};
     yf_setevtfn(YF_EVT_KEYKB, fn, NULL);
@@ -221,27 +221,27 @@ static void update(void)
     static const YF_viewport vp = {0.0f, 0.0f, YF_WINW, YF_WINH, 0.0f, 1.0f};
     static const YF_rect sciss = {{0, 0}, {YF_WINW, YF_WINH}};
 
-    int tgt_i = yf_wsi_next(l_vars.wsi, 0);
+    int tgt_i = yf_wsi_next(vars_.wsi, 0);
     assert(tgt_i >= 0);
 
-    YF_cmdbuf cb = yf_cmdbuf_get(l_vars.ctx, YF_CMDBUF_GRAPH);
+    YF_cmdbuf cb = yf_cmdbuf_get(vars_.ctx, YF_CMDBUF_GRAPH);
     assert(cb != NULL);
 
-    yf_cmdbuf_setgstate(cb, l_vars.gst);
-    yf_cmdbuf_settarget(cb, l_vars.tgts[tgt_i]);
+    yf_cmdbuf_setgstate(cb, vars_.gst);
+    yf_cmdbuf_settarget(cb, vars_.tgts[tgt_i]);
     yf_cmdbuf_setvport(cb, 0, &vp);
     yf_cmdbuf_setsciss(cb, 0, sciss);
     yf_cmdbuf_setdtable(cb, 0, 0);
-    yf_cmdbuf_setvbuf(cb, 0, l_vars.buf, sizeof(float[16]));
+    yf_cmdbuf_setvbuf(cb, 0, vars_.buf, sizeof(float[16]));
     yf_cmdbuf_clearcolor(cb, 0, YF_COLOR_BLACK);
     yf_cmdbuf_cleardepth(cb, 1.0f);
     yf_cmdbuf_draw(cb, 0, 3, 0, 1);
 
     if (yf_cmdbuf_end(cb) != 0)
         assert(0);
-    if (yf_cmdbuf_exec(l_vars.ctx) != 0)
+    if (yf_cmdbuf_exec(vars_.ctx) != 0)
         assert(0);
-    if (yf_wsi_present(l_vars.wsi, tgt_i) != 0)
+    if (yf_wsi_present(vars_.wsi, tgt_i) != 0)
         assert(0);
 }
 
@@ -274,16 +274,16 @@ static int run(void)
 
         printf("\n[time] %lds %ldns (%.0f fps)", now.tv_sec, now.tv_nsec,
                (double)999999999 / (double)dt);
-    } while (l_vars.key == YF_KEY_UNKNOWN);
+    } while (vars_.key == YF_KEY_UNKNOWN);
 
-    yf_gstate_deinit(l_vars.gst);
-    yf_pass_deinit(l_vars.pass);
-    yf_dtable_deinit(l_vars.dtb);
-    yf_image_deinit(l_vars.img);
-    yf_buffer_deinit(l_vars.buf);
-    yf_wsi_deinit(l_vars.wsi);
-    yf_window_deinit(l_vars.win);
-    yf_context_deinit(l_vars.ctx);
+    yf_gstate_deinit(vars_.gst);
+    yf_pass_deinit(vars_.pass);
+    yf_dtable_deinit(vars_.dtb);
+    yf_image_deinit(vars_.img);
+    yf_buffer_deinit(vars_.buf);
+    yf_wsi_deinit(vars_.wsi);
+    yf_window_deinit(vars_.win);
+    yf_context_deinit(vars_.ctx);
     return 0;
 }
 
