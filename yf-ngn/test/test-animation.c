@@ -8,8 +8,10 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "yf/wsys/yf-wsys.h"
+#include "yf/wsys/yf-event.h"
+#include "yf/wsys/yf-keyboard.h"
 
+#include "test.h"
 #include "yf-ngn.h"
 
 #define YF_WINW 640
@@ -94,13 +96,8 @@ static void on_key(int key, int state,
 /* Updates content. */
 static void update(double elapsed_time)
 {
-    printf("update (%.4f)\n", elapsed_time);
-
-    if (l_vars.input.quit) {
-        puts("quit");
+    if (l_vars.input.quit)
         yf_view_stop(l_vars.view);
-    }
-
 
     YF_camera cam = yf_scene_getcam(l_vars.scn);
     const float md = 16.0 * elapsed_time;
@@ -133,7 +130,13 @@ static void update(double elapsed_time)
 
     if (l_vars.input.play) {
         static float dt = 0.0f;
+        char s[128];
         float rem = yf_animation_apply(l_vars.anim, dt);
+
+        snprintf(s, sizeof s >> 1, "anim, %.6f", dt);
+        snprintf(s+(sizeof s >> 1), sizeof s >> 1, "%.6f", rem);
+        YF_TEST_PRINT("apply", s, s+64);
+
         if (rem < -1.0f)
             dt = 0.0f;
         else
@@ -145,7 +148,7 @@ static int traverse(YF_node node, YF_UNUSED void *arg)
 {
     char name[2][256];
     size_t n[2] = {256, 256};
-    printf("> node '%s' is child of '%s'\n",
+    printf(" node '%s' is child of '%s'\n",
            yf_node_getname(node, name[0], n),
            yf_node_getname(yf_node_getparent(node), name[1], n+1));
 
@@ -235,6 +238,7 @@ static int each_anim(const char *name, void *anim, YF_UNUSED void *arg)
 }
 
 /* Tests animation. */
+/* TODO: More tests. */
 int yf_test_animation(void)
 {
     YF_evtfn evtfn = {.key_kb = on_key};
@@ -245,6 +249,8 @@ int yf_test_animation(void)
 
     l_vars.view = yf_view_init(l_vars.win);
     assert(l_vars.view != NULL);
+
+    puts("\n- collection animation loading -\n");
 
     l_vars.coll = yf_collection_init("tmp/animation.glb");
     assert(l_vars.coll != NULL);
@@ -265,6 +271,8 @@ int yf_test_animation(void)
     yf_view_setscene(l_vars.view, l_vars.scn);
     yf_view_start(l_vars.view, YF_FPS, update);
 #endif
+
+    puts("\n- no explicit 'deinit()' call for managed animation -\n");
 
     /* managed... */
     /*yf_animation_deinit(l_vars.anim);*/
