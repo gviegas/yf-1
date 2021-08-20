@@ -138,9 +138,9 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
         return -1;
     }
 
-    const size_t vtx_sz = data->v.n * mesh->v.stride;
-    const size_t idx_sz = data->i.n * mesh->i.stride;
-    const size_t sz = vtx_sz + idx_sz;
+    const size_t v_sz = data->v.n * mesh->v.stride;
+    const size_t i_sz = data->i.n * mesh->i.stride;
+    const size_t sz = v_sz + i_sz;
     size_t blk_i = blk_n_;
 
     for (size_t i = 0; i < blk_n_; i++) {
@@ -151,14 +151,15 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
     }
 
     if (blk_i == blk_n_) {
-        if (blk_n_ == blk_cap_) {
-            size_t new_cap = blk_cap_ + 1;
-            if (resize_blks(new_cap) < new_cap)
-                return -1;
+        if (blk_n_ == YF_BLKMAX) {
+            /* TODO: Handle segmentation. */
+            assert(0);
         }
-        size_t buf_len = yf_buffer_getsize(buf_);
+
+        const size_t buf_len = yf_buffer_getsize(buf_);
         size_t new_len = buf_len + sz;
         int merge_last = 0;
+
         if (blk_n_ > 0) {
             T_memblk *last = blks_+blk_i-1;
             if (last->offset + last->size == buf_len) {
@@ -166,8 +167,10 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
                 merge_last = 1;
             }
         }
+
         if (resize_buf(new_len) < new_len)
             return -1;
+
         if (merge_last) {
             blks_[--blk_i].size += new_len - buf_len;
         } else {
@@ -178,15 +181,13 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
     }
 
     const size_t off = blks_[blk_i].offset;
-    if (yf_buffer_copy(buf_, off, data->v.data, vtx_sz) != 0)
+    if (yf_buffer_copy(buf_, off, data->v.data, v_sz) != 0 ||
+        (i_sz > 0 && yf_buffer_copy(buf_, off+v_sz, data->i.data, i_sz) != 0))
         return -1;
-    if (idx_sz > 0) {
-        if (yf_buffer_copy(buf_, off + vtx_sz, data->i.data, idx_sz) != 0)
-            return -1;
-    }
+
     mesh->v.offset = off;
     mesh->v.n = data->v.n;
-    mesh->i.offset = off + vtx_sz;
+    mesh->i.offset = off + v_sz;
     mesh->i.n = data->i.n;
 
     if (blks_[blk_i].size > sz) {
