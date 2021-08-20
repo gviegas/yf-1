@@ -25,6 +25,9 @@
 #undef YF_BUFLEN
 #define YF_BUFLEN 1048576
 
+#undef YF_BLKMAX
+#define YF_BLKMAX 256
+
 struct YF_mesh_o {
     struct {
         size_t offset;
@@ -51,7 +54,7 @@ static YF_context ctx_ = NULL;
 static YF_buffer buf_ = NULL;
 
 /* Ordered list of unused memory block ranges. */
-static T_memblk *blks_ = NULL;
+static T_memblk blks_[YF_BLKMAX] = {0};
 static size_t blk_n_ = 1;
 
 /* Resizes the buffer instance. */
