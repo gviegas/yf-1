@@ -25,9 +25,6 @@
 #undef YF_BUFLEN
 #define YF_BUFLEN 1048576
 
-#undef YF_BLKCAP
-#define YF_BLKCAP 32
-
 struct YF_mesh_o {
     struct {
         size_t offset;
@@ -56,7 +53,6 @@ static YF_buffer buf_ = NULL;
 /* Ordered list of unused memory block ranges. */
 static T_memblk *blks_ = NULL;
 static size_t blk_n_ = 1;
-static size_t blk_cap_ = YF_BLKCAP;
 
 /* Resizes the buffer instance. */
 static size_t resize_buf(size_t new_len)
@@ -98,32 +94,6 @@ static size_t resize_buf(size_t new_len)
     }
 
     return sz;
-}
-
-/* Resizes the memory block list. */
-static size_t resize_blks(size_t new_cap)
-{
-    if (new_cap > SIZE_MAX / sizeof(T_memblk)) {
-        yf_seterr(YF_ERR_OFLOW, __func__);
-        return blk_cap_;
-    }
-
-    size_t n = (new_cap*sizeof(T_memblk) < SIZE_MAX) ? YF_BLKCAP : new_cap;
-    while (n < new_cap)
-        n <<= 1;
-
-    if (n != blk_cap_) {
-        T_memblk *tmp = realloc(blks_, n * sizeof *tmp);
-        if (tmp == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            n = blk_cap_;
-        } else {
-            blks_ = tmp;
-            blk_cap_ = n;
-        }
-    }
-
-    return n;
 }
 
 /* Copies mesh data to buffer instance and updates mesh object. */
