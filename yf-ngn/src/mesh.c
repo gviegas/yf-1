@@ -231,9 +231,7 @@ void yf_mesh_deinit(YF_mesh mesh)
     if (mesh == NULL)
         return;
 
-    const size_t vtx_sz = mesh->v.n * mesh->v.stride;
-    const size_t idx_sz = mesh->i.n * mesh->i.stride;
-    const size_t sz = vtx_sz + idx_sz;
+    const size_t sz = mesh->v.n * mesh->v.stride + mesh->i.n * mesh->i.stride;
     const size_t off = mesh->v.offset;
     size_t blk_i = blk_n_;
 
@@ -256,9 +254,10 @@ void yf_mesh_deinit(YF_mesh mesh)
         if (prev->offset + prev->size == off) {
             prev->size += sz;
         } else {
-            if (blk_n_ == blk_cap_ && resize_blks(blk_i+1) < blk_i+1)
-                /* TODO */
+            if (blk_n_ == YF_BLKMAX) {
+                /* TODO: Handle segmentation. */
                 assert(0);
+            }
             blks_[blk_i].offset = off;
             blks_[blk_i].size = sz;
             blk_n_++;
@@ -271,9 +270,10 @@ void yf_mesh_deinit(YF_mesh mesh)
             next->offset = off;
             next->size += sz;
         } else {
-            if (blk_n_ == blk_cap_ && resize_blks(blk_n_+1) < blk_n_+1)
-                /* TODO */
+            if (blk_n_ == YF_BLKMAX) {
+                /* TODO: Handle segmentation. */
                 assert(0);
+            }
             memmove(next+1, next, blk_n_ * sizeof *blks_);
             blks_[0].offset = off;
             blks_[0].size = sz;
@@ -300,9 +300,10 @@ void yf_mesh_deinit(YF_mesh mesh)
             next_merged = 1;
         }
         if (!prev_merged && !next_merged) {
-            if (blk_n_ == blk_cap_ && resize_blks(blk_n_+1) < blk_n_+1)
-                /* TODO */
+            if (blk_n_ == YF_BLKMAX) {
+                /* TODO: Handle segmentation. */
                 assert(0);
+            }
             memmove(next+1, next, (blk_n_ - blk_i) * sizeof *blks_);
             blks_[blk_i].offset = off;
             blks_[blk_i].size = sz;
