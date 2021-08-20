@@ -19,6 +19,8 @@
 #include "coreobj.h"
 #include "data-gltf.h"
 
+/* TODO: Thread-safe. */
+
 /* TODO: Should be defined elsewhere. */
 #undef YF_BUFLEN
 #define YF_BUFLEN 1048576
