@@ -321,23 +321,13 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
     assert(data != NULL);
 
     if (ctx_ == NULL) {
-        assert(buf_ == NULL);
-        assert(blks_ == NULL);
-        if ((ctx_ = yf_getctx()) == NULL)
-            return NULL;
-        if ((buf_ = yf_buffer_init(ctx_, YF_BUFLEN)) == NULL) {
-            ctx_ = NULL;
-            return NULL;
-        }
-        if ((blks_ = malloc(YF_BLKCAP * sizeof *blks_)) == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            ctx_ = NULL;
-            yf_buffer_deinit(buf_);
-            buf_ = NULL;
-            return NULL;
-        }
+        if ((ctx_ = yf_getctx()) == NULL ||
+            (buf_ = yf_buffer_init(ctx_, YF_BUFLEN)) == NULL)
+            return (ctx_ = NULL, NULL);
+
         blks_[0].offset = 0;
         blks_[0].size = yf_buffer_getsize(buf_);
+        blk_n_ = 1;
     }
 
     YF_mesh mesh = calloc(1, sizeof(struct YF_mesh_o));
@@ -345,10 +335,12 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
     }
+
     if (copy_data(mesh, data) != 0) {
         yf_mesh_deinit(mesh);
         mesh = NULL;
     }
+
     return mesh;
 }
 
