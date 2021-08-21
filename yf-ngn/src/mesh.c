@@ -25,8 +25,8 @@
 #undef YF_BUFLEN
 #define YF_BUFLEN 1048576
 
-#undef YF_BLKCAP
-#define YF_BLKCAP 32
+#undef YF_BLKMAX
+#define YF_BLKMAX 256
 
 struct YF_mesh_o {
     struct {
@@ -54,9 +54,8 @@ static YF_context ctx_ = NULL;
 static YF_buffer buf_ = NULL;
 
 /* Ordered list of unused memory block ranges. */
-static T_memblk *blks_ = NULL;
+static T_memblk blks_[YF_BLKMAX] = {0};
 static size_t blk_n_ = 1;
-static size_t blk_cap_ = YF_BLKCAP;
 
 /* Resizes the buffer instance. */
 static size_t resize_buf(size_t new_len)
@@ -100,32 +99,6 @@ static size_t resize_buf(size_t new_len)
     return sz;
 }
 
-/* Resizes the memory block list. */
-static size_t resize_blks(size_t new_cap)
-{
-    if (new_cap > SIZE_MAX / sizeof(T_memblk)) {
-        yf_seterr(YF_ERR_OFLOW, __func__);
-        return blk_cap_;
-    }
-
-    size_t n = (new_cap*sizeof(T_memblk) < SIZE_MAX) ? YF_BLKCAP : new_cap;
-    while (n < new_cap)
-        n <<= 1;
-
-    if (n != blk_cap_) {
-        T_memblk *tmp = realloc(blks_, n * sizeof *tmp);
-        if (tmp == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            n = blk_cap_;
-        } else {
-            blks_ = tmp;
-            blk_cap_ = n;
-        }
-    }
-
-    return n;
-}
-
 /* Copies mesh data to buffer instance and updates mesh object. */
 static int copy_data(YF_mesh mesh, const YF_meshdt *data)
 {
@@ -165,9 +138,9 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
         return -1;
     }
 
-    const size_t vtx_sz = data->v.n * mesh->v.stride;
-    const size_t idx_sz = data->i.n * mesh->i.stride;
-    const size_t sz = vtx_sz + idx_sz;
+    const size_t v_sz = data->v.n * mesh->v.stride;
+    const size_t i_sz = data->i.n * mesh->i.stride;
+    const size_t sz = v_sz + i_sz;
     size_t blk_i = blk_n_;
 
     for (size_t i = 0; i < blk_n_; i++) {
@@ -178,14 +151,15 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
     }
 
     if (blk_i == blk_n_) {
-        if (blk_n_ == blk_cap_) {
-            size_t new_cap = blk_cap_ + 1;
-            if (resize_blks(new_cap) < new_cap)
-                return -1;
+        if (blk_n_ == YF_BLKMAX) {
+            /* TODO: Handle segmentation. */
+            assert(0);
         }
-        size_t buf_len = yf_buffer_getsize(buf_);
+
+        const size_t buf_len = yf_buffer_getsize(buf_);
         size_t new_len = buf_len + sz;
         int merge_last = 0;
+
         if (blk_n_ > 0) {
             T_memblk *last = blks_+blk_i-1;
             if (last->offset + last->size == buf_len) {
@@ -193,8 +167,10 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
                 merge_last = 1;
             }
         }
+
         if (resize_buf(new_len) < new_len)
             return -1;
+
         if (merge_last) {
             blks_[--blk_i].size += new_len - buf_len;
         } else {
@@ -205,15 +181,13 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
     }
 
     const size_t off = blks_[blk_i].offset;
-    if (yf_buffer_copy(buf_, off, data->v.data, vtx_sz) != 0)
+    if (yf_buffer_copy(buf_, off, data->v.data, v_sz) != 0 ||
+        (i_sz > 0 && yf_buffer_copy(buf_, off+v_sz, data->i.data, i_sz) != 0))
         return -1;
-    if (idx_sz > 0) {
-        if (yf_buffer_copy(buf_, off + vtx_sz, data->i.data, idx_sz) != 0)
-            return -1;
-    }
+
     mesh->v.offset = off;
     mesh->v.n = data->v.n;
-    mesh->i.offset = off + vtx_sz;
+    mesh->i.offset = off + v_sz;
     mesh->i.n = data->i.n;
 
     if (blks_[blk_i].size > sz) {
@@ -257,9 +231,7 @@ void yf_mesh_deinit(YF_mesh mesh)
     if (mesh == NULL)
         return;
 
-    const size_t vtx_sz = mesh->v.n * mesh->v.stride;
-    const size_t idx_sz = mesh->i.n * mesh->i.stride;
-    const size_t sz = vtx_sz + idx_sz;
+    const size_t sz = mesh->v.n * mesh->v.stride + mesh->i.n * mesh->i.stride;
     const size_t off = mesh->v.offset;
     size_t blk_i = blk_n_;
 
@@ -282,9 +254,10 @@ void yf_mesh_deinit(YF_mesh mesh)
         if (prev->offset + prev->size == off) {
             prev->size += sz;
         } else {
-            if (blk_n_ == blk_cap_ && resize_blks(blk_i+1) < blk_i+1)
-                /* TODO */
+            if (blk_n_ == YF_BLKMAX) {
+                /* TODO: Handle segmentation. */
                 assert(0);
+            }
             blks_[blk_i].offset = off;
             blks_[blk_i].size = sz;
             blk_n_++;
@@ -297,9 +270,10 @@ void yf_mesh_deinit(YF_mesh mesh)
             next->offset = off;
             next->size += sz;
         } else {
-            if (blk_n_ == blk_cap_ && resize_blks(blk_n_+1) < blk_n_+1)
-                /* TODO */
+            if (blk_n_ == YF_BLKMAX) {
+                /* TODO: Handle segmentation. */
                 assert(0);
+            }
             memmove(next+1, next, blk_n_ * sizeof *blks_);
             blks_[0].offset = off;
             blks_[0].size = sz;
@@ -326,9 +300,10 @@ void yf_mesh_deinit(YF_mesh mesh)
             next_merged = 1;
         }
         if (!prev_merged && !next_merged) {
-            if (blk_n_ == blk_cap_ && resize_blks(blk_n_+1) < blk_n_+1)
-                /* TODO */
+            if (blk_n_ == YF_BLKMAX) {
+                /* TODO: Handle segmentation. */
                 assert(0);
+            }
             memmove(next+1, next, (blk_n_ - blk_i) * sizeof *blks_);
             blks_[blk_i].offset = off;
             blks_[blk_i].size = sz;
@@ -348,23 +323,13 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
     assert(data != NULL);
 
     if (ctx_ == NULL) {
-        assert(buf_ == NULL);
-        assert(blks_ == NULL);
-        if ((ctx_ = yf_getctx()) == NULL)
-            return NULL;
-        if ((buf_ = yf_buffer_init(ctx_, YF_BUFLEN)) == NULL) {
-            ctx_ = NULL;
-            return NULL;
-        }
-        if ((blks_ = malloc(YF_BLKCAP * sizeof *blks_)) == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            ctx_ = NULL;
-            yf_buffer_deinit(buf_);
-            buf_ = NULL;
-            return NULL;
-        }
+        if ((ctx_ = yf_getctx()) == NULL ||
+            (buf_ = yf_buffer_init(ctx_, YF_BUFLEN)) == NULL)
+            return (ctx_ = NULL, NULL);
+
         blks_[0].offset = 0;
         blks_[0].size = yf_buffer_getsize(buf_);
+        blk_n_ = 1;
     }
 
     YF_mesh mesh = calloc(1, sizeof(struct YF_mesh_o));
@@ -372,10 +337,12 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
     }
+
     if (copy_data(mesh, data) != 0) {
         yf_mesh_deinit(mesh);
         mesh = NULL;
     }
+
     return mesh;
 }
 
