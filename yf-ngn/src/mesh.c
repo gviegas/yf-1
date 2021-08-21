@@ -343,7 +343,11 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
 
         blks_[0].offset = 0;
         blks_[0].size = yf_buffer_getsize(buf_);
+        blks_[0].prev_mesh = NULL;
         blk_n_ = 1;
+
+        head_ = NULL;
+        tail_ = NULL;
     }
 
     YF_mesh mesh = calloc(1, sizeof(struct YF_mesh_o));
