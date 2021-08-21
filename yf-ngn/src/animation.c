@@ -26,6 +26,9 @@ struct YF_animation_o {
 
     /* targets can be set (or unset) at any time */
     YF_node *targets;
+
+    /* considering every timeline of every input */
+    float duration;
 };
 
 /* Gets a pair of timeline indices defining keyframes for interpolation. */
@@ -113,6 +116,8 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
     assert(outputs != NULL && output_n > 0);
     assert(actions != NULL && action_n > 0);
 
+    /* TODO: Ensure that all 'inputs'/'outputs' are referenced by 'actions'. */
+
     YF_animation anim = calloc(1, sizeof(struct YF_animation_o));
     if (anim == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
@@ -134,6 +139,9 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
     }
     anim->input_n = input_n;
 
+    float tm_min = 0.0f;
+    float tm_max = 0.0f;
+
     for (unsigned i = 0; i < input_n; i++) {
         assert(inputs[i].timeline != NULL && inputs[i].n > 0);
 
@@ -146,7 +154,17 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
         }
         memcpy(anim->inputs[i].timeline, inputs[i].timeline, sz);
         anim->inputs[i].n = inputs[i].n;
+
+        tm_min = YF_MIN(tm_min, inputs[i].timeline[0]);
+        tm_max = YF_MAX(tm_max, inputs[i].timeline[inputs[i].n - 1]);
     }
+
+    if (tm_min < 0.0f || tm_min > tm_max) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        yf_animation_deinit(anim);
+        return NULL;
+    }
+    anim->duration = tm_max - tm_min;
 
     /* outputs */
     anim->outputs = calloc(output_n, sizeof *outputs);
@@ -272,17 +290,6 @@ float yf_animation_apply(YF_animation anim, float frame_tm)
 {
     assert(anim != NULL);
 
-    /* TODO: Compute this once. */
-    float tm_min = 0.0f;
-    float tm_max = 0.0f;
-    for (unsigned i = 0; i < anim->input_n; i++) {
-        tm_min = YF_MIN(tm_min, anim->inputs[i].timeline[0]);
-        tm_max = YF_MAX(tm_max,
-                        anim->inputs[i].timeline[anim->inputs[i].n - 1]);
-    }
-    assert(tm_min >= 0.0f && tm_min <= tm_max);
-    const float dur = tm_max - tm_min;
-
     for (unsigned i = 0; i < anim->action_n; i++) {
         YF_node node = anim->targets[i];
         if (node == NULL)
@@ -368,7 +375,7 @@ float yf_animation_apply(YF_animation anim, float frame_tm)
         }
     }
 
-    return dur - frame_tm;
+    return anim->duration - frame_tm;
 }
 
 void yf_animation_deinit(YF_animation anim)
