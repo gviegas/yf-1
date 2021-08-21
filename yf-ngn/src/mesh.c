@@ -39,12 +39,20 @@ struct YF_mesh_o {
         short stride;
         unsigned n;
     } i;
+
+    /* mesh whose buffer location precedes this one's */
+    YF_mesh prev;
+    /* mesh whose buffer location succeeds this one's */
+    YF_mesh next;
 };
 
 /* Type defining an unused range of memory. */
 typedef struct {
     size_t offset;
     size_t size;
+
+    /* mesh whose buffer location precedes this block */
+    YF_mesh prev_mesh;
 } T_memblk;
 
 /* Global context. */
@@ -56,6 +64,12 @@ static YF_buffer buf_ = NULL;
 /* Ordered list of unused memory block ranges. */
 static T_memblk blks_[YF_BLKMAX] = {0};
 static size_t blk_n_ = 1;
+
+/* First mesh relative to locations in the buffer. */
+static YF_mesh head_ = NULL;
+
+/* Last mesh relative to locations in the buffer. */
+static YF_mesh tail_ = NULL;
 
 /* Resizes the buffer instance. */
 static size_t resize_buf(size_t new_len)
