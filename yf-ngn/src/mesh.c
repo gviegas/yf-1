@@ -190,6 +190,7 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
         } else {
             blks_[blk_i].offset = buf_len;
             blks_[blk_i].size = new_len - buf_len;
+            blks_[blk_i].prev_mesh = tail_;
             blk_n_++;
         }
     }
@@ -204,9 +205,28 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
     mesh->i.offset = off + v_sz;
     mesh->i.n = data->i.n;
 
+    mesh->prev = blks_[blk_i].prev_mesh;
+    if (mesh->prev != NULL) {
+        mesh->next = mesh->prev->next;
+        mesh->prev->next = mesh;
+        if (mesh->next != NULL)
+            mesh->next->prev = mesh;
+        else
+            tail_ = mesh;
+    } else {
+        if (head_ != NULL) {
+            mesh->next = head_;
+            head_->prev = mesh;
+        } else {
+            tail_ = mesh;
+        }
+        head_ = mesh;
+    }
+
     if (blks_[blk_i].size > sz) {
         blks_[blk_i].offset += sz;
         blks_[blk_i].size -= sz;
+        blks_[blk_i].prev_mesh = mesh;
     } else {
         if (blk_i + 1 != blk_n_) {
             void *dst = blks_+blk_i;
