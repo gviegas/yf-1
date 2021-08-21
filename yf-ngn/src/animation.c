@@ -116,6 +116,8 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
     assert(outputs != NULL && output_n > 0);
     assert(actions != NULL && action_n > 0);
 
+    /* TODO: Ensure that all 'inputs'/'outputs' are referenced by 'actions'. */
+
     YF_animation anim = calloc(1, sizeof(struct YF_animation_o));
     if (anim == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
