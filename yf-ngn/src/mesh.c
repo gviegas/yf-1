@@ -255,8 +255,13 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
 
     if (blk_i == blk_n_) {
         if (blk_n_ == YF_BLKMAX) {
-            /* TODO: Handle segmentation. */
-            assert(0);
+            if (trim_mem() != 0)
+                return -1;
+            /* if enough memory is made available after trimming,
+               buffer resizing can be omitted */
+            blk_i = 0;
+            if (blks_[0].size >= sz)
+                goto no_resz;
         }
 
         const size_t buf_len = yf_buffer_getsize(buf_);
@@ -282,6 +287,9 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
             blks_[blk_i].prev_mesh = tail_;
             blk_n_++;
         }
+
+no_resz:
+        ;
     }
 
     const size_t off = blks_[blk_i].offset;
