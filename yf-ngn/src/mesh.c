@@ -280,6 +280,7 @@ void yf_mesh_deinit(YF_mesh mesh)
         /* no blocks */
         blks_[0].offset = off;
         blks_[0].size = sz;
+        blks_[0].prev_mesh = mesh->prev;
         blk_n_++;
 
     } else if (blk_i == blk_n_) {
@@ -294,6 +295,7 @@ void yf_mesh_deinit(YF_mesh mesh)
             }
             blks_[blk_i].offset = off;
             blks_[blk_i].size = sz;
+            blks_[blk_i].prev_mesh = mesh->prev;
             blk_n_++;
         }
 
@@ -303,6 +305,7 @@ void yf_mesh_deinit(YF_mesh mesh)
         if (off + sz == next->offset) {
             next->offset = off;
             next->size += sz;
+            next->prev_mesh = mesh->prev;
         } else {
             if (blk_n_ == YF_BLKMAX) {
                 /* TODO: Handle segmentation. */
@@ -311,6 +314,7 @@ void yf_mesh_deinit(YF_mesh mesh)
             memmove(next+1, next, blk_n_ * sizeof *blks_);
             blks_[0].offset = off;
             blks_[0].size = sz;
+            blks_[0].prev_mesh = mesh->prev;
             blk_n_++;
         }
 
@@ -330,6 +334,7 @@ void yf_mesh_deinit(YF_mesh mesh)
             } else {
                 next->offset = off;
                 next->size += sz;
+                next->prev_mesh = mesh->prev;
             }
             next_merged = 1;
         }
@@ -341,12 +346,25 @@ void yf_mesh_deinit(YF_mesh mesh)
             memmove(next+1, next, (blk_n_ - blk_i) * sizeof *blks_);
             blks_[blk_i].offset = off;
             blks_[blk_i].size = sz;
+            blks_[blk_i].prev_mesh = mesh->prev;
             blk_n_++;
         } else if (prev_merged && next_merged) {
             if (blk_i + 1 < blk_n_)
                 memmove(next, next+1, (blk_n_ - blk_i) * sizeof *blks_);
             blk_n_--;
         }
+    }
+
+    if (mesh->prev != NULL) {
+        mesh->prev->next = mesh->next;
+        if (mesh->next != NULL)
+            mesh->next->prev = mesh->prev;
+        else
+            tail_ = mesh->prev;
+    } else {
+        if (mesh->next != NULL)
+            mesh->next->prev = NULL;
+        head_ = mesh->next;
     }
 
     free(mesh);
