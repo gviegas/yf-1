@@ -113,6 +113,95 @@ static size_t resize_buf(size_t new_len)
     return sz;
 }
 
+/* Trims buffer instance/memory blocks. */
+static int trim_mem(void)
+{
+    if (blk_n_ <= 1)
+        return 0;
+
+    /* copy trimmed data to a new buffer */
+    const size_t buf_sz = yf_buffer_getsize(buf_);
+    YF_buffer new_buf = yf_buffer_init(ctx_, buf_sz);
+    if (new_buf == NULL)
+        return -1;
+
+    YF_cmdbuf cb = yf_cmdbuf_get(ctx_, YF_CMDBUF_XFER);
+    if (cb == NULL) {
+        yf_buffer_deinit(new_buf);
+        return -1;
+    }
+
+    size_t dst_off, src_off;
+
+    if (blks_[0].prev_mesh != NULL) {
+        yf_cmdbuf_copybuf(cb, new_buf, 0, buf_, 0, blks_[0].offset);
+        dst_off = blks_[0].offset;
+        src_off = blks_[0].offset + blks_[0].size;
+    } else {
+        dst_off = 0;
+        src_off = blks_[0].size;
+    }
+
+    for (size_t i = 1; i < blk_n_; i++) {
+        size_t sz = blks_[i].offset - src_off;
+        yf_cmdbuf_copybuf(cb, new_buf, dst_off, buf_, src_off, sz);
+        dst_off += sz;
+        src_off = blks_[i].offset + blks_[i].size;
+    }
+
+    if (blks_[blk_n_-1].prev_mesh != tail_) {
+        size_t sz = buf_sz - src_off;
+        yf_cmdbuf_copybuf(cb, new_buf, dst_off, buf_, src_off, sz);
+        dst_off += sz;
+    }
+
+    if (yf_cmdbuf_end(cb) != 0) {
+        yf_buffer_deinit(new_buf);
+        return -1;
+    }
+
+    if (yf_cmdbuf_exec(ctx_) != 0) {
+        yf_cmdbuf_reset(ctx_);
+        yf_buffer_deinit(new_buf);
+        return -1;
+    }
+
+    yf_buffer_deinit(buf_);
+    buf_ = new_buf;
+
+    /* mesh offsets need to match new buffer locations */
+    size_t diff = 0;
+
+    for (size_t i = 1; i < blk_n_; i++) {
+        YF_mesh prev = blks_[i-1].prev_mesh;
+        YF_mesh mesh = blks_[i].prev_mesh;
+        diff += blks_[i-1].offset + blks_[i-1].size;
+        do {
+            mesh->v.offset -= diff;
+            if (mesh->i.n > 0)
+                mesh->i.offset -= diff;
+        } while ((mesh = mesh->prev) != prev);
+    }
+
+    if (blks_[blk_n_-1].prev_mesh != tail_) {
+        YF_mesh mesh = blks_[blk_n_-1].prev_mesh;
+        diff += blks_[blk_n_-1].offset + blks_[blk_n_-1].size;
+        do {
+            mesh->v.offset -= diff;
+            if (mesh->i.n > 0)
+                mesh->i.offset -= diff;
+        } while ((mesh = mesh->next) != NULL);
+    }
+
+    /* unused memory is now contiguous */
+    blks_[0].offset = dst_off;
+    blks_[0].size = buf_sz - dst_off;
+    blks_[0].prev_mesh = tail_;
+    blk_n_ = 1;
+
+    return 0;
+}
+
 /* Copies mesh data to buffer instance and updates mesh object. */
 static int copy_data(YF_mesh mesh, const YF_meshdt *data)
 {
