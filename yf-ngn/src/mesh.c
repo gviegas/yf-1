@@ -74,6 +74,9 @@ static YF_mesh head_ = NULL;
 /* Last mesh relative to locations in the buffer. */
 static YF_mesh tail_ = NULL;
 
+/* Number of invalid meshes. */
+static size_t inval_n_ = 0;
+
 /* Resizes the buffer instance. */
 static size_t resize_buf(size_t new_len)
 {
@@ -341,6 +344,15 @@ no_resz:
     return 0;
 }
 
+/* Invalidates a mesh. */
+static void invalidate(YF_mesh mesh)
+{
+    if (!mesh->invalid) {
+        mesh->invalid = 1;
+        inval_n_++;
+    }
+}
+
 YF_mesh yf_mesh_init(int filetype, const char *pathname, size_t index)
 {
     switch (filetype) {
@@ -496,6 +508,8 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
 
         head_ = NULL;
         tail_ = NULL;
+
+        inval_n_ = 0;
     }
 
     YF_mesh mesh = calloc(1, sizeof(struct YF_mesh_o));
