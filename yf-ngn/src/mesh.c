@@ -396,11 +396,10 @@ void yf_mesh_deinit(YF_mesh mesh)
             blks_[blk_i].prev_mesh = mesh->prev;
             blk_n_++;
         } else {
-            if (trim_mem() != 0)
-                /* TODO */
-                assert(0);
-            else
+            if (trim_mem() == 0)
                 yf_mesh_deinit(mesh);
+            else
+                mesh->invalid = 1;
             return;
         }
 
@@ -418,11 +417,10 @@ void yf_mesh_deinit(YF_mesh mesh)
             blks_[0].prev_mesh = mesh->prev;
             blk_n_++;
         } else {
-            if (trim_mem() != 0)
-                /* TODO */
-                assert(0);
-            else
+            if (trim_mem() == 0)
                 yf_mesh_deinit(mesh);
+            else
+                mesh->invalid = 1;
             return;
         }
 
@@ -454,11 +452,10 @@ void yf_mesh_deinit(YF_mesh mesh)
                 blks_[blk_i].prev_mesh = mesh->prev;
                 blk_n_++;
             } else {
-                if (trim_mem() != 0)
-                    /* TODO */
-                    assert(0);
-                else
+                if (trim_mem() == 0)
                     yf_mesh_deinit(mesh);
+                else
+                    mesh->invalid = 1;
                 return;
             }
         } else if (prev_merged && next_merged) {
