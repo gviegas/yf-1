@@ -44,6 +44,9 @@ struct YF_mesh_o {
     YF_mesh prev;
     /* mesh whose buffer location succeeds this one's */
     YF_mesh next;
+
+    /* indicates that deinitialization failed */
+    int invalid;
 };
 
 /* Type defining an unused range of memory. */
@@ -319,6 +322,8 @@ no_resz:
         }
         head_ = mesh;
     }
+
+    mesh->invalid = 0;
 
     if (blks_[blk_i].size > sz) {
         blks_[blk_i].offset += sz;
