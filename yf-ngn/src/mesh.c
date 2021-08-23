@@ -411,7 +411,7 @@ void yf_mesh_deinit(YF_mesh mesh)
             if (trim_mem() == 0)
                 yf_mesh_deinit(mesh);
             else
-                mesh->invalid = 1;
+                invalidate(mesh);
             return;
         }
 
@@ -432,7 +432,7 @@ void yf_mesh_deinit(YF_mesh mesh)
             if (trim_mem() == 0)
                 yf_mesh_deinit(mesh);
             else
-                mesh->invalid = 1;
+                invalidate(mesh);
             return;
         }
 
@@ -467,7 +467,7 @@ void yf_mesh_deinit(YF_mesh mesh)
                 if (trim_mem() == 0)
                     yf_mesh_deinit(mesh);
                 else
-                    mesh->invalid = 1;
+                    invalidate(mesh);
                 return;
             }
         } else if (prev_merged && next_merged) {
