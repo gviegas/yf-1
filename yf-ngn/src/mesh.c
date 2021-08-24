@@ -208,6 +208,22 @@ static int trim_mem(void)
     return 0;
 }
 
+/* Tries to deinitialize invalid meshes. */
+static void try_release(void)
+{
+    YF_mesh mesh = head_;
+    size_t n = inval_n_;
+
+    /* TODO: Store first/last invalid meshes to speed this up. */
+    while (n-- > 0) {
+        while (!mesh->invalid)
+            mesh = mesh->next;
+        YF_mesh next = mesh->next;
+        yf_mesh_deinit(mesh);
+        mesh = next;
+    }
+}
+
 /* Copies mesh data to buffer instance and updates mesh object. */
 static int copy_data(YF_mesh mesh, const YF_meshdt *data)
 {
