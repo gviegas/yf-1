@@ -100,18 +100,20 @@ static size_t resize_buf(size_t new_len)
             yf_buffer_deinit(new_buf);
             return buf_len;
         }
+
         /* TODO: Copy used range only, not the whole buffer. */
         yf_cmdbuf_copybuf(cb, new_buf, 0, buf_, 0, YF_MIN(sz, buf_len));
+
         if (yf_cmdbuf_end(cb) != 0) {
             yf_buffer_deinit(new_buf);
             return buf_len;
         }
-
         if (yf_cmdbuf_exec(ctx_) != 0) {
             yf_cmdbuf_reset(ctx_);
             yf_buffer_deinit(new_buf);
             return buf_len;
         }
+
         yf_buffer_deinit(buf_);
         buf_ = new_buf;
     }
@@ -125,7 +127,7 @@ static int trim_mem(void)
     if (blk_n_ <= 1)
         return 0;
 
-    /* copy trimmed data to a new buffer */
+    /* trimmed data will be copied into a new buffer */
     const size_t buf_sz = yf_buffer_getsize(buf_);
     YF_buffer new_buf = yf_buffer_init(ctx_, buf_sz);
     if (new_buf == NULL)
@@ -140,6 +142,7 @@ static int trim_mem(void)
     size_t dst_off, src_off;
 
     if (blks_[0].prev_mesh != NULL) {
+        /* copy data that precedes the first block */
         yf_cmdbuf_copybuf(cb, new_buf, 0, buf_, 0, blks_[0].offset);
         dst_off = blks_[0].offset;
         src_off = blks_[0].offset + blks_[0].size;
@@ -148,6 +151,7 @@ static int trim_mem(void)
         src_off = blks_[0].size;
     }
 
+    /* copy data that is located between blocks */
     for (size_t i = 1; i < blk_n_; i++) {
         size_t sz = blks_[i].offset - src_off;
         yf_cmdbuf_copybuf(cb, new_buf, dst_off, buf_, src_off, sz);
@@ -156,6 +160,7 @@ static int trim_mem(void)
     }
 
     if (blks_[blk_n_-1].prev_mesh != tail_) {
+        /* copy data that succeeds the last block */
         size_t sz = buf_sz - src_off;
         yf_cmdbuf_copybuf(cb, new_buf, dst_off, buf_, src_off, sz);
         dst_off += sz;
@@ -165,7 +170,6 @@ static int trim_mem(void)
         yf_buffer_deinit(new_buf);
         return -1;
     }
-
     if (yf_cmdbuf_exec(ctx_) != 0) {
         yf_cmdbuf_reset(ctx_);
         yf_buffer_deinit(new_buf);
@@ -564,9 +568,8 @@ int yf_mesh_setvtx(YF_mesh mesh, YF_slice range, const void *data)
         return -1;
     }
 
-    size_t off = mesh->v.offset + mesh->v.stride * range.i;
-    size_t sz = mesh->v.stride * range.n;
-    return yf_buffer_copy(buf_, off, data, sz);
+    return yf_buffer_copy(buf_, mesh->v.offset + mesh->v.stride * range.i,
+                          data, mesh->v.stride * range.n);
 }
 
 void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
