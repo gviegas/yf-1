@@ -355,6 +355,8 @@ no_resz:
             memmove(dst, src, (blk_n_ - blk_i - 1) * sizeof *blks_);
         }
         blk_n_--;
+        if (inval_n_ > 0)
+            try_release();
     }
 
     return 0;
