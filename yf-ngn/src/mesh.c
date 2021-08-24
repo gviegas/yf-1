@@ -507,6 +507,15 @@ void yf_mesh_deinit(YF_mesh mesh)
         head_ = mesh->next;
     }
 
+    if (mesh->invalid) {
+        inval_n_--;
+    } else {
+        if (inval_n_ > 0 && (blk_n_ < YF_BLKMAX ||
+                             (mesh->prev != NULL && mesh->prev->invalid) ||
+                             (mesh->next != NULL && mesh->next->invalid)))
+            try_release();
+    }
+
     free(mesh);
 }
 
