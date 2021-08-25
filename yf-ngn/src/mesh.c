@@ -302,7 +302,8 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
             }
         }
 
-        if (resize_buf(new_len) < new_len)
+        new_len = resize_buf(new_len);
+        if (new_len == buf_len)
             return -1;
 
         if (merge_last) {
