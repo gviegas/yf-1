@@ -185,7 +185,7 @@ static int trim_mem(void)
     for (size_t i = 1; i < blk_n_; i++) {
         YF_mesh prev = blks_[i-1].prev_mesh;
         YF_mesh mesh = blks_[i].prev_mesh;
-        diff += blks_[i-1].offset + blks_[i-1].size;
+        diff += blks_[i-1].size;
         do {
             mesh->v.offset -= diff;
             if (mesh->i.n > 0)
@@ -194,13 +194,14 @@ static int trim_mem(void)
     }
 
     if (blks_[blk_n_-1].prev_mesh != tail_) {
-        YF_mesh mesh = blks_[blk_n_-1].prev_mesh;
-        diff += blks_[blk_n_-1].offset + blks_[blk_n_-1].size;
+        YF_mesh prev = blks_[blk_n_-1].prev_mesh;
+        YF_mesh mesh = tail_;
+        diff += blks_[blk_n_-1].size;
         do {
             mesh->v.offset -= diff;
             if (mesh->i.n > 0)
                 mesh->i.offset -= diff;
-        } while ((mesh = mesh->next) != NULL);
+        } while ((mesh = mesh->prev) != prev);
     }
 
     /* unused memory is now contiguous */
