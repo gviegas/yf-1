@@ -585,3 +585,78 @@ void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
         yf_cmdbuf_draw(cmdb, 0, mesh->v.n, 0, inst_n);
     }
 }
+
+/*
+ * DEVEL
+ */
+
+#ifdef YF_DEVEL
+
+#define YF_SPANOFMESH(mesh, beg_p, end_p) do { \
+    *(beg_p) = (mesh)->v.offset; \
+    *(end_p) = (mesh)->v.stride * (mesh)->v.n; \
+    if ((mesh)->i.n > 0) \
+        *(end_p) += (mesh)->i.stride * (mesh)->i.n; \
+    *(end_p) += *(beg_p); } while (0)
+
+void yf_print_mesh(YF_mesh mesh)
+{
+    assert(ctx_ != NULL);
+
+    printf("\n[YF] OUTPUT (%s):\n", __func__);
+
+    if (mesh == NULL) {
+        size_t beg, end;
+
+        for (size_t i = 0; i < blk_n_; i++) {
+            printf(" mem. block #%zu:\n"
+                   "  offset: \t%zu\n"
+                   "  size:   \t%zu\n", i, blks_[i].offset, blks_[i].size);
+
+            if (blks_[i].prev_mesh != NULL) {
+                YF_SPANOFMESH(blks_[i].prev_mesh, &beg, &end);
+                printf("  prev. mesh: \t[%zu, %zu)\n", beg, end);
+            } else {
+                printf("  (no prev. mesh)\n");
+            }
+
+        }
+
+        puts("\n meshes:");
+        YF_mesh next = head_;
+        while (next != NULL) {
+            YF_SPANOFMESH(next, &beg, &end);
+            printf("  [%zu, %zu)\n", beg, end);
+            next = next->next;
+        }
+
+        if (head_) {
+            YF_SPANOFMESH(head_, &beg, &end);
+            printf("\n head: [%zu, %zu)", beg, end);
+            YF_SPANOFMESH(tail_, &beg, &end);
+            printf("\n tail: [%zu, %zu)\n", beg, end);
+        } else {
+            printf("\n (no meshes)\n");
+        }
+
+        printf("\n inval_n_: %zu\n", inval_n_);
+
+    } else {
+        printf(" mesh <%p>:\n"
+               "  vertex:\n"
+               "   offset: %zu\n"
+               "   stride: %u\n"
+               "   count:  %u\n"
+               "  index:\n"
+               "   offset: %zu\n"
+               "   stride: %hd\n"
+               "   count:  %u\n",
+               (void *)mesh,
+               mesh->v.offset, mesh->v.stride, mesh->v.n,
+               mesh->i.offset, mesh->i.stride, mesh->i.n);
+    }
+
+    puts("");
+}
+
+#endif
