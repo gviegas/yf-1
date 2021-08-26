@@ -286,9 +286,11 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
                 return -1;
             /* if enough memory is made available after trimming,
                buffer resizing can be omitted */
-            blk_i = 0;
-            if (blks_[0].size >= sz)
+            if (blks_[0].size >= sz) {
+                blk_i = 0;
                 goto no_resz;
+            }
+            blk_i = 1;
         }
 
         const size_t buf_len = yf_buffer_getsize(buf_);
@@ -296,7 +298,7 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
         int merge_last = 0;
 
         if (blk_n_ > 0) {
-            T_memblk *last = blks_+blk_i-1;
+            T_memblk *last = blks_+blk_n_-1;
             if (last->offset + last->size == buf_len) {
                 new_len -= last->size;
                 merge_last = 1;
