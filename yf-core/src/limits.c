@@ -8,6 +8,10 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#ifdef YF_DEVEL
+# include <stdio.h>
+#endif
+
 #include "yf/com/yf-util.h"
 #include "yf/com/yf-error.h"
 
@@ -117,3 +121,114 @@ const YF_limits *yf_getlimits(YF_context ctx)
     ctx->lim.deinit_callb = destroy_lim;
     return lim;
 }
+
+/*
+ * DEVEL
+ */
+
+#ifdef YF_DEVEL
+
+void yf_print_lim(const YF_limits *lim)
+{
+    assert(lim != NULL);
+
+    printf("\n[YF] OUTPUT (%s):\n", __func__);
+
+    printf(" limits:\n"
+           "  memory:\n"
+           "   max objects: %zu\n"
+           "  buffer:\n"
+           "   max size: %zu\n",
+           lim->memory.obj_max, lim->buffer.sz_max);
+
+    printf("  image:\n"
+           "   max 1D:     %u\n"
+           "   max 2D:     %u\n"
+           "   max 3D:     %u\n"
+           "   max layers: %u\n"
+           "   sample mask:\n"
+           "    color:    %u\n"
+           "    depth:    %u\n"
+           "    stencil:  %u\n"
+           "    s. image: %u\n",
+           lim->image.dim_1d_max, lim->image.dim_2d_max, lim->image.dim_3d_max,
+           lim->image.layer_max, lim->image.sample_mask_clr,
+           lim->image.sample_mask_dep, lim->image.sample_mask_sten,
+           lim->image.sample_mask_img);
+
+    printf("  dtable:\n"
+           "   max per stage res.:    %u\n"
+           "   max unif. buffers:     %u\n"
+           "   max mut. buffers:      %u\n"
+           "   max r/w images:        %u\n"
+           "   max sampled images:    %u\n"
+           "   max samplers:          %u\n"
+           "   max combined img/splr: %u\n"
+           "   copy:\n"
+           "    min alignement (unif): %zu\n"
+           "    max size (unif):       %zu\n"
+           "    min alignement (mut):  %zu\n"
+           "    max size (mut):        %zu\n",
+           lim->dtable.stg_res_max, lim->dtable.unif_max, lim->dtable.mut_max,
+           lim->dtable.img_max, lim->dtable.spld_max, lim->dtable.splr_max,
+           lim->dtable.ispl_max, lim->dtable.cpy_unif_align_min,
+           lim->dtable.cpy_unif_sz_max, lim->dtable.cpy_mut_align_min,
+           lim->dtable.cpy_mut_sz_max);
+
+    printf("  vinput:\n"
+           "   max attributes: %u\n"
+           "   max offset:     %u\n"
+           "   max stride:     %u\n",
+           lim->vinput.attr_max, lim->vinput.off_max, lim->vinput.strd_max);
+
+    printf("  pass:\n"
+           "   max colors:     %u\n"
+           "   max dimensions: %ux%u\n"
+           "   max layers:     %u\n"
+           "   sample mask:\n"
+           "    color:   %u\n"
+           "    depth:   %u\n"
+           "    stencil: %u\n",
+           lim->pass.color_max, lim->pass.dim_max.width,
+           lim->pass.dim_max.height, lim->pass.layer_max,
+           lim->pass.sample_mask_clr, lim->pass.sample_mask_dep,
+           lim->pass.sample_mask_sten);
+
+    printf("  viewport:\n"
+           "   max:            %u\n"
+           "   max dimensions: %ux%u\n"
+           "   min bounds:     %.6f\n"
+           "   max bounds:     %.6f\n",
+           lim->viewport.max, lim->viewport.dim_max.width,
+           lim->viewport.dim_max.height, lim->viewport.bounds_min,
+           lim->viewport.bounds_max);
+
+    printf("  state:\n"
+           "   max bound dtables: %u\n"
+           "   max vinputs:       %u\n",
+           lim->state.dtable_max, lim->state.vinput_max);
+
+    printf("  shader:\n"
+           "   max vert. output components: %u\n"
+           "   max frag. input components:  %u\n"
+           "   min point size:              %.6f\n"
+           "   max point size:              %.6f\n"
+           "   point size granularity:      %.6f\n"
+           "   min line width:              %.6f\n"
+           "   max line width:              %.6f\n"
+           "   line width granularity:      %.6f\n",
+           lim->shader.vert_out_max, lim->shader.frag_in_max,
+           lim->shader.point_sz_min, lim->shader.point_sz_max,
+           lim->shader.point_sz_gran, lim->shader.line_wdt_min,
+           lim->shader.line_wdt_max, lim->shader.line_wdt_gran);
+
+    printf("  cmdbuf:\n"
+           "   max draw index value:         %u\n"
+           "   max dispatch work group dim.: %ux%ux%u\n",
+           lim->cmdbuf.draw_idx_max, lim->cmdbuf.disp_dim_max.width,
+           lim->cmdbuf.disp_dim_max.height, lim->cmdbuf.disp_dim_max.depth);
+
+    puts("");
+}
+
+#endif
