@@ -165,10 +165,10 @@ void yf_print_lim(const YF_limits *lim)
            "   max samplers:          %u\n"
            "   max combined img/splr: %u\n"
            "   copy:\n"
-           "    min alignement (unif): %zu\n"
-           "    max size (unif):       %zu\n"
-           "    min alignement (mut):  %zu\n"
-           "    max size (mut):        %zu\n",
+           "    min alignment (unif): %zu\n"
+           "    max size (unif):      %zu\n"
+           "    min alignment (mut):  %zu\n"
+           "    max size (mut):       %zu\n",
            lim->dtable.stg_res_max, lim->dtable.unif_max, lim->dtable.mut_max,
            lim->dtable.img_max, lim->dtable.spld_max, lim->dtable.splr_max,
            lim->dtable.ispl_max, lim->dtable.cpy_unif_align_min,
