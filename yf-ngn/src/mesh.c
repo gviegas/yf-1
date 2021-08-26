@@ -628,7 +628,8 @@ void yf_print_mesh(YF_mesh mesh)
         YF_mesh next = head_;
         while (next != NULL) {
             YF_SPANOFMESH(next, &beg, &end);
-            printf("  [%zu, %zu)\n", beg, end);
+            printf("  [%zu, %zu)%s\n", beg, end,
+                   next->invalid ? "\t<inval.>" : "");
             next = next->next;
         }
 
