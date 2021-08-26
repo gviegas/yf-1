@@ -41,9 +41,7 @@ LD_LIBS := -lm
 LD_FLAGS := -iquote $(INCLUDE_DIR) -iquote $(SRC_DIR)
 
 PP := $(CC) -E
-#PP_FLAGS := -D YF_COM
-# XXX: Enabling devel. flag here for now.
-PP_FLAGS := -D YF_COM -D YF_DEVEL
+PP_FLAGS := -D YF_COM
 
 all:
 
