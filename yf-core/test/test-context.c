@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include "test.h"
+#include "print.h"
 #include "yf-context.h"
 
 /* Tests context. */
@@ -17,6 +18,8 @@ int yf_test_context(void)
     YF_context ctx = yf_context_init();
     if (ctx == NULL)
         return -1;
+
+    yf_print_ctx(ctx);
 
     YF_TEST_PRINT("deinit", "ctx", "");
     yf_context_deinit(ctx);
