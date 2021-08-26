@@ -20,6 +20,7 @@ int yf_test_context(void)
         return -1;
 
     yf_print_ctx(ctx);
+    yf_print_lim(yf_getlimits(ctx));
 
     YF_TEST_PRINT("deinit", "ctx", "");
     yf_context_deinit(ctx);
