@@ -615,7 +615,8 @@ void yf_print_mesh(YF_mesh mesh)
         for (size_t i = 0; i < blk_n_; i++) {
             printf(" mem. block #%zu:\n"
                    "  offset: \t%zu\n"
-                   "  size:   \t%zu\n", i, blks_[i].offset, blks_[i].size);
+                   "  size:   \t%zu\n",
+                   i, blks_[i].offset, blks_[i].size);
 
             if (blks_[i].prev_mesh != NULL) {
                 YF_SPANOFMESH(blks_[i].prev_mesh, &beg, &end);
@@ -644,7 +645,7 @@ void yf_print_mesh(YF_mesh mesh)
             printf("\n (no meshes)\n");
         }
 
-        printf("\n inval_n_: %zu\n", inval_n_);
+        printf("\n inval. count: %zu\n", inval_n_);
 
     } else {
         printf(" mesh <%p>:\n"
