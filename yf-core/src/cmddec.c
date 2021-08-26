@@ -518,13 +518,13 @@ static int decode_disp(const YF_cmd *cmd)
 /* Decodes a 'copy buffer' command. */
 static int decode_cpybuf(const YF_cmd *cmd)
 {
-    assert(cmd->cpybuf.dst->size >= cmd->cpybuf.dst_offs + cmd->cpybuf.size);
-    assert(cmd->cpybuf.src->size >= cmd->cpybuf.src_offs + cmd->cpybuf.size);
+    assert(cmd->cpybuf.dst->size >= cmd->cpybuf.dst_off + cmd->cpybuf.size);
+    assert(cmd->cpybuf.src->size >= cmd->cpybuf.src_off + cmd->cpybuf.size);
     assert(cmd->cpybuf.size > 0);
 
     VkBufferCopy region = {
-        .srcOffset = cmd->cpybuf.src_offs,
-        .dstOffset = cmd->cpybuf.dst_offs,
+        .srcOffset = cmd->cpybuf.src_off,
+        .dstOffset = cmd->cpybuf.dst_off,
         .size = cmd->cpybuf.size
     };
 
