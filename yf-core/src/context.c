@@ -624,3 +624,42 @@ void yf_context_deinit(YF_context ctx)
 
     atomic_flag_clear(&flag_);
 }
+
+/*
+ * DEVEL
+ */
+
+#ifdef YF_DEVEL
+
+void yf_print_ctx(YF_context ctx)
+{
+    assert(ctx != NULL);
+
+    printf("\n[YF] OUTPUT (%s):\n", __func__);
+
+    printf(" context (vk):\n"
+           "  queues:\n"
+           "   index (subm): %d\n"
+           "   index (pres): %d\n"
+           "   mask:         %x\n"
+           "  api version: %u.%u\n",
+           ctx->queue_i, ctx->pres_queue_i, ctx->queue_mask,
+           VK_VERSION_MAJOR(ctx->inst_version),
+           VK_VERSION_MINOR(ctx->inst_version));
+
+    printf("  layers (%u):\n", ctx->layer_n);
+    for (unsigned i = 0; i < ctx->layer_n; i++)
+        printf("   * %s\n", ctx->layers[i]);
+
+    puts("  extensions:");
+    printf("   instance (%u):\n", ctx->inst_ext_n);
+    for (unsigned i = 0; i < ctx->inst_ext_n; i++)
+        printf("    * %s\n", ctx->inst_exts[i]);
+    printf("   device (%u):\n", ctx->dev_ext_n);
+    for (unsigned i = 0; i < ctx->dev_ext_n; i++)
+        printf("    * %s\n", ctx->dev_exts[i]);
+
+    puts("");
+}
+
+#endif

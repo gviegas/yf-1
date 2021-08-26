@@ -12,31 +12,6 @@
 #undef YF_PTITLE
 #define YF_PTITLE printf("\n[YF] OUTPUT (%s):", __func__)
 
-void yf_print_ctx(YF_context ctx)
-{
-    YF_PTITLE;
-
-    printf("\nqueue indices:\n subm: %d\n pres: %d", ctx->queue_i,
-           ctx->pres_queue_i);
-    printf("\nqueue mask:\n graph? %s\n comp? %s",
-           ctx->queue_mask & YF_QUEUE_GRAPH ? "yes" : "no",
-           ctx->queue_mask & YF_QUEUE_COMP ? "yes" : "no");
-    printf("\ninstance version: %u.%u", VK_VERSION_MAJOR(ctx->inst_version),
-           VK_VERSION_MINOR(ctx->inst_version));
-
-    printf("\nlayers: #%u", ctx->layer_n);
-    for (unsigned i = 0; i < ctx->layer_n; i++)
-        printf("\n\t%s", ctx->layers[i]);
-    printf("\ninstance extensions: #%u", ctx->inst_ext_n);
-    for (unsigned i = 0; i < ctx->inst_ext_n; i++)
-        printf("\n\t%s", ctx->inst_exts[i]);
-    printf("\ndevice extensions: #%u", ctx->dev_ext_n);
-    for (unsigned i = 0; i < ctx->dev_ext_n; i++)
-        printf("\n\t%s", ctx->dev_exts[i]);
-
-    printf("\n\n");
-}
-
 void yf_print_lim(const YF_limits *lim)
 {
     YF_PTITLE;
