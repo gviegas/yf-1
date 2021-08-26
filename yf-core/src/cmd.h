@@ -96,9 +96,9 @@ typedef struct {
 /* The parameters of a 'copy buffer' command. */
 typedef struct {
     YF_buffer dst;
-    size_t dst_offs;
+    size_t dst_off;
     YF_buffer src;
-    size_t src_offs;
+    size_t src_off;
     size_t size;
 } YF_cmd_cpybuf;
 
