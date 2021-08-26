@@ -20,10 +20,8 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a command buffer.
  *
- * Command buffers are context-managed objects into which graphics or
- * compute commands can be encoded.
- * Work is performed through explicit execution of the context's pending
- * command buffers.
+ * Command buffers are context-managed objects that encode a set of
+ * operations for future execution.
  */
 typedef struct YF_cmdbuf_o *YF_cmdbuf;
 
@@ -268,13 +266,13 @@ void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim);
  *
  * @param cmdb: The command buffer.
  * @param dst: The destination buffer.
- * @param dst_offs: The offset from the beginning of the destination buffer.
+ * @param dst_off: The offset from the beginning of the destination buffer.
  * @param src: The source buffer.
- * @param src_offs: The offset from the beginning of the source buffer.
+ * @param src_off: The offset from the beginning of the source buffer.
  * @param size: The number of bytes to copy.
  */
-void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_offs,
-                       YF_buffer src, size_t src_offs, size_t size);
+void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_off,
+                       YF_buffer src, size_t src_off, size_t size);
 
 /**
  * Copies data between images.
