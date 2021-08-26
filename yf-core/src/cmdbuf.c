@@ -456,8 +456,8 @@ void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim)
     }
 }
 
-void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_offs,
-                       YF_buffer src, size_t src_offs, size_t size)
+void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_off,
+                       YF_buffer src, size_t src_off, size_t size)
 {
     assert(cmdb != NULL);
     assert(dst != NULL);
@@ -476,9 +476,9 @@ void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_offs,
         }
         cmdb->cmds[i].cmd = YF_CMD_CPYBUF;
         cmdb->cmds[i].cpybuf.dst = dst;
-        cmdb->cmds[i].cpybuf.dst_offs = dst_offs;
+        cmdb->cmds[i].cpybuf.dst_off = dst_off;
         cmdb->cmds[i].cpybuf.src = src;
-        cmdb->cmds[i].cpybuf.src_offs = src_offs;
+        cmdb->cmds[i].cpybuf.src_off = src_off;
         cmdb->cmds[i].cpybuf.size = size;
         break;
     default:
