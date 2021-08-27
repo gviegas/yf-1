@@ -4517,251 +4517,270 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
  */
 
 #ifdef YF_DEVEL
+
 static void print_gltf(const T_gltf *gltf)
 {
     printf("\n[YF] OUTPUT (%s):\n", __func__);
 
-    puts("glTF.asset:");
-    printf(" copyright: %s\n", gltf->asset.copyright);
-    printf(" generator: %s\n", gltf->asset.generator);
-    printf(" version: %s\n", gltf->asset.version);
-    printf(" minVersion: %s\n", gltf->asset.min_version);
+    /* root/asset/scene */
+    printf(" glTF:\n"
+           "  asset:\n"
+           "   copyright: %s\n"
+           "   generator: %s\n"
+           "   version: %s\n"
+           "   minVersion: %s\n"
+           "  scene: %lld\n",
+           gltf->asset.copyright, gltf->asset.generator, gltf->asset.version,
+           gltf->asset.min_version, gltf->scene);
 
-    puts("glTF.scene:");
-    printf(" #: %lld\n", gltf->scene);
-
-    puts("glTF.scenes:");
-    printf(" n: %zu\n", gltf->scenes.n);
+    /* scenes */
+    printf("  scenes (%zu):\n", gltf->scenes.n);
     for (size_t i = 0; i < gltf->scenes.n; i++) {
-        printf(" scene '%s':\n", gltf->scenes.v[i].name);
-        printf("  nodes: [ ");
+        printf("   scene '%s':\n"
+               "    nodes: [ ",
+               gltf->scenes.v[i].name);
         for (size_t j = 0; j < gltf->scenes.v[i].node_n; j++)
             printf("%lld ", gltf->scenes.v[i].nodes[j]);
         puts("]");
     }
 
-    puts("glTF.nodes:");
-    printf(" n: %zu\n", gltf->nodes.n);
+    /* nodes */
+    printf("  nodes (%zu):\n", gltf->nodes.n);
     for (size_t i = 0; i < gltf->nodes.n; i++) {
-        printf(" node '%s':\n", gltf->nodes.v[i].name);
-        printf("  children: [ ");
+        printf("   node '%s':\n"
+               "    children: [ ",
+               gltf->nodes.v[i].name);
         for (size_t j = 0; j < gltf->nodes.v[i].child_n; j++)
             printf("%lld ", gltf->nodes.v[i].children[j]);
         puts("]");
-        printf("  camera: %lld\n", gltf->nodes.v[i].camera);
-        printf("  mesh: %lld\n", gltf->nodes.v[i].mesh);
+
+        printf("    camera: %lld\n"
+               "    mesh: %lld\n",
+               gltf->nodes.v[i].camera, gltf->nodes.v[i].mesh);
+
         if (gltf->nodes.v[i].xform_mask == YF_GLTF_XFORM_NONE) {
-            puts("  (no transform)");
+            puts("    (no transform)");
         } else if (gltf->nodes.v[i].xform_mask == YF_GLTF_XFORM_NONE) {
-            printf("  matrix: [ ");
-            for (size_t j = 0; j < 16; j++)
-                printf("%.4f ", gltf->nodes.v[i].matrix[j]);
-            puts("]");
+            puts("    matrix:");
+            for (size_t j = 0; j < 4; j++) {
+                for (size_t k = 0; k < 4; k++)
+                    printf("     %.4f", gltf->nodes.v[i].matrix[j+k*4]);
+                puts("");
+            }
         } else {
-            printf("  translation: [ ");
+            printf("    xlation: [ ");
             for (size_t j = 0; j < 3; j++)
                 printf("%.4f ", gltf->nodes.v[i].trs.t[j]);
             puts("]");
-            printf("  rotation: [ ");
+            printf("    rotation: [ ");
             for (size_t j = 0; j < 4; j++)
                 printf("%.4f ", gltf->nodes.v[i].trs.r[j]);
             puts("]");
-            printf("  scale: [ ");
+            printf("    scale: [ ");
             for (size_t j = 0; j < 3; j++)
                 printf("%.4f ", gltf->nodes.v[i].trs.s[j]);
             puts("]");
         }
-        printf("  skin: %lld\n", gltf->nodes.v[i].skin);
-        printf("  weights: [ ");
+
+        printf("    skin: %lld\n"
+               "    weights: [ ",
+               gltf->nodes.v[i].skin);
         for (size_t j = 0; j < gltf->nodes.v[i].weight_n; j++)
-            printf("%.9f ", gltf->nodes.v[i].weights[j]);
+            printf("%.6f ", gltf->nodes.v[i].weights[j]);
         puts("]");
     }
 
-    puts("glTF.cameras:");
-    printf(" n: %zu\n", gltf->cameras.n);
+    /* cameras */
+    printf("  cameras (%zu):\n", gltf->cameras.n);
     for (size_t i = 0; i < gltf->cameras.n; i++) {
-        printf(" camera '%s':\n", gltf->cameras.v[i].name);
-        if (gltf->cameras.v[i].type == YF_GLTF_CAMERA_PERSP) {
-            puts("  pespective:");
-            printf("   yfov: %.9f\n", gltf->cameras.v[i].persp.yfov);
-            printf("   aspectRatio: %.9f\n",
-                   gltf->cameras.v[i].persp.aspect_ratio);
-            printf("   znear: %.9f\n", gltf->cameras.v[i].persp.znear);
-            printf("   zfar: %.9f\n", gltf->cameras.v[i].persp.zfar);
-        } else {
-            puts("  orthographic:");
-            printf("   xmag: %.9f\n", gltf->cameras.v[i].ortho.xmag);
-            printf("   ymag: %.9f\n", gltf->cameras.v[i].ortho.ymag);
-            printf("   znear: %.9f\n", gltf->cameras.v[i].ortho.znear);
-            printf("   zfar: %.9f\n", gltf->cameras.v[i].ortho.zfar);
-        }
+        printf("   camera '%s':\n", gltf->cameras.v[i].name);
+        if (gltf->cameras.v[i].type == YF_GLTF_CAMERA_PERSP)
+            printf("    perspective:\n"
+                   "     yfov: %.6f\n"
+                   "     aspect: %.6f\n"
+                   "     znear: %.6f\n"
+                   "     zfar: %.6f\n",
+                   gltf->cameras.v[i].persp.yfov,
+                   gltf->cameras.v[i].persp.aspect_ratio,
+                   gltf->cameras.v[i].persp.znear,
+                   gltf->cameras.v[i].persp.zfar);
+        else
+            printf("    orthographic:\n"
+                   "     xmag: %.6f\n"
+                   "     ymag: %.6f\n"
+                   "     znear: %.6f\n"
+                   "     zfar: %.6f\n",
+                   gltf->cameras.v[i].ortho.xmag,
+                   gltf->cameras.v[i].ortho.ymag,
+                   gltf->cameras.v[i].ortho.znear,
+                   gltf->cameras.v[i].ortho.zfar);
     }
 
-    puts("glTF.meshes:");
-    printf(" n: %zu\n", gltf->meshes.n);
+    /* meshes */
+    printf("  meshes (%zu):\n", gltf->meshes.n);
     for (size_t i = 0; i < gltf->meshes.n; i++) {
-        printf(" mesh '%s':\n", gltf->meshes.v[i].name);
-        printf("  n: %zu\n", gltf->meshes.v[i].primitives.n);
+        printf("   mesh '%s':\n"
+               "    primitives (%zu):\n",
+               gltf->meshes.v[i].name, gltf->meshes.v[i].primitives.n);
+
+        const T_primitives *prims = &gltf->meshes.v[i].primitives;
         for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; j++) {
-            printf("  primitives #%zu:\n", j);
-            puts("   attributes:");
-            printf("    POSITION: %lld\n",
-                   gltf->meshes.v[i].primitives.v[j]
-                   .attributes[YF_GLTF_ATTR_POS]);
-            printf("    NORMAL: %lld\n",
-                   gltf->meshes.v[i].primitives.v[j]
-                   .attributes[YF_GLTF_ATTR_NORM]);
-            printf("    TANGENT: %lld\n",
-                   gltf->meshes.v[i].primitives.v[j]
-                   .attributes[YF_GLTF_ATTR_TAN]);
-            printf("    TEXCOORD_0: %lld\n",
-                   gltf->meshes.v[i].primitives.v[j]
-                   .attributes[YF_GLTF_ATTR_TC0]);
-            printf("    TEXCOORD_1: %lld\n",
-                   gltf->meshes.v[i].primitives.v[j]
-                   .attributes[YF_GLTF_ATTR_TC1]);
-            printf("    JOINTS_0: %lld\n",
-                   gltf->meshes.v[i].primitives.v[j]
-                   .attributes[YF_GLTF_ATTR_JNT0]);
-            printf("    WEIGHTS_0: %lld\n",
-                   gltf->meshes.v[i].primitives.v[j]
-                   .attributes[YF_GLTF_ATTR_WGT0]);
-            printf("   indices: %lld\n",
-                   gltf->meshes.v[i].primitives.v[j].indices);
-            printf("   material: %lld\n",
-                   gltf->meshes.v[i].primitives.v[j].material);
-            printf("   mode: %lld\n", gltf->meshes.v[i].primitives.v[j].mode);
-            if (gltf->meshes.v[i].primitives.v[j].targets.n == 0) {
-                puts("   (no targets)");
+            printf("     primitive [%zu]:\n"
+                   "      attributes:\n"
+                   "       POSITION: %lld\n"
+                   "       NORMAL: %lld\n"
+                   "       TANGENT: %lld\n"
+                   "       TEXCOORD_0: %lld\n"
+                   "       TEXCOORD_1: %lld\n"
+                   "       JOINTS_0: %lld\n"
+                   "       WEIGHTS_0: %lld\n"
+                   "      indices: %lld\n"
+                   "      material: %lld\n"
+                   "      mode: %lld\n",
+                   j, prims->v[j].attributes[YF_GLTF_ATTR_POS],
+                   prims->v[j].attributes[YF_GLTF_ATTR_NORM],
+                   prims->v[j].attributes[YF_GLTF_ATTR_TAN],
+                   prims->v[j].attributes[YF_GLTF_ATTR_TC0],
+                   prims->v[j].attributes[YF_GLTF_ATTR_TC1],
+                   prims->v[j].attributes[YF_GLTF_ATTR_JNT0],
+                   prims->v[j].attributes[YF_GLTF_ATTR_WGT0],
+                   prims->v[j].indices, prims->v[j].material,
+                   prims->v[j].mode);
+
+            if (prims->v[j].targets.n == 0) {
+                puts("      (no targets)");
             } else {
-                const size_t target_n =
-                    gltf->meshes.v[i].primitives.v[j].targets.n;
-                for (size_t k = 0; k < target_n; k++) {
-                    printf("   targets #%zu:\n", k);
-                    printf("    POSITION: %lld\n",
-                           gltf->meshes.v[i].primitives.v[j]
-                           .targets.v[k].position);
-                    printf("    NORMAL: %lld\n",
-                           gltf->meshes.v[i].primitives.v[j]
-                           .targets.v[k].normal);
-                    printf("    TANGENT: %lld\n",
-                           gltf->meshes.v[i].primitives.v[j]
-                           .targets.v[k].tangent);
-                }
+                const size_t target_n = prims->v[j].targets.n;
+                for (size_t k = 0; k < target_n; k++)
+                    printf("      targets [%zu]:\n"
+                           "       POSITION: %lld\n"
+                           "       NORMAL: %lld\n"
+                           "       TANGENT: %lld\n",
+                           k, prims->v[j].targets.v[k].position,
+                           prims->v[j].targets.v[k].normal,
+                           prims->v[j].targets.v[k].tangent);
             }
         }
-        printf("  weights: [ ");
+
+        printf("    weights: [ ");
         for (size_t j = 0; j < gltf->meshes.v[i].weight_n; j++)
-            printf("%.9f ", gltf->meshes.v[i].weights[j]);
+            printf("%.6f ", gltf->meshes.v[i].weights[j]);
         puts("]");
     }
 
-    puts("glTF.skins:");
-    printf(" n: %zu\n", gltf->skins.n);
+    /* skins */
+    printf("  skins (%zu):\n", gltf->skins.n);
     for (size_t i = 0; i < gltf->skins.n; i++) {
-        printf(" skin '%s':\n", gltf->skins.v[i].name);
-        printf("  inverseBindMatrices: %lld\n",
-               gltf->skins.v[i].inv_bind_matrices);
-        printf("  skeleton: %lld\n", gltf->skins.v[i].skeleton);
-        printf("  joints: [ ");
+        printf("   skin '%s':\n"
+               "    inverseBindMatrices: %lld\n"
+               "    skeleton: %lld\n"
+               "    joints: [ ",
+               gltf->skins.v[i].name, gltf->skins.v[i].inv_bind_matrices,
+               gltf->skins.v[i].skeleton);
         for (size_t j = 0; j < gltf->skins.v[i].joint_n; j++)
             printf("%lld ", gltf->skins.v[i].joints[j]);
         puts("]");
     }
 
-    puts("glTF.materials:");
-    printf(" n: %zu\n", gltf->materials.n);
+    /* materials */
+    printf("  materials (%zu):\n", gltf->materials.n);
     for (size_t i = 0; i < gltf->materials.n; i++) {
-        printf(" material '%s':\n", gltf->materials.v[i].name);
-        puts("  pbrMetallicRoughness:");
-        printf("   baseColorFactor: [%.9f, %.9f, %.9f, %.9f]\n",
+        printf("   material '%s':\n", gltf->materials.v[i].name);
+
+        printf("    pbrMetallicRoughness:\n"
+               "     baseColorFactor: [%.6f, %.6f, %.6f, %.6f]\n"
+               "     baseColorTexture:\n"
+               "      index: %lld\n"
+               "      texCoord: %lld\n"
+               "     metallicFactor: %.6f\n"
+               "     roughnessFactor: %.6f\n"
+               "     metallicRoughnessTexture:\n"
+               "      index: %lld\n"
+               "      texCoord: %lld\n",
                gltf->materials.v[i].pbrmr.base_clr_fac[0],
                gltf->materials.v[i].pbrmr.base_clr_fac[1],
                gltf->materials.v[i].pbrmr.base_clr_fac[2],
-               gltf->materials.v[i].pbrmr.base_clr_fac[3]);
-        puts("   baseColorTexture:");
-        printf("    index: %lld\n",
-               gltf->materials.v[i].pbrmr.base_clr_tex.index);
-        printf("    texCoord: %lld\n",
-               gltf->materials.v[i].pbrmr.base_clr_tex.tex_coord);
-        printf("   metallicFactor: %.9f\n",
-               gltf->materials.v[i].pbrmr.metallic_fac);
-        printf("   roughnessFactor: %.9f\n",
-               gltf->materials.v[i].pbrmr.roughness_fac);
-        puts("   metallicRoughnessTexture:");
-        printf("    index: %lld\n",
-               gltf->materials.v[i].pbrmr.metal_rough_tex.index);
-        printf("    texCoord: %lld\n",
+               gltf->materials.v[i].pbrmr.base_clr_fac[3],
+               gltf->materials.v[i].pbrmr.base_clr_tex.index,
+               gltf->materials.v[i].pbrmr.base_clr_tex.tex_coord,
+               gltf->materials.v[i].pbrmr.metallic_fac,
+               gltf->materials.v[i].pbrmr.roughness_fac,
+               gltf->materials.v[i].pbrmr.metal_rough_tex.index,
                gltf->materials.v[i].pbrmr.metal_rough_tex.tex_coord);
-        puts("  normalTexture:");
-        printf("   index: %lld\n",
-               gltf->materials.v[i].normal_tex.index);
-        printf("   texCoord: %lld\n",
-               gltf->materials.v[i].normal_tex.tex_coord);
-        printf("   scale: %.9f\n",
-               gltf->materials.v[i].normal_tex.scale);
-        puts("  occlusionTexture:");
-        printf("   index: %lld\n",
-               gltf->materials.v[i].occlusion_tex.index);
-        printf("   texCoord: %lld\n",
-               gltf->materials.v[i].occlusion_tex.tex_coord);
-        printf("   strength: %.9f\n",
-               gltf->materials.v[i].occlusion_tex.strength);
-        printf("   emissiveFactor: [%.9f, %.9f, %.9f]\n",
+
+        printf("    normalTexture:\n"
+               "     index: %lld\n"
+               "     texCoord: %lld\n"
+               "     scale: %.6f\n"
+               "    occlusionTexture:\n"
+               "     index: %lld\n"
+               "     texCoord: %lld\n"
+               "     strength: %.6f\n"
+               "    emissiveFactor: [%.6f, %.6f, %.6f]\n"
+               "    emissiveTexture:\n"
+               "     index: %lld\n"
+               "     texCoord: %lld\n"
+               "    alphaMode: %d\n"
+               "    alphaCutoff: %.6f\n"
+               "    doubleSided: %s\n",
+               gltf->materials.v[i].normal_tex.index,
+               gltf->materials.v[i].normal_tex.tex_coord,
+               gltf->materials.v[i].normal_tex.scale,
+               gltf->materials.v[i].occlusion_tex.index,
+               gltf->materials.v[i].occlusion_tex.tex_coord,
+               gltf->materials.v[i].occlusion_tex.strength,
                gltf->materials.v[i].emissive_fac[0],
                gltf->materials.v[i].emissive_fac[1],
-               gltf->materials.v[i].emissive_fac[2]);
-        puts("  emissiveTexture:");
-        printf("   index: %lld\n",
-               gltf->materials.v[i].emissive_tex.index);
-        printf("   texCoord: %lld\n",
-               gltf->materials.v[i].emissive_tex.tex_coord);
-        printf("  alphaMode: %d\n", gltf->materials.v[i].alpha_mode);
-        printf("  alphaCutoff: %.9f\n", gltf->materials.v[i].alpha_cutoff);
-        printf("  doubleSided: %s\n",
-               gltf->materials.v[i].double_sided ? "true" : "false");
+               gltf->materials.v[i].emissive_fac[2],
+               gltf->materials.v[i].emissive_tex.index,
+               gltf->materials.v[i].emissive_tex.tex_coord,
+               gltf->materials.v[i].alpha_mode,
+               gltf->materials.v[i].alpha_cutoff,
+               (gltf->materials.v[i].double_sided ? "true" : "false"));
     }
 
-    puts("glTF.animations:");
-    printf(" n: %zu\n", gltf->animations.n);
+    /* animations */
+    printf("  animations (%zu):\n", gltf->animations.n);
     for (size_t i = 0; i < gltf->animations.n; i++) {
-        printf(" animation '%s':\n", gltf->animations.v[i].name);
-        puts("  channels:");
-        printf("  n: %zu\n", gltf->animations.v[i].channels.n);
-        for (size_t j = 0; j < gltf->animations.v[i].channels.n; j++) {
-            printf("  channel #%zu:\n", j);
-            printf("   sampler: %lld\n",
-                   gltf->animations.v[i].channels.v[j].sampler);
-            puts("   target:");
-            printf("    node: %lld\n",
-                   gltf->animations.v[i].channels.v[j].target.node);
-            printf("    path: %d\n",
+        printf("   animation '%s':\n"
+               "    channels (%zu):\n",
+               gltf->animations.v[i].name, gltf->animations.v[i].channels.n);
+
+        for (size_t j = 0; j < gltf->animations.v[i].channels.n; j++)
+            printf("     channel [%zu]:\n"
+                   "      sampler: %lld\n"
+                   "      target:\n"
+                   "       node: %lld\n"
+                   "       path: %d\n",
+                   j, gltf->animations.v[i].channels.v[j].sampler,
+                   gltf->animations.v[i].channels.v[j].target.node,
                    gltf->animations.v[i].channels.v[j].target.path);
-        }
-        puts("  samplers:");
-        printf("  n: %zu\n", gltf->animations.v[i].samplers.n);
-        for (size_t j = 0; j < gltf->animations.v[i].samplers.n; j++) {
-            printf("  sampler #%zu:\n", j);
-            printf("   input: %lld\n",
-                   gltf->animations.v[i].samplers.v[j].input);
-            printf("   output: %lld\n",
-                   gltf->animations.v[i].samplers.v[j].output);
-            printf("   interpolation: %d\n",
+
+        printf("    samplers (%zu):\n", gltf->animations.v[i].samplers.n);
+        for (size_t j = 0; j < gltf->animations.v[i].samplers.n; j++)
+            printf("     sampler [%zu]:\n"
+                   "      input: %lld\n"
+                   "      output: %lld\n"
+                   "      interpolation: %d\n",
+                   j, gltf->animations.v[i].samplers.v[j].input,
+                   gltf->animations.v[i].samplers.v[j].output,
                    gltf->animations.v[i].samplers.v[j].interpolation);
-        }
     }
 
-    puts("glTF.accessors:");
-    printf(" n: %zu\n", gltf->accessors.n);
+    /* accessors */
+    printf("  accessors (%zu):\n", gltf->accessors.n);
     for (size_t i = 0; i < gltf->accessors.n; i++) {
-        printf(" accessor '%s':\n", gltf->accessors.v[i].name);
-        printf("  bufferView: %lld\n", gltf->accessors.v[i].buffer_view);
-        printf("  byteOffset: %lld\n", gltf->accessors.v[i].byte_off);
-        printf("  count: %lld\n", gltf->accessors.v[i].count);
-        printf("  componenType: %lld\n", gltf->accessors.v[i].comp_type);
-        printf("  type: %d\n", gltf->accessors.v[i].type);
-        size_t comp_n = 0;
+        printf("   accessor '%s':\n"
+               "    bufferView: %lld\n"
+               "    byteOffset: %lld\n"
+               "    count: %lld\n"
+               "    componenType: %lld\n"
+               "    type: %d\n",
+               gltf->accessors.v[i].name, gltf->accessors.v[i].buffer_view,
+               gltf->accessors.v[i].byte_off, gltf->accessors.v[i].count,
+               gltf->accessors.v[i].comp_type, gltf->accessors.v[i].type);
+
+        size_t comp_n, col_n = 1;
         switch (gltf->accessors.v[i].type) {
         case YF_GLTF_TYPE_SCALAR:
             comp_n = 1;
@@ -4773,89 +4792,120 @@ static void print_gltf(const T_gltf *gltf)
             comp_n = 3;
             break;
         case YF_GLTF_TYPE_VEC4:
+            comp_n = 4;
+            break;
         case YF_GLTF_TYPE_MAT2:
             comp_n = 4;
+            col_n = 2;
             break;
         case YF_GLTF_TYPE_MAT3:
             comp_n = 9;
+            col_n = 3;
             break;
         case YF_GLTF_TYPE_MAT4:
             comp_n = 16;
+            col_n = 4;
             break;
         }
-        if (comp_n > 1) {
-            printf("  min: [ ");
+
+        if (col_n > 1) {
+            puts("    min:");
+            for (size_t j = 0; j < col_n; j++) {
+                for (size_t k = 0; k < col_n; k++)
+                    printf("     %.4f", gltf->accessors.v[i].min.m4[j+k*col_n]);
+                puts("");
+            }
+            puts("    max:");
+            for (size_t j = 0; j < col_n; j++) {
+                for (size_t k = 0; k < col_n; k++)
+                    printf("     %.4f", gltf->accessors.v[i].max.m4[j+k*col_n]);
+                puts("");
+            }
+        } else if (comp_n > 1) {
+            printf("    min: [ ");
             for (size_t j = 0; j < comp_n; j++)
-                printf("%.9f ", gltf->accessors.v[i].min.m4[j]);
-            printf("]\n  max: [ ");
+                printf("%.6f ", gltf->accessors.v[i].min.m4[j]);
+            printf("]\n    max: [ ");
             for (size_t j = 0; j < comp_n; j++)
-                printf("%.9f ", gltf->accessors.v[i].max.m4[j]);
+                printf("%.6f ", gltf->accessors.v[i].max.m4[j]);
             puts("]");
         } else {
-            printf("  min: %.9f\n", gltf->accessors.v[i].min.s);
-            printf("  max: %.9f\n", gltf->accessors.v[i].max.s);
+            printf("    min: %.6f\n"
+                   "    max: %.6f\n",
+                   gltf->accessors.v[i].min.s, gltf->accessors.v[i].max.s);
         }
-        printf("  normalized: %s\n",
-               gltf->accessors.v[i].normalized ? "true" : "false");
-        puts("  sparse:");
-        puts("   indices:");
-        printf("    bufferView: %lld\n",
-               gltf->accessors.v[i].sparse.indices.buffer_view);
-        printf("    byteOffset: %lld\n",
-               gltf->accessors.v[i].sparse.indices.byte_off);
-        printf("    componenType: %lld\n",
-               gltf->accessors.v[i].sparse.indices.comp_type);
-        puts("   values:");
-        printf("    bufferView: %lld\n",
-               gltf->accessors.v[i].sparse.values.buffer_view);
-        printf("    byteOffset: %lld\n",
+
+        printf("    normalized: %s\n"
+               "    sparse:\n"
+               "     indices:\n"
+               "      bufferView: %lld\n"
+               "      byteOffset: %lld\n"
+               "      componenType: %lld\n"
+               "     values:\n"
+               "      bufferView: %lld\n"
+               "      byteOffset: %lld\n",
+               (gltf->accessors.v[i].normalized ? "true" : "false"),
+               gltf->accessors.v[i].sparse.indices.buffer_view,
+               gltf->accessors.v[i].sparse.indices.byte_off,
+               gltf->accessors.v[i].sparse.indices.comp_type,
+               gltf->accessors.v[i].sparse.values.buffer_view,
                gltf->accessors.v[i].sparse.values.byte_off);
     }
 
-    puts("glTF.bufferViews:");
-    printf(" n: %zu\n", gltf->bufferviews.n);
-    for (size_t i = 0; i < gltf->bufferviews.n; i++) {
-        printf(" buffer view '%s':\n", gltf->bufferviews.v[i].name);
-        printf("  buffer: %lld\n", gltf->bufferviews.v[i].buffer);
-        printf("  byteOffset: %lld\n", gltf->bufferviews.v[i].byte_off);
-        printf("  byteLength: %lld\n", gltf->bufferviews.v[i].byte_len);
-        printf("  byteStride: %lld\n", gltf->bufferviews.v[i].byte_strd);
-        printf("  target: %lld\n", gltf->bufferviews.v[i].target);
-    }
+    /* buf. views */
+    printf("  bufferViews (%zu):\n", gltf->bufferviews.n);
+    for (size_t i = 0; i < gltf->bufferviews.n; i++)
+        printf("   view '%s':\n"
+               "    buffer: %lld\n"
+               "    byteOffset: %lld\n"
+               "    byteLength: %lld\n"
+               "    byteStride: %lld\n"
+               "    target: %lld\n",
+               gltf->bufferviews.v[i].name, gltf->bufferviews.v[i].buffer,
+               gltf->bufferviews.v[i].byte_off, gltf->bufferviews.v[i].byte_len,
+               gltf->bufferviews.v[i].byte_strd, gltf->bufferviews.v[i].target);
 
-    puts("glTF.buffers:");
-    printf(" n: %zu\n", gltf->buffers.n);
-    for (size_t i = 0; i < gltf->buffers.n; i++) {
-        printf(" buffer '%s':\n", gltf->buffers.v[i].name);
-        printf("  byteLength: %lld\n", gltf->buffers.v[i].byte_len);
-        printf("  uri: %s\n", gltf->buffers.v[i].uri);
-    }
+    /* buffers */
+    printf("  buffers (%zu):\n", gltf->buffers.n);
+    for (size_t i = 0; i < gltf->buffers.n; i++)
+        printf("   buffer '%s':\n"
+               "    byteLength: %lld\n"
+               "    uri: %s\n",
+               gltf->buffers.v[i].name, gltf->buffers.v[i].byte_len,
+               gltf->buffers.v[i].uri);
 
-    puts("glTF.textures:");
-    printf(" n: %zu\n", gltf->textures.n);
-    for (size_t i = 0; i < gltf->textures.n; i++) {
-        printf(" texture '%s':\n", gltf->textures.v[i].name);
-        printf("  sampler: %lld\n", gltf->textures.v[i].sampler);
-        printf("  source: %lld\n", gltf->textures.v[i].source);
-    }
+    /* textures */
+    printf("  textures (%zu):\n", gltf->textures.n);
+    for (size_t i = 0; i < gltf->textures.n; i++)
+        printf("   texture '%s':\n"
+               "    sampler: %lld\n"
+               "    source: %lld\n",
+               gltf->textures.v[i].name, gltf->textures.v[i].sampler,
+               gltf->textures.v[i].source);
 
-    puts("glTF.images:");
-    printf(" n: %zu\n", gltf->images.n);
-    for (size_t i = 0; i < gltf->images.n; i++) {
-        printf(" image '%s':\n", gltf->images.v[i].name);
-        printf("  uri: %s\n", gltf->images.v[i].uri);
-        printf("  mimeType: %s\n", gltf->images.v[i].mime_type);
-        printf("  bufferView: %lld\n", gltf->images.v[i].buffer_view);
-    }
+    /* images */
+    printf("  images (%zu):\n", gltf->images.n);
+    for (size_t i = 0; i < gltf->images.n; i++)
+        printf("   image '%s':\n"
+               "    uri: %s\n"
+               "    mimeType: %s\n"
+               "    bufferView: %lld\n",
+               gltf->images.v[i].name, gltf->images.v[i].uri,
+               gltf->images.v[i].mime_type, gltf->images.v[i].buffer_view);
 
-    puts("glTF.samplers:");
-    printf(" n: %zu\n", gltf->samplers.n);
-    for (size_t i = 0; i < gltf->samplers.n; i++) {
-        printf(" sampler '%s':\n", gltf->samplers.v[i].name);
-        printf("  minFilter: %lld\n", gltf->samplers.v[i].min_filter);
-        printf("  magFilter: %lld\n", gltf->samplers.v[i].mag_filter);
-        printf("  wrapS: %lld\n", gltf->samplers.v[i].wrap_s);
-        printf("  wrapT: %lld\n", gltf->samplers.v[i].wrap_t);
-    }
+    /* samplers */
+    printf("  samplers (%zu):\n", gltf->samplers.n);
+    for (size_t i = 0; i < gltf->samplers.n; i++)
+        printf("   sampler '%s':\n"
+               "    minFilter: %lld\n"
+               "    magFilter: %lld\n"
+               "    wrapS: %lld\n"
+               "    wrapT: %lld\n",
+               gltf->samplers.v[i].name, gltf->samplers.v[i].min_filter,
+               gltf->samplers.v[i].mag_filter, gltf->samplers.v[i].wrap_s,
+               gltf->samplers.v[i].wrap_t);
+
+    puts("");
 }
+
 #endif
