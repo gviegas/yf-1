@@ -21,6 +21,10 @@
 # error "Invalid platform"
 #endif
 
+#ifdef YF_DEVEL
+# include <stdio.h>
+#endif
+
 #include "yf/com/yf-error.h"
 
 #include "data-gltf.h"
