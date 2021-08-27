@@ -80,11 +80,14 @@ static size_t inval_n_ = 0;
 /* Resizes the buffer instance. */
 static size_t resize_buf(size_t new_len)
 {
+    assert(ctx_ != NULL);
+    assert(buf_ != NULL);
+
     size_t sz = new_len < SIZE_MAX ? YF_BUFLEN : new_len;
     while (sz < new_len)
         sz <<= 1;
 
-    size_t buf_len = yf_buffer_getsize(buf_);
+    const size_t buf_len = yf_buffer_getsize(buf_);
 
     if (sz != buf_len) {
         YF_buffer new_buf;
