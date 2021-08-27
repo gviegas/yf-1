@@ -524,6 +524,8 @@ void yf_mesh_deinit(YF_mesh mesh)
             try_release();
     }
 
+    /* TODO: Consider resizing the buffer down if too much mem. goes unused. */
+
     free(mesh);
 }
 
