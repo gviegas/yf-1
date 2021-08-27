@@ -127,6 +127,9 @@ static size_t resize_buf(size_t new_len)
 /* Trims buffer instance/memory blocks. */
 static int trim_mem(void)
 {
+    assert(ctx_ != NULL);
+    assert(buf_ != NULL);
+
     if (blk_n_ <= 1)
         return 0;
 
@@ -235,7 +238,10 @@ static void try_release(void)
 /* Copies mesh data to buffer instance and updates mesh object. */
 static int copy_data(YF_mesh mesh, const YF_meshdt *data)
 {
-    assert(data->v.n <= UINT_MAX);
+    assert(mesh != NULL);
+    assert(data != NULL);
+    assert(data->v.data != NULL);
+    assert(data->v.n > 0 && data->v.n <= UINT_MAX);
     assert(data->i.n <= UINT_MAX);
 
     switch (data->v.vtype) {
