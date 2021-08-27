@@ -1034,28 +1034,31 @@ int yf_loadpng2(FILE *file, YF_texdt *data)
  */
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
+
 static void print_codes(const uint8_t *lengths, size_t length_n,
                         const uint32_t *codes, const T_tree *tree,
                         size_t tree_n, size_t tree_max)
 {
     printf("\n[YF] OUTPUT (%s):\n", __func__);
 
-    puts("[codes]");
-    printf(" n: %zu\n", length_n);
+    printf(" codes (%zu):\n", length_n);
     for (size_t i = 0; i < length_n; i++) {
-        printf(" #%zu  b", i);
+        printf("  [%.4zu]  b", i);
         for (int8_t j = lengths[i]-1; j >= 0; j--)
             printf("%d", codes[i]>>j&1);
         puts("");
     }
 
-    puts("[code tree]");
-    printf(" n/max: %zu/%zu\n", tree_n, tree_max);
+    printf(" code tree (%zu, max=%zu):\n", tree_n, tree_max);
     for (size_t i = 0; i < tree_n; i++) {
         if (tree[i].leaf)
-            printf(" #%zu  value: %u\n", i, tree[i].value);
+            printf("  [%.4zu]  value: %u\n", i, tree[i].value);
         else
-            printf(" #%zu  next: %u|%u\n", i, tree[i].next[0], tree[i].next[1]);
+            printf("  [%.4zu]  next: %u|%u\n", i, tree[i].next[0],
+                   tree[i].next[1]);
     }
+
+    puts("");
 }
+
 #endif
