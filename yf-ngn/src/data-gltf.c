@@ -724,7 +724,7 @@ typedef struct {
 #define YF_GLTF_TYPE_MAT4   44
         int type;
         union {
-            /* XXX: May not suffice for uint32. */
+            /* XXX: May not suffice. */
             T_num s;
             T_num v2[2];
             T_num v3[3];
@@ -2120,6 +2120,10 @@ static int parse_accessors(FILE *file, T_token *token,
     accessors->v[index].buffer_view = YF_INT_MIN;
     accessors->v[index].sparse.indices.buffer_view = YF_INT_MIN;
     accessors->v[index].sparse.values.buffer_view = YF_INT_MIN;
+    for (size_t i = 0; i < 16; i++) {
+        accessors->v[index].min.m4[i] = YF_INT_MIN;
+        accessors->v[index].max.m4[i] = YF_INT_MAX;
+    }
 
     while (1) {
         switch (next_token(file, token)) {
