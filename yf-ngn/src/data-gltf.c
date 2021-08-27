@@ -2679,7 +2679,7 @@ typedef struct {
         (pathname)[path_len+name_len] = '\0'; \
     } } while (0)
 
-#ifdef YF_DEVEL
+#if defined(YF_DEVEL) && defined(YF_PRINT)
 static void print_gltf(const T_gltf *gltf);
 #endif
 
@@ -2973,7 +2973,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         }
     }
 
-#ifdef YF_DEVEL
+#if defined(YF_DEVEL) && defined(YF_PRINT)
     print_gltf(gltf);
 #endif
 
@@ -3226,8 +3226,8 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             break;
         default:
 #ifdef YF_DEVEL
-            printf("\n[YF] WARNING (%s):", __func__);
-            printf("\nglTF mesh attribute %zu ignored\n", i);
+            printf("\n[YF] WARNING (%s):\n glTF mesh attribute %zu ignored\n",
+                   __func__, i);
 #endif
             continue;
         }
@@ -4524,7 +4524,7 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
  * DEVEL
  */
 
-#ifdef YF_DEVEL
+#if defined(YF_DEVEL) && defined(YF_PRINT)
 
 static void print_gltf(const T_gltf *gltf)
 {
