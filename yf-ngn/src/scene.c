@@ -598,7 +598,7 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
 static int copy_inst_terr(YF_scene scn, YF_terrain *terrs, unsigned terr_n,
                           YF_dtable inst_dtb, unsigned inst_alloc)
 {
-    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
+    const YF_mat4 *v = yf_camera_getview(scn->cam);
     YF_node node;
     YF_mat4 mv, *m;
 
@@ -636,7 +636,7 @@ static int copy_inst_terr(YF_scene scn, YF_terrain *terrs, unsigned terr_n,
 static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
                           YF_dtable inst_dtb, unsigned inst_alloc)
 {
-    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
+    const YF_mat4 *v = yf_camera_getview(scn->cam);
     YF_node node;
     YF_mat4 mv, *m;
 
@@ -674,7 +674,7 @@ static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
 static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
                           YF_dtable inst_dtb, unsigned inst_alloc)
 {
-    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
+    const YF_mat4 *v = yf_camera_getview(scn->cam);
     YF_node node;
     YF_mat4 mv, *m;
     const YF_rect *rect;
@@ -722,7 +722,7 @@ static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
 static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
                           YF_dtable inst_dtb, unsigned inst_alloc)
 {
-    const YF_mat4 *v = yf_camera_getview(yf_scene_getcam(scn));
+    const YF_mat4 *v = yf_camera_getview(scn->cam);
     YF_node node;
     YF_mat4 mv, *m;
     YF_dim2 udim;
