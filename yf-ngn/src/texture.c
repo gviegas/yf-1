@@ -9,6 +9,10 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef YF_DEVEL
+# include <stdio.h>
+#endif
+
 #include "yf/com/yf-dict.h"
 #include "yf/com/yf-error.h"
 #include "yf/core/yf-image.h"
@@ -297,3 +301,56 @@ int yf_texture_copyres(YF_texture tex, YF_dtable dtb, unsigned alloc_i,
     return yf_dtable_copyimg(dtb, alloc_i, binding, elem,
                              &tex->imge->img, &tex->layer, NULL);
 }
+
+/*
+ * DEVEL
+ */
+
+#ifdef YF_DEVEL
+
+void yf_print_tex(YF_texture tex)
+{
+    assert(ctx_ != NULL);
+
+    printf("\n[YF] OUTPUT (%s):\n", __func__);
+
+    if (tex == NULL) {
+        size_t n = yf_dict_getlen(imges_);
+        printf(" imges (%zu):\n", n);
+
+        YF_iter it = YF_NILIT;
+        T_kv *kv;
+        while ((kv = yf_dict_next(imges_, &it, NULL)) != NULL) {
+            int pixfmt;
+            YF_dim3 dim;
+            unsigned lays, lvls, spls;
+            yf_image_getval(kv->val.img, &pixfmt, &dim, &lays, &lvls, &spls);
+
+            printf("  imge <%p>:\n"
+                   "   image obj.:\n"
+                   "    pixfmt: %d\n"
+                   "    dim: %ux%ux%u\n"
+                   "    layers: %u\n"
+                   "    levels: %u\n"
+                   "    samples: %u\n"
+                   "   layer count: %u\n"
+                   "   layer index: %u\n"
+                   "   layer state:\n",
+                   (void *)&kv->val, pixfmt, dim.width, dim.height, dim.depth,
+                   lays, lvls, spls, kv->val.lay_n, kv->val.lay_i);
+
+            for (size_t i = 0; i < lays; i++)
+                printf("    [%.3zu] %s\n", i, kv->val.lay_used[i] ? "X" : "");
+        }
+
+    } else {
+        printf(" texture <%p>:\n"
+               "  imge: %p\n"
+               "  layer: %u\n",
+               (void *)tex, (void *)(tex->imge), tex->layer);
+    }
+
+    puts("");
+}
+
+#endif
