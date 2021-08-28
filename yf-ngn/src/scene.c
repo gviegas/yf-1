@@ -1316,18 +1316,26 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_GLOBL, 0);
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
-    printf("\n[YF] OUTPUT (%s):\nresource allocations:\n", __func__);
-    printf(" RESRQ_MDL:   %u\n", vars_.insts[YF_RESRQ_MDL]);
-    printf(" RESRQ_MDL2:  %u\n", vars_.insts[YF_RESRQ_MDL2]);
-    printf(" RESRQ_MDL4:  %u\n", vars_.insts[YF_RESRQ_MDL4]);
-    printf(" RESRQ_MDL8:  %u\n", vars_.insts[YF_RESRQ_MDL8]);
-    printf(" RESRQ_MDL16: %u\n", vars_.insts[YF_RESRQ_MDL16]);
-    printf(" RESRQ_MDL32: %u\n", vars_.insts[YF_RESRQ_MDL32]);
-    printf(" RESRQ_MDL64: %u\n", vars_.insts[YF_RESRQ_MDL64]);
-    printf(" RESRQ_TERR:  %u\n", vars_.insts[YF_RESRQ_TERR]);
-    printf(" RESRQ_PART:  %u\n", vars_.insts[YF_RESRQ_PART]);
-    printf(" RESRQ_QUAD:  %u\n", vars_.insts[YF_RESRQ_QUAD]);
-    printf(" RESRQ_LABL:  %u\n\n", vars_.insts[YF_RESRQ_LABL]);
+    printf("\n[YF] OUTPUT (%s):\n"
+           " scene resources:\n"
+           "  RESRQ_MDL:   %u\n"
+           "  RESRQ_MDL2:  %u\n"
+           "  RESRQ_MDL4:  %u\n"
+           "  RESRQ_MDL8:  %u\n"
+           "  RESRQ_MDL16: %u\n"
+           "  RESRQ_MDL32: %u\n"
+           "  RESRQ_MDL64: %u\n"
+           "  RESRQ_TERR:  %u\n"
+           "  RESRQ_PART:  %u\n"
+           "  RESRQ_QUAD:  %u\n"
+           "  RESRQ_LABL:  %u\n\n",
+           __func__,
+           vars_.insts[YF_RESRQ_MDL], vars_.insts[YF_RESRQ_MDL2],
+           vars_.insts[YF_RESRQ_MDL4], vars_.insts[YF_RESRQ_MDL8],
+           vars_.insts[YF_RESRQ_MDL16], vars_.insts[YF_RESRQ_MDL32],
+           vars_.insts[YF_RESRQ_MDL64], vars_.insts[YF_RESRQ_TERR],
+           vars_.insts[YF_RESRQ_PART], vars_.insts[YF_RESRQ_QUAD],
+           vars_.insts[YF_RESRQ_LABL]);
 
     unsigned exec_n = 0;
 #endif
@@ -1428,8 +1436,8 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     }
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
-    printf("\n[YF] OUTPUT (%s):\nnumber of executions: %u\n\n",
-           __func__, exec_n);
+    printf("\n[YF] OUTPUT (%s):\n 'cmdbuf_exec()' called %u time%s\n\n",
+           __func__, exec_n, (exec_n > 1 ? "s" : ""));
 #endif
 
     clear_obj();
