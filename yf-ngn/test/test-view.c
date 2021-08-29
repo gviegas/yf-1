@@ -58,11 +58,23 @@ int yf_test_view(void)
     if (view_ == NULL)
         return -1;
 
+    YF_TEST_PRINT("getscene", "view_", "");
+    if (yf_view_getscene(view_) != NULL)
+        return -1;
+
     YF_TEST_PRINT("setscene", "view_, scns_[0]", "");
     yf_view_setscene(view_, scns_[0]);
 
+    YF_TEST_PRINT("getscene", "view_", "");
+    if (yf_view_getscene(view_) != scns_[0])
+        return -1;
+
     YF_TEST_PRINT("start", "view_, 30, update, 1", "");
     if (yf_view_start(view_, 30, update, (void *)1) != 0)
+        return -1;
+
+    YF_TEST_PRINT("getscene", "view_", "");
+    if (yf_view_getscene(view_) != scns_[1])
         return -1;
 
     YF_TEST_PRINT("init", "wins_[1]", "(nil)");
@@ -82,8 +94,16 @@ int yf_test_view(void)
     YF_TEST_PRINT("setscene", "view_, scns_[1]", "");
     yf_view_setscene(view_, scns_[1]);
 
+    YF_TEST_PRINT("getscene", "view_", "");
+    if (yf_view_getscene(view_) != scns_[1])
+        return -1;
+
     YF_TEST_PRINT("start", "view_, 30, update, 0", "");
     if (yf_view_start(view_, 30, update, 0) != 0)
+        return -1;
+
+    YF_TEST_PRINT("getscene", "view_", "");
+    if (yf_view_getscene(view_) != scns_[0])
         return -1;
 
     YF_TEST_PRINT("deinit", "view_", "");
