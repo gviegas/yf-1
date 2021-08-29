@@ -200,6 +200,7 @@ int yf_view_start(YF_view view, unsigned fps,
                   void (*update)(double elapsed_time, void *arg), void *arg)
 {
     assert(view != NULL);
+    assert(update != NULL);
 
     if (view->started) {
         yf_seterr(YF_ERR_BUSY, __func__);
@@ -208,12 +209,10 @@ int yf_view_start(YF_view view, unsigned fps,
     view->started = 1;
 
     const double rate = (fps == 0) ? (0.0) : (1.0 / (double)fps);
-    double dt = 0.0;
-    double tm = yf_gettime();
+    double dt = 0.0, tm = yf_gettime();
     int r = 0;
     do {
-        if (update != NULL)
-            update(dt, arg);
+        update(dt, arg);
 
         if ((r = yf_view_render(view)) != 0)
             break;
