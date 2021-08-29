@@ -350,7 +350,6 @@ static int prepare_res(void)
         inst_min += vars_.insts[i] != 0;
         inst_sum += vars_.insts[i];
     }
-    assert(inst_min > 0);
 
     size_t buf_sz;
 
