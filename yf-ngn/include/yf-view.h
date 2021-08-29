@@ -64,11 +64,12 @@ int yf_view_render(YF_view view);
  * @param view: The view.
  * @param fps: The preferred FPS.
  * @param update: The function to call before rendering takes place.
+ * @param arg: The generic argument to pass on 'update' calls. Can be 'NULL'.
  * @return: On success, returns zero. Otherwise, 'NULL' is returned and the
  *  global error is set to indicate the cause.
  */
 int yf_view_start(YF_view view, unsigned fps,
-                  void (*update)(double elapsed_time));
+                  void (*update)(double elapsed_time, void *arg), void *arg);
 
 /**
  * Stops a view's rendering loop.

@@ -191,7 +191,7 @@ int yf_view_render(YF_view view)
 }
 
 int yf_view_start(YF_view view, unsigned fps,
-                  void (*update)(double elapsed_time))
+                  void (*update)(double elapsed_time, void *arg), void *arg)
 {
     assert(view != NULL);
 
@@ -207,7 +207,7 @@ int yf_view_start(YF_view view, unsigned fps,
     int r = 0;
     do {
         if (update != NULL)
-            update(dt);
+            update(dt, arg);
 
         if ((r = yf_view_render(view)) != 0)
             break;
