@@ -113,7 +113,7 @@ YF_view yf_view_init(YF_window win)
         yf_g_pass = view->pass;
 
     } else {
-        /* TODO: Make sure that the global pass is compatible with this view. */
+        /* TODO: Ensure that the global pass is compatible with this view. */
         view->pass = yf_g_pass;
     }
 
@@ -143,6 +143,12 @@ YF_view yf_view_init(YF_window win)
     view->tgt_n = pres_img_n;
     free(clr_atts);
     return view;
+}
+
+YF_scene yf_view_getscene(YF_view view)
+{
+    assert(view != NULL);
+    return view->scn;
 }
 
 void yf_view_setscene(YF_view view, YF_scene scn)

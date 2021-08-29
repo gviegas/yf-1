@@ -36,6 +36,14 @@ typedef struct YF_view_o *YF_view;
 YF_view yf_view_init(YF_window win);
 
 /**
+ * Gets a view's scene.
+ *
+ * @param view: The view.
+ * @return: The scene currently set for 'view', or 'NULL' if none is set.
+ */
+YF_scene yf_view_getscene(YF_view view);
+
+/**
  * Sets a view's scene.
  *
  * @param view: The view.
