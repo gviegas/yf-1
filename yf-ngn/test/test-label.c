@@ -229,7 +229,7 @@ static void on_key(int key, int state, unsigned mod_mask,
 }
 
 /* Updates content. */
-static void update(double elapsed_time, YF_UNUSED void *arg)
+static void update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
         yf_view_stop(vars_.view);
