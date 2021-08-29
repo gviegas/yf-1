@@ -1430,6 +1430,8 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
                 clear_obj();
                 return -1;
             }
+            vars_.buf_off = YF_GLOBLSZ + vars_.globlpd;
+            yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_GLOBL, 0);
         } else {
             break;
         }
