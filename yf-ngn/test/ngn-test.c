@@ -8,6 +8,7 @@
 #include "test.h"
 
 int yf_test_node(void);
+int yf_test_view(void);
 int yf_test_vector(void);
 int yf_test_matrix(void);
 int yf_test_mesh(void);
@@ -24,6 +25,7 @@ int yf_test_composition(void);
 
 static const char *ids_[] = {
     "node",
+    "view",
     "vector",
     "matrix",
     "mesh",
@@ -41,6 +43,7 @@ static const char *ids_[] = {
 
 static int (*fns_[])(void) = {
     yf_test_node,
+    yf_test_view,
     yf_test_vector,
     yf_test_matrix,
     yf_test_mesh,
