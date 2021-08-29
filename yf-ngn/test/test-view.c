@@ -17,11 +17,10 @@ static YF_view view_ = NULL;
 static YF_window wins_[2] = {0};
 static YF_scene scns_[2] = {0};
 
-static void update(double elapsed_time)
+static void update(double elapsed_time, void *arg)
 {
     static double tm = 0.0;
     static int swapped = 0;
-    static int i = 1;
 
     if (tm > 3.0) {
         YF_TEST_PRINT("stop", "view_", "");
@@ -32,10 +31,9 @@ static void update(double elapsed_time)
     }
 
     if (tm > 1.5 && !swapped) {
-        YF_TEST_PRINT("setscene", "view_, scns_[i]", "");
-        yf_view_setscene(view_, scns_[i]);
+        YF_TEST_PRINT("setscene", "view_, scns_[arg]", "");
+        yf_view_setscene(view_, scns_[(size_t)arg]);
         swapped = 1;
-        i = !i;
     }
 
     tm += elapsed_time;
@@ -63,8 +61,8 @@ int yf_test_view(void)
     YF_TEST_PRINT("setscene", "view_, scns_[0]", "");
     yf_view_setscene(view_, scns_[0]);
 
-    YF_TEST_PRINT("start", "view_, 30, update", "");
-    if (yf_view_start(view_, 30, update) != 0)
+    YF_TEST_PRINT("start", "view_, 30, update, 1", "");
+    if (yf_view_start(view_, 30, update, (void *)1) != 0)
         return -1;
 
     YF_TEST_PRINT("init", "wins_[1]", "(nil)");
@@ -84,8 +82,8 @@ int yf_test_view(void)
     YF_TEST_PRINT("setscene", "view_, scns_[1]", "");
     yf_view_setscene(view_, scns_[1]);
 
-    YF_TEST_PRINT("start", "view_, 30, update", "");
-    if (yf_view_start(view_, 30, update) != 0)
+    YF_TEST_PRINT("start", "view_, 30, update, 0", "");
+    if (yf_view_start(view_, 30, update, 0) != 0)
         return -1;
 
     YF_TEST_PRINT("deinit", "view_", "");

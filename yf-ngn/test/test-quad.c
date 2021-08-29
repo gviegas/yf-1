@@ -47,7 +47,7 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(YF_UNUSED double elapsed_time)
+static void update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
         yf_view_stop(vars_.view);
@@ -101,7 +101,7 @@ int yf_test_quad(void)
 
     yf_view_setscene(vars_.view, vars_.scn);
 
-    if (yf_view_start(vars_.view, YF_FPS, update) != 0)
+    if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
         assert(0);
 
     YF_TEST_PRINT("deinit", "quad", "");

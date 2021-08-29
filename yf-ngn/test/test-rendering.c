@@ -110,7 +110,7 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(double elapsed_time)
+static void update(double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
         yf_view_stop(vars_.view);
@@ -263,7 +263,7 @@ int yf_test_rendering(void)
     yf_scene_setcolor(vars_.scn2, YF_COLOR_BLUE);
 
     yf_view_setscene(vars_.view, vars_.scn1);
-    yf_view_start(vars_.view, YF_FPS, update);
+    yf_view_start(vars_.view, YF_FPS, update, NULL);
 
     for (size_t i = 0; i < YF_MDLN_1; i++)
         yf_model_deinit(vars_.mdls1[i]);

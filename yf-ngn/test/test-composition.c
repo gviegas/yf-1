@@ -132,7 +132,7 @@ static void on_button(int btn, int state, int x, int y, YF_UNUSED void *arg)
 }
 
 /* Updates content. */
-static void update(double elapsed_time)
+static void update(double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
         yf_view_stop(vars_.view);
@@ -407,7 +407,7 @@ int yf_test_composition(void)
     yf_scene_setcolor(vars_.scn, YF_COLOR_DARKGREY);
     yf_view_setscene(vars_.view, vars_.scn);
 
-    if (yf_view_start(vars_.view, YF_FPS, update) != 0)
+    if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
         assert(0);
 
     yf_view_deinit(vars_.view);

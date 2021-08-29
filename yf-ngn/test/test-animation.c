@@ -94,7 +94,7 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(double elapsed_time)
+static void update(double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
         yf_view_stop(vars_.view);
@@ -269,7 +269,7 @@ int yf_test_animation(void)
 
     yf_scene_setcolor(vars_.scn, YF_COLOR_DARKGREY);
     yf_view_setscene(vars_.view, vars_.scn);
-    yf_view_start(vars_.view, YF_FPS, update);
+    yf_view_start(vars_.view, YF_FPS, update, NULL);
 #endif
 
     puts("\n- no explicit 'deinit()' call for managed animation -\n");
