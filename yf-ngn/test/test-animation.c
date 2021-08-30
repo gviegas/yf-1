@@ -12,6 +12,7 @@
 #include "yf/wsys/yf-keyboard.h"
 
 #include "test.h"
+#include "print.h"
 #include "yf-ngn.h"
 
 #define YF_WINW 640
@@ -155,69 +156,23 @@ static int traverse(YF_node node, YF_UNUSED void *arg)
     return 0;
 }
 
-static int each_anim(const char *name, void *anim, YF_UNUSED void *arg)
+static int each_anim(YF_UNUSED const char *name, void *anim,
+                     YF_UNUSED void *arg)
 {
-    printf("\nanimation '%s':\n", name);
+    yf_print_anim(anim);
 
-    unsigned in_n, out_n, act_n;
-    const YF_kfinput *ins = yf_animation_getins(anim, &in_n);
+    unsigned out_n, act_n;
     const YF_kfoutput *outs = yf_animation_getouts(anim, &out_n);
     const YF_kfaction *acts = yf_animation_getacts(anim, &act_n);
 
-    for (unsigned i = 0; i < in_n; i++) {
-        printf(" input #%u (%u sample(s)):\n", i, ins[i].n);
-        for (unsigned j = 0; j < ins[i].n; j++)
-            printf("  %.4f\n", ins[i].timeline[j]);
-    }
-
-    for (unsigned i = 0; i < out_n; i++) {
-        printf(" output #%u (%u sample(s)):\n", i, outs[i].n);
-        switch (outs[i].kfprop) {
-        case YF_KFPROP_T:
-            printf("  (T)\n");
-            for (unsigned j = 0; j < outs[i].n; j++)
-                printf("  [%.4f, %.4f, %.4f]\n",
-                       outs[i].t[j][0], outs[i].t[j][1], outs[i].t[j][2]);
-            break;
-        case YF_KFPROP_R:
-            printf("  (R)\n");
-            for (unsigned j = 0; j < outs[i].n; j++)
-                printf("  [%.4f, %.4f, %.4f, %.4f]\n",
-                       outs[i].r[j][0], outs[i].r[j][1], outs[i].r[j][2],
-                       outs[i].r[j][3]);
-            break;
-        case YF_KFPROP_S:
-            printf("  (S)\n");
-            for (unsigned j = 0; j < outs[i].n; j++)
-                printf("  [%.4f, %.4f, %.4f]\n",
-                       outs[i].s[j][0], outs[i].s[j][1], outs[i].s[j][2]);
-            break;
-        default:
-            assert(0);
-        }
-    }
-
     for (unsigned i = 0; i < act_n; i++) {
-        printf(" action #%u:\n", i);
-        printf("  kferp: %s\n",
-               acts[i].kferp == YF_KFERP_STEP ? "step" :
-               (acts[i].kferp == YF_KFERP_LINEAR ? "linear" : "ERR"));
-        printf("  in_i: %u\n  out_i: %u\n", acts[i].in_i, acts[i].out_i);
         YF_node node = yf_animation_gettarget(anim, i);
         if (node == NULL)
-            printf("  (no target set for this action)\n");
-        else {
-            char name[256];
-            size_t n = 256;
-            printf("  target node is '%s'\n", yf_node_getname(node, name, &n));
-            if (yf_node_isleaf(node))
-                printf("  (is a leaf node)\n");
-            else
-                yf_node_traverse(node, traverse, NULL);
-        }
+            continue;
 
         const unsigned out_i = acts[i].out_i;
         const unsigned val_i = outs[out_i].n - 1;
+
         switch (outs[out_i].kfprop) {
         case YF_KFPROP_T:
             yf_vec3_copy(*yf_node_gett(node), outs[out_i].t[val_i]);
