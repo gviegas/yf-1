@@ -20,6 +20,7 @@ int yf_test_quad(void);
 int yf_test_label(void);
 int yf_test_scene(void);
 int yf_test_animation(void);
+int yf_test_collection(void);
 int yf_test_rendering(void);
 int yf_test_composition(void);
 
@@ -37,6 +38,7 @@ static const char *ids_[] = {
     "label",
     "scene",
     "animation",
+    "collection",
     "rendering",
     "composition"
 };
@@ -55,6 +57,7 @@ static int (*fns_[])(void) = {
     yf_test_label,
     yf_test_scene,
     yf_test_animation,
+    yf_test_collection,
     yf_test_rendering,
     yf_test_composition,
 };
