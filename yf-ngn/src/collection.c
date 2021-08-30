@@ -198,3 +198,48 @@ void yf_collection_deinit(YF_collection coll)
 
     free(coll);
 }
+
+/*
+ * DEVEL
+ */
+
+#ifdef YF_DEVEL
+
+void yf_print_coll(YF_collection coll)
+{
+    assert(coll != NULL);
+
+    printf("\n[YF] OUTPUT (%s):\n"
+           " collection:\n"
+           "  number of items: %zu\n"
+           "  items:\n",
+           __func__, coll->n);
+
+    const char *cnames[YF_CITEM_N] = {
+        [YF_CITEM_SCENE]     = "CITEM_SCENE",
+        [YF_CITEM_NODE]      = "CITEM_NODE",
+        [YF_CITEM_MESH]      = "CITEM_MESH",
+        [YF_CITEM_SKIN]      = "CITEM_SKIN",
+        [YF_CITEM_MATERIAL]  = "CITEM_MATERIAL",
+        [YF_CITEM_TEXTURE]   = "CITEM_TEXTURE",
+        [YF_CITEM_ANIMATION] = "CITEM_ANIMATION",
+        [YF_CITEM_FONT]      = "CITEM_FONT"
+    };
+
+    for (size_t i = 0; i < YF_CITEM_N; i++) {
+        printf("   %s (%zu):\n", cnames[i], yf_dict_getlen(coll->items[i]));
+
+        YF_iter it = YF_NILIT;
+        void *val, *key;
+        for (;;) {
+            val = yf_dict_next(coll->items[i], &it, &key);
+            if (YF_IT_ISNIL(it))
+                break;
+            printf("    '%s', %p\n", (char *)key, val);
+        }
+    }
+
+    puts("");
+}
+
+#endif
