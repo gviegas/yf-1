@@ -3099,6 +3099,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     /* vertex data */
+    /* TODO: Endianness. */
     struct { T_int acc, view, buf; } attrs[YF_GLTF_ATTR_N];
     for (size_t i = 0; i < YF_GLTF_ATTR_N; i++) {
         attrs[i].acc = prim->v[0].attributes[i];
@@ -3283,6 +3284,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     /* index data */
+    /* TODO: Endianness. */
     const T_int i_acc = prim->v[0].indices;
     size_t i_n;
     void *inds;
@@ -3526,6 +3528,7 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     /* ibm data */
+    /* TODO: Endianness. */
     const T_int acc = gltf->skins.v[skin].inv_bind_matrices;
     if (acc != YF_INT_MIN) {
         const T_int view = gltf->accessors.v[acc].buffer_view;
@@ -3988,6 +3991,7 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
 
         /* create new input only when necessary */
+        /* TODO: Endianness. */
         if (input != YF_INT_MIN) {
             assert(gltf->accessors.v[input].comp_type == YF_GLTF_COMP_FLOAT);
             assert(gltf->accessors.v[input].type == YF_GLTF_TYPE_SCALAR);
@@ -4022,6 +4026,7 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
 
         /* create new output only when necessary */
+        /* TODO: Endianness. */
         if (output != YF_INT_MIN) {
             for (size_t j = 0; j < channel_n; j++) {
                 if (channels->v[j].sampler != (T_int)i)
