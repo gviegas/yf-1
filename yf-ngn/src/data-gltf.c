@@ -3082,7 +3082,6 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->meshes != NULL);
-    /* XXX: Contents pending creation are expected to be 'NULL'. */
     if (cont->meshes[mesh] != NULL)
         return 0;
 
@@ -3457,7 +3456,6 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->skins != NULL);
-    /* XXX: Contents pending creation are expected to be 'NULL'. */
     if (cont->skins[skin] != NULL)
         return 0;
 
@@ -3583,7 +3581,6 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->matls != NULL);
-    /* XXX: Contents pending creation are expected to be 'NULL'. */
     if (cont->matls[material] != NULL)
         return 0;
 
@@ -3669,7 +3666,6 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->nodes != NULL);
-    /* XXX: Contents pending creation are expected to be 'NULL'. */
     if (cont->nodes[node] != NULL)
         return 0;
 
@@ -3917,7 +3913,6 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->anims != NULL);
-    /* XXX: Contents pending creation are expected to be 'NULL'. */
     if (cont->anims[animation] != NULL)
         return 0;
 
@@ -4207,7 +4202,6 @@ static int load_scene(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->scns != NULL);
-    /* XXX: Contents pending creation are expected to be 'NULL'. */
     if (cont->scns[scene] != NULL)
         return 0;
 
@@ -4503,8 +4497,8 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
     if (init_gltf(file, &gltf, &fdata, &cont) != 0)
         return -1;
 
-    /* XXX: This function assumes that 'fdata.path' is not used, i.e., the
-       whole data is embedded, thus it won't be set. */
+    /* XXX: This function does not set 'fdata.path' - it is assumed that
+       the whole data is embedded. */
 
     int r;
     switch (datac) {
