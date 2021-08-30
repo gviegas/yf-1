@@ -2646,10 +2646,13 @@ typedef struct {
     YF_scene *scns;
     YF_node *nodes;
     YF_mesh *meshes;
-    YF_texture *texs;
     YF_skin *skins;
     YF_material *matls;
     YF_animation *anims;
+
+    /* the texture list contain source image indices */
+    T_int *texs;
+    YF_texture *imgs;
 
     /* flag indicating that the contents must be destroyed
        when not set, only the allocated lists are freed */
@@ -2734,13 +2737,6 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             }
             free(cont->meshes);
         }
-        if (cont->texs != NULL) {
-            if (cont->deinit) {
-                for (size_t i = 0; i < gltf->textures.n; i++)
-                    yf_texture_deinit(cont->texs[i]);
-            }
-            free(cont->texs);
-        }
         if (cont->skins != NULL) {
             if (cont->deinit) {
                 for (size_t i = 0; i < gltf->skins.n; i++)
@@ -2761,6 +2757,15 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
                     yf_animation_deinit(cont->anims[i]);
             }
             free(cont->anims);
+        }
+        if (cont->texs != NULL)
+            free(cont->texs);
+        if (cont->imgs != NULL) {
+            if (cont->deinit) {
+                for (size_t i = 0; i < gltf->images.n; i++)
+                    yf_texture_deinit(cont->imgs[i]);
+            }
+            free(cont->imgs);
         }
     }
 
@@ -2940,14 +2945,6 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             return -1;
         }
     }
-    if (gltf->textures.n > 0) {
-        cont->texs = calloc(gltf->textures.n, sizeof *cont->texs);
-        if (cont->texs == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            deinit_gltf(gltf, fdata, cont);
-            return -1;
-        }
-    }
     if (gltf->skins.n > 0) {
         cont->skins = calloc(gltf->skins.n, sizeof *cont->skins);
         if (cont->skins == NULL) {
@@ -2971,6 +2968,22 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             deinit_gltf(gltf, fdata, cont);
             return -1;
         }
+    }
+    if (gltf->textures.n > 0) {
+        if (gltf->images.n == 0) {
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            deinit_gltf(gltf, fdata, cont);
+            return -1;
+        }
+        cont->texs = malloc(gltf->textures.n * sizeof *cont->texs);
+        cont->imgs = calloc(gltf->images.n, sizeof *cont->imgs);
+        if (cont->texs == NULL || cont->imgs == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            deinit_gltf(gltf, fdata, cont);
+            return -1;
+        }
+        for (size_t i = 0; i < gltf->textures.n; i++)
+            cont->texs[i] = YF_INT_MIN;
     }
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
@@ -3383,11 +3396,16 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     assert(cont->texs != NULL);
-    /* XXX: Contents pending creation are expected to be 'NULL'. */
-    if (cont->texs[texture] != NULL)
+    if (cont->texs[texture] != YF_INT_MIN)
         return 0;
 
+    assert(cont->imgs != NULL);
     const T_int image = gltf->textures.v[texture].source;
+    if (cont->imgs[image] != NULL) {
+        cont->texs[texture] = image;
+        return 0;
+    }
+
     if (gltf->images.v[image].mime_type != NULL &&
         strcmp(gltf->images.v[image].mime_type, "image/png") != 0) {
         yf_seterr(YF_ERR_UNSUP, __func__);
@@ -3415,9 +3433,13 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             return -1;
     }
 
-    cont->texs[texture] = yf_texture_initdt(&data);
+    cont->imgs[image] = yf_texture_initdt(&data);
     free(data.data);
-    return cont->texs[texture] == NULL ? -1 : 0;
+    if (cont->imgs[image] == NULL)
+        return -1;
+
+    cont->texs[texture] = image;
+    return 0;
 }
 
 /* Loads a single skin from glTF contents. */
@@ -3623,7 +3645,7 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
         if (load_texture(gltf, fdata, cont, tex_i[i]) != 0)
             return -1;
-        *tex_p[i] = cont->texs[tex_i[i]];
+        *tex_p[i] = cont->imgs[cont->texs[tex_i[i]]];
     }
 
     cont->matls[material] = yf_material_init(&prop);
@@ -4331,19 +4353,15 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
     }
 
     /* created textures */
-    if (cont->texs != NULL) {
-        for (size_t i = 0; i < gltf->textures.n; i++) {
-            YF_texture tex = cont->texs[i];
+    if (cont->imgs != NULL) {
+        for (size_t i = 0; i < gltf->images.n; i++) {
+            YF_texture tex = cont->imgs[i];
             if (tex == NULL)
                 continue;
 
-            const char *name = gltf->textures.v[i].name;
-            if (name == NULL) {
-                const T_int image = gltf->textures.v[i].source;
-                name = gltf->images.v[image].name;
-                if (name == NULL)
-                    name = gltf->images.v[image].uri;
-            }
+            const char *name = gltf->images.v[i].name;
+            if (name == NULL)
+                name = gltf->images.v[i].uri;
 
             if (yf_collection_manage(coll, YF_CITEM_TEXTURE, name, tex) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
@@ -4453,7 +4471,7 @@ int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst)
         break;
     case YF_DATAC_TEX:
         if ((r = load_texture(&gltf, &fdata, &cont, index)) == 0)
-            dst->tex = cont.texs[index];
+            dst->tex = cont.imgs[cont.texs[index]];
         break;
     case YF_DATAC_SKIN:
         if ((r = load_skin(&gltf, &fdata, &cont, index)) == 0)
@@ -4500,7 +4518,7 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
         break;
     case YF_DATAC_TEX:
         if ((r = load_texture(&gltf, &fdata, &cont, index)) == 0)
-            dst->tex = cont.texs[index];
+            dst->tex = cont.imgs[cont.texs[index]];
         break;
     case YF_DATAC_SKIN:
         if ((r = load_skin(&gltf, &fdata, &cont, index)) == 0)
