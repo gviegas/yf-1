@@ -429,14 +429,15 @@ void yf_print_anim(YF_animation anim)
 
     printf("\n[YF] OUTPUT (%s):\n", __func__);
 
-    unsigned in_n, out_n, act_n;
-    const YF_kfinput *ins = yf_animation_getins(anim, &in_n);
-    const YF_kfoutput *outs = yf_animation_getouts(anim, &out_n);
-    const YF_kfaction *acts = yf_animation_getacts(anim, &act_n);
+    const YF_kfinput *ins = anim->inputs;
+    const YF_kfoutput *outs = anim->outputs;
+    const YF_kfaction *acts = anim->actions;
 
     printf(" Keyframe animation:\n"
-           "  inputs (%u):\n", in_n);
-    for (unsigned i = 0; i < in_n; i++) {
+           "  duration: %.6f\n"
+           "  inputs (%u):\n",
+           anim->duration, anim->input_n);
+    for (unsigned i = 0; i < anim->input_n; i++) {
         printf("   input [%u]:\n"
                "    number of samples: %u\n"
                "    timeline:\n",
@@ -446,8 +447,8 @@ void yf_print_anim(YF_animation anim)
             printf("     [%.5u]  %.6f\n", j, ins[i].timeline[j]);
     }
 
-    printf("  outputs (%u):\n", out_n);
-    for (unsigned i = 0; i < out_n; i++) {
+    printf("  outputs (%u):\n", anim->output_n);
+    for (unsigned i = 0; i < anim->output_n; i++) {
         printf("   output [%u]:\n"
                "    number of samples: %u\n"
                "    animated property: ",
@@ -478,8 +479,8 @@ void yf_print_anim(YF_animation anim)
         }
     }
 
-    printf("  actions (%u):\n", act_n);
-    for (unsigned i = 0; i < out_n; i++) {
+    printf("  actions (%u):\n", anim->action_n);
+    for (unsigned i = 0; i < anim->action_n; i++) {
         char *erp = "";
         switch (acts[i].kferp) {
         case YF_KFERP_STEP:
@@ -497,6 +498,17 @@ void yf_print_anim(YF_animation anim)
                "    input index: %u\n"
                "    output index: %u\n",
                i, erp, acts[i].in_i, acts[i].out_i);
+
+        YF_node node = anim->targets[i];
+        if (node != NULL) {
+            size_t len;
+            yf_node_getname(node, NULL, &len);
+            char name[len];
+            yf_node_getname(node, name, &len);
+            printf("    target node: '%s' <%p>\n", name, (void *)node);
+        } else {
+            printf("    (no target set for this action)\n");
+        }
     }
 
     puts("");
