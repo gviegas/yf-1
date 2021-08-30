@@ -11,6 +11,10 @@
 #include <math.h>
 #include <assert.h>
 
+#ifdef YF_DEVEL
+# include <stdio.h>
+#endif
+
 #include "yf/com/yf-util.h"
 #include "yf/com/yf-error.h"
 
@@ -412,3 +416,90 @@ void yf_animation_deinit(YF_animation anim)
     free(anim->targets);
     free(anim);
 }
+
+/*
+ * DEVEL
+ */
+
+#ifdef YF_DEVEL
+
+void yf_print_anim(YF_animation anim)
+{
+    assert(anim != NULL);
+
+    printf("\n[YF] OUTPUT (%s):\n", __func__);
+
+    unsigned in_n, out_n, act_n;
+    const YF_kfinput *ins = yf_animation_getins(anim, &in_n);
+    const YF_kfoutput *outs = yf_animation_getouts(anim, &out_n);
+    const YF_kfaction *acts = yf_animation_getacts(anim, &act_n);
+
+    printf(" Keyframe animation:\n"
+           "  inputs (%u):\n", in_n);
+    for (unsigned i = 0; i < in_n; i++) {
+        printf("   input [%u]:\n"
+               "    number of samples: %u\n"
+               "    timeline:\n",
+               i, ins[i].n);
+
+        for (unsigned j = 0; j < ins[i].n; j++)
+            printf("     [%.5u]  %.6f\n", j, ins[i].timeline[j]);
+    }
+
+    printf("  outputs (%u):\n", out_n);
+    for (unsigned i = 0; i < out_n; i++) {
+        printf("   output [%u]:\n"
+               "    number of samples: %u\n"
+               "    animated property: ",
+               i, outs[i].n);
+
+        switch (outs[i].kfprop) {
+        case YF_KFPROP_T:
+            puts("KFPROP_T\n    values:");
+            for (unsigned j = 0; j < outs[i].n; j++)
+                printf("     [%.5u]  %.4f, %.4f, %.4f\n", j, outs[i].t[j][0],
+                       outs[i].t[j][1], outs[i].t[j][2]);
+            break;
+        case YF_KFPROP_R:
+            puts("KFPROP_R\n    values:");
+            for (unsigned j = 0; j < outs[i].n; j++)
+                printf("     [%.5u]  %.4f, %.4f, %.4f, %.4f\n", j,
+                       outs[i].r[j][0], outs[i].r[j][1], outs[i].r[j][2],
+                       outs[i].r[j][3]);
+            break;
+        case YF_KFPROP_S:
+            puts("KFPROP_S\n    values:");
+            for (unsigned j = 0; j < outs[i].n; j++)
+                printf("     [%.5u]  %.4f, %.4f, %.4f\n", j, outs[i].s[j][0],
+                       outs[i].s[j][1], outs[i].s[j][2]);
+            break;
+        default:
+            assert(0);
+        }
+    }
+
+    printf("  actions (%u):\n", act_n);
+    for (unsigned i = 0; i < out_n; i++) {
+        char *erp = "";
+        switch (acts[i].kferp) {
+        case YF_KFERP_STEP:
+            erp = "KFERP_STEP";
+            break;
+        case YF_KFERP_LINEAR:
+            erp = "KFERP_LINEAR";
+            break;
+        default:
+            assert(0);
+        }
+
+        printf("   action [%u]:\n"
+               "    interpolation method: %s\n"
+               "    input index: %u\n"
+               "    output index: %u\n",
+               i, erp, acts[i].in_i, acts[i].out_i);
+    }
+
+    puts("");
+}
+
+#endif
