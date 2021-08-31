@@ -193,7 +193,6 @@ static int each_anim(YF_UNUSED const char *name, void *anim,
 }
 
 /* Tests animation. */
-/* TODO: More tests. */
 int yf_test_animation(void)
 {
     YF_evtfn evtfn = {.key_kb = on_key};
@@ -205,6 +204,153 @@ int yf_test_animation(void)
     vars_.view = yf_view_init(vars_.win);
     assert(vars_.view != NULL);
 
+    YF_node tgt = yf_node_init();
+    assert(tgt != NULL);
+
+    float tmln[] = {0.0f, 0.0333f, 0.0667f};
+
+    YF_vec3 tvals[] = {
+        {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}
+    };
+
+    YF_vec4 rvals[3] = {0};
+    yf_vec4_rotqx(rvals[0], 3.141593f * 0.5f);
+    yf_vec4_rotqy(rvals[1], 3.141593f * 0.5f);
+    yf_vec4_rotqz(rvals[2], 3.141593f * 0.5f);
+
+    YF_vec3 svals[] = {
+        {0.5f, 1.0f, 1.0f}, {1.0f, 0.5f, 1.0f}, {1.0f, 1.0f, 0.5f}
+    };
+
+    YF_kfinput ins[] = {
+        {.timeline = tmln, .n = 1},
+        {.timeline = tmln, .n = 3}
+    };
+
+    YF_kfoutput outs[] = {
+        {.kfprop = YF_KFPROP_T, .t = tvals, .n = 1},
+        {.kfprop = YF_KFPROP_R, .r = rvals, .n = 1},
+        {.kfprop = YF_KFPROP_S, .s = svals, .n = 1},
+        {.kfprop = YF_KFPROP_T, .t = tvals, .n = 3},
+        {.kfprop = YF_KFPROP_R, .r = rvals, .n = 3},
+        {.kfprop = YF_KFPROP_S, .s = svals, .n = 3}
+    };
+
+    YF_kfaction acts[] = {
+        {.kferp = YF_KFERP_STEP, .in_i = 0, .out_i = 0},
+        {.kferp = YF_KFERP_STEP, .in_i = 0, .out_i = 1},
+        {.kferp = YF_KFERP_STEP, .in_i = 0, .out_i = 2},
+        {.kferp = YF_KFERP_LINEAR, .in_i = 1, .out_i = 3},
+        {.kferp = YF_KFERP_LINEAR, .in_i = 1, .out_i = 4},
+        {.kferp = YF_KFERP_LINEAR, .in_i = 1, .out_i = 5}
+    };
+
+    unsigned in_n, out_n, act_n;
+
+    YF_TEST_PRINT("init", "ins, 1, outs, 2, acts, 2", "anim");
+    YF_animation anim = yf_animation_init(ins, 1, outs, 2, acts, 2);
+    if (anim == NULL)
+        return -1;
+
+    YF_TEST_PRINT("gettarget", "anim, 1", "");
+    if (yf_animation_gettarget(anim, 1) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("gettarget", "anim, 0", "");
+    if (yf_animation_gettarget(anim, 0) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("settarget", "anim, 0, tgt", "");
+    yf_animation_settarget(anim, 0, tgt);
+
+    YF_TEST_PRINT("settarget", "anim, 1, tgt", "");
+    yf_animation_settarget(anim, 1, tgt);
+
+    YF_TEST_PRINT("gettarget", "anim, 1", "");
+    if (yf_animation_gettarget(anim, 1) != tgt)
+        return -1;
+
+    YF_TEST_PRINT("gettarget", "anim, 0", "");
+    if (yf_animation_gettarget(anim, 0) != tgt)
+        return -1;
+
+    YF_TEST_PRINT("getins", "anim, &in_n", "");
+    if (yf_animation_getins(anim, &in_n) == NULL || in_n != 1)
+        return -1;
+
+    YF_TEST_PRINT("getouts", "anim, &out_n", "");
+    if (yf_animation_getouts(anim, &out_n) == NULL || out_n != 2)
+        return -1;
+
+    YF_TEST_PRINT("getacts", "anim, &act_n", "");
+    if (yf_animation_getacts(anim, &act_n) == NULL || act_n != 2)
+        return -1;
+
+    yf_print_anim(anim);
+
+    YF_TEST_PRINT("init", "ins, 2, outs, 6, acts, 6", "anim2");
+    YF_animation anim2 = yf_animation_init(ins, 2, outs, 6, acts, 6);
+    if (anim2 == NULL)
+        return -1;
+
+    YF_TEST_PRINT("gettarget", "anim2, 0", "");
+    if (yf_animation_gettarget(anim2, 0) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("gettarget", "anim2, 2", "");
+    if (yf_animation_gettarget(anim2, 2) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("gettarget", "anim2, 5", "");
+    if (yf_animation_gettarget(anim2, 5) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("settarget", "anim2, 0, tgt", "");
+    yf_animation_settarget(anim2, 0, tgt);
+
+    YF_TEST_PRINT("settarget", "anim2, 2, tgt", "");
+    yf_animation_settarget(anim2, 2, tgt);
+
+    YF_TEST_PRINT("settarget", "anim2, 5, tgt", "");
+    yf_animation_settarget(anim2, 5, tgt);
+
+    YF_TEST_PRINT("settarget", "anim2, 2, NULL", "");
+    yf_animation_settarget(anim2, 2, NULL);
+
+    YF_TEST_PRINT("gettarget", "anim2, 0", "");
+    if (yf_animation_gettarget(anim2, 0) != tgt)
+        return -1;
+
+    YF_TEST_PRINT("gettarget", "anim2, 2", "");
+    if (yf_animation_gettarget(anim2, 2) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("gettarget", "anim2, 5", "");
+    if (yf_animation_gettarget(anim2, 5) != tgt)
+        return -1;
+
+    YF_TEST_PRINT("getins", "anim2, &in_n", "");
+    if (yf_animation_getins(anim2, &in_n) == NULL || in_n != 2)
+        return -1;
+
+    YF_TEST_PRINT("getouts", "anim2, &out_n", "");
+    if (yf_animation_getouts(anim2, &out_n) == NULL || out_n != 6)
+        return -1;
+
+    YF_TEST_PRINT("getacts", "anim2, &act_n", "");
+    if (yf_animation_getacts(anim2, &act_n) == NULL || act_n != 6)
+        return -1;
+
+    yf_print_anim(anim2);
+
+    YF_TEST_PRINT("deinit", "anim", "");
+    yf_animation_deinit(anim);
+
+    YF_TEST_PRINT("deinit", "anim2", "");
+    yf_animation_deinit(anim2);
+
+    yf_node_deinit(tgt);
+
     puts("\n- collection animation loading -\n");
 
     vars_.coll = yf_collection_init("tmp/animation.glb");
@@ -212,7 +358,6 @@ int yf_test_animation(void)
 
     yf_collection_each(vars_.coll, YF_CITEM_ANIMATION, each_anim, NULL);
 
-#if 1
     vars_.anim = yf_collection_getitem(vars_.coll, YF_CITEM_ANIMATION,
                                        "Animation");
     assert(vars_.anim != NULL);
@@ -220,20 +365,18 @@ int yf_test_animation(void)
     vars_.scn = yf_collection_getitem(vars_.coll, YF_CITEM_SCENE, "Scene");
     assert(vars_.scn != NULL);
 
+    YF_TEST_PRINT("traverse", "getnode(scn), traverse, NULL", "");
     yf_node_traverse(yf_scene_getnode(vars_.scn), traverse, NULL);
 
     yf_scene_setcolor(vars_.scn, YF_COLOR_DARKGREY);
     yf_view_setscene(vars_.view, vars_.scn);
     yf_view_start(vars_.view, YF_FPS, update, NULL);
-#endif
 
     puts("\n- no explicit 'deinit()' call for managed animation -\n");
 
-    /* managed... */
-    /*yf_animation_deinit(vars_.anim);*/
-    /*yf_scene_deinit(vars_.scn);*/
     yf_collection_deinit(vars_.coll);
     yf_view_deinit(vars_.view);
     yf_window_deinit(vars_.win);
+
     return 0;
 }
