@@ -38,7 +38,7 @@ struct YF_camera_o {
 };
 
 /* World's 'up' vector. */
-static const YF_vec3 wld_up_ = {0.0, 1.0, 0.0};
+static const YF_vec3 wld_up_ = {0.0f, 1.0f, 0.0f};
 
 /* Updates the camera's view matrix. */
 static void update_view(YF_camera cam)
@@ -55,7 +55,7 @@ static void update_view(YF_camera cam)
 static void update_proj(YF_camera cam)
 {
     cam->zoom = YF_CLAMP(cam->zoom, YF_FOV_MIN, YF_FOV_MAX);
-    yf_mat4_persp(cam->proj, cam->zoom, cam->aspect, 0.01, 100.0);
+    yf_mat4_persp(cam->proj, cam->zoom, cam->aspect, 0.01f, 100.0f);
 
     cam->pend_mask &= ~YF_PEND_P;
     cam->pend_mask |= YF_PEND_VP;
@@ -291,7 +291,7 @@ const YF_mat4 *yf_camera_getproj(YF_camera cam)
 void yf_camera_adjust(YF_camera cam, float aspect)
 {
     assert(cam != NULL);
-    assert(aspect > 0.0);
+    assert(aspect > 0.0f);
 
     cam->aspect = aspect;
     cam->pend_mask |= YF_PEND_P;
