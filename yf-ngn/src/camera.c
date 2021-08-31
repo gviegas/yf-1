@@ -10,6 +10,10 @@
 #include <math.h>
 #include <assert.h>
 
+#ifdef YF_DEVEL
+# include <stdio.h>
+#endif
+
 #include "yf/com/yf-util.h"
 #include "yf/com/yf-error.h"
 
@@ -302,3 +306,26 @@ void yf_camera_deinit(YF_camera cam)
     if (cam != NULL)
         free(cam);
 }
+
+/*
+ * DEVEL
+ */
+
+#ifdef YF_DEVEL
+
+void yf_print_cam(YF_camera cam)
+{
+    assert(cam != NULL);
+
+    printf("\n[YF] OUTPUT (%s):\n"
+           " camera:\n"
+           "  position: [%.4f, %.4f, %.4f]\n"
+           "  direction: [%.4f, %.4f, %.4f]\n"
+           "  turn (x-axis): %.4f\n"
+           "  zoom: %.4f\n"
+           "  aspect: %.4f\n\n",
+           __func__, cam->pos[0], cam->pos[1], cam->pos[2], cam->dir[0],
+           cam->dir[1], cam->dir[2], cam->turn_x, cam->zoom, cam->aspect);
+}
+
+#endif
