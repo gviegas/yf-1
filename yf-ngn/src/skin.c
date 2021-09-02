@@ -283,7 +283,7 @@ void yf_print_skin(YF_skin skin)
             }
         }
     } else {
-        puts("  (no skeletons instantiated)\n");
+        puts("  (no skeletons instantiated)");
     }
 
     puts("");
