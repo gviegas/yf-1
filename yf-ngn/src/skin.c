@@ -9,6 +9,10 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef YF_DEVEL
+# include <stdio.h>
+#endif
+
 #include "yf/com/yf-list.h"
 #include "yf/com/yf-error.h"
 
@@ -207,3 +211,82 @@ void yf_skin_deinit(YF_skin skin)
     free(skin->jnts);
     free(skin);
 }
+
+/*
+ * DEVEL
+ */
+
+#ifdef YF_DEVEL
+
+void yf_print_skin(YF_skin skin)
+{
+    assert(skin != NULL);
+
+    printf("\n[YF] OUTPUT (%s):\n"
+           " skin:\n"
+           " joints (%u):\n",
+           __func__, skin->jnt_n);
+
+    for (unsigned i = 0; i < skin->jnt_n; i++) {
+        const YF_joint *jnt = skin->jnts+i;
+        printf("  joint [%u]:\n"
+               "   transform:\n"
+               "    %.4f  %.4f  %.4f  %.4f\n"
+               "    %.4f  %.4f  %.4f  %.4f\n"
+               "    %.4f  %.4f  %.4f  %.4f\n"
+               "    %.4f  %.4f  %.4f  %.4f\n"
+               "   inverse-bind matrix:\n"
+               "    %.4f  %.4f  %.4f  %.4f\n"
+               "    %.4f  %.4f  %.4f  %.4f\n"
+               "    %.4f  %.4f  %.4f  %.4f\n"
+               "    %.4f  %.4f  %.4f  %.4f\n"
+               "   name: '%s'\n"
+               "   parent index: %ld%s\n",
+               i,
+               jnt->xform[0], jnt->xform[4], jnt->xform[8], jnt->xform[12],
+               jnt->xform[1], jnt->xform[5], jnt->xform[9], jnt->xform[13],
+               jnt->xform[2], jnt->xform[6], jnt->xform[10], jnt->xform[14],
+               jnt->xform[3], jnt->xform[7], jnt->xform[11], jnt->xform[15],
+               jnt->ibm[0], jnt->ibm[4], jnt->ibm[8], jnt->ibm[12],
+               jnt->ibm[1], jnt->ibm[5], jnt->ibm[9], jnt->ibm[13],
+               jnt->ibm[2], jnt->ibm[6], jnt->ibm[10], jnt->ibm[14],
+               jnt->ibm[3], jnt->ibm[7], jnt->ibm[11], jnt->ibm[15],
+               jnt->name, jnt->pnt_i, (jnt->pnt_i < 0 ? " (no parent)" : ""));
+    }
+
+    const size_t skel_n = yf_list_getlen(skin->skels);
+    if (skel_n != 0) {
+        printf("  skeletons (%zu):\n", skel_n);
+
+        YF_iter it = YF_NILIT;
+        YF_skeleton skel;
+        while ((skel = yf_list_next(skin->skels, &it)) != NULL) {
+            printf("   skeleton <%p>:\n"
+                   "    managed: %s\n"
+                   "    nodes: (%u):\n",
+                   (void *)skel, (skel->managed ? "yes" : "no"), skel->node_n);
+
+            for (unsigned i = 0; i < skel->node_n; i++) {
+                size_t len;
+                yf_node_getname(skel->nodes[i], NULL, &len);
+                char str[len];
+                yf_node_getname(skel->nodes[i], str, &len);
+
+                printf("     [%.3u]: '%s' <%p> ",
+                       i, str, (void *)skel->nodes[i]);
+
+                if (yf_node_isroot(skel->nodes[i]))
+                    puts("(is a root node)");
+                else
+                    printf("(parent is <%p>)\n",
+                           (void *)yf_node_getparent(skel->nodes[i]));
+            }
+        }
+    } else {
+        puts("  (no skeletons instantiated)\n");
+    }
+
+    puts("");
+}
+
+#endif
