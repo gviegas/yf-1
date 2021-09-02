@@ -85,10 +85,10 @@ static void update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
         static unsigned sub = 0;
         YF_rect rect = {{0}, yf_texture_getdim(yf_quad_gettex(vars_.quad))};
         if (++sub & 1) {
-            rect.origin.x = rect.size.width >> 2;
-            rect.origin.y = rect.size.height >> 2;
-            rect.size.width >>= 1;
-            rect.size.height >>= 1;
+            rect.size.width >>= 2;
+            rect.size.height >>= 2;
+            rect.origin.x = rect.size.width + (rect.size.width >> 1);
+            rect.origin.y = rect.size.height + (rect.size.height >> 1);
         }
 
         YF_TEST_PRINT("setrect", "quad, &rect", "");
@@ -165,6 +165,8 @@ int yf_test_quad(void)
     yf_node_insert(yf_scene_getnode(vars_.scn), node);
 
     yf_view_setscene(vars_.view, vars_.scn);
+
+    yf_scene_setcolor(vars_.scn, YF_COLOR_LIGHTGREY);
 
     if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
         assert(0);
