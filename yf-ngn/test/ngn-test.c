@@ -14,6 +14,7 @@ int yf_test_matrix(void);
 int yf_test_mesh(void);
 int yf_test_texture(void);
 int yf_test_font(void);
+int yf_test_material(void);
 int yf_test_model(void);
 int yf_test_terrain(void);
 int yf_test_particle(void);
@@ -34,6 +35,7 @@ static const char *ids_[] = {
     "mesh",
     "texture",
     "font",
+    "material",
     "model",
     "terrain",
     "particle",
@@ -55,6 +57,7 @@ static int (*fns_[])(void) = {
     yf_test_mesh,
     yf_test_texture,
     yf_test_font,
+    yf_test_material,
     yf_test_model,
     yf_test_terrain,
     yf_test_particle,
