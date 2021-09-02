@@ -20,15 +20,17 @@
 /* Context instance. */
 static YF_context ctx_ = NULL;
 
-/* Pass instance (managed somewhere else). */
+/* Pass instance (managed elsewhere). */
 extern YF_pass yf_g_pass;
 
-/* Unsets shared scene variables (defined somewhere else). */
+/* Unsets shared variables (defined elsewhere). */
+void yf_unsetmesh(void);
 void yf_unsetscn(void);
 
 /* Handles deinitialization before exiting. */
 static void handle_exit(void)
 {
+    yf_unsetmesh();
     yf_unsetscn();
     yf_pass_deinit(yf_g_pass);
     yf_context_deinit(ctx_);
