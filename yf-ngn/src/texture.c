@@ -302,6 +302,23 @@ int yf_texture_copyres(YF_texture tex, YF_dtable dtb, unsigned alloc_i,
                              &tex->imge->img, &tex->layer, NULL);
 }
 
+/* Called by 'coreobj' on exit. */
+void yf_unsettex(void)
+{
+    if (imges_ != NULL) {
+        YF_iter it = YF_NILIT;
+        T_kv *kv;
+        while ((kv = yf_dict_next(imges_, &it, NULL)) != NULL) {
+            yf_image_deinit(kv->val.img);
+            free(kv->val.lay_used);
+            free(kv);
+        }
+        yf_dict_deinit(imges_);
+        imges_ = NULL;
+    }
+    ctx_ = NULL;
+}
+
 /*
  * DEVEL
  */
