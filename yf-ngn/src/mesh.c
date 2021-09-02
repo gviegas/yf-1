@@ -605,6 +605,23 @@ void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
     }
 }
 
+/* Called by 'coreobj' on exit. */
+void yf_unsetmesh(void)
+{
+    inval_n_ = 0;
+    tail_ = NULL;
+    while (head_ != NULL) {
+        YF_mesh tmp = head_;
+        head_ = head_->next;
+        yf_mesh_deinit(tmp);
+    }
+    blk_n_ = 1;
+    blks_[0] = (T_memblk){0};
+    yf_buffer_deinit(buf_);
+    buf_ = NULL;
+    ctx_ = NULL;
+}
+
 /*
  * DEVEL
  */
