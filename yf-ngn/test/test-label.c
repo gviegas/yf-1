@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <wchar.h>
 #include <assert.h>
 
 #include "yf/wsys/yf-event.h"
@@ -34,6 +35,38 @@ struct T_vars {
 };
 static struct T_vars vars_ = {0};
 
+/* Sets label color from a string. */
+static void set_color(const wchar_t *wcs)
+{
+    YF_TEST_PRINT("getcolor", "labl, CORENER_ALL", "");
+    YF_color cur_clr = yf_label_getcolor(vars_.labl, YF_CORNER_ALL);
+
+    YF_color clr;
+    char *params;
+    if (wcscmp(wcs, L"red") == 0) {
+        clr = YF_COLOR_RED;
+        params = "labl, CORNER_ALL, COLOR_RED";
+    } else if (wcscmp(wcs, L"green") == 0) {
+        clr = YF_COLOR_GREEN;
+        params = "labl, CORNER_ALL, COLOR_GREEN";
+    } else if (wcscmp(wcs, L"blue") == 0) {
+        clr = YF_COLOR_BLUE;
+        params = "labl, CORNER_ALL, COLOR_BLUE";
+    } else {
+        clr = YF_COLOR_WHITE;
+        params = "labl, CORNER_ALL, COLOR_WHITE";
+    }
+
+    if (cur_clr.r != clr.r || cur_clr.g != clr.g || cur_clr.b != clr.b) {
+        YF_TEST_PRINT("setcolor", params, "");
+        yf_label_setcolor(vars_.labl, YF_CORNER_ALL, clr);
+
+        cur_clr = yf_label_getcolor(vars_.labl, YF_CORNER_ALL);
+        assert(cur_clr.r == clr.r && cur_clr.g == clr.g &&
+               cur_clr.b == clr.b && cur_clr.a == clr.a);
+    }
+}
+
 /* Inserts wide-characters. */
 static void insert_wc(wchar_t wc)
 {
@@ -49,7 +82,10 @@ static void insert_wc(wchar_t wc)
     } else if (n < YF_MAXN) {
         wcs[n++] = wc;
         yf_label_setstr(vars_.labl, wcs);
-    }
+    } else
+        return;
+
+    set_color(wcs);
 }
 
 /* Handles key events. */
@@ -236,7 +272,6 @@ static void update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
 }
 
 /* Tests label. */
-/* TODO: More tests. */
 int yf_test_label(void)
 {
     YF_evtfn evtfn = {.key_kb = on_key};
