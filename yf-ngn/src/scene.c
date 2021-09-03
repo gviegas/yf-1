@@ -370,47 +370,59 @@ static int prepare_res(void)
                 continue;
 
             size_t inst_sz;
+            size_t matl_sz;
 
             switch (i) {
             case YF_RESRQ_MDL:
                 inst_sz = YF_INSTSZ_MDL + vars_.instpd_mdl;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL2:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 1;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL4:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 2;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL8:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 3;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL16:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 4;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL32:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 5;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL64:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 6;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_TERR:
                 inst_sz = YF_INSTSZ_TERR + vars_.instpd_terr;
+                matl_sz = 0;
                 break;
             case YF_RESRQ_PART:
                 inst_sz = YF_INSTSZ_PART + vars_.instpd_part;
+                matl_sz = 0;
                 break;
             case YF_RESRQ_QUAD:
                 inst_sz = YF_INSTSZ_QUAD + vars_.instpd_quad;
+                matl_sz = 0;
                 break;
             case YF_RESRQ_LABL:
                 inst_sz = YF_INSTSZ_LABL + vars_.instpd_labl;
+                matl_sz = 0;
                 break;
             default:
                 assert(0);
                 abort();
             }
 
-            buf_sz += vars_.insts[i] * inst_sz;
+            buf_sz += vars_.insts[i] * (inst_sz + matl_sz);
         }
 
         /* proceed if all allocations succeed */
