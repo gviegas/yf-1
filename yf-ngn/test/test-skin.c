@@ -114,12 +114,35 @@ int yf_test_skin(void)
 
     yf_print_skin(skin);
 
+    YF_TEST_PRINT("getnode", "skin, skel", "");
+    if (yf_skin_getnode(skin, skel) != node)
+        return -1;
+
+    YF_TEST_PRINT("getjntnode", "skin, skel, 0", "");
+    if (yf_skin_getjntnode(skin, skel, 0) != node)
+        return -1;
+
     YF_TEST_PRINT("makeskel", "skin2, NULL", "skel2");
     skel2 = yf_skin_makeskel(skin2, NULL);
     if (skel2 == NULL)
         return -1;
 
     yf_print_skin(skin2);
+
+    YF_TEST_PRINT("getnode", "skin2, skel2", "");
+    YF_node node2 = yf_skin_getnode(skin2, skel2);
+    if (node2 == NULL)
+        return -1;
+
+    YF_TEST_PRINT("getjntnode", "skin2, skel2, 0", "");
+    YF_node node3 = yf_skin_getjntnode(skin2, skel2, 0);
+    if (node3 == NULL || node3 == node2)
+        return -1;
+
+    YF_TEST_PRINT("getjntnode", "skin2, skel2, 1", "");
+    YF_node node4 = yf_skin_getjntnode(skin2, skel2, 1);
+    if (node4 == NULL || node4 == node3 || node4 == node2)
+        return -1;
 
     YF_TEST_PRINT("deinit", "skin", "");
     yf_skin_deinit(skin);
