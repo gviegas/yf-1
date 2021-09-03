@@ -85,6 +85,7 @@
 #define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_QUAD ((sizeof(YF_mat4) << 1) + 16)
 #define YF_INSTSZ_LABL ((sizeof(YF_mat4) << 1) + 16)
+#define YF_MATLSZ      (sizeof(YF_vec4) << 2)
 
 #define YF_PEND_NONE 0
 #define YF_PEND_MDL  0x01
@@ -115,6 +116,7 @@ typedef struct {
     unsigned instpd_part;
     unsigned instpd_quad;
     unsigned instpd_labl;
+    unsigned matlpd;
     unsigned insts[YF_RESRQ_N];
     YF_list res_obtd;
     YF_cmdbuf cb;
@@ -1193,6 +1195,8 @@ static int init_vars(void)
         vars_.instpd_quad = align - mod;
     if ((mod = YF_INSTSZ_LABL % align) != 0)
         vars_.instpd_labl = align - mod;
+    if ((mod = YF_MATLSZ % align) != 0)
+        vars_.matlpd = align - mod;
 
 #ifndef YF_SCN_DYNAMIC
     if (prepare_res() != 0) {
