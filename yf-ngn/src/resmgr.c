@@ -169,7 +169,12 @@ static int init_mdl(T_entry *entry, unsigned elements)
     /* descriptor table */
     const YF_dentry inst_ents[] = {
         {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
-        {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL}
+        {YF_RESBIND_MATL, YF_DTYPE_UNIFORM, 1, NULL},
+        {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL},
+        {YF_RESBIND_TEX1, YF_DTYPE_ISAMPLER, 1, NULL},
+        {YF_RESBIND_TEX2, YF_DTYPE_ISAMPLER, 1, NULL},
+        {YF_RESBIND_TEX3, YF_DTYPE_ISAMPLER, 1, NULL},
+        {YF_RESBIND_TEX4, YF_DTYPE_ISAMPLER, 1, NULL}
     };
 
     YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,

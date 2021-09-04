@@ -85,6 +85,7 @@
 #define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
 #define YF_INSTSZ_QUAD ((sizeof(YF_mat4) << 1) + 16)
 #define YF_INSTSZ_LABL ((sizeof(YF_mat4) << 1) + 16)
+#define YF_MATLSZ      (sizeof(YF_vec4) << 2)
 
 #define YF_PEND_NONE 0
 #define YF_PEND_MDL  0x01
@@ -115,6 +116,7 @@ typedef struct {
     unsigned instpd_part;
     unsigned instpd_quad;
     unsigned instpd_labl;
+    unsigned matlpd;
     unsigned insts[YF_RESRQ_N];
     YF_list res_obtd;
     YF_cmdbuf cb;
@@ -368,47 +370,59 @@ static int prepare_res(void)
                 continue;
 
             size_t inst_sz;
+            size_t matl_sz;
 
             switch (i) {
             case YF_RESRQ_MDL:
                 inst_sz = YF_INSTSZ_MDL + vars_.instpd_mdl;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL2:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 1;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL4:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 2;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL8:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 3;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL16:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 4;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL32:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 5;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_MDL64:
                 inst_sz = (YF_INSTSZ_MDL + vars_.instpd_mdl) << 6;
+                matl_sz = YF_MATLSZ + vars_.matlpd;
                 break;
             case YF_RESRQ_TERR:
                 inst_sz = YF_INSTSZ_TERR + vars_.instpd_terr;
+                matl_sz = 0;
                 break;
             case YF_RESRQ_PART:
                 inst_sz = YF_INSTSZ_PART + vars_.instpd_part;
+                matl_sz = 0;
                 break;
             case YF_RESRQ_QUAD:
                 inst_sz = YF_INSTSZ_QUAD + vars_.instpd_quad;
+                matl_sz = 0;
                 break;
             case YF_RESRQ_LABL:
                 inst_sz = YF_INSTSZ_LABL + vars_.instpd_labl;
+                matl_sz = 0;
                 break;
             default:
                 assert(0);
                 abort();
             }
 
-            buf_sz += vars_.insts[i] * inst_sz;
+            buf_sz += vars_.insts[i] * (inst_sz + matl_sz);
         }
 
         /* proceed if all allocations succeed */
@@ -765,6 +779,154 @@ static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
     return 0;
 }
 
+/* Copies material uniform to buffer and updates dtable. */
+static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
+{
+#define YF_MPBRSG 0
+#define YF_MPBRMR 1
+#define YF_MUNLIT 2
+
+#define YF_BOPAQUE 0
+#define YF_BBLEND  1
+
+#define YF_TCLR  0x01
+#define YF_TPBR  0x02
+#define YF_TNORM 0x04
+#define YF_TOCC  0x08
+#define YF_TEMIS 0x10
+
+    struct {
+        int method, blend; float norm_fac, occ_fac;     /* 0-15 */
+        YF_vec4 clr_fac;                                /* 16-31 */
+        YF_vec4 pbr_fac;                                /* 32-47 */
+        YF_vec3 emis_fac; unsigned tex_mask;            /* 48-63 */
+    } unif;
+
+    static_assert(sizeof unif == YF_MATLSZ, "!sizeof");
+
+    const YF_matlprop *prop = yf_material_getprop(matl);
+    unif.tex_mask = 0;
+
+    /* normal map */
+    if (prop->normal.tex != NULL) {
+        if (yf_texture_copyres(prop->normal.tex, inst_dtb, inst_alloc,
+                               YF_RESBIND_TEX2, 0) != 0)
+            return -1;
+        unif.tex_mask |= YF_TNORM;
+    }
+    unif.norm_fac = prop->normal.scale;
+
+    /* occlusion map */
+    if (prop->occlusion.tex != NULL) {
+        if (yf_texture_copyres(prop->occlusion.tex, inst_dtb, inst_alloc,
+                               YF_RESBIND_TEX3, 0) != 0)
+            return -1;
+        unif.tex_mask |= YF_TOCC;
+    }
+    unif.occ_fac = prop->occlusion.strength;
+
+    /* emissive map */
+    if (prop->emissive.tex != NULL) {
+        if (yf_texture_copyres(prop->emissive.tex, inst_dtb, inst_alloc,
+                               YF_RESBIND_TEX4, 0) != 0)
+            return -1;
+        unif.tex_mask |= YF_TEMIS;
+    }
+    yf_vec3_copy(unif.emis_fac, prop->emissive.factor);
+
+    /* pbr */
+    switch (prop->pbr) {
+    case YF_PBR_SPECGLOSS:
+        if (prop->pbrsg.diffuse_tex != NULL) {
+            if (yf_texture_copyres(prop->pbrsg.diffuse_tex, inst_dtb,
+                                   inst_alloc, YF_RESBIND_TEX, 0) != 0)
+                return -1;
+            unif.tex_mask |= YF_TCLR;
+        }
+
+        if (prop->pbrsg.spec_gloss_tex != NULL) {
+            if (yf_texture_copyres(prop->pbrsg.spec_gloss_tex, inst_dtb,
+                                   inst_alloc, YF_RESBIND_TEX1, 0) != 0)
+                return -1;
+            unif.tex_mask |= YF_TPBR;
+        }
+
+        yf_vec4_copy(unif.clr_fac, prop->pbrsg.diffuse_fac);
+        yf_vec3_copy(unif.pbr_fac, prop->pbrsg.specular_fac);
+        unif.pbr_fac[3] = prop->pbrsg.glossiness_fac;
+
+        unif.method = YF_MPBRSG;
+        break;
+
+    case YF_PBR_METALROUGH:
+        if (prop->pbrmr.color_tex != NULL) {
+            if (yf_texture_copyres(prop->pbrmr.color_tex, inst_dtb,
+                                   inst_alloc, YF_RESBIND_TEX, 0) != 0)
+                return -1;
+            unif.tex_mask |= YF_TCLR;
+        }
+
+        if (prop->pbrmr.metal_rough_tex != NULL) {
+            if (yf_texture_copyres(prop->pbrmr.metal_rough_tex, inst_dtb,
+                                   inst_alloc, YF_RESBIND_TEX1, 0) != 0)
+                return -1;
+            unif.tex_mask |= YF_TPBR;
+        }
+
+        yf_vec4_copy(unif.clr_fac, prop->pbrmr.color_fac);
+        unif.pbr_fac[0] = prop->pbrmr.metallic_fac;
+        unif.pbr_fac[1] = prop->pbrmr.roughness_fac;
+        unif.pbr_fac[2] = unif.pbr_fac[3] = 1.0f;
+
+        unif.method = YF_MPBRMR;
+        break;
+
+    default:
+        assert(0);
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    /* blend */
+    switch (prop->alphamode) {
+    case YF_ALPHAMODE_OPAQUE:
+        unif.blend = YF_BOPAQUE;
+        break;
+    case YF_ALPHAMODE_BLEND:
+        unif.blend = YF_BBLEND;
+        break;
+    default:
+        assert(0);
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    const size_t sz = YF_MATLSZ;
+    const YF_slice elems = {0, 1};
+
+    /* copy */
+    if (yf_buffer_copy(vars_.buf, vars_.buf_off, &unif, sz) != 0 ||
+        yf_dtable_copybuf(inst_dtb, inst_alloc, YF_RESBIND_MATL, elems,
+                          &vars_.buf, &vars_.buf_off, &sz) != 0)
+        return -1;
+    vars_.buf_off += sz + vars_.matlpd;
+
+    return 0;
+
+#undef YF_MPBRSG
+#undef YF_MPBRMR
+#undef YF_MUNLIT
+
+#undef YF_BOPAQUE
+#undef YF_BBLEND
+
+#undef YF_TCLR
+#undef YF_TPBR
+#undef YF_TNORM
+#undef YF_TOCC
+#undef YF_TEMIS
+}
+
 /* Renders model objects. */
 static int render_mdl(YF_scene scn)
 {
@@ -841,17 +1003,12 @@ static int render_mdl(YF_scene scn)
                 return -1;
             }
 
-            /* TODO: 'copy_matl()'. */
             YF_material matl = yf_model_getmatl(mdls[rem]);
             if (matl != NULL) {
-                YF_matlprop *prop = yf_material_getprop(matl);
-
-                /* TODO */
-                assert(prop->pbr == YF_PBR_METALROUGH &&
-                       prop->pbrmr.color_tex != NULL);
-
-                yf_texture_copyres(prop->pbrmr.color_tex, inst_dtb, inst_alloc,
-                                   YF_RESBIND_TEX, 0);
+                if (copy_matl(matl, inst_dtb, inst_alloc) != 0) {
+                    yf_list_deinit(done);
+                    return -1;
+                }
             } else {
                 /* TODO */
                 assert(0);
@@ -1193,6 +1350,8 @@ static int init_vars(void)
         vars_.instpd_quad = align - mod;
     if ((mod = YF_INSTSZ_LABL % align) != 0)
         vars_.instpd_labl = align - mod;
+    if ((mod = YF_MATLSZ % align) != 0)
+        vars_.matlpd = align - mod;
 
 #ifndef YF_SCN_DYNAMIC
     if (prepare_res() != 0) {
