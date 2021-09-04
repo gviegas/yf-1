@@ -28,9 +28,6 @@
 #define LIGHT_INTENS vec3(6.0)
 #define LIGHT_CLR    vec3(1.0)
 
-/* TODO: Get from vertex shader. */
-#define EYE vec3(20.0, 20.0, 20.0)
-
 layout(std140, column_major) uniform;
 
 /**
@@ -61,6 +58,7 @@ layout(location=0) in IO_v {
     vec2 tc;
     vec3 norm;
     vec4 clr;
+    vec3 eye;
 } v_;
 
 layout(location=0) out vec4 clr_;
@@ -128,7 +126,7 @@ vec4 getclr()
     if (matl_.method == METHOD_UNLIT)
         return clr;
 
-    vec3 v = normalize(EYE);
+    vec3 v = normalize(v_.eye);
     vec3 l = normalize(-LIGHT_DIR);
     vec3 n = normalize(v_.norm);
     vec3 h = normalize(l + v);
