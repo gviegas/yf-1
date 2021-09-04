@@ -1003,17 +1003,12 @@ static int render_mdl(YF_scene scn)
                 return -1;
             }
 
-            /* TODO: 'copy_matl()'. */
             YF_material matl = yf_model_getmatl(mdls[rem]);
             if (matl != NULL) {
-                YF_matlprop *prop = yf_material_getprop(matl);
-
-                /* TODO */
-                assert(prop->pbr == YF_PBR_METALROUGH &&
-                       prop->pbrmr.color_tex != NULL);
-
-                yf_texture_copyres(prop->pbrmr.color_tex, inst_dtb, inst_alloc,
-                                   YF_RESBIND_TEX, 0);
+                if (copy_matl(matl, inst_dtb, inst_alloc) != 0) {
+                    yf_list_deinit(done);
+                    return -1;
+                }
             } else {
                 /* TODO */
                 assert(0);
