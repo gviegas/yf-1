@@ -206,7 +206,7 @@ int yf_test_model(void)
     assert(tex != NULL);
     YF_matlprop mprop = {
         .pbr = YF_PBR_METALROUGH,
-        .pbrmr = {tex, {1.0f, 1.0f, 1.0f, 1.0f}, NULL, 1.0f, 0.0f},
+        .pbrmr = {tex, {1.0f, 1.0f, 1.0f, 1.0f}, NULL, 0.5f, 0.5f},
         .normal = {0},
         .occlusion = {0},
         .emissive = {0},
