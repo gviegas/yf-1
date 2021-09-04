@@ -20,6 +20,9 @@
 #define TEX_OCC  0x08
 #define TEX_EMIS 0x10
 
+#define PI          3.14159265358979323846
+#define ONE_OVER_PI 0.31830988618379067154
+
 layout(std140, column_major) uniform;
 
 /**
@@ -53,6 +56,53 @@ layout(location=0) in IO_v {
 } v_;
 
 layout(location=0) out vec4 clr_;
+
+/**
+ * Microfacet (D).
+ */
+float microfacet_d(float ndoth, float arxar)
+{
+    float fac = (ndoth * ndoth) * (arxar - 1.0) + 1.0;
+    return arxar / (PI * fac * fac);
+}
+
+/**
+ * Visibility (V).
+ */
+float visibility_v(float ndotv, float ndotl, float arxar)
+{
+    float diffa = 1.0 - arxar;
+    float ggx = ndotl * sqrt(ndotv * ndotv * diffa + arxar) +
+                ndotv * sqrt(ndotl * ndotl * diffa + arxar);
+    return (ggx > 0.0) ? (0.5 / ggx) : (0.0);
+}
+
+/**
+ * Fresnel term (F).
+ */
+vec3 fresnel_f(vec3 f0, float vdoth)
+{
+    return f0 + (vec3(1.0) - f0) * pow(1.0 - abs(vdoth), 5.0);
+}
+
+/**
+ * Diffuse BRDF.
+ */
+vec3 diffuse_brdf(vec3 color, vec3 fterm)
+{
+    return (1.0 - fterm) * (color * ONE_OVER_PI);
+}
+
+/**
+ * Specular BRDF.
+ */
+vec3 specular_brdf(vec3 fterm, float ndotv, float ndotl, float ndoth,
+                   float arxar)
+{
+    return fterm *
+           visibility_v(ndotv, ndotl, arxar) *
+           microfacet_d(ndoth, arxar);
+}
 
 void main()
 {
