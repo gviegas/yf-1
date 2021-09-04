@@ -75,6 +75,7 @@ layout(location=0) out IO_v {
     vec2 tc;
     vec3 norm;
     vec4 clr;
+    vec3 eye;
 } v_;
 
 /**
@@ -120,4 +121,5 @@ void main()
     v_.tc = tc_;
     v_.norm = norm;
     v_.clr = clr_;
+    v_.eye = globl_.v[3].xyz - pos.xyz;
 }
