@@ -20,14 +20,18 @@
             (a)->pbrsg.spec_gloss_tex != (b)->pbrsg.spec_gloss_tex || \
             !yf_vec3_iseq((a)->pbrsg.specular_fac, (b)->pbrsg.specular_fac) || \
             (a)->pbrsg.glossiness_fac != (b)->pbrsg.glossiness_fac) \
-        return -1;\
+            return -1; \
     } else if ((a)->pbr == YF_PBR_METALROUGH) { \
         if ((a)->pbrmr.color_tex != (b)->pbrmr.color_tex || \
             !yf_vec4_iseq((a)->pbrmr.color_fac, (b)->pbrmr.color_fac) || \
             (a)->pbrmr.metal_rough_tex != (b)->pbrmr.metal_rough_tex || \
             (a)->pbrmr.metallic_fac != (b)->pbrmr.metallic_fac || \
             (a)->pbrmr.roughness_fac != (b)->pbrmr.roughness_fac) \
-        return -1;\
+            return -1; \
+    } else if ((a)->pbr == YF_PBR_NONE) { \
+        if ((a)->nopbr.color_tex != (b)->nopbr.color_tex || \
+            !yf_vec4_iseq((a)->nopbr.color_fac, (b)->nopbr.color_fac)) \
+            return -1; \
     } else \
         return -1; \
     if ((a)->normal.tex != (b)->normal.tex || \
@@ -86,7 +90,7 @@ int yf_test_material(void)
     YF_matlprop prop_mr = {
         .pbr = YF_PBR_METALROUGH,
         .pbrmr = {
-            .color_tex= NULL,
+            .color_tex = NULL,
             .color_fac = {0.2f, 0.4f, 0.8f, 1.0f},
             .metal_rough_tex = NULL,
             .metallic_fac = 0.5f,
@@ -114,6 +118,25 @@ int yf_test_material(void)
 
     yf_print_matl(matl3);
 
+    YF_matlprop prop_ul = {
+        .pbr = YF_PBR_NONE,
+        .nopbr = {
+            .color_tex = NULL,
+            .color_fac = {0.01f, 0.02f, 0.04f, 1.0f}
+        },
+        .normal = {0},
+        .occlusion = {0},
+        .emissive = {0},
+        .alphamode = YF_ALPHAMODE_OPAQUE
+    };
+
+    YF_TEST_PRINT("init", "&prop_ul", "matl4");
+    YF_material matl4 = yf_material_init(&prop_ul);
+    if (matl4 == NULL)
+        return -1;
+
+    yf_print_matl(matl4);
+
     const YF_matlprop *prop;
 
     YF_TEST_PRINT("getprop", "matl", "");
@@ -133,6 +156,12 @@ int yf_test_material(void)
         return -1;
     YF_CMPMATL(prop, &prop_mr);
 
+    YF_TEST_PRINT("getprop", "matl4", "");
+    prop = yf_material_getprop(matl4);
+    if (prop == NULL)
+        return -1;
+    YF_CMPMATL(prop, &prop_ul);
+
     YF_TEST_PRINT("deinit", "matl", "");
     yf_material_deinit(matl);
 
@@ -141,6 +170,9 @@ int yf_test_material(void)
 
     YF_TEST_PRINT("deinit", "matl3", "");
     yf_material_deinit(matl3);
+
+    YF_TEST_PRINT("deinit", "matl4", "");
+    yf_material_deinit(matl4);
 
     return 0;
 }
