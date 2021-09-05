@@ -86,9 +86,9 @@ float visibility_v(float ndotv, float ndotl, float arxar)
 /**
  * Fresnel term (F).
  */
-vec3 fresnel_f(vec3 f0, float vdoth)
+vec3 fresnel_f(vec3 f0, vec3 f90, float vdoth)
 {
-    return f0 + (vec3(1.0) - f0) * pow(1.0 - abs(vdoth), 5.0);
+    return f0 + (f90 - f0) * pow(1.0 - abs(vdoth), 5.0);
 }
 
 /**
@@ -151,8 +151,9 @@ vec4 getclr()
         vec3 ior = vec3(0.04);
         vec3 albedo = mix(clr.rgb * (vec3(1.0) - ior), vec3(0.0), metallic);
         vec3 f0 = mix(ior, clr.rgb, metallic);
+        vec3 f90 = vec3(1.0);
         float ar = roughness * roughness;
-        vec3 fterm = fresnel_f(f0, vdoth);
+        vec3 fterm = fresnel_f(f0, f90, vdoth);
         vec3 diffuse = diffuse_brdf(albedo, fterm);
         vec3 specular = specular_brdf(fterm, ndotv, ndotl, ndoth, ar*ar);
         clr.xyz = (diffuse + specular) * LIGHT_INTENS * LIGHT_CLR * ndotl;
