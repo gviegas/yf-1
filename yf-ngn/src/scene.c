@@ -881,6 +881,19 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
         unif.method = YF_MPBRMR;
         break;
 
+    case YF_PBR_NONE:
+        if (prop->nopbr.color_tex != NULL) {
+            if (yf_texture_copyres(prop->nopbr.color_tex, inst_dtb,
+                                   inst_alloc, YF_RESBIND_TEX, 0) != 0)
+                return -1;
+            unif.tex_mask |= YF_TCLR;
+        }
+
+        yf_vec4_copy(unif.clr_fac, prop->nopbr.color_fac);
+
+        unif.method = YF_MUNLIT;
+        break;
+
     default:
         assert(0);
         yf_seterr(YF_ERR_INVARG, __func__);
