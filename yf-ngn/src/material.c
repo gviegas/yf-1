@@ -101,6 +101,14 @@ void yf_print_matl(YF_material matl)
                (void *)matl->prop.pbrmr.metal_rough_tex,
                matl->prop.pbrmr.metallic_fac, matl->prop.pbrmr.roughness_fac);
         break;
+    case YF_PBR_NONE:
+        printf("  pbr: PBR_NONE\n"
+               "   color texture: %p\n"
+               "   color factor: [%.4f, %.4f, %.4f, %.4f]\n",
+               (void *)matl->prop.nopbr.color_tex,
+               matl->prop.nopbr.color_fac[0], matl->prop.nopbr.color_fac[1],
+               matl->prop.nopbr.color_fac[2], matl->prop.nopbr.color_fac[3]);
+        break;
     default:
         assert(0);
     }
