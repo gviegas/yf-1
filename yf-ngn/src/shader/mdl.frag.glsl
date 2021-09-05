@@ -115,16 +115,20 @@ vec3 specular_brdf(vec3 fterm, float ndotv, float ndotl, float ndoth,
  */
 vec4 getclr()
 {
+    /* TODO: Vertex color; normal/occlusion/emissive maps. */
+
     vec4 clr = vec4(1.0);
 
     if ((matl_.tex_mask & TEX_CLR) == TEX_CLR)
         clr = textureLod(clr_is_, v_.tc, 0.0);
     clr *= matl_.clr_fac;
 
-    /* TODO: Vertex color; normal/occlusion/emissive maps. */
+    if (matl_.method == METHOD_UNLIT) {
+        if (matl_.blend == BLEND_OPAQUE)
+            clr.a = 1.0;
 
-    if (matl_.method == METHOD_UNLIT)
         return clr;
+    }
 
     vec3 v = normalize(v_.eye);
     vec3 l = normalize(-LIGHT_DIR);
@@ -174,6 +178,9 @@ vec4 getclr()
     vec3 diffuse = diffuse_brdf(albedo, fterm);
     vec3 specular = specular_brdf(fterm, ndotv, ndotl, ndoth, ar*ar);
     clr.xyz = (diffuse + specular) * LIGHT_INTENS * LIGHT_CLR * ndotl;
+
+    if (matl_.blend == BLEND_OPAQUE)
+        clr.a = 1.0;
 
     return clr;
 }
