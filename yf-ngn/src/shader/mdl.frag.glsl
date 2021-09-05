@@ -135,30 +135,45 @@ vec4 getclr()
     float ndotl = max(dot(n, l), 0.0);
     float ndoth = max(dot(n, h), 0.0);
 
+    vec3 albedo, f0, f90;
+    float ar;
+
     switch (matl_.method) {
     case METHOD_PBRSG:
-        /* TODO */
+        vec3 specular = matl_.pbr_fac.rgb;
+        float glossiness = matl_.pbr_fac.a;
+        if ((matl_.tex_mask & TEX_PBR) == TEX_PBR) {
+            vec4 spec_gloss = textureLod(pbr_is_, v_.tc, 0.0);
+            specular *= spec_gloss.rgb;
+            glossiness *= spec_gloss.a;
+        }
+        albedo = clr.rgb * (1.0 - max(specular.r, max(specular.g, specular.b)));
+        f0 = specular;
+        f90 = vec3(1.0);
+        ar = 1.0 - glossiness;
+        ar *= ar;
         break;
 
     case METHOD_PBRMR:
         float metallic = matl_.pbr_fac[0];
         float roughness = matl_.pbr_fac[1];
         if ((matl_.tex_mask & TEX_PBR) == TEX_PBR) {
-            vec4 mr = textureLod(pbr_is_, v_.tc, 0.0);
-            metallic *= mr.b;
-            roughness *= mr.g;
+            vec4 metal_rough = textureLod(pbr_is_, v_.tc, 0.0);
+            metallic *= metal_rough.b;
+            roughness *= metal_rough.g;
         }
         vec3 ior = vec3(0.04);
-        vec3 albedo = mix(clr.rgb * (vec3(1.0) - ior), vec3(0.0), metallic);
-        vec3 f0 = mix(ior, clr.rgb, metallic);
-        vec3 f90 = vec3(1.0);
-        float ar = roughness * roughness;
-        vec3 fterm = fresnel_f(f0, f90, vdoth);
-        vec3 diffuse = diffuse_brdf(albedo, fterm);
-        vec3 specular = specular_brdf(fterm, ndotv, ndotl, ndoth, ar*ar);
-        clr.xyz = (diffuse + specular) * LIGHT_INTENS * LIGHT_CLR * ndotl;
+        albedo = mix(clr.rgb * (vec3(1.0) - ior), vec3(0.0), metallic);
+        f0 = mix(ior, clr.rgb, metallic);
+        f90 = vec3(1.0);
+        ar = roughness * roughness;
         break;
     }
+
+    vec3 fterm = fresnel_f(f0, f90, vdoth);
+    vec3 diffuse = diffuse_brdf(albedo, fterm);
+    vec3 specular = specular_brdf(fterm, ndotv, ndotl, ndoth, ar*ar);
+    clr.xyz = (diffuse + specular) * LIGHT_INTENS * LIGHT_CLR * ndotl;
 
     return clr;
 }
