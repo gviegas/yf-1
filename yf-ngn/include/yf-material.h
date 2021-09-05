@@ -25,6 +25,7 @@ typedef struct YF_material_o *YF_material;
  */
 #define YF_PBR_SPECGLOSS  0
 #define YF_PBR_METALROUGH 1
+#define YF_PBR_NONE       2
 
 /**
  * Alpha modes.
@@ -54,6 +55,11 @@ typedef struct {
             float metallic_fac;
             float roughness_fac;
         } pbrmr;
+        /* Unlit. */
+        struct {
+            YF_texture color_tex;
+            YF_vec4 color_fac;
+        } nopbr;
     };
     struct {
         YF_texture tex;
