@@ -26,7 +26,7 @@ struct YF_light_o {
 /* Light deinitialization callback. */
 static void deinit_light(void *light)
 {
-    /* TODO */
+    free(light);
 }
 
 YF_light yf_light_init(int lightt, const YF_vec3 color, float intensity,
@@ -63,5 +63,6 @@ YF_node yf_light_getnode(YF_light light)
 
 void yf_light_deinit(YF_light light)
 {
-    /* TODO */
+    if (light != NULL)
+        yf_node_deinit(light->node);
 }
