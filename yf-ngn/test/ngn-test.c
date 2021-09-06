@@ -21,6 +21,7 @@ int yf_test_terrain(void);
 int yf_test_particle(void);
 int yf_test_quad(void);
 int yf_test_label(void);
+int yf_test_light(void);
 int yf_test_scene(void);
 int yf_test_camera(void);
 int yf_test_animation(void);
@@ -43,6 +44,7 @@ static const char *ids_[] = {
     "particle",
     "quad",
     "label",
+    "light",
     "scene",
     "camera",
     "animation",
@@ -66,6 +68,7 @@ static int (*fns_[])(void) = {
     yf_test_particle,
     yf_test_quad,
     yf_test_label,
+    yf_test_light,
     yf_test_scene,
     yf_test_camera,
     yf_test_animation,
