@@ -32,7 +32,29 @@ static void deinit_light(void *light)
 YF_light yf_light_init(int lightt, const YF_vec3 color, float intensity,
                        float range, float inner_angle, float outer_angle)
 {
-    YF_light light = calloc(1, sizeof(struct YF_light_o));
+    switch (lightt) {
+    case YF_LIGHTT_POINT:
+    case YF_LIGHTT_DIRECT:
+        if (intensity < 0.0f) {
+            yf_seterr(YF_ERR_INVARG, __func__);
+            return NULL;
+        }
+        break;
+    case YF_LIGHTT_SPOT:
+        if (intensity < 0.0f ||
+            inner_angle < 0.0f || inner_angle > 1.5707963268f ||
+            outer_angle < 0.0f || outer_angle > 1.5707963268f) {
+
+            yf_seterr(YF_ERR_INVARG, __func__);
+            return NULL;
+        }
+        break;
+    default:
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return NULL;
+    }
+
+    YF_light light = malloc(sizeof(struct YF_light_o));
     if (light == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
