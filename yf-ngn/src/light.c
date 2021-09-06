@@ -57,8 +57,8 @@ YF_light yf_light_init(int lightt, const YF_vec3 color, float intensity,
 
 YF_node yf_light_getnode(YF_light light)
 {
-    /* TODO */
-    return NULL;
+    assert(light != NULL);
+    return light->node;
 }
 
 void yf_light_deinit(YF_light light)
