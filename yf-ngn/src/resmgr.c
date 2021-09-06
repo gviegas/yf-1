@@ -48,25 +48,19 @@ static char *make_shdpath(int nodeobj, int stage, unsigned elements)
     char *obj_name = NULL;
     switch (nodeobj) {
     case YF_NODEOBJ_MODEL:
-        obj_name = "mdl";
+        obj_name = "model";
         break;
     case YF_NODEOBJ_TERRAIN:
-        obj_name = "terr";
+        obj_name = "terrain";
         break;
     case YF_NODEOBJ_PARTICLE:
-        obj_name = "part";
+        obj_name = "particle";
         break;
     case YF_NODEOBJ_QUAD:
         obj_name = "quad";
         break;
     case YF_NODEOBJ_LABEL:
-        obj_name = "labl";
-        break;
-    case YF_NODEOBJ_LIGHT:
-        obj_name = "lig";
-        break;
-    case YF_NODEOBJ_EFFECT:
-        obj_name = "fx";
+        obj_name = "label";
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
