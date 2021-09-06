@@ -23,6 +23,18 @@ YF_DECLS_BEGIN
 typedef struct YF_node_o *YF_node;
 
 /**
+ * Types of objects that a node can represent.
+ */
+#define YF_NODEOBJ_NONE     0
+#define YF_NODEOBJ_MODEL    1
+#define YF_NODEOBJ_TERRAIN  2
+#define YF_NODEOBJ_PARTICLE 3
+#define YF_NODEOBJ_QUAD     4
+#define YF_NODEOBJ_LABEL    5
+#define YF_NODEOBJ_LIGHT    6
+#define YF_NODEOBJ_EFFECT   7
+
+/**
  * Initializes a new node.
  *
  * @return: On success, returns a new node. Otherwise, 'NULL' is returned and
@@ -200,18 +212,6 @@ int yf_node_getobj(YF_node node, void **obj);
  * @param node: The node to deinitialize. Can be 'NULL'.
  */
 void yf_node_deinit(YF_node node);
-
-/**
- * Types of objects that a node can represent.
- */
-#define YF_NODEOBJ_NONE     0
-#define YF_NODEOBJ_MODEL    1
-#define YF_NODEOBJ_TERRAIN  2
-#define YF_NODEOBJ_PARTICLE 3
-#define YF_NODEOBJ_QUAD     4
-#define YF_NODEOBJ_LABEL    5
-#define YF_NODEOBJ_LIGHT    6
-#define YF_NODEOBJ_EFFECT   7
 
 YF_DECLS_END
 
