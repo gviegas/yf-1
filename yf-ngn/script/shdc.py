@@ -10,25 +10,25 @@
 import subprocess
 
 vert_srcs = [
-    ('labl', '',      ['-DVPORT_N=1']),
-    ('mdl',  '',      ['-DVPORT_N=1', '-DINST_N=1',  '-DJOINT_N=64']),
-    ('mdl',  'mdl2',  ['-DVPORT_N=1', '-DINST_N=2',  '-DJOINT_N=64']),
-    ('mdl',  'mdl4',  ['-DVPORT_N=1', '-DINST_N=4',  '-DJOINT_N=64']),
-    ('mdl',  'mdl8',  ['-DVPORT_N=1', '-DINST_N=8',  '-DJOINT_N=64']),
-    ('mdl',  'mdl16', ['-DVPORT_N=1', '-DINST_N=16', '-DJOINT_N=64']),
-    ('mdl',  'mdl32', ['-DVPORT_N=1', '-DINST_N=32', '-DJOINT_N=64']),
-    ('mdl',  'mdl64', ['-DVPORT_N=1', '-DINST_N=64', '-DJOINT_N=64']),
-    ('part', '',      ['-DVPORT_N=1']),
-    ('quad', '',      ['-DVPORT_N=1']),
-    ('terr', '',      ['-DVPORT_N=1'])
+    ('label',    '',        ['-DVPORT_N=1']),
+    ('model',    '',        ['-DVPORT_N=1', '-DINST_N=1',  '-DJOINT_N=64']),
+    ('model',    'model2',  ['-DVPORT_N=1', '-DINST_N=2',  '-DJOINT_N=64']),
+    ('model',    'model4',  ['-DVPORT_N=1', '-DINST_N=4',  '-DJOINT_N=64']),
+    ('model',    'model8',  ['-DVPORT_N=1', '-DINST_N=8',  '-DJOINT_N=64']),
+    ('model',    'model16', ['-DVPORT_N=1', '-DINST_N=16', '-DJOINT_N=64']),
+    ('model',    'model32', ['-DVPORT_N=1', '-DINST_N=32', '-DJOINT_N=64']),
+    ('model',    'model64', ['-DVPORT_N=1', '-DINST_N=64', '-DJOINT_N=64']),
+    ('particle', '',        ['-DVPORT_N=1']),
+    ('quad',     '',        ['-DVPORT_N=1']),
+    ('terrain',  '',        ['-DVPORT_N=1'])
 ]
 
 frag_srcs = [
-    ('labl', '', []),
-    ('mdl',  '', []),
-    ('part', '', []),
+    ('label', '', []),
+    ('model',  '', []),
+    ('particle', '', []),
     ('quad', '', []),
-    ('terr', '', [])
+    ('terrain', '', [])
 ]
 
 src_dir = 'tmp/shd/'
