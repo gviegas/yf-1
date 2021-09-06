@@ -1,6 +1,6 @@
 /*
  * YF
- * labl.vert.glsl
+ * label.vert.glsl
  *
  * Copyright © 2021 Gustavo C. Viegas.
  */

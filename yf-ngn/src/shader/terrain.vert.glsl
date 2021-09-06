@@ -1,6 +1,6 @@
 /*
  * YF
- * part.vert.glsl
+ * terrain.vert.glsl
  *
  * Copyright © 2021 Gustavo C. Viegas.
  */
@@ -44,25 +44,25 @@ layout(set=1, binding=0) uniform U_inst {
     mat4 mv;
 } inst_;
 
-/* TODO: Other per-particle params., e.g. clrN, size... */
+/**
+ * Height map.
+ */
+layout(set=1, binding=2) uniform sampler2D hmap_;
+
 layout(location=0) in vec3 pos_;
-layout(location=4) in vec4 clr_;
+layout(location=1) in vec2 tc_;
+layout(location=2) in vec3 norm_;
 
 layout(location=0) out IO_v {
-    vec4 clr;
+    vec2 tc;
+    vec3 norm;
 } v_;
 
 void main()
 {
-    /* TODO: Take this parameters from uniform buffer instead. */
-    const float pt_min = 0.125;
-    const float pt_max = 4.0;
-    const float pt_fac = pt_max / (100.0 - 0.01);
+    const float y = textureLod(hmap_, tc_, 0.0).r;
+    gl_Position = globl_.p * inst_.mv * vec4(pos_.x, y, pos_.z, 1.0);
 
-    const float d = distance(globl_.v[3].xyz, pos_);
-    gl_PointSize = clamp(abs(pt_max - d * pt_fac), pt_min, pt_max);
-
-    /* TODO: MVP as uniform. */
-    gl_Position = globl_.p * inst_.mv * vec4(pos_, 1.0);
-    v_.clr = clr_;
+    v_.tc = tc_;
+    v_.norm = norm_;
 }
