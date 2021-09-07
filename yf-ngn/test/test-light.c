@@ -19,8 +19,12 @@
     float intens, rng, inner, outer; \
     YF_TEST_PRINT("getval", #light", <non-nil>", ""); \
     yf_light_getval(light, &tp, clr, &intens, &rng, &inner, &outer); \
-    if (tp != (type) || !yf_vec3_iseq(clr, color) || intens != intensity || \
-        rng != range || inner != inner_angle || outer != outer_angle) \
+    if (tp != (type) || !yf_vec3_iseq(clr, color) || intens != intensity) \
+        return -1; \
+    if (tp != YF_LIGHTT_DIRECT && rng != range) \
+        return -1; \
+    if (tp == YF_LIGHTT_SPOT && (inner != inner_angle || \
+                                 outer != outer_angle)) \
         return -1; \
     tp = ~type; \
     YF_TEST_PRINT("getval", #light", <nil>", ""); \
@@ -134,6 +138,19 @@ int yf_test_light(void)
         return -1;
 
     YF_LIGHTVAL(light3, YF_LIGHTT_DIRECT);
+
+    color[0] = 0.0f;
+    color[1] = color[2] = 0.9f;
+    intensity = 1000.0f;
+    range = 3.0f;
+
+    snprintf(s, sizeof s, "light2, [%.2f, %.2f, %.2f], %.2f, %.2f",
+             color[0], color[1], color[2], intensity, range);
+
+    YF_TEST_PRINT("setpoint", s, "");
+    yf_light_setpoint(light2, color, intensity, range);
+
+    YF_LIGHTVAL(light2, YF_LIGHTT_POINT);
 
     YF_TEST_PRINT("deinit", "light", "");
     yf_light_deinit(light);
