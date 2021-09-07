@@ -144,6 +144,22 @@ int yf_light_setspot(YF_light light, const YF_vec3 color, float intensity,
     return 0;
 }
 
+int yf_light_setdirect(YF_light light, const YF_vec3 color, float intensity)
+{
+    assert(light != NULL);
+
+    if (intensity < 0.0f) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    light->lightt = YF_LIGHTT_DIRECT;
+    yf_vec3_copy(light->color, color);
+    light->intensity = intensity;
+
+    return 0;
+}
+
 void yf_light_deinit(YF_light light)
 {
     if (light != NULL)

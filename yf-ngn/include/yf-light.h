@@ -96,6 +96,17 @@ int yf_light_setspot(YF_light light, const YF_vec3 color, float intensity,
                      float range, float inner_angle, float outer_angle);
 
 /**
+ * Sets a given light source as a directional light.
+ *
+ * @param light: The light.
+ * @param color: The directional light color.
+ * @param intensity: The directional light intensity.
+ * @return: On success, returns zero. Otherwise, a non-zero value is returned
+ *  and the global error is set to indicate the cause.
+ */
+int yf_light_setdirect(YF_light light, const YF_vec3 color, float intensity);
+
+/**
  * Deinitializes a light source.
  *
  * @param light: The light to deinitialize. Can be 'NULL'.
