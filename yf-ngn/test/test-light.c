@@ -13,6 +13,21 @@
 #include "print.h"
 #include "yf-light.h"
 
+#define YF_LIGHTVAL(light, type) do { \
+    int tp; \
+    YF_vec3 clr; \
+    float intens, rng, inner, outer; \
+    YF_TEST_PRINT("getval", #light", <non-nil>", ""); \
+    yf_light_getval(light, &tp, clr, &intens, &rng, &inner, &outer); \
+    if (tp != (type) || !yf_vec3_iseq(clr, color) || intens != intensity || \
+        rng != range || inner != inner_angle || outer != outer_angle) \
+        return -1; \
+    tp = ~type; \
+    YF_TEST_PRINT("getval", #light", <nil>", ""); \
+    yf_light_getval(light, &tp, NULL, NULL, NULL, NULL, NULL); \
+    if (tp != (type)) \
+        return -1; } while (0)
+
 /* Tests light. */
 int yf_test_light(void)
 {
@@ -42,6 +57,8 @@ int yf_test_light(void)
     if (node == NULL || yf_node_getobj(node, &obj) != YF_NODEOBJ_LIGHT ||
         obj != light)
         return -1;
+
+    YF_LIGHTVAL(light, YF_LIGHTT_POINT);
 
     intensity = -0.1f;
 
@@ -93,6 +110,8 @@ int yf_test_light(void)
         obj != light2)
         return -1;
 
+    YF_LIGHTVAL(light2, YF_LIGHTT_SPOT);
+
     color[0] = color[1] = 0.2f;
     range = 0.0f;
     inner_angle = -0.79f;
@@ -113,6 +132,8 @@ int yf_test_light(void)
     if (node == NULL || yf_node_getobj(node, &obj) != YF_NODEOBJ_LIGHT ||
         obj != light3)
         return -1;
+
+    YF_LIGHTVAL(light3, YF_LIGHTT_DIRECT);
 
     YF_TEST_PRINT("deinit", "light", "");
     yf_light_deinit(light);
