@@ -13,6 +13,7 @@
 #include "yf-particle.h"
 #include "yf-quad.h"
 #include "yf-label.h"
+#include "yf-light.h"
 
 void yf_print_nodeobj(YF_node node)
 {
@@ -85,10 +86,25 @@ void yf_print_nodeobj(YF_node node)
                yf_label_getpt(labl), str, n, dim.width, dim.height);
     } break;
 
-    case YF_NODEOBJ_LIGHT:
-        /* TODO */
-        assert(0);
-        break;
+    case YF_NODEOBJ_LIGHT: {
+        YF_light light = obj;
+        int lightt;
+        YF_vec3 color;
+        float intensity, range, inner_angle, outer_angle;
+        yf_light_getval(light, &lightt, color, &intensity, &range,
+                        &inner_angle, &outer_angle);
+        printf(" NODEOBJ_LIGHT <%p>:\n"
+               "  light type:  LIGHTT_%s\n"
+               "  color:       [%.4f, %.4f, %.4f]\n"
+               "  intensity:   %.4f\n"
+               "  range:       %.4f\n"
+               "  inner_angle: %.4f\n"
+               "  outer_angle: %.4f\n",
+               (void *)light, (lightt == YF_LIGHTT_POINT ? "POINT" :
+                               (lightt == YF_LIGHTT_SPOT ? "SPOT" : "DIRECT")),
+               color[0], color[1], color[2], intensity, range, inner_angle,
+               outer_angle);
+    } break;
 
     case YF_NODEOBJ_EFFECT:
         /* TODO */
