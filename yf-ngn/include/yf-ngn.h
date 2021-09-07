@@ -16,6 +16,7 @@
 #include "yf-collection.h"
 #include "yf-font.h"
 #include "yf-label.h"
+#include "yf-light.h"
 #include "yf-material.h"
 #include "yf-matrix.h"
 #include "yf-mesh.h"
