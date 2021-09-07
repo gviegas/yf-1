@@ -10,7 +10,7 @@
 /**
  * Primary texture.
  */
-layout(set=1, binding=4) uniform sampler2D tex_;
+layout(set=1, binding=1) uniform sampler2D tex_;
 
 layout(location=0) in IO_v {
     vec4 clr;

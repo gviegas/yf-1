@@ -33,7 +33,7 @@ layout(std140, column_major) uniform;
 /**
  * Material.
  */
-layout(set=1, binding=3) uniform U_matl {
+layout(set=1, binding=1) uniform U_matl {
     int method;
     int blend;
     float norm_fac;
@@ -47,11 +47,11 @@ layout(set=1, binding=3) uniform U_matl {
 /**
  * Textures.
  */
-layout(set=1, binding=4) uniform sampler2D clr_is_;
-layout(set=1, binding=5) uniform sampler2D pbr_is_;
-layout(set=1, binding=6) uniform sampler2D norm_is_;
-layout(set=1, binding=7) uniform sampler2D occ_is_;
-layout(set=1, binding=8) uniform sampler2D emis_is_;
+layout(set=1, binding=2) uniform sampler2D clr_is_;
+layout(set=1, binding=3) uniform sampler2D pbr_is_;
+layout(set=1, binding=4) uniform sampler2D norm_is_;
+layout(set=1, binding=5) uniform sampler2D occ_is_;
+layout(set=1, binding=6) uniform sampler2D emis_is_;
 
 layout(location=0) in IO_v {
     vec3 pos;
