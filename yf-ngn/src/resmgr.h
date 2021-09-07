@@ -60,14 +60,15 @@ void yf_resmgr_clear(void);
 /* Descriptor table bindings. */
 #define YF_RESBIND_GLOBL 0
 #define YF_RESBIND_INST  0
-#define YF_RESBIND_MASK  1
+#define YF_RESBIND_LIGHT 1
+#define YF_RESBIND_MATL  1
+#define YF_RESBIND_TEX   1
 #define YF_RESBIND_HMAP  2
-#define YF_RESBIND_MATL  3
-#define YF_RESBIND_TEX   4
-#define YF_RESBIND_TEX1  5
-#define YF_RESBIND_TEX2  6
-#define YF_RESBIND_TEX3  7
-#define YF_RESBIND_TEX4  8
+#define YF_RESBIND_CLR   2
+#define YF_RESBIND_PBR   3
+#define YF_RESBIND_NORM  4
+#define YF_RESBIND_OCC   5
+#define YF_RESBIND_EMIS  6
 
 /* Vertex input locations. */
 #define YF_RESLOC_POS   0
