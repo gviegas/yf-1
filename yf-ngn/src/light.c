@@ -103,6 +103,24 @@ void yf_light_getval(YF_light light, int *lightt, YF_vec3 color,
         *outer_angle = light->outer_angle;
 }
 
+int yf_light_setpoint(YF_light light, const YF_vec3 color, float intensity,
+                      float range)
+{
+    assert(light != NULL);
+
+    if (intensity < 0.0f) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    light->lightt = YF_LIGHTT_POINT;
+    yf_vec3_copy(light->color, color);
+    light->intensity = intensity;
+    light->range = range;
+
+    return 0;
+}
+
 void yf_light_deinit(YF_light light)
 {
     if (light != NULL)

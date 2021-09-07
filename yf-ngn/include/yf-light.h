@@ -68,6 +68,19 @@ void yf_light_getval(YF_light light, int *lightt, YF_vec3 color,
                      float *outer_angle);
 
 /**
+ * Sets a given light source as a point light.
+ *
+ * @param light: The light.
+ * @param color: The point light color.
+ * @param intensity: The point light intensity.
+ * @param range: The point light range.
+ * @return: On success, returns zero. Otherwise, a non-zero value is returned
+ *  and the global error is set to indicate the cause.
+ */
+int yf_light_setpoint(YF_light light, const YF_vec3 color, float intensity,
+                      float range);
+
+/**
  * Deinitializes a light source.
  *
  * @param light: The light to deinitialize. Can be 'NULL'.
