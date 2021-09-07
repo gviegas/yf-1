@@ -51,6 +51,23 @@ YF_light yf_light_init(int lightt, const YF_vec3 color, float intensity,
 YF_node yf_light_getnode(YF_light light);
 
 /**
+ * Gets values of a light source.
+ *
+ * @param light: The light.
+ * @param lightt: The destination for the light type value. Can be 'NULL'.
+ * @param color: The destination for the color value. Can be 'NULL'.
+ * @param intensity: The destination for the intensity value. Can be 'NULL'.
+ * @param range: The destination for the range value. Can be 'NULL'.
+ * @param inner_angle: The destination for the inner cone angle value.
+ *  Can be 'NULL'.
+ * @param outer_angle: The destination for the outer cone angle value.
+ *  Can be 'NULL'.
+ */
+void yf_light_getval(YF_light light, int *lightt, YF_vec3 color,
+                     float *intensity, float *range, float *inner_angle,
+                     float *outer_angle);
+
+/**
  * Deinitializes a light source.
  *
  * @param light: The light to deinitialize. Can be 'NULL'.

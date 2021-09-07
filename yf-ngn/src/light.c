@@ -83,6 +83,26 @@ YF_node yf_light_getnode(YF_light light)
     return light->node;
 }
 
+void yf_light_getval(YF_light light, int *lightt, YF_vec3 color,
+                     float *intensity, float *range, float *inner_angle,
+                     float *outer_angle)
+{
+    assert(light != NULL);
+
+    if (lightt != NULL)
+        *lightt = light->lightt;
+    if (color != NULL)
+        yf_vec3_copy(color, light->color);
+    if (intensity != NULL)
+        *intensity = light->intensity;
+    if (range != NULL)
+        *range = light->range;
+    if (inner_angle != NULL)
+        *inner_angle = light->inner_angle;
+    if (outer_angle != NULL)
+        *outer_angle = light->outer_angle;
+}
+
 void yf_light_deinit(YF_light light)
 {
     if (light != NULL)
