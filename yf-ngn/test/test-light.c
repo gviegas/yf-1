@@ -64,6 +64,8 @@ int yf_test_light(void)
 
     YF_LIGHTVAL(light, YF_LIGHTT_POINT);
 
+    yf_print_nodeobj(node);
+
     intensity = -0.1f;
 
     snprintf(s, sizeof s,
@@ -116,6 +118,8 @@ int yf_test_light(void)
 
     YF_LIGHTVAL(light2, YF_LIGHTT_SPOT);
 
+    yf_print_nodeobj(node);
+
     color[0] = color[1] = 0.2f;
     range = 0.0f;
     inner_angle = -0.79f;
@@ -139,6 +143,8 @@ int yf_test_light(void)
 
     YF_LIGHTVAL(light3, YF_LIGHTT_DIRECT);
 
+    yf_print_nodeobj(node);
+
     color[0] = 0.0f;
     color[1] = color[2] = 0.9f;
     intensity = 1000.0f;
@@ -151,6 +157,8 @@ int yf_test_light(void)
     yf_light_setpoint(light2, color, intensity, range);
 
     YF_LIGHTVAL(light2, YF_LIGHTT_POINT);
+
+    yf_print_nodeobj(yf_light_getnode(light2));
 
     color[0] = 0.6f;
     color[2] = 0.1f;
@@ -168,6 +176,8 @@ int yf_test_light(void)
 
     YF_LIGHTVAL(light3, YF_LIGHTT_SPOT);
 
+    yf_print_nodeobj(yf_light_getnode(light3));
+
     color[0] = 1.0f;
     color[1] = 0.5f;
     color[2] = 0.2f;
@@ -180,6 +190,8 @@ int yf_test_light(void)
     yf_light_setdirect(light, color, intensity);
 
     YF_LIGHTVAL(light, YF_LIGHTT_DIRECT);
+
+    yf_print_nodeobj(yf_light_getnode(light));
 
     YF_TEST_PRINT("deinit", "light", "");
     yf_light_deinit(light);
