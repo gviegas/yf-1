@@ -121,6 +121,29 @@ int yf_light_setpoint(YF_light light, const YF_vec3 color, float intensity,
     return 0;
 }
 
+int yf_light_setspot(YF_light light, const YF_vec3 color, float intensity,
+                     float range, float inner_angle, float outer_angle)
+{
+    assert(light != NULL);
+
+    if (intensity < 0.0f ||
+        inner_angle < 0.0f || inner_angle > 1.5707963268f ||
+        outer_angle < 0.0f || outer_angle > 1.5707963268f) {
+
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    light->lightt = YF_LIGHTT_SPOT;
+    yf_vec3_copy(light->color, color);
+    light->intensity = intensity;
+    light->range = range;
+    light->inner_angle = inner_angle;
+    light->outer_angle = outer_angle;
+
+    return 0;
+}
+
 void yf_light_deinit(YF_light light)
 {
     if (light != NULL)

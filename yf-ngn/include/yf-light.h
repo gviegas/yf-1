@@ -81,6 +81,21 @@ int yf_light_setpoint(YF_light light, const YF_vec3 color, float intensity,
                       float range);
 
 /**
+ * Sets a given light source as a spot light.
+ *
+ * @param light: The light.
+ * @param color: The spot light color.
+ * @param intensity: The spot light intensity.
+ * @param range: The spot light range.
+ * @param inner_angle: The spot light inner cone angle.
+ * @param outer_angle: The spot light outer cone angle.
+ * @return: On success, returns zero. Otherwise, a non-zero value is returned
+ *  and the global error is set to indicate the cause.
+ */
+int yf_light_setspot(YF_light light, const YF_vec3 color, float intensity,
+                     float range, float inner_angle, float outer_angle);
+
+/**
  * Deinitializes a light source.
  *
  * @param light: The light to deinitialize. Can be 'NULL'.
