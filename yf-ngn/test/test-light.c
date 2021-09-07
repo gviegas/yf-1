@@ -168,6 +168,19 @@ int yf_test_light(void)
 
     YF_LIGHTVAL(light3, YF_LIGHTT_SPOT);
 
+    color[0] = 1.0f;
+    color[1] = 0.5f;
+    color[2] = 0.2f;
+    intensity = 4.5f;
+
+    snprintf(s, sizeof s, "light, [%.2f, %.2f, %.2f], %.2f",
+             color[0], color[1], color[2], intensity);
+
+    YF_TEST_PRINT("setdirect", s, "");
+    yf_light_setdirect(light, color, intensity);
+
+    YF_LIGHTVAL(light, YF_LIGHTT_DIRECT);
+
     YF_TEST_PRINT("deinit", "light", "");
     yf_light_deinit(light);
 
