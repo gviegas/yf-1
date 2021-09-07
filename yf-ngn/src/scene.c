@@ -810,7 +810,7 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
     /* normal map */
     if (prop->normal.tex != NULL) {
         if (yf_texture_copyres(prop->normal.tex, inst_dtb, inst_alloc,
-                               YF_RESBIND_TEX2, 0) != 0)
+                               YF_RESBIND_NORM, 0) != 0)
             return -1;
         unif.tex_mask |= YF_TNORM;
     }
@@ -819,7 +819,7 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
     /* occlusion map */
     if (prop->occlusion.tex != NULL) {
         if (yf_texture_copyres(prop->occlusion.tex, inst_dtb, inst_alloc,
-                               YF_RESBIND_TEX3, 0) != 0)
+                               YF_RESBIND_OCC, 0) != 0)
             return -1;
         unif.tex_mask |= YF_TOCC;
     }
@@ -828,7 +828,7 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
     /* emissive map */
     if (prop->emissive.tex != NULL) {
         if (yf_texture_copyres(prop->emissive.tex, inst_dtb, inst_alloc,
-                               YF_RESBIND_TEX4, 0) != 0)
+                               YF_RESBIND_EMIS, 0) != 0)
             return -1;
         unif.tex_mask |= YF_TEMIS;
     }
@@ -839,14 +839,14 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
     case YF_PBR_SPECGLOSS:
         if (prop->pbrsg.diffuse_tex != NULL) {
             if (yf_texture_copyres(prop->pbrsg.diffuse_tex, inst_dtb,
-                                   inst_alloc, YF_RESBIND_TEX, 0) != 0)
+                                   inst_alloc, YF_RESBIND_CLR, 0) != 0)
                 return -1;
             unif.tex_mask |= YF_TCLR;
         }
 
         if (prop->pbrsg.spec_gloss_tex != NULL) {
             if (yf_texture_copyres(prop->pbrsg.spec_gloss_tex, inst_dtb,
-                                   inst_alloc, YF_RESBIND_TEX1, 0) != 0)
+                                   inst_alloc, YF_RESBIND_PBR, 0) != 0)
                 return -1;
             unif.tex_mask |= YF_TPBR;
         }
@@ -861,14 +861,14 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
     case YF_PBR_METALROUGH:
         if (prop->pbrmr.color_tex != NULL) {
             if (yf_texture_copyres(prop->pbrmr.color_tex, inst_dtb,
-                                   inst_alloc, YF_RESBIND_TEX, 0) != 0)
+                                   inst_alloc, YF_RESBIND_CLR, 0) != 0)
                 return -1;
             unif.tex_mask |= YF_TCLR;
         }
 
         if (prop->pbrmr.metal_rough_tex != NULL) {
             if (yf_texture_copyres(prop->pbrmr.metal_rough_tex, inst_dtb,
-                                   inst_alloc, YF_RESBIND_TEX1, 0) != 0)
+                                   inst_alloc, YF_RESBIND_PBR, 0) != 0)
                 return -1;
             unif.tex_mask |= YF_TPBR;
         }
@@ -884,7 +884,7 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
     case YF_PBR_NONE:
         if (prop->nopbr.color_tex != NULL) {
             if (yf_texture_copyres(prop->nopbr.color_tex, inst_dtb,
-                                   inst_alloc, YF_RESBIND_TEX, 0) != 0)
+                                   inst_alloc, YF_RESBIND_CLR, 0) != 0)
                 return -1;
             unif.tex_mask |= YF_TCLR;
         }
