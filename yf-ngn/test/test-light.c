@@ -152,6 +152,22 @@ int yf_test_light(void)
 
     YF_LIGHTVAL(light2, YF_LIGHTT_POINT);
 
+    color[0] = 0.6f;
+    color[2] = 0.1f;
+    intensity = 500.0f;
+    range = 6.0f;
+    inner_angle = 0.39f;
+    outer_angle = 1.05f;
+
+    snprintf(s, sizeof s, "light3, [%.2f, %.2f, %.2f], %.2f, %.2f, %.4f, %.4f",
+             color[0], color[1], color[2], intensity,
+             range, inner_angle, outer_angle);
+
+    YF_TEST_PRINT("setspot", s, "");
+    yf_light_setspot(light3, color, intensity, range, inner_angle, outer_angle);
+
+    YF_LIGHTVAL(light3, YF_LIGHTT_SPOT);
+
     YF_TEST_PRINT("deinit", "light", "");
     yf_light_deinit(light);
 
