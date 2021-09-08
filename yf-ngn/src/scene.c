@@ -75,10 +75,12 @@
 #define YF_CAMTGT  (YF_vec3){0.0f, 0.0f, 0.0f}
 #define YF_CAMASP  1.0f
 
-/* XXX */
+/* TODO: These should be defined elsewhere. */
+#define YF_LIGHTN 16
 #define YF_JOINTN 64
 
 #define YF_GLOBLSZ     ((sizeof(YF_mat4) << 2) + 32)
+#define YF_LIGHTSZ     ((sizeof(YF_vec4) << 2) * YF_LIGHTN)
 #define YF_INSTSZ_MDL  ((sizeof(YF_mat4) * 3) + \
                         (sizeof(YF_mat4) * (YF_JOINTN << 1)))
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
@@ -111,6 +113,7 @@ typedef struct {
     YF_buffer buf;
     size_t buf_off;
     unsigned globlpd;
+    unsigned lightpd;
     unsigned instpd_mdl;
     unsigned instpd_terr;
     unsigned instpd_part;
@@ -1353,6 +1356,8 @@ static int init_vars(void)
 
     if ((mod = YF_GLOBLSZ % align) != 0)
         vars_.globlpd = align - mod;
+    if ((mod = YF_LIGHTSZ % align) != 0)
+        vars_.lightpd = align - mod;
     if ((mod = YF_INSTSZ_MDL % align) != 0)
         vars_.instpd_mdl = align - mod;
     if ((mod = YF_INSTSZ_TERR % align) != 0)
