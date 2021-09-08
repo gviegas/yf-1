@@ -29,6 +29,7 @@
 #include "yf-particle.h"
 #include "yf-quad.h"
 #include "yf-label.h"
+#include "yf-light.h"
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
 # include <stdio.h>
@@ -128,6 +129,8 @@ typedef struct {
     YF_list parts;
     YF_list quads;
     YF_list labls;
+    YF_light lights[YF_LIGHTN];
+    unsigned light_n;
 } T_vars;
 
 /* Type defining an entry in the list of obtained resources. */
