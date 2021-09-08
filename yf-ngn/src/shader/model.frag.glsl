@@ -7,7 +7,9 @@
 
 #version 460 core
 
-#define LIGHT_N 16
+#ifndef LIGHT_N
+# error "LIGHT_N not defined"
+#endif
 
 #define TYPE_POINT  0
 #define TYPE_SPOT   1
