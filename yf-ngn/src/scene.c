@@ -9,6 +9,7 @@
 #define YF_SCN_DYNAMIC
 
 #include <stdlib.h>
+#include <math.h>
 #include <assert.h>
 
 #include "yf/com/yf-util.h"
@@ -29,6 +30,7 @@
 #include "yf-particle.h"
 #include "yf-quad.h"
 #include "yf-label.h"
+#include "yf-light.h"
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
 # include <stdio.h>
@@ -75,10 +77,12 @@
 #define YF_CAMTGT  (YF_vec3){0.0f, 0.0f, 0.0f}
 #define YF_CAMASP  1.0f
 
-/* XXX */
+/* TODO: These should be defined elsewhere. */
+#define YF_LIGHTN 16
 #define YF_JOINTN 64
 
 #define YF_GLOBLSZ     ((sizeof(YF_mat4) << 2) + 32)
+#define YF_LIGHTSZ     ((sizeof(YF_vec4) << 2) * YF_LIGHTN)
 #define YF_INSTSZ_MDL  ((sizeof(YF_mat4) * 3) + \
                         (sizeof(YF_mat4) * (YF_JOINTN << 1)))
 #define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
@@ -111,6 +115,7 @@ typedef struct {
     YF_buffer buf;
     size_t buf_off;
     unsigned globlpd;
+    unsigned lightpd;
     unsigned instpd_mdl;
     unsigned instpd_terr;
     unsigned instpd_part;
@@ -125,6 +130,8 @@ typedef struct {
     YF_list parts;
     YF_list quads;
     YF_list labls;
+    YF_light lights[YF_LIGHTN];
+    unsigned light_n;
 } T_vars;
 
 /* Type defining an entry in the list of obtained resources. */
@@ -247,8 +254,13 @@ static int traverse_scn(YF_node node, void *arg)
         break;
 
     case YF_NODEOBJ_LIGHT:
-        /* TODO */
-        assert(0);
+        if (vars_.light_n >= YF_LIGHTN) {
+            yf_seterr(YF_ERR_LIMIT, __func__);
+            *(int *)arg = -1;
+            return -1;
+        }
+        vars_.lights[vars_.light_n++] = obj;
+        break;
 
     case YF_NODEOBJ_EFFECT:
         /* TODO */
@@ -272,6 +284,7 @@ static int traverse_scn(YF_node node, void *arg)
 #if defined(YF_DEVEL) && defined(YF_PRINT)
     yf_print_nodeobj(node);
 #endif
+
     return 0;
 }
 
@@ -357,7 +370,7 @@ static int prepare_res(void)
 
     while (1) {
         int failed = 0;
-        buf_sz = YF_GLOBLSZ + vars_.globlpd;
+        buf_sz = YF_GLOBLSZ + vars_.globlpd + YF_LIGHTSZ + vars_.lightpd;
 
         for (unsigned i = 0; i < YF_RESRQ_N; i++) {
             if (yf_resmgr_setallocn(i, vars_.insts[i]) != 0) {
@@ -531,6 +544,101 @@ static int copy_globl(YF_scene scn)
         return -1;
 
     return 0;
+}
+
+/* Copies light uniform to buffer and updates dtable. */
+static int copy_light(void)
+{
+#define YF_TPOINT  0
+#define YF_TSPOT   1
+#define YF_TDIRECT 2
+
+    YF_dtable dtb = yf_resmgr_getglobl();
+    if (dtb == NULL)
+        return -1;
+
+    struct {
+        int unused, type; float intens, range;  /* 0-15 */
+        YF_vec3 clr; float ang_scale;           /* 16-31 */
+        YF_vec3 pos; float ang_off;             /* 32-47 */
+        YF_vec3 dir; float pad;                 /* 48-63 */
+    } unif[YF_LIGHTN];
+
+    static_assert(sizeof unif == YF_LIGHTSZ, "!sizeof");
+
+    unif[0].unused = 1;
+
+    for (unsigned i = 0; i < vars_.light_n; i++) {
+        unif[i].unused = 0;
+
+        int lightt;
+        float inner_angle, outer_angle;
+        yf_light_getval(vars_.lights[i], &lightt, unif[i].clr, &unif[i].intens,
+                        &unif[i].range, &inner_angle, &outer_angle);
+
+        /* light type */
+        switch (lightt) {
+        case YF_LIGHTT_POINT:
+            unif[i].type = YF_TPOINT;
+            break;
+        case YF_LIGHTT_SPOT:
+            unif[i].type = YF_TSPOT;
+            break;
+        case YF_LIGHTT_DIRECT:
+            unif[i].type = YF_TDIRECT;
+            break;
+        default:
+            assert(0);
+            yf_seterr(YF_ERR_INVARG, __func__);
+            return -1;
+        }
+
+        /* angular attenuation data */
+        if (lightt == YF_LIGHTT_SPOT) {
+            const float inner_cos = cosf(inner_angle);
+            const float outer_cos = cosf(outer_angle);
+            const float cos_diff = inner_cos - outer_cos;
+            if (cos_diff < 1.0e-6f)
+                unif[i].ang_scale = 1.0e6f;
+            else
+                unif[i].ang_scale = 1.0f / cos_diff;
+            unif[i].ang_off = unif[i].ang_scale * -outer_cos;
+        }
+
+        YF_mat4 *m = yf_node_getwldxform(yf_light_getnode(vars_.lights[i]));
+
+        /* position */
+        if (lightt != YF_LIGHTT_DIRECT)
+            yf_vec3_copy(unif[i].pos, &(*m)[12]);
+
+        /* direction */
+        if (lightt != YF_LIGHTT_POINT) {
+            YF_mat3 rs = {
+                (*m)[0], (*m)[1], (*m)[2],
+                (*m)[4], (*m)[5], (*m)[6],
+                (*m)[8], (*m)[9], (*m)[10]
+            };
+            YF_vec3 dir = {0.0f, 0.0f, -1.0f};
+            yf_mat3_mulv(unif[i].dir, rs, dir);
+            yf_vec3_normi(unif[i].dir);
+        }
+    }
+
+    const size_t sz = YF_MAX(1, vars_.light_n) * (sizeof unif / sizeof *unif);
+    const YF_slice elems = {0, 1};
+
+    /* copy */
+    if (yf_buffer_copy(vars_.buf, vars_.buf_off, unif, sz) != 0 ||
+        yf_dtable_copybuf(dtb, 0, YF_RESBIND_LIGHT, elems,
+                          &vars_.buf, &vars_.buf_off, &sz) != 0)
+        return -1;
+    vars_.buf_off += YF_LIGHTSZ + vars_.lightpd;
+
+    return 0;
+
+#undef YF_TPOINT
+#undef YF_TSPOT
+#undef YF_TDIRECT
 }
 
 /* Copies model's instance uniform to buffer and updates dtable. */
@@ -1305,6 +1413,7 @@ static void clear_obj(void)
     yf_list_clear(vars_.parts);
     yf_list_clear(vars_.quads);
     yf_list_clear(vars_.labls);
+    vars_.light_n = 0;
 }
 
 /* Deinitializes shared variables and releases resources. */
@@ -1353,6 +1462,8 @@ static int init_vars(void)
 
     if ((mod = YF_GLOBLSZ % align) != 0)
         vars_.globlpd = align - mod;
+    if ((mod = YF_LIGHTSZ % align) != 0)
+        vars_.lightpd = align - mod;
     if ((mod = YF_INSTSZ_MDL % align) != 0)
         vars_.instpd_mdl = align - mod;
     if ((mod = YF_INSTSZ_TERR % align) != 0)
@@ -1470,7 +1581,6 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     if (yf_list_getlen(vars_.labls) != 0)
         pend |= YF_PEND_LABL;
 
-    vars_.buf_off = 0;
     if ((vars_.cb = yf_cmdbuf_get(vars_.ctx, YF_CMDBUF_GRAPH)) == NULL) {
         clear_obj();
         return -1;
@@ -1479,11 +1589,12 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     yf_cmdbuf_clearcolor(vars_.cb, 0, scn->color);
     yf_cmdbuf_cleardepth(vars_.cb, 1.0f);
 
-    if (copy_globl(scn) != 0) {
+    vars_.buf_off = 0;
+    if (copy_globl(scn) != 0 || copy_light() != 0) {
         clear_obj();
         return -1;
     }
-
+    const size_t globl_off = vars_.buf_off;
     yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_GLOBL, 0);
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
@@ -1601,7 +1712,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
                 clear_obj();
                 return -1;
             }
-            vars_.buf_off = YF_GLOBLSZ + vars_.globlpd;
+            vars_.buf_off = globl_off;
             yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_GLOBL, 0);
         } else {
             break;

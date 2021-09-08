@@ -732,12 +732,18 @@ YF_dtable yf_resmgr_getglobl(void)
     YF_context ctx = yf_getctx();
     assert(ctx != NULL);
 
-    const YF_dentry ents[] = {{YF_RESIDX_GLOBL, YF_DTYPE_UNIFORM, 1, NULL}};
+    const YF_dentry ents[] = {
+        {YF_RESBIND_GLOBL, YF_DTYPE_UNIFORM, 1, NULL},
+        {YF_RESBIND_LIGHT, YF_DTYPE_UNIFORM, 1, NULL}
+    };
+
     globl_ = yf_dtable_init(ctx, ents, sizeof ents / sizeof *ents);
+
     if (globl_ == NULL || yf_dtable_alloc(globl_, 1) != 0) {
         yf_dtable_deinit(globl_);
         globl_ = NULL;
     }
+
     return globl_;
 }
 
