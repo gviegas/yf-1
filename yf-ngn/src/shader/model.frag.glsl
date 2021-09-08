@@ -7,6 +7,12 @@
 
 #version 460 core
 
+#define LIGHT_N 16
+
+#define TYPE_POINT  0
+#define TYPE_SPOT   1
+#define TYPE_DIRECT 2
+
 #define METHOD_PBRSG 0
 #define METHOD_PBRMR 1
 #define METHOD_UNLIT 2
@@ -29,6 +35,28 @@
 #define LIGHT_CLR    vec3(1.0)
 
 layout(std140, column_major) uniform;
+
+/**
+ * Type defining a light source.
+ */
+struct T_light {
+    int unused;
+    int type;
+    float intens;
+    float range;
+    vec3 clr;
+    float ang_scale;
+    vec3 pos;
+    float ang_off;
+    vec3 dir;
+};
+
+/**
+ * Light.
+ */
+layout(set=0, binding=1) uniform U_light {
+    T_light l[LIGHT_N];
+} light_;
 
 /**
  * Material.
