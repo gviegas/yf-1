@@ -1317,6 +1317,7 @@ static void clear_obj(void)
     yf_list_clear(vars_.parts);
     yf_list_clear(vars_.quads);
     yf_list_clear(vars_.labls);
+    vars_.light_n = 0;
 }
 
 /* Deinitializes shared variables and releases resources. */
