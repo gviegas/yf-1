@@ -1576,7 +1576,6 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     if (yf_list_getlen(vars_.labls) != 0)
         pend |= YF_PEND_LABL;
 
-    vars_.buf_off = 0;
     if ((vars_.cb = yf_cmdbuf_get(vars_.ctx, YF_CMDBUF_GRAPH)) == NULL) {
         clear_obj();
         return -1;
@@ -1585,11 +1584,12 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
     yf_cmdbuf_clearcolor(vars_.cb, 0, scn->color);
     yf_cmdbuf_cleardepth(vars_.cb, 1.0f);
 
-    if (copy_globl(scn) != 0) {
+    vars_.buf_off = 0;
+    if (copy_globl(scn) != 0 || copy_light() != 0) {
         clear_obj();
         return -1;
     }
-
+    const size_t globl_off = vars_.buf_off;
     yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_GLOBL, 0);
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
@@ -1707,7 +1707,7 @@ int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
                 clear_obj();
                 return -1;
             }
-            vars_.buf_off = YF_GLOBLSZ + vars_.globlpd;
+            vars_.buf_off = globl_off;
             yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_GLOBL, 0);
         } else {
             break;
