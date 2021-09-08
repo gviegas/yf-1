@@ -369,7 +369,7 @@ static int prepare_res(void)
 
     while (1) {
         int failed = 0;
-        buf_sz = YF_GLOBLSZ + vars_.globlpd;
+        buf_sz = YF_GLOBLSZ + vars_.globlpd + YF_LIGHTSZ + vars_.lightpd;
 
         for (unsigned i = 0; i < YF_RESRQ_N; i++) {
             if (yf_resmgr_setallocn(i, vars_.insts[i]) != 0) {
