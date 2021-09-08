@@ -9,6 +9,7 @@
 #define YF_SCN_DYNAMIC
 
 #include <stdlib.h>
+#include <math.h>
 #include <assert.h>
 
 #include "yf/com/yf-util.h"
@@ -543,6 +544,96 @@ static int copy_globl(YF_scene scn)
         return -1;
 
     return 0;
+}
+
+/* Copies light uniform to buffer and updates dtable. */
+static int copy_light(void)
+{
+#define YF_TPOINT  0
+#define YF_TSPOT   1
+#define YF_TDIRECT 2
+
+    YF_dtable dtb = yf_resmgr_getglobl();
+    if (dtb == NULL)
+        return -1;
+
+    struct {
+        int unused, type; float intens, range;  /* 0-15 */
+        YF_vec3 clr; float ang_scale;           /* 16-31 */
+        YF_vec3 pos; float ang_off;             /* 32-47 */
+        YF_vec3 dir; float pad;                 /* 48-63 */
+    } unif[YF_LIGHTN];
+
+    static_assert(sizeof unif == YF_LIGHTSZ, "!sizeof");
+
+    unif[0].unused = 1;
+
+    for (unsigned i = 0; i < vars_.light_n; i++) {
+        unif[i].unused = 0;
+
+        int lightt;
+        float inner_angle, outer_angle;
+        yf_light_getval(vars_.lights[i], &lightt, unif[i].clr, &unif[i].intens,
+                        &unif[i].range, &inner_angle, &outer_angle);
+
+        /* light type */
+        switch (lightt) {
+        case YF_LIGHTT_POINT:
+            unif[i].type = YF_TPOINT;
+            break;
+        case YF_LIGHTT_SPOT:
+            unif[i].type = YF_TSPOT;
+            break;
+        case YF_LIGHTT_DIRECT:
+            unif[i].type = YF_TDIRECT;
+            break;
+        default:
+            assert(0);
+            yf_seterr(YF_ERR_INVARG, __func__);
+            return -1;
+        }
+
+        /* angular attenuation data */
+        if (lightt == YF_LIGHTT_SPOT) {
+            const float inner_cos = cosf(inner_angle);
+            const float outer_cos = cosf(outer_angle);
+            const float cos_diff = inner_cos - outer_cos;
+            if (cos_diff < 1.0e-6f)
+                unif[i].ang_scale = 1.0e6f;
+            else
+                unif[i].ang_scale = 1.0f / cos_diff;
+            unif[i].ang_off = unif[i].ang_scale * -outer_cos;
+        }
+
+        /* position */
+        if (lightt != YF_LIGHTT_DIRECT) {
+            /* TODO */
+            yf_vec3_set(unif[i].pos, 0.0f);
+        }
+
+        /* direction */
+        if (lightt != YF_LIGHTT_POINT) {
+            /* TODO */
+            unif[i].dir[0] = unif[i].dir[1] = 0.0f;
+            unif[i].dir[2] = -1.0f;
+        }
+    }
+
+    const size_t sz = YF_MAX(1, vars_.light_n) * (sizeof unif / sizeof *unif);
+    const YF_slice elems = {0, 1};
+
+    /* copy */
+    if (yf_buffer_copy(vars_.buf, vars_.buf_off, unif, sz) != 0 ||
+        yf_dtable_copybuf(dtb, 0, YF_RESBIND_LIGHT, elems,
+                          &vars_.buf, &vars_.buf_off, &sz) != 0)
+        return -1;
+    vars_.buf_off += YF_LIGHTSZ + vars_.lightpd;
+
+    return 0;
+
+#undef YF_TPOINT
+#undef YF_TSPOT
+#undef YF_TDIRECT
 }
 
 /* Copies model's instance uniform to buffer and updates dtable. */
