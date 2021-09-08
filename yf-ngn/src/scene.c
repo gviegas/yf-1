@@ -253,8 +253,13 @@ static int traverse_scn(YF_node node, void *arg)
         break;
 
     case YF_NODEOBJ_LIGHT:
-        /* TODO */
-        assert(0);
+        if (vars_.light_n >= YF_LIGHTN) {
+            yf_seterr(YF_ERR_LIMIT, __func__);
+            *(int *)arg = -1;
+            return -1;
+        }
+        vars_.lights[vars_.light_n++] = obj;
+        break;
 
     case YF_NODEOBJ_EFFECT:
         /* TODO */
@@ -278,6 +283,7 @@ static int traverse_scn(YF_node node, void *arg)
 #if defined(YF_DEVEL) && defined(YF_PRINT)
     yf_print_nodeobj(node);
 #endif
+
     return 0;
 }
 
