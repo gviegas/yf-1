@@ -605,17 +605,22 @@ static int copy_light(void)
             unif[i].ang_off = unif[i].ang_scale * -outer_cos;
         }
 
+        YF_mat4 *m = yf_node_getwldxform(yf_light_getnode(vars_.lights[i]));
+
         /* position */
-        if (lightt != YF_LIGHTT_DIRECT) {
-            /* TODO */
-            yf_vec3_set(unif[i].pos, 0.0f);
-        }
+        if (lightt != YF_LIGHTT_DIRECT)
+            yf_vec3_copy(unif[i].pos, &(*m)[12]);
 
         /* direction */
         if (lightt != YF_LIGHTT_POINT) {
-            /* TODO */
-            unif[i].dir[0] = unif[i].dir[1] = 0.0f;
-            unif[i].dir[2] = -1.0f;
+            YF_mat3 rs = {
+                (*m)[0], (*m)[1], (*m)[2],
+                (*m)[4], (*m)[5], (*m)[6],
+                (*m)[8], (*m)[9], (*m)[10]
+            };
+            YF_vec3 dir = {0.0f, 0.0f, -1.0f};
+            yf_mat3_mulv(unif[i].dir, rs, dir);
+            yf_vec3_normi(unif[i].dir);
         }
     }
 
