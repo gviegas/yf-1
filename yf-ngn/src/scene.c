@@ -566,7 +566,7 @@ static int copy_light(void)
 
     static_assert(sizeof unif == YF_LIGHTSZ, "!sizeof");
 
-    unif[0].unused = 1;
+    unif[YF_MIN(YF_LIGHTN-1, vars_.light_n)].unused = 1;
 
     for (unsigned i = 0; i < vars_.light_n; i++) {
         unif[i].unused = 0;
