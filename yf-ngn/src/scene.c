@@ -624,7 +624,8 @@ static int copy_light(void)
         }
     }
 
-    const size_t sz = YF_MAX(1, vars_.light_n) * (sizeof unif / sizeof *unif);
+    const size_t sz = YF_LIGHTSZ / YF_LIGHTN *
+                      YF_MIN(vars_.light_n + 1, YF_LIGHTN);
     const YF_slice elems = {0, 1};
 
     /* copy */
