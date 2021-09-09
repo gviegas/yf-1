@@ -94,6 +94,25 @@ layout(location=0) in IO_v {
 layout(location=0) out vec4 clr_;
 
 /**
+ * Range attenuation.
+ */
+float attenuation(float dist, float range)
+{
+    return range > 0.0 ?
+           clamp(1.0 - pow(dist / range, 4.0), 0.0, 1.0) / pow(dist, 2.0) :
+           1.0 / pow(dist, 2.0);
+}
+
+/**
+ * Angular attenuation.
+ */
+float attenuation(vec3 dir, vec3 l, float ang_scale, float ang_off)
+{
+    float at = clamp(dot(dir, -l) * ang_scale + ang_off, 0.0, 1.0);
+    return at * at;
+}
+
+/**
  * Microfacet (D).
  */
 float microfacet_d(float ndoth, float arxar)
