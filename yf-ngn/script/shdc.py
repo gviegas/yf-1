@@ -24,11 +24,11 @@ vert_srcs = [
 ]
 
 frag_srcs = [
-    ('label', '', []),
-    ('model',  '', []),
+    ('label',    '', []),
+    ('model',    '', ['-DLIGHT_N=16']),
     ('particle', '', []),
-    ('quad', '', []),
-    ('terrain', '', [])
+    ('quad',     '', []),
+    ('terrain',  '', [])
 ]
 
 src_dir = 'tmp/shd/'
