@@ -31,11 +31,6 @@
 #define PI          3.14159265358979323846
 #define ONE_OVER_PI 0.31830988618379067154
 
-/* TODO: Punctual lights. */
-#define LIGHT_DIR    vec3(-0.7527726527, -0.6199304199, -0.2214037214)
-#define LIGHT_INTENS vec3(6.0)
-#define LIGHT_CLR    vec3(1.0)
-
 layout(std140, column_major) uniform;
 
 /**
@@ -179,15 +174,6 @@ vec4 getclr()
         return clr;
     }
 
-    vec3 v = normalize(v_.eye);
-    vec3 l = normalize(-LIGHT_DIR);
-    vec3 n = normalize(v_.norm);
-    vec3 h = normalize(l + v);
-    float vdoth = max(dot(v, h), 0.0);
-    float ndotv = max(dot(n, v), 0.0);
-    float ndotl = max(dot(n, l), 0.0);
-    float ndoth = max(dot(n, h), 0.0);
-
     vec3 albedo, f0, f90;
     float ar;
 
@@ -223,10 +209,52 @@ vec4 getclr()
         break;
     }
 
-    vec3 fterm = fresnel_f(f0, f90, vdoth);
-    vec3 diffuse = diffuse_brdf(albedo, fterm);
-    vec3 specular = specular_brdf(fterm, ndotv, ndotl, ndoth, ar*ar);
-    clr.xyz = (diffuse + specular) * LIGHT_INTENS * LIGHT_CLR * ndotl;
+    for (uint i = 0; i < LIGHT_N; i++) {
+        if (light_.l[i].unused != 0)
+            break;
+
+        vec3 l;
+        float dist, rng_at, ang_at;
+        rng_at = ang_at = 1.0;
+
+        switch (light_.l[i].type) {
+        case TYPE_POINT:
+            l = vec3(light_.l[i].pos - v_.pos);
+            dist = length(l);
+            l /= dist;
+            rng_at = attenuation(dist, light_.l[i].range);
+            break;
+
+        case TYPE_SPOT:
+            l = vec3(light_.l[i].pos - v_.pos);
+            dist = length(l);
+            l /= dist;
+            rng_at = attenuation(dist, light_.l[i].range);
+            ang_at = attenuation(light_.l[i].dir, l, light_.l[i].ang_scale,
+                                 light_.l[i].ang_off);
+            break;
+
+        case TYPE_DIRECT:
+            l = -light_.l[i].dir;
+            break;
+        }
+
+        vec3 v = normalize(v_.eye);
+        vec3 n = normalize(v_.norm);
+        vec3 h = normalize(l + v);
+        float vdoth = max(dot(v, h), 0.0);
+        float ndotv = max(dot(n, v), 0.0);
+        float ndotl = max(dot(n, l), 0.0);
+        float ndoth = max(dot(n, h), 0.0);
+
+        vec3 fterm = fresnel_f(f0, f90, vdoth);
+        vec3 diffuse = diffuse_brdf(albedo, fterm);
+        vec3 specular = specular_brdf(fterm, ndotv, ndotl, ndoth, ar * ar);
+
+        /* FIXME: Combine. */
+        clr.xyz = (diffuse + specular) * light_.l[i].clr *
+                  light_.l[i].intens * rng_at * ang_at * ndotl;
+    }
 
     if (matl_.blend == BLEND_OPAQUE)
         clr.a = 1.0;
