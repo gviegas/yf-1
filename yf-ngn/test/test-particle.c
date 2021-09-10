@@ -180,12 +180,31 @@ int yf_test_particle(void)
     YF_psys *sys = yf_particle_getsys(vars_.part);
     if (sys == NULL)
         return -1;
+    /* TODO: Setting 'emitter.norm' has no effect currently. */
+    sys->emitter.norm[0] = 0.0f;
+    sys->emitter.norm[1] = 1.0f;
+    sys->emitter.norm[2] = 0.0f;
+    sys->emitter.size = 2.0f;
+    sys->lifetime.spawn_min = 0.15f;
+    sys->lifetime.spawn_max = 0.95f;
+    sys->lifetime.duration_min = 1.0f;
+    sys->lifetime.duration_max = 2.0f;
+    sys->lifetime.death_min = 1.0f;
+    sys->lifetime.death_max = 1.75f;
+    sys->color.min[0] = 0.0f;
+    sys->color.max[0] = 1.0f;
+    sys->color.min[1] = 0.0f;
+    sys->color.max[1] = 0.0f;
+    sys->color.min[2] = 0.0f;
+    sys->color.max[2] = 0.0f;
+    sys->velocity.min[0] = -0.01f;
+    sys->velocity.max[0] = 0.01f;
     sys->velocity.min[1] = -0.001f;
-    sys->velocity.max[1] = 0.25f;
-    sys->lifetime.spawn_min = 0.1f;
-    sys->lifetime.spawn_max = 0.5f;
-    sys->lifetime.duration_min = 0.75f;
-    sys->lifetime.duration_max = 2.5f;
+    sys->velocity.max[1] = 0.05f;
+    sys->velocity.min[2] = -0.01f;
+    sys->velocity.max[2] = 0.01f;
+
+    vars_.input.rgb[1] = vars_.input.rgb[2] = ~0;
 
     YF_TEST_PRINT("getnode", "part", "");
     YF_node node = yf_particle_getnode(vars_.part);
