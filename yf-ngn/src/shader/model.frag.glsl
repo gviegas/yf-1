@@ -167,13 +167,6 @@ vec4 getclr()
         clr = textureLod(clr_is_, v_.tc, 0.0);
     clr *= matl_.clr_fac;
 
-    if (matl_.method == METHOD_UNLIT) {
-        if (matl_.blend == BLEND_OPAQUE)
-            clr.a = 1.0;
-
-        return clr;
-    }
-
     vec3 albedo, f0, f90;
     float ar;
 
@@ -207,31 +200,41 @@ vec4 getclr()
         f90 = vec3(1.0);
         ar = roughness * roughness;
         break;
+
+    case METHOD_UNLIT:
+        if ((matl_.blend == BLEND_OPAQUE))
+            clr.a = 1.0;
+        return clr;
     }
+
+    clr.rgb = vec3(0.0);
+
+    vec3 v = normalize(v_.eye);
+    vec3 n = normalize(v_.norm);
+    float ndotv = max(dot(n, v), 0.0);
 
     for (uint i = 0; i < LIGHT_N; i++) {
         if (light_.l[i].unused != 0)
             break;
 
         vec3 l;
-        float dist, rng_at, ang_at;
-        rng_at = ang_at = 1.0;
+        float dist, atten = 1.0;
 
         switch (light_.l[i].type) {
         case TYPE_POINT:
             l = vec3(light_.l[i].pos - v_.pos);
             dist = length(l);
             l /= dist;
-            rng_at = attenuation(dist, light_.l[i].range);
+            atten = attenuation(dist, light_.l[i].range);
             break;
 
         case TYPE_SPOT:
             l = vec3(light_.l[i].pos - v_.pos);
             dist = length(l);
             l /= dist;
-            rng_at = attenuation(dist, light_.l[i].range);
-            ang_at = attenuation(light_.l[i].dir, l, light_.l[i].ang_scale,
-                                 light_.l[i].ang_off);
+            atten = attenuation(dist, light_.l[i].range) *
+                    attenuation(light_.l[i].dir, l, light_.l[i].ang_scale,
+                                light_.l[i].ang_off);
             break;
 
         case TYPE_DIRECT:
@@ -239,21 +242,22 @@ vec4 getclr()
             break;
         }
 
-        vec3 v = normalize(v_.eye);
-        vec3 n = normalize(v_.norm);
+        float ndotl = max(dot(n, l), 0.0);
+
+        if (ndotl == 0.0 && ndotv == 0.0)
+            continue;
+
         vec3 h = normalize(l + v);
         float vdoth = max(dot(v, h), 0.0);
-        float ndotv = max(dot(n, v), 0.0);
-        float ndotl = max(dot(n, l), 0.0);
         float ndoth = max(dot(n, h), 0.0);
 
         vec3 fterm = fresnel_f(f0, f90, vdoth);
         vec3 diffuse = diffuse_brdf(albedo, fterm);
         vec3 specular = specular_brdf(fterm, ndotv, ndotl, ndoth, ar * ar);
 
-        /* FIXME: Combine. */
-        clr.xyz = (diffuse + specular) * light_.l[i].clr *
-                  light_.l[i].intens * rng_at * ang_at * ndotl;
+        vec3 light = light_.l[i].clr * light_.l[i].intens * atten * ndotl;
+
+        clr.rgb += (diffuse + specular) * light;
     }
 
     if (matl_.blend == BLEND_OPAQUE)
