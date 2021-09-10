@@ -4670,6 +4670,7 @@ static void print_gltf(const T_gltf *gltf)
                    "       TANGENT: %lld\n"
                    "       TEXCOORD_0: %lld\n"
                    "       TEXCOORD_1: %lld\n"
+                   "       COLOR_0: %lld\n"
                    "       JOINTS_0: %lld\n"
                    "       WEIGHTS_0: %lld\n"
                    "      indices: %lld\n"
@@ -4680,6 +4681,7 @@ static void print_gltf(const T_gltf *gltf)
                    prims->v[j].attributes[YF_GLTF_ATTR_TAN],
                    prims->v[j].attributes[YF_GLTF_ATTR_TC0],
                    prims->v[j].attributes[YF_GLTF_ATTR_TC1],
+                   prims->v[j].attributes[YF_GLTF_ATTR_CLR0],
                    prims->v[j].attributes[YF_GLTF_ATTR_JNT0],
                    prims->v[j].attributes[YF_GLTF_ATTR_WGT0],
                    prims->v[j].indices, prims->v[j].material,
