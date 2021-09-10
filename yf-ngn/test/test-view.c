@@ -22,7 +22,7 @@ static void update(double elapsed_time, void *arg)
     static double tm = 0.0;
     static int swapped = 0;
 
-    if (tm > 3.0) {
+    if (tm > 1.25) {
         YF_TEST_PRINT("stop", "view_", "");
         yf_view_stop(view_);
         tm = 0.0;
@@ -30,7 +30,7 @@ static void update(double elapsed_time, void *arg)
         return;
     }
 
-    if (tm > 1.5 && !swapped) {
+    if (tm > 0.625 && !swapped) {
         YF_TEST_PRINT("setscene", "view_, scns_[arg]", "");
         yf_view_setscene(view_, scns_[(size_t)arg]);
         swapped = 1;
