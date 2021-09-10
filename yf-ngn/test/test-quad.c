@@ -166,8 +166,6 @@ int yf_test_quad(void)
 
     yf_view_setscene(vars_.view, vars_.scn);
 
-    yf_scene_setcolor(vars_.scn, YF_COLOR_LIGHTGREY);
-
     if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
         assert(0);
 
