@@ -558,10 +558,14 @@ static int copy_light(void)
         return -1;
 
     struct {
-        int unused, type; float intens, range;  /* 0-15 */
-        YF_vec3 clr; float ang_scale;           /* 16-31 */
-        YF_vec3 pos; float ang_off;             /* 32-47 */
-        YF_vec3 dir; float pad;                 /* 48-63 */
+        /* 0 */
+        int unused, type; float inten, range;
+        /* 16 */
+        YF_vec3 clr; float ang_scale;
+        /* 32 */
+        YF_vec3 pos; float ang_off;
+        /* 48 */
+        YF_vec3 dir; float pad;
     } unif[YF_LIGHTN];
 
     static_assert(sizeof unif == YF_LIGHTSZ, "!sizeof");
@@ -573,7 +577,7 @@ static int copy_light(void)
 
         int lightt;
         float inner_angle, outer_angle;
-        yf_light_getval(vars_.lights[i], &lightt, unif[i].clr, &unif[i].intens,
+        yf_light_getval(vars_.lights[i], &lightt, unif[i].clr, &unif[i].inten,
                         &unif[i].range, &inner_angle, &outer_angle);
 
         /* light type */
@@ -905,10 +909,14 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
 #define YF_TEMIS 0x10
 
     struct {
-        int method, blend; float norm_fac, occ_fac;     /* 0-15 */
-        YF_vec4 clr_fac;                                /* 16-31 */
-        YF_vec4 pbr_fac;                                /* 32-47 */
-        YF_vec3 emis_fac; unsigned tex_mask;            /* 48-63 */
+        /* 0 */
+        int method, blend; float norm_fac, occ_fac;
+        /* 16 */
+        YF_vec4 clr_fac;
+        /* 32 */
+        YF_vec4 pbr_fac;
+        /* 48 */
+        YF_vec3 emis_fac; unsigned tex_mask;
     } unif;
 
     static_assert(sizeof unif == YF_MATLSZ, "!sizeof");
