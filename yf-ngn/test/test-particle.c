@@ -211,12 +211,6 @@ int yf_test_particle(void)
 
     yf_node_insert(yf_scene_getnode(vars_.scn), node);
 
-    YF_camera cam = yf_scene_getcam(vars_.scn);
-    const YF_vec3 pos = {0.0f, 0.0f, 20.0f};
-    const YF_vec3 tgt = {0.0f, 6.0f, 0.0f};
-    yf_camera_place(cam, pos);
-    yf_camera_point(cam, tgt);
-
     yf_view_setscene(vars_.view, vars_.scn);
 
     if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
