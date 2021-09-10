@@ -159,12 +159,12 @@ vec3 specular_brdf(vec3 fterm, float ndotv, float ndotl, float ndoth,
  */
 vec4 getclr()
 {
-    /* TODO: Vertex color; normal/occlusion/emissive maps. */
+    /* TODO: Normal/occlusion/emissive maps. */
 
-    vec4 clr = vec4(1.0);
+    vec4 clr = v_.clr;
 
     if ((matl_.tex_mask & TEX_CLR) == TEX_CLR)
-        clr = textureLod(clr_is_, v_.tc, 0.0);
+        clr *= textureLod(clr_is_, v_.tc, 0.0);
     clr *= matl_.clr_fac;
 
     vec3 albedo, f0, f90;
