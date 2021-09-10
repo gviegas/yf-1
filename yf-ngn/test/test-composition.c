@@ -404,9 +404,7 @@ int yf_test_composition(void)
     yf_camera_place(cam, pos);
     yf_camera_point(cam, tgt);
 
-    yf_scene_setcolor(vars_.scn, YF_COLOR_DARKGREY);
     yf_view_setscene(vars_.view, vars_.scn);
-
     if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
         assert(0);
 
