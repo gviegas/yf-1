@@ -39,7 +39,7 @@ layout(std140, column_major) uniform;
 struct T_light {
     int unused;
     int type;
-    float intens;
+    float inten;
     float range;
     vec3 clr;
     float ang_scale;
@@ -103,8 +103,8 @@ float attenuation(float dist, float range)
  */
 float attenuation(vec3 dir, vec3 l, float ang_scale, float ang_off)
 {
-    float at = clamp(dot(dir, -l) * ang_scale + ang_off, 0.0, 1.0);
-    return at * at;
+    float atn = clamp(dot(dir, -l) * ang_scale + ang_off, 0.0, 1.0);
+    return atn * atn;
 }
 
 /**
@@ -218,23 +218,24 @@ vec4 getclr()
             break;
 
         vec3 l;
-        float dist, atten = 1.0;
+        float dist = 0.0001;
+        float atn = 1.0;
 
         switch (light_.l[i].type) {
         case TYPE_POINT:
             l = vec3(light_.l[i].pos - v_.pos);
-            dist = length(l);
+            dist = max(length(l), dist);
             l /= dist;
-            atten = attenuation(dist, light_.l[i].range);
+            atn = attenuation(dist, light_.l[i].range);
             break;
 
         case TYPE_SPOT:
             l = vec3(light_.l[i].pos - v_.pos);
-            dist = length(l);
+            dist = max(length(l), dist);
             l /= dist;
-            atten = attenuation(dist, light_.l[i].range) *
-                    attenuation(light_.l[i].dir, l, light_.l[i].ang_scale,
-                                light_.l[i].ang_off);
+            atn = attenuation(dist, light_.l[i].range) *
+                  attenuation(light_.l[i].dir, l, light_.l[i].ang_scale,
+                              light_.l[i].ang_off);
             break;
 
         case TYPE_DIRECT:
@@ -255,7 +256,7 @@ vec4 getclr()
         vec3 diffuse = diffuse_brdf(albedo, fterm);
         vec3 specular = specular_brdf(fterm, ndotv, ndotl, ndoth, ar * ar);
 
-        vec3 light = light_.l[i].clr * light_.l[i].intens * atten * ndotl;
+        vec3 light = light_.l[i].clr * light_.l[i].inten * atn * ndotl;
 
         clr.rgb += (diffuse + specular) * light;
     }
