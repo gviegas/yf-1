@@ -205,8 +205,8 @@ int yf_test_model(void)
     YF_texture tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube.png");
     assert(tex != NULL);
     YF_matlprop mprop = {
-        .pbr = YF_PBR_METALROUGH,
-        .pbrmr = {tex, {1.0f, 1.0f, 1.0f, 1.0f}, NULL, 0.5f, 0.5f},
+        .pbr = YF_PBR_NONE,
+        .nopbr = {tex, {1.0f, 1.0f, 1.0f, 1.0f}},
         .normal = {0},
         .occlusion = {0},
         .emissive = {0},
@@ -261,7 +261,9 @@ int yf_test_model(void)
         return -1;
 
     yf_node_insert(yf_scene_getnode(vars_.scn), node);
+
     yf_view_setscene(vars_.view, vars_.scn);
+
     if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
         assert(0);
 
