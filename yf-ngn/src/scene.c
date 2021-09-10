@@ -1511,7 +1511,7 @@ YF_scene yf_scene_init(void)
         yf_scene_deinit(scn);
         return NULL;
     }
-    scn->color = YF_COLOR_BLACK;
+    scn->color = YF_COLOR_DARKGREY;
 
     return scn;
 }
