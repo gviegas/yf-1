@@ -557,7 +557,7 @@ typedef struct {
     struct {
 #define YF_GLTF_ATTR_POS  0
 #define YF_GLTF_ATTR_NORM 1
-#define YF_GLTF_ATTR_TAN  2
+#define YF_GLTF_ATTR_TGNT 2
 #define YF_GLTF_ATTR_TC0  3
 #define YF_GLTF_ATTR_TC1  4
 #define YF_GLTF_ATTR_CLR0 5
@@ -1047,11 +1047,11 @@ static int parse_nodes(FILE *file, T_token *token,
                 const unsigned mask = nodes->v[index].xform_mask;
                 if (mask != YF_GLTF_XFORM_NONE && !(mask & YF_GLTF_XFORM_M)) {
                     if (!(mask & YF_GLTF_XFORM_R))
-                        nodes->v[index].trs.r[3] = 1.0;
+                        nodes->v[index].trs.r[3] = 1.0f;
                     if (!(mask & YF_GLTF_XFORM_S)) {
-                        nodes->v[index].trs.s[0] = 1.0;
-                        nodes->v[index].trs.s[1] = 1.0;
-                        nodes->v[index].trs.s[2] = 1.0;
+                        nodes->v[index].trs.s[0] = 1.0f;
+                        nodes->v[index].trs.s[1] = 1.0f;
+                        nodes->v[index].trs.s[2] = 1.0f;
                     }
                 }
                 return 0;
@@ -1257,7 +1257,7 @@ static int parse_attributes(FILE *file, T_token *token, T_int *attributes)
                     return -1;
 
             } else if (strcmp("TANGENT", token->data) == 0) {
-                if (parse_int(file, token, attributes+YF_GLTF_ATTR_TAN) != 0)
+                if (parse_int(file, token, attributes+YF_GLTF_ATTR_TGNT) != 0)
                     return -1;
 
             } else if (strcmp("TEXCOORD_0", token->data) == 0) {
@@ -1665,20 +1665,20 @@ static int parse_materials(FILE *file, T_token *token,
     assert(token->token == YF_TOKEN_OP);
     assert(token->data[0] == '[' || token->data[0] == ',');
 
-    materials->v[index].pbrmr.base_clr_fac[0] = 1.0;
-    materials->v[index].pbrmr.base_clr_fac[1] = 1.0;
-    materials->v[index].pbrmr.base_clr_fac[2] = 1.0;
-    materials->v[index].pbrmr.base_clr_fac[3] = 1.0;
+    materials->v[index].pbrmr.base_clr_fac[0] = 1.0f;
+    materials->v[index].pbrmr.base_clr_fac[1] = 1.0f;
+    materials->v[index].pbrmr.base_clr_fac[2] = 1.0f;
+    materials->v[index].pbrmr.base_clr_fac[3] = 1.0f;
     materials->v[index].pbrmr.base_clr_tex.index = YF_INT_MIN;
-    materials->v[index].pbrmr.metallic_fac = 1.0;
-    materials->v[index].pbrmr.roughness_fac = 1.0;
+    materials->v[index].pbrmr.metallic_fac = 1.0f;
+    materials->v[index].pbrmr.roughness_fac = 1.0f;
     materials->v[index].pbrmr.metal_rough_tex.index = YF_INT_MIN;
     materials->v[index].normal_tex.index = YF_INT_MIN;
-    materials->v[index].normal_tex.scale = 1.0;
+    materials->v[index].normal_tex.scale = 1.0f;
     materials->v[index].occlusion_tex.index = YF_INT_MIN;
-    materials->v[index].occlusion_tex.strength = 1.0;
+    materials->v[index].occlusion_tex.strength = 1.0f;
     materials->v[index].emissive_tex.index = YF_INT_MIN;
-    materials->v[index].alpha_cutoff = 0.5;
+    materials->v[index].alpha_cutoff = 0.5f;
 
     while (1) {
         switch (next_token(file, token)) {
@@ -3125,15 +3125,15 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             switch (i) {
             case YF_GLTF_ATTR_NORM:
                 for (size_t i = 0; i < v_n; i++)
-                    yf_vec3_set(verts[i].norm, 0.0);
+                    yf_vec3_set(verts[i].norm, 0.0f);
                 break;
             case YF_GLTF_ATTR_TC0:
                 for (size_t i = 0; i < v_n; i++)
-                    yf_vec2_set(verts[i].tc, 0.0);
+                    yf_vec2_set(verts[i].tc, 0.0f);
                 break;
             case YF_GLTF_ATTR_CLR0:
                 for (size_t i = 0; i < v_n; i++)
-                    yf_vec4_set(verts[i].clr, 1.0);
+                    yf_vec4_set(verts[i].clr, 1.0f);
                 break;
             case YF_GLTF_ATTR_JNT0:
                 for (size_t i = 0; i < v_n; i++)
@@ -3141,7 +3141,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 break;
             case YF_GLTF_ATTR_WGT0:
                 for (size_t i = 0; i < v_n; i++)
-                    yf_vec4_set(verts[i].wgts, 0.25);
+                    yf_vec4_set(verts[i].wgts, 0.25f);
                 break;
             default:
                 break;
@@ -4678,7 +4678,7 @@ static void print_gltf(const T_gltf *gltf)
                    "      mode: %lld\n",
                    j, prims->v[j].attributes[YF_GLTF_ATTR_POS],
                    prims->v[j].attributes[YF_GLTF_ATTR_NORM],
-                   prims->v[j].attributes[YF_GLTF_ATTR_TAN],
+                   prims->v[j].attributes[YF_GLTF_ATTR_TGNT],
                    prims->v[j].attributes[YF_GLTF_ATTR_TC0],
                    prims->v[j].attributes[YF_GLTF_ATTR_TC1],
                    prims->v[j].attributes[YF_GLTF_ATTR_CLR0],
