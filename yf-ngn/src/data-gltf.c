@@ -3131,6 +3131,10 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 for (size_t i = 0; i < v_n; i++)
                     yf_vec2_set(verts[i].tc, 0.0);
                 break;
+            case YF_GLTF_ATTR_CLR0:
+                for (size_t i = 0; i < v_n; i++)
+                    yf_vec4_set(verts[i].clr, 1.0);
+                break;
             case YF_GLTF_ATTR_JNT0:
                 for (size_t i = 0; i < v_n; i++)
                     memset(verts[i].jnts, 0, sizeof verts[i].jnts);
@@ -3216,6 +3220,15 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 return -1;
             }
             v_off = offsetof(YF_vmdl, tc);
+            break;
+        case YF_GLTF_ATTR_CLR0:
+            /* TODO: Support for VEC3 type & UBYTE/USHORT component types. */
+            if (type != YF_GLTF_TYPE_VEC4 || comp_type != YF_GLTF_COMP_FLOAT) {
+                yf_seterr(YF_ERR_UNSUP, __func__);
+                free(verts);
+                return -1;
+            }
+            v_off = offsetof(YF_vmdl, clr);
             break;
         case YF_GLTF_ATTR_JNT0:
             assert(type == YF_GLTF_TYPE_VEC4);
