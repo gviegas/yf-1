@@ -162,7 +162,7 @@ int yf_test_scene(void)
 
     YF_TEST_PRINT("getcolor", "scn", "");
     YF_color color = yf_scene_getcolor(scn);
-    if (memcmp(&color, &YF_COLOR_BLACK, sizeof color) != 0)
+    if (memcmp(&color, &YF_COLOR_DARKGREY, sizeof color) != 0)
         return -1;
 
     YF_TEST_PRINT("setcolor", "scn, COLOR_YELLOW", "");
