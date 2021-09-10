@@ -368,7 +368,6 @@ int yf_test_animation(void)
     YF_TEST_PRINT("traverse", "getnode(scn), traverse, NULL", "");
     yf_node_traverse(yf_scene_getnode(vars_.scn), traverse, NULL);
 
-    yf_scene_setcolor(vars_.scn, YF_COLOR_DARKGREY);
     yf_view_setscene(vars_.view, vars_.scn);
     yf_view_start(vars_.view, YF_FPS, update, NULL);
 
