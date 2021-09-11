@@ -30,6 +30,7 @@ struct T_vars {
     YF_model mdl;
     YF_node labl_node;
     YF_label labls[2];
+    YF_light light;
 
     struct {
         int camera;
@@ -397,6 +398,30 @@ int yf_test_composition(void)
         assert(0);
 
     yf_node_insert(yf_scene_getnode(vars_.scn), vars_.labl_node);
+
+    const YF_vec3 light_clr = {1.0f, 1.0f, 1.0f};
+    vars_.light = yf_light_init(YF_LIGHTT_SPOT, light_clr, 1000.0f, 100.0f,
+                                0.0f, 0.785398f);
+    assert(vars_.light != NULL);
+
+    YF_mat4 t;
+    yf_mat4_xlate(t, 10.0f, 10.0f, 10.0f);
+
+    YF_vec4 qx, qy;
+    yf_vec4_rotqx(qx, 3.141593f * -0.25f);
+    yf_vec4_rotqy(qy, 3.141593f * 0.25f);
+    yf_vec4_mulqi(qx, qy);
+
+    YF_mat4 r;
+    yf_mat4_rotq(r, qx);
+
+    yf_mat4_mul(*yf_node_getxform(yf_light_getnode(vars_.light)), t, r);
+
+    if (yf_collection_manage(vars_.coll, YF_CITEM_NODE, "light",
+                             yf_light_getnode(vars_.light)) != 0)
+        assert(0);
+
+    yf_node_insert(yf_scene_getnode(vars_.scn), yf_light_getnode(vars_.light));
 
     YF_camera cam = yf_scene_getcam(vars_.scn);
     const YF_vec3 pos = {-4.0f, 6.0f, 15.0f};
