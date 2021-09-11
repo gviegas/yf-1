@@ -365,6 +365,14 @@ int yf_test_animation(void)
     vars_.scn = yf_collection_getitem(vars_.coll, YF_CITEM_SCENE, "Scene");
     assert(vars_.scn != NULL);
 
+    const YF_vec3 light_clr = {1.0f, 1.0f, 1.0f};
+    YF_light light = yf_light_init(YF_LIGHTT_POINT, light_clr, 1000.0f, 100.0f,
+                                   0.0f, 0.0f);
+    assert(light != NULL);
+    yf_mat4_xlate(*yf_node_getxform(yf_light_getnode(light)),
+                  10.0f, 10.0f, 10.0f);
+    yf_node_insert(yf_scene_getnode(vars_.scn), yf_light_getnode(light));
+
     YF_TEST_PRINT("traverse", "getnode(scn), traverse, NULL", "");
     yf_node_traverse(yf_scene_getnode(vars_.scn), traverse, NULL);
 
@@ -374,6 +382,7 @@ int yf_test_animation(void)
     puts("\n- no explicit 'deinit()' call for managed animation -\n");
 
     yf_collection_deinit(vars_.coll);
+    yf_light_deinit(light);
     yf_view_deinit(vars_.view);
     yf_window_deinit(vars_.win);
 
