@@ -4611,21 +4611,29 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
 
 static void print_gltf(const T_gltf *gltf)
 {
-    printf("\n[YF] OUTPUT (%s):\n", __func__);
+    printf("\n[YF] OUTPUT (%s):\n glTF:\n", __func__);
 
-    /* root/asset/scene */
-    printf(" glTF:\n"
-           "  asset:\n"
+    /* extensions */
+    printf("  extensions required (%zu):\n", gltf->extensionsrequired.n);
+    for (size_t i = 0; i < gltf->extensionsrequired.n; i++)
+        printf("   '%s'\n", gltf->extensionsrequired.v[i]);
+    printf("  extensions used (%zu):\n", gltf->extensionsused.n);
+    for (size_t i = 0; i < gltf->extensionsused.n; i++)
+        printf("   '%s'\n", gltf->extensionsused.v[i]);
+
+    /* asset */
+    printf("  asset:\n"
            "   copyright: %s\n"
            "   generator: %s\n"
            "   version: %s\n"
-           "   minVersion: %s\n"
-           "  scene: %lld\n",
+           "   minVersion: %s\n",
            gltf->asset.copyright, gltf->asset.generator, gltf->asset.version,
-           gltf->asset.min_version, gltf->scene);
+           gltf->asset.min_version);
 
     /* scenes */
-    printf("  scenes (%zu):\n", gltf->scenes.n);
+    printf("  scene: %lld\n"
+           "  scenes (%zu):\n",
+           gltf->scene, gltf->scenes.n);
     for (size_t i = 0; i < gltf->scenes.n; i++) {
         printf("   scene '%s':\n"
                "    nodes: [ ",
