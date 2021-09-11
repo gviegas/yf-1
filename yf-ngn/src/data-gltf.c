@@ -294,6 +294,20 @@ static int parse_str(FILE *file, T_token *token, T_str *str)
     return 0;
 }
 
+/* Parses an element of an array of strings. */
+static int parse_str_array(FILE *file, T_token *token,
+                           size_t index, void *str_pp)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(str_pp != NULL);
+
+    T_str *str_p = *(T_str **)str_pp;
+    assert(str_p != NULL);
+
+    return parse_str(file, token, str_p+index);
+}
+
 /* Parses a floating-point number. */
 static int parse_num(FILE *file, T_token *token, T_num *num)
 {
