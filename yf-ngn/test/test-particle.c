@@ -14,6 +14,7 @@
 #include "yf/wsys/yf-keyboard.h"
 
 #include "test.h"
+#include "print.h"
 #include "yf-ngn.h"
 
 #define YF_WINW 640
@@ -176,6 +177,15 @@ int yf_test_particle(void)
     if (vars_.part == NULL)
         return -1;
 
+    YF_TEST_PRINT("getnode", "part", "");
+    YF_node node = yf_particle_getnode(vars_.part);
+    if (node == NULL)
+        return -1;
+
+    yf_mat4_scale(*yf_node_getxform(node), 0.5f, 1.0f, 0.25f);
+
+    yf_print_nodeobj(node);
+
     YF_TEST_PRINT("getsys", "part", "");
     YF_psys *sys = yf_particle_getsys(vars_.part);
     if (sys == NULL)
@@ -204,14 +214,9 @@ int yf_test_particle(void)
     sys->velocity.min[2] = -0.01f;
     sys->velocity.max[2] = 0.01f;
 
+    yf_print_nodeobj(node);
+
     vars_.input.rgb[1] = vars_.input.rgb[2] = ~0;
-
-    YF_TEST_PRINT("getnode", "part", "");
-    YF_node node = yf_particle_getnode(vars_.part);
-    if (node == NULL)
-        return -1;
-
-    yf_mat4_scale(*yf_node_getxform(node), 0.5f, 1.0f, 0.25f);
 
     YF_TEST_PRINT("getmesh", "part", "");
     if (yf_particle_getmesh(vars_.part) == NULL)
@@ -234,6 +239,8 @@ int yf_test_particle(void)
 
     if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
         assert(0);
+
+    yf_print_nodeobj(node);
 
     YF_TEST_PRINT("deinit", "part", "");
     yf_particle_deinit(vars_.part);
