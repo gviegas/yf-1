@@ -2814,6 +2814,14 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         }
     }
 
+    for (size_t i = 0; i < gltf->extensionsrequired.n; i++)
+        free(gltf->extensionsrequired.v[i]);
+    free(gltf->extensionsrequired.v);
+
+    for (size_t i = 0; i <gltf->extensionsused.n; i++)
+        free(gltf->extensionsused.v[i]);
+    free(gltf->extensionsused.v);
+
     free(gltf->asset.copyright);
     free(gltf->asset.generator);
     free(gltf->asset.version);
