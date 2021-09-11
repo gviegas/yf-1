@@ -294,6 +294,20 @@ static int parse_str(FILE *file, T_token *token, T_str *str)
     return 0;
 }
 
+/* Parses an element of an array of strings. */
+static int parse_str_array(FILE *file, T_token *token,
+                           size_t index, void *str_pp)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(str_pp != NULL);
+
+    T_str *str_p = *(T_str **)str_pp;
+    assert(str_p != NULL);
+
+    return parse_str(file, token, str_p+index);
+}
+
 /* Parses a floating-point number. */
 static int parse_num(FILE *file, T_token *token, T_num *num)
 {
@@ -467,6 +481,12 @@ static int consume_prop(FILE *file, T_token *token)
 
     return 0;
 }
+
+/* Type defining the 'glTF.extensionsUsed/Required' properties. */
+typedef struct {
+    T_str *v;
+    size_t n;
+} T_extensions;
 
 /* Type defining the 'glTF.asset' property. */
 typedef struct {
@@ -813,6 +833,8 @@ typedef struct {
 
 /* Type defining the root glTF object. */
 typedef struct {
+    T_extensions extensionsrequired;
+    T_extensions extensionsused;
     T_asset asset;
     T_int scene;
     T_scenes scenes;
@@ -829,6 +851,20 @@ typedef struct {
     T_images images;
     T_samplers samplers;
 } T_gltf;
+
+/* Parses the 'glTF.extensionsUsed/Required' properties. */
+static int parse_extensions(FILE *file, T_token *token,
+                            T_extensions *extensions)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(extensions != NULL);
+    assert(strcmp(token->data, "extensionsRequired") == 0 ||
+           strcmp(token->data, "extensionsUsed") == 0);
+
+    return parse_array(file, token, (void **)&extensions->v, &extensions->n,
+                       sizeof *extensions->v, parse_str_array, &extensions->v);
+}
 
 /* Parses the 'glTF.asset' property. */
 static int parse_asset(FILE *file, T_token *token, T_asset *asset)
@@ -2518,7 +2554,16 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
     while (1) {
         switch (next_token(file, token)) {
         case YF_TOKEN_STR:
-            if (strcmp("asset", token->data) == 0) {
+            if (strcmp("extensionsRequired", token->data) == 0) {
+                if (parse_extensions(file, token,
+                                     &gltf->extensionsrequired) != 0)
+                    return -1;
+
+            } else if (strcmp("extensionsUsed", token->data) == 0) {
+                if (parse_extensions(file, token, &gltf->extensionsused) != 0)
+                    return -1;
+
+            } else if (strcmp("asset", token->data) == 0) {
                 if (parse_asset(file, token, &gltf->asset) != 0)
                     return -1;
 
@@ -2768,6 +2813,14 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             free(cont->imgs);
         }
     }
+
+    for (size_t i = 0; i < gltf->extensionsrequired.n; i++)
+        free(gltf->extensionsrequired.v[i]);
+    free(gltf->extensionsrequired.v);
+
+    for (size_t i = 0; i <gltf->extensionsused.n; i++)
+        free(gltf->extensionsused.v[i]);
+    free(gltf->extensionsused.v);
 
     free(gltf->asset.copyright);
     free(gltf->asset.generator);
@@ -4558,21 +4611,29 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
 
 static void print_gltf(const T_gltf *gltf)
 {
-    printf("\n[YF] OUTPUT (%s):\n", __func__);
+    printf("\n[YF] OUTPUT (%s):\n glTF:\n", __func__);
 
-    /* root/asset/scene */
-    printf(" glTF:\n"
-           "  asset:\n"
+    /* extensions */
+    printf("  extensions required (%zu):\n", gltf->extensionsrequired.n);
+    for (size_t i = 0; i < gltf->extensionsrequired.n; i++)
+        printf("   '%s'\n", gltf->extensionsrequired.v[i]);
+    printf("  extensions used (%zu):\n", gltf->extensionsused.n);
+    for (size_t i = 0; i < gltf->extensionsused.n; i++)
+        printf("   '%s'\n", gltf->extensionsused.v[i]);
+
+    /* asset */
+    printf("  asset:\n"
            "   copyright: %s\n"
            "   generator: %s\n"
            "   version: %s\n"
-           "   minVersion: %s\n"
-           "  scene: %lld\n",
+           "   minVersion: %s\n",
            gltf->asset.copyright, gltf->asset.generator, gltf->asset.version,
-           gltf->asset.min_version, gltf->scene);
+           gltf->asset.min_version);
 
     /* scenes */
-    printf("  scenes (%zu):\n", gltf->scenes.n);
+    printf("  scene: %lld\n"
+           "  scenes (%zu):\n",
+           gltf->scene, gltf->scenes.n);
     for (size_t i = 0; i < gltf->scenes.n; i++) {
         printf("   scene '%s':\n"
                "    nodes: [ ",
