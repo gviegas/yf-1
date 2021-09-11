@@ -189,6 +189,14 @@ int yf_test_scene(void)
     if (node == NULL)
         return -1;
 
+    const YF_vec3 light_clr = {1.0f, 1.0f, 1.0f};
+    YF_light light = yf_light_init(YF_LIGHTT_POINT, light_clr, 1000.0f, 100.0f,
+                                   0.0f, 0.0f);
+    assert(light != NULL);
+    YF_node light_node = yf_light_getnode(light);
+    yf_mat4_xlate(*yf_node_getxform(light_node), 10.0f, 10.0f, 10.0f);
+    yf_node_insert(node, light_node);
+
     YF_TEST_PRINT("traverse", "node, traverse, NULL", "");
     yf_node_traverse(node, traverse, NULL);
 
@@ -198,6 +206,7 @@ int yf_test_scene(void)
     puts("\n- no explicit 'deinit()' call for managed scene -\n");
 
     yf_collection_deinit(vars_.coll);
+    yf_light_deinit(light);
     yf_view_deinit(vars_.view);
     yf_window_deinit(vars_.win);
 
