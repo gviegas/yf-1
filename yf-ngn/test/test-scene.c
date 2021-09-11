@@ -192,9 +192,6 @@ int yf_test_scene(void)
     YF_TEST_PRINT("traverse", "node, traverse, NULL", "");
     yf_node_traverse(node, traverse, NULL);
 
-    YF_TEST_PRINT("setcolor", "scn, COLOR_DARKGREY", "");
-    yf_scene_setcolor(vars_.scn, YF_COLOR_DARKGREY);
-
     yf_view_setscene(vars_.view, vars_.scn);
     yf_view_start(vars_.view, YF_FPS, update, NULL);
 
