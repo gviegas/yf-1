@@ -37,6 +37,8 @@ struct T_vars {
     YF_material matl2;
     YF_model mdls1[YF_MDLN_1];
     YF_model mdls2[YF_MDLN_2];
+    YF_light light1;
+    YF_light light2;
 
     struct {
         int quit;
@@ -259,6 +261,29 @@ int yf_test_rendering(void)
             yf_node_insert(yf_model_getnode(vars_.mdls2[i-1]), nd);
     }
 
+    const YF_vec3 light_clr = {1.0f, 1.0f, 1.0f};
+    vars_.light1 = yf_light_init(YF_LIGHTT_DIRECT, light_clr, 3.0f,
+                                 0.0f, 0.0f, 0.0f);
+    vars_.light2 = yf_light_init(YF_LIGHTT_DIRECT, light_clr, 3.0f,
+                                 0.0f, 0.0f, 0.0f);
+    assert(vars_.light1 != NULL);
+    assert(vars_.light2 != NULL);
+
+    YF_vec4 qx, qy;
+    yf_vec4_rotqx(qx, 3.141593f * -0.25f);
+    yf_vec4_rotqy(qy, 3.141593f * 0.25f);
+    yf_vec4_mulqi(qx, qy);
+
+    YF_mat4 r;
+    yf_mat4_rotq(r, qx);
+    yf_mat4_copy(*yf_node_getxform(yf_light_getnode(vars_.light1)), r);
+    yf_mat4_copy(*yf_node_getxform(yf_light_getnode(vars_.light2)), r);
+
+    yf_node_insert(yf_scene_getnode(vars_.scn1),
+                   yf_light_getnode(vars_.light1));
+    yf_node_insert(yf_scene_getnode(vars_.scn2),
+                   yf_light_getnode(vars_.light2));
+
     yf_scene_setcolor(vars_.scn1, YF_COLOR_YELLOW);
     yf_scene_setcolor(vars_.scn2, YF_COLOR_BLUE);
 
@@ -270,6 +295,8 @@ int yf_test_rendering(void)
     for (size_t i = 0; i < YF_MDLN_2; i++)
         yf_model_deinit(vars_.mdls2[i]);
 
+    yf_light_deinit(vars_.light1);
+    yf_light_deinit(vars_.light2);
     yf_material_deinit(vars_.matl1);
     yf_material_deinit(vars_.matl2);
     yf_texture_deinit(vars_.tex1);
