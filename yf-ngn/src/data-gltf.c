@@ -852,6 +852,20 @@ typedef struct {
     T_samplers samplers;
 } T_gltf;
 
+/* Parses the 'glTF.extensionsUsed/Required' properties. */
+static int parse_extensions(FILE *file, T_token *token,
+                            T_extensions *extensions)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(extensions != NULL);
+    assert(strcmp(token->data, "extensionsRequired") == 0 ||
+           strcmp(token->data, "extensionsUsed") == 0);
+
+    return parse_array(file, token, (void **)&extensions->v, &extensions->n,
+                       sizeof *extensions->v, parse_str_array, &extensions->v);
+}
+
 /* Parses the 'glTF.asset' property. */
 static int parse_asset(FILE *file, T_token *token, T_asset *asset)
 {
