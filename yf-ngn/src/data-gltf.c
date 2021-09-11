@@ -482,6 +482,12 @@ static int consume_prop(FILE *file, T_token *token)
     return 0;
 }
 
+/* Type defining the 'glTF.extensionsUsed/Required' properties. */
+typedef struct {
+    T_str *v;
+    size_t n;
+} T_extensions;
+
 /* Type defining the 'glTF.asset' property. */
 typedef struct {
     T_str copyright;
@@ -827,6 +833,8 @@ typedef struct {
 
 /* Type defining the root glTF object. */
 typedef struct {
+    T_extensions extensionsrequired;
+    T_extensions extensionssused;
     T_asset asset;
     T_int scene;
     T_scenes scenes;
