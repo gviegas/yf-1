@@ -834,7 +834,7 @@ typedef struct {
 /* Type defining the root glTF object. */
 typedef struct {
     T_extensions extensionsrequired;
-    T_extensions extensionssused;
+    T_extensions extensionsused;
     T_asset asset;
     T_int scene;
     T_scenes scenes;
@@ -2554,7 +2554,16 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
     while (1) {
         switch (next_token(file, token)) {
         case YF_TOKEN_STR:
-            if (strcmp("asset", token->data) == 0) {
+            if (strcmp("extensionsRequired", token->data) == 0) {
+                if (parse_extensions(file, token,
+                                     &gltf->extensionsrequired) != 0)
+                    return -1;
+
+            } else if (strcmp("extensionsUsed", token->data) == 0) {
+                if (parse_extensions(file, token, &gltf->extensionsused) != 0)
+                    return -1;
+
+            } else if (strcmp("asset", token->data) == 0) {
                 if (parse_asset(file, token, &gltf->asset) != 0)
                     return -1;
 
