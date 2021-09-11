@@ -51,11 +51,40 @@ void yf_print_nodeobj(YF_node node)
 
     case YF_NODEOBJ_PARTICLE: {
         YF_particle part = obj;
+        YF_psys *sys = yf_particle_getsys(part);
         printf(" NODEOBJ_PARTICLE <%p>:\n"
                "  mesh: %p\n"
                "  tex:  %p\n",
                (void *)part, (void *)yf_particle_getmesh(part),
                (void *)yf_particle_gettex(part));
+        printf("  sys:\n"
+               "   emitter:\n"
+               "    norm: [%.4f, %.4f, %.4f]\n"
+               "    size: %.4f\n"
+               "   lifetime:\n"
+               "    duration min: %.4f\n"
+               "    duration max: %.4f\n"
+               "    spawn min: %.4f\n"
+               "    spawn max: %.4f\n"
+               "    death min: %.4f\n"
+               "    death max: %.4f\n"
+               "    once: %s\n"
+               "   color:\n"
+               "    min: [%.4f, %.4f, %.4f]\n"
+               "    max: [%.4f, %.4f, %.4f]\n"
+               "   velocity:\n"
+               "    min: [%.4f, %.4f, %.4f]\n"
+               "    max: [%.4f, %.4f, %.4f]\n",
+               sys->emitter.norm[0], sys->emitter.norm[1], sys->emitter.norm[2],
+               sys->emitter.size, sys->lifetime.duration_min,
+               sys->lifetime.duration_max, sys->lifetime.spawn_min,
+               sys->lifetime.spawn_max, sys->lifetime.death_min,
+               sys->lifetime.death_max, (sys->lifetime.once ? "yes" : "no"),
+               sys->color.min[0], sys->color.min[1], sys->color.min[2],
+               sys->color.max[0], sys->color.max[1], sys->color.max[2],
+               sys->velocity.min[0], sys->velocity.min[1],
+               sys->velocity.min[2], sys->velocity.max[0],
+               sys->velocity.max[1], sys->velocity.max[2]);
     } break;
 
     case YF_NODEOBJ_QUAD: {
