@@ -1338,6 +1338,87 @@ static int parse_spot(FILE *file, T_token *token, T_spot *spot)
     return 0;
 }
 
+/* Parses the 'glTF.lights' property. */
+static int parse_lights(FILE *file, T_token *token,
+                        size_t index, void *lights_p)
+{
+    T_lights *lights = lights_p;
+
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(lights != NULL);
+    assert(index < lights->n);
+    assert(token->token == YF_TOKEN_OP);
+    assert(token->data[0] == '[' || token->data[0] == ',');
+
+    lights->v[index].color[0] = 1.0f;
+    lights->v[index].color[1] = 1.0f;
+    lights->v[index].color[2] = 1.0f;
+    lights->v[index].intensity = 1.0f;
+    lights->v[index].range = 0.0f;
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("type", token->data) == 0) {
+                next_token(file, token); /* ':' */
+                next_token(file, token);
+                if (strcmp("directional", token->data) == 0) {
+                    lights->v[index].type = YF_GLTF_LIGHT_DIRECT;
+                } else if (strcmp("point", token->data) == 0) {
+                    lights->v[index].type = YF_GLTF_LIGHT_POINT;
+                } else if (strcmp("spot", token->data) == 0) {
+                    lights->v[index].type = YF_GLTF_LIGHT_SPOT;
+                } else {
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    return -1;
+                }
+
+            } else if (strcmp("color", token->data) == 0) {
+                next_token(file, token); /* ':' */
+                next_token(file, token); /* '[' */
+                for (size_t i = 0; i < 3; i++) {
+                    if (parse_num(file, token, lights->v[index].color+i) != 0)
+                        return -1;
+                }
+                next_token(file, token); /* ']' */
+
+            } else if (strcmp("intensity", token->data) == 0) {
+                if (parse_num(file, token, &lights->v[index].intensity) != 0)
+                    return -1;
+
+            } else if (strcmp("range", token->data) == 0) {
+                if (parse_num(file, token, &lights->v[index].range) != 0)
+                    return -1;
+
+            } else if (strcmp("spot", token->data) == 0) {
+                if (parse_spot(file, token, &lights->v[index].spot) != 0)
+                    return -1;
+
+            } else if (strcmp("name", token->data) == 0) {
+                if (parse_str(file, token, &lights->v[index].name) != 0)
+                    return -1;
+
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the 'glTF.meshes.primitives.attributes' property. */
 static int parse_attributes(FILE *file, T_token *token, T_int *attributes)
 {
