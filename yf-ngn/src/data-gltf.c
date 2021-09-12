@@ -556,28 +556,6 @@ typedef struct {
     size_t n;
 } T_cameras;
 
-/* Type defining the 'glTF.lights.spot' property. */
-typedef struct {
-    T_num inner_cone_angle;
-    T_num outer_cone_angle;
-} T_spot;
-
-/* Type defining the 'glTF.lights' property (extension). */
-typedef struct {
-    struct {
-#define YF_GLTF_LIGHT_POINT  0
-#define YF_GLTF_LIGHT_SPOT   1
-#define YF_GLTF_LIGHT_DIRECT 2
-        int type;
-        T_num color[3];
-        T_num intensity;
-        T_num range;
-        T_spot spot;
-        T_str name;
-    } *v;
-    size_t n;
-} T_lights;
-
 /* Type defining the 'glTF.meshes.primitives.targets' property. */
 typedef struct {
     struct {
@@ -847,6 +825,29 @@ typedef struct {
     size_t n;
 } T_samplers;
 
+/* Type defining the 'glTF.extensions.KHR_lights_punctual.lights.spot'
+   property. */
+typedef struct {
+    T_num inner_cone_angle;
+    T_num outer_cone_angle;
+} T_spot;
+
+/* Type defining the 'glTF.extensions.KHR_lights_punctual.lights' property. */
+typedef struct {
+    struct {
+#define YF_GLTF_LIGHT_POINT  0
+#define YF_GLTF_LIGHT_SPOT   1
+#define YF_GLTF_LIGHT_DIRECT 2
+        int type;
+        T_num color[3];
+        T_num intensity;
+        T_num range;
+        T_spot spot;
+        T_str name;
+    } *v;
+    size_t n;
+} T_lights;
+
 /* Type defining the root glTF object. */
 typedef struct {
     T_str *ext_used;
@@ -858,7 +859,6 @@ typedef struct {
     T_scenes scenes;
     T_nodes nodes;
     T_cameras cameras;
-    T_lights lights;
     T_meshes meshes;
     T_skins skins;
     T_materials materials;
@@ -869,6 +869,9 @@ typedef struct {
     T_textures textures;
     T_images images;
     T_samplers samplers;
+    struct {
+        T_lights lights;
+    } ext;
 } T_gltf;
 
 /* Parses the 'glTF.asset' property. */
@@ -1252,133 +1255,6 @@ static int parse_cameras(FILE *file, T_token *token,
 
             } else if (strcmp("name", token->data) == 0) {
                 if (parse_str(file, token, &cameras->v[index].name) != 0)
-                    return -1;
-
-            } else {
-                if (consume_prop(file, token) != 0)
-                    return -1;
-            }
-            break;
-
-        case YF_TOKEN_OP:
-            if (token->data[0] == '}')
-                return 0;
-            break;
-
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
-/* Parses the 'glTF.lights.spot' property. */
-static int parse_spot(FILE *file, T_token *token, T_spot *spot)
-{
-    assert(file != NULL && !feof(file));
-    assert(token != NULL);
-    assert(spot != NULL);
-    assert(token->token == YF_TOKEN_STR);
-    assert(strcmp(token->data, "spot") == 0);
-
-    next_token(file, token); /* ':' */
-    next_token(file, token); /* '{' */
-
-    spot->inner_cone_angle = 0.0f;
-    spot->outer_cone_angle = 0.7853981633974483f;
-
-    while (1) {
-        switch (next_token(file, token)) {
-        case YF_TOKEN_STR:
-            if (strcmp("innerConeAngle", token->data) == 0) {
-                if (parse_num(file, token, &spot->inner_cone_angle) != 0)
-                    return -1;
-
-            } else if (strcmp("outerConeAngle", token->data) == 0) {
-                if (parse_num(file, token, &spot->outer_cone_angle) != 0)
-                    return -1;
-
-            } else {
-                if (consume_prop(file, token) != 0)
-                    return -1;
-            }
-            break;
-
-        case YF_TOKEN_OP:
-            if (token->data[0] == '}')
-                return 0;
-            break;
-
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            return -1;
-        }
-    }
-
-    return 0;
-}
-
-/* Parses the 'glTF.lights' property. */
-static int parse_lights(FILE *file, T_token *token,
-                        size_t index, void *lights_p)
-{
-    T_lights *lights = lights_p;
-
-    assert(file != NULL && !feof(file));
-    assert(token != NULL);
-    assert(lights != NULL);
-    assert(index < lights->n);
-    assert(token->token == YF_TOKEN_OP);
-    assert(token->data[0] == '[' || token->data[0] == ',');
-
-    lights->v[index].color[0] = 1.0f;
-    lights->v[index].color[1] = 1.0f;
-    lights->v[index].color[2] = 1.0f;
-    lights->v[index].intensity = 1.0f;
-    lights->v[index].range = 0.0f;
-
-    while (1) {
-        switch (next_token(file, token)) {
-        case YF_TOKEN_STR:
-            if (strcmp("type", token->data) == 0) {
-                next_token(file, token); /* ':' */
-                next_token(file, token);
-                if (strcmp("directional", token->data) == 0) {
-                    lights->v[index].type = YF_GLTF_LIGHT_DIRECT;
-                } else if (strcmp("point", token->data) == 0) {
-                    lights->v[index].type = YF_GLTF_LIGHT_POINT;
-                } else if (strcmp("spot", token->data) == 0) {
-                    lights->v[index].type = YF_GLTF_LIGHT_SPOT;
-                } else {
-                    yf_seterr(YF_ERR_INVFILE, __func__);
-                    return -1;
-                }
-
-            } else if (strcmp("color", token->data) == 0) {
-                next_token(file, token); /* ':' */
-                next_token(file, token); /* '[' */
-                for (size_t i = 0; i < 3; i++) {
-                    if (parse_num(file, token, lights->v[index].color+i) != 0)
-                        return -1;
-                }
-                next_token(file, token); /* ']' */
-
-            } else if (strcmp("intensity", token->data) == 0) {
-                if (parse_num(file, token, &lights->v[index].intensity) != 0)
-                    return -1;
-
-            } else if (strcmp("range", token->data) == 0) {
-                if (parse_num(file, token, &lights->v[index].range) != 0)
-                    return -1;
-
-            } else if (strcmp("spot", token->data) == 0) {
-                if (parse_spot(file, token, &lights->v[index].spot) != 0)
-                    return -1;
-
-            } else if (strcmp("name", token->data) == 0) {
-                if (parse_str(file, token, &lights->v[index].name) != 0)
                     return -1;
 
             } else {
@@ -2672,6 +2548,133 @@ static int parse_samplers(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.extensions.KHR_lights_punctual.lights.spot' property. */
+static int parse_spot(FILE *file, T_token *token, T_spot *spot)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(spot != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp(token->data, "spot") == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    spot->inner_cone_angle = 0.0f;
+    spot->outer_cone_angle = 0.7853981633974483f;
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("innerConeAngle", token->data) == 0) {
+                if (parse_num(file, token, &spot->inner_cone_angle) != 0)
+                    return -1;
+
+            } else if (strcmp("outerConeAngle", token->data) == 0) {
+                if (parse_num(file, token, &spot->outer_cone_angle) != 0)
+                    return -1;
+
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* Parses the 'glTF.extensions.KHR_lights_punctual.lights' property. */
+static int parse_lights(FILE *file, T_token *token,
+                        size_t index, void *lights_p)
+{
+    T_lights *lights = lights_p;
+
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(lights != NULL);
+    assert(index < lights->n);
+    assert(token->token == YF_TOKEN_OP);
+    assert(token->data[0] == '[' || token->data[0] == ',');
+
+    lights->v[index].color[0] = 1.0f;
+    lights->v[index].color[1] = 1.0f;
+    lights->v[index].color[2] = 1.0f;
+    lights->v[index].intensity = 1.0f;
+    lights->v[index].range = 0.0f;
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("type", token->data) == 0) {
+                next_token(file, token); /* ':' */
+                next_token(file, token);
+                if (strcmp("directional", token->data) == 0) {
+                    lights->v[index].type = YF_GLTF_LIGHT_DIRECT;
+                } else if (strcmp("point", token->data) == 0) {
+                    lights->v[index].type = YF_GLTF_LIGHT_POINT;
+                } else if (strcmp("spot", token->data) == 0) {
+                    lights->v[index].type = YF_GLTF_LIGHT_SPOT;
+                } else {
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    return -1;
+                }
+
+            } else if (strcmp("color", token->data) == 0) {
+                next_token(file, token); /* ':' */
+                next_token(file, token); /* '[' */
+                for (size_t i = 0; i < 3; i++) {
+                    if (parse_num(file, token, lights->v[index].color+i) != 0)
+                        return -1;
+                }
+                next_token(file, token); /* ']' */
+
+            } else if (strcmp("intensity", token->data) == 0) {
+                if (parse_num(file, token, &lights->v[index].intensity) != 0)
+                    return -1;
+
+            } else if (strcmp("range", token->data) == 0) {
+                if (parse_num(file, token, &lights->v[index].range) != 0)
+                    return -1;
+
+            } else if (strcmp("spot", token->data) == 0) {
+                if (parse_spot(file, token, &lights->v[index].spot) != 0)
+                    return -1;
+
+            } else if (strcmp("name", token->data) == 0) {
+                if (parse_str(file, token, &lights->v[index].name) != 0)
+                    return -1;
+
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the root glTF object. */
 static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
 {
@@ -2726,9 +2729,9 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
 
             } else if (strcmp("lights", token->data) == 0) {
                 /* FIXME: This is found under 'extensions'. */
-                if (parse_array(file, token, (void **)&gltf->lights.v,
-                                &gltf->lights.n, sizeof *gltf->lights.v,
-                                parse_lights, &gltf->lights) != 0)
+                if (parse_array(file, token, (void **)&gltf->ext.lights.v,
+                                &gltf->ext.lights.n, sizeof *gltf->ext.lights.v,
+                                parse_lights, &gltf->ext.lights) != 0)
                     return -1;
 
             } else if (strcmp("meshes", token->data) == 0) {
@@ -2986,10 +2989,6 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         free(gltf->cameras.v[i].name);
     free(gltf->cameras.v);
 
-    for (size_t i = 0; i < gltf->lights.n; i++)
-        free(gltf->lights.v[i].name);
-    free(gltf->lights.v);
-
     for (size_t i = 0; i < gltf->meshes.n; i++) {
         for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; j++)
             free(gltf->meshes.v[i].primitives.v[j].targets.v);
@@ -3044,6 +3043,10 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     for (size_t i = 0; i < gltf->samplers.n; i++)
         free(gltf->samplers.v[i].name);
     free(gltf->samplers.v);
+
+    for (size_t i = 0; i < gltf->ext.lights.n; i++)
+        free(gltf->ext.lights.v[i].name);
+    free(gltf->ext.lights.v);
 }
 
 /* Initializes glTF contents. */
@@ -4861,35 +4864,6 @@ static void print_gltf(const T_gltf *gltf)
                    gltf->cameras.v[i].ortho.zfar);
     }
 
-    /* lights */
-    printf("  lights (%zu):\n", gltf->lights.n);
-    for (size_t i = 0; i < gltf->lights.n; i++) {
-        char *type = "";
-        switch (gltf->lights.v[i].type) {
-        case YF_GLTF_LIGHT_POINT:
-            type = "point";
-            break;
-        case YF_GLTF_LIGHT_SPOT:
-            type = "spot";
-            break;
-        case YF_GLTF_LIGHT_DIRECT:
-            type = "direct";
-        }
-        printf("   light '%s':\n"
-               "    type: %s\n"
-               "    color: [%.6f, %.6f, %.6f]\n"
-               "    intensity: %.6f\n"
-               "    range: %.6f\n"
-               "    spot:\n"
-               "     innerConeAngle: %.6f\n"
-               "     outerConeAngle: %.6f\n",
-               gltf->lights.v[i].name, type, gltf->lights.v[i].color[0],
-               gltf->lights.v[i].color[1], gltf->lights.v[i].color[2],
-               gltf->lights.v[i].intensity, gltf->lights.v[i].range,
-               gltf->lights.v[i].spot.inner_cone_angle,
-               gltf->lights.v[i].spot.outer_cone_angle);
-    }
-
     /* meshes */
     printf("  meshes (%zu):\n", gltf->meshes.n);
     for (size_t i = 0; i < gltf->meshes.n; i++) {
@@ -5128,7 +5102,7 @@ static void print_gltf(const T_gltf *gltf)
                gltf->accessors.v[i].sparse.values.byte_off);
     }
 
-    /* buf. views */
+    /* buffer views */
     printf("  bufferViews (%zu):\n", gltf->bufferviews.n);
     for (size_t i = 0; i < gltf->bufferviews.n; i++)
         printf("   view '%s':\n"
@@ -5180,6 +5154,38 @@ static void print_gltf(const T_gltf *gltf)
                gltf->samplers.v[i].name, gltf->samplers.v[i].min_filter,
                gltf->samplers.v[i].mag_filter, gltf->samplers.v[i].wrap_s,
                gltf->samplers.v[i].wrap_t);
+
+    /* extensions */
+    puts("  extensions:");
+
+    /* lights punctual */
+    printf("   lights (%zu):\n", gltf->ext.lights.n);
+    for (size_t i = 0; i < gltf->ext.lights.n; i++) {
+        char *type = "";
+        switch (gltf->ext.lights.v[i].type) {
+        case YF_GLTF_LIGHT_POINT:
+            type = "point";
+            break;
+        case YF_GLTF_LIGHT_SPOT:
+            type = "spot";
+            break;
+        case YF_GLTF_LIGHT_DIRECT:
+            type = "direct";
+        }
+        printf("    light '%s':\n"
+               "     type: %s\n"
+               "     color: [%.6f, %.6f, %.6f]\n"
+               "     intensity: %.6f\n"
+               "     range: %.6f\n"
+               "     spot:\n"
+               "      innerConeAngle: %.6f\n"
+               "      outerConeAngle: %.6f\n",
+               gltf->ext.lights.v[i].name, type, gltf->ext.lights.v[i].color[0],
+               gltf->ext.lights.v[i].color[1], gltf->ext.lights.v[i].color[2],
+               gltf->ext.lights.v[i].intensity, gltf->ext.lights.v[i].range,
+               gltf->ext.lights.v[i].spot.inner_cone_angle,
+               gltf->ext.lights.v[i].spot.outer_cone_angle);
+    }
 
     puts("");
 }
