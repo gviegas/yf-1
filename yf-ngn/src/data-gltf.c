@@ -574,7 +574,7 @@ typedef struct {
 #define YF_GLTF_LIGHT_POINT  0
 #define YF_GLTF_LIGHT_SPOT   1
 #define YF_GLTF_LIGHT_DIRECT 2
-        T_int type;
+        int type;
         T_num color[3];
         T_num intensity;
         T_num range;
@@ -2740,6 +2740,7 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
                     return -1;
 
             } else if (strcmp("lights", token->data) == 0) {
+                /* FIXME: This is found under 'extensions'. */
                 if (parse_array(file, token, (void **)&gltf->lights.v,
                                 &gltf->lights.n, sizeof *gltf->lights.v,
                                 parse_lights, &gltf->lights) != 0)
