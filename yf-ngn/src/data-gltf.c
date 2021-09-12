@@ -3000,6 +3000,10 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         free(gltf->cameras.v[i].name);
     free(gltf->cameras.v);
 
+    for (size_t i = 0; i < gltf->lights.n; i++)
+        free(gltf->lights.v[i].name);
+    free(gltf->lights.v);
+
     for (size_t i = 0; i < gltf->meshes.n; i++) {
         for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; j++)
             free(gltf->meshes.v[i].primitives.v[j].targets.v);
