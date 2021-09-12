@@ -4875,6 +4875,35 @@ static void print_gltf(const T_gltf *gltf)
                    gltf->cameras.v[i].ortho.zfar);
     }
 
+    /* lights */
+    printf("  lights (%zu):\n", gltf->lights.n);
+    for (size_t i = 0; i < gltf->lights.n; i++) {
+        char *type = "";
+        switch (gltf->lights.v[i].type) {
+        case YF_GLTF_LIGHT_POINT:
+            type = "point";
+            break;
+        case YF_GLTF_LIGHT_SPOT:
+            type = "spot";
+            break;
+        case YF_GLTF_LIGHT_DIRECT:
+            type = "direct";
+        }
+        printf("   light '%s':\n"
+               "    type: %s\n"
+               "    color: [%.6f, %.6f, %.6f]\n"
+               "    intensity: %.6f\n"
+               "    range: %.6f\n"
+               "    spot:\n"
+               "     innerConeAngle: %.6f\n"
+               "     outerConeAngle: %.6f\n",
+               gltf->lights.v[i].name, type, gltf->lights.v[i].color[0],
+               gltf->lights.v[i].color[1], gltf->lights.v[i].color[2],
+               gltf->lights.v[i].intensity, gltf->lights.v[i].range,
+               gltf->lights.v[i].spot.inner_cone_angle,
+               gltf->lights.v[i].spot.outer_cone_angle);
+    }
+
     /* meshes */
     printf("  meshes (%zu):\n", gltf->meshes.n);
     for (size_t i = 0; i < gltf->meshes.n; i++) {
