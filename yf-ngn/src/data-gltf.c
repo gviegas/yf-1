@@ -2739,6 +2739,12 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
                                 parse_cameras, &gltf->cameras) != 0)
                     return -1;
 
+            } else if (strcmp("lights", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->lights.v,
+                                &gltf->lights.n, sizeof *gltf->lights.v,
+                                parse_lights, &gltf->lights) != 0)
+                    return -1;
+
             } else if (strcmp("meshes", token->data) == 0) {
                 if (parse_array(file, token, (void **)&gltf->meshes.v,
                                 &gltf->meshes.n, sizeof *gltf->meshes.v,
