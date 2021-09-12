@@ -1292,6 +1292,52 @@ static int parse_cameras(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.lights.spot' property. */
+static int parse_spot(FILE *file, T_token *token, T_spot *spot)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(spot != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp(token->data, "spot") == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    spot->inner_cone_angle = 0.0f;
+    spot->outer_cone_angle = 0.7853981633974483f;
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("innerConeAngle", token->data) == 0) {
+                if (parse_num(file, token, &spot->inner_cone_angle) != 0)
+                    return -1;
+
+            } else if (strcmp("outerConeAngle", token->data) == 0) {
+                if (parse_num(file, token, &spot->outer_cone_angle) != 0)
+                    return -1;
+
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the 'glTF.meshes.primitives.attributes' property. */
 static int parse_attributes(FILE *file, T_token *token, T_int *attributes)
 {
