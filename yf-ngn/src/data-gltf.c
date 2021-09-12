@@ -562,6 +562,28 @@ typedef struct {
     size_t n;
 } T_cameras;
 
+/* Type defining the 'glTF.lights.spot' property. */
+typedef struct {
+    T_num inner_cone_angle;
+    T_num outer_cone_angle;
+} T_spot;
+
+/* Type defining the 'glTF.lights' property (extension). */
+typedef struct {
+    struct {
+#define YF_GLTF_LIGHT_POINT  0
+#define YF_GLTF_LIGHT_SPOT   1
+#define YF_GLTF_LIGHT_DIRECT 2
+        T_int type;
+        T_num color[3];
+        T_num intensity;
+        T_num range;
+        T_spot spot;
+        T_str name;
+    } *v;
+    size_t n;
+} T_lights;
+
 /* Type defining the 'glTF.meshes.primitives.targets' property. */
 typedef struct {
     struct {
@@ -840,6 +862,7 @@ typedef struct {
     T_scenes scenes;
     T_nodes nodes;
     T_cameras cameras;
+    T_lights lights;
     T_meshes meshes;
     T_skins skins;
     T_materials materials;
