@@ -222,7 +222,8 @@ typedef int T_bool;
 /* Parses an array of unknown size. */
 static int parse_array(FILE *file, T_token *token,
                        void **array, size_t *n, size_t elem_sz,
-                       int (*fn)(FILE *, T_token *, size_t, void *), void *arg)
+                       int (*fn)(FILE *, T_token *, size_t index, void *arg),
+                       void *arg)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -296,8 +297,8 @@ static int parse_str(FILE *file, T_token *token, T_str *str)
 }
 
 /* Parses an element of an array of strings. */
-static int parse_str_array(FILE *file, T_token *token,
-                           size_t index, void *str_pp)
+static int parse_str_array(FILE *file, T_token *token, size_t index,
+                           void *str_pp)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -338,8 +339,8 @@ static int parse_num(FILE *file, T_token *token, T_num *num)
 }
 
 /* Parses an element of an array of floating-point numbers. */
-static int parse_num_array(FILE *file, T_token *token,
-                           size_t index, void *num_pp)
+static int parse_num_array(FILE *file, T_token *token, size_t index,
+                           void *num_pp)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -380,8 +381,8 @@ static int parse_int(FILE *file, T_token *token, T_int *intr)
 }
 
 /* Parses an element of an array of integer numbers. */
-static int parse_int_array(FILE *file, T_token *token,
-                           size_t index, void *int_pp)
+static int parse_int_array(FILE *file, T_token *token, size_t index,
+                           void *int_pp)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -947,8 +948,8 @@ static int parse_scene(FILE *file, T_token *token, T_int *scene)
 }
 
 /* Parses the 'glTF.scenes' property. */
-static int parse_scenes(FILE *file, T_token *token,
-                        size_t index, void *scenes_p)
+static int parse_scenes(FILE *file, T_token *token, size_t index,
+                        void *scenes_p)
 {
     T_scenes *scenes = scenes_p;
 
@@ -994,8 +995,8 @@ static int parse_scenes(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.nodes.extensions.KHR_lights_punctual' property. */
-static int parse_node_punctual(FILE *file, T_token *token,
-                               size_t index, T_nodes *nodes)
+static int parse_node_punctual(FILE *file, T_token *token, size_t index,
+                               T_nodes *nodes)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1035,8 +1036,8 @@ static int parse_node_punctual(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.nodes.extensions' property. */
-static int parse_node_ext(FILE *file, T_token *token,
-                          size_t index, T_nodes *nodes)
+static int parse_node_ext(FILE *file, T_token *token, size_t index,
+                          T_nodes *nodes)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1076,8 +1077,7 @@ static int parse_node_ext(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.nodes' property. */
-static int parse_nodes(FILE *file, T_token *token,
-                       size_t index, void *nodes_p)
+static int parse_nodes(FILE *file, T_token *token, size_t index, void *nodes_p)
 {
     T_nodes *nodes = nodes_p;
 
@@ -1202,7 +1202,7 @@ static int parse_nodes(FILE *file, T_token *token,
     return 0;
 }
 
-/* Parses the 'glTF.camera.perspective' property. */
+/* Parses the 'glTF.cameras.perspective' property. */
 static int parse_perspective(FILE *file, T_token *token,
                              T_perspective *perspective)
 {
@@ -1254,7 +1254,7 @@ static int parse_perspective(FILE *file, T_token *token,
     return 0;
 }
 
-/* Parses the 'glTF.camera.orthographic' property. */
+/* Parses the 'glTF.cameras.orthographic' property. */
 static int parse_orthographic(FILE *file, T_token *token,
                               T_orthographic *orthographic)
 {
@@ -1307,8 +1307,8 @@ static int parse_orthographic(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.cameras' property. */
-static int parse_cameras(FILE *file, T_token *token,
-                         size_t index, void *cameras_p)
+static int parse_cameras(FILE *file, T_token *token, size_t index,
+                         void *cameras_p)
 {
     T_cameras *cameras = cameras_p;
 
@@ -1436,8 +1436,8 @@ static int parse_attributes(FILE *file, T_token *token, T_int *attributes)
 }
 
 /* Parses the 'glTF.meshes.primitives.targets' property. */
-static int parse_targets(FILE *file, T_token *token,
-                         size_t index, void *targets_p)
+static int parse_targets(FILE *file, T_token *token, size_t index,
+                         void *targets_p)
 {
     T_targets *targets = targets_p;
 
@@ -1488,8 +1488,8 @@ static int parse_targets(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.meshes.primitives' property. */
-static int parse_primitives(FILE *file, T_token *token,
-                            size_t index, void *primitives_p)
+static int parse_primitives(FILE *file, T_token *token, size_t index,
+                            void *primitives_p)
 {
     T_primitives *primitives = primitives_p;
 
@@ -1559,8 +1559,8 @@ static int parse_primitives(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.meshes' property. */
-static int parse_meshes(FILE *file, T_token *token,
-                        size_t index, void *meshes_p)
+static int parse_meshes(FILE *file, T_token *token, size_t index,
+                        void *meshes_p)
 {
     T_meshes *meshes = meshes_p;
 
@@ -1616,8 +1616,7 @@ static int parse_meshes(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.skins' property. */
-static int parse_skins(FILE *file, T_token *token,
-                       size_t index, void *skins_p)
+static int parse_skins(FILE *file, T_token *token, size_t index, void *skins_p)
 {
     T_skins *skins = skins_p;
 
@@ -1788,8 +1787,8 @@ static int parse_pbrmetalrough(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.materials' property. */
-static int parse_materials(FILE *file, T_token *token,
-                           size_t index, void *materials_p)
+static int parse_materials(FILE *file, T_token *token, size_t index,
+                           void *materials_p)
 {
     T_materials *materials = materials_p;
 
@@ -1952,8 +1951,8 @@ static int parse_ctarget(FILE *file, T_token *token, T_ctarget *ctarget)
 }
 
 /* Parses the 'glTF.animations.channels' property. */
-static int parse_channels(FILE *file, T_token *token,
-                          size_t index, void *channels_p)
+static int parse_channels(FILE *file, T_token *token, size_t index,
+                          void *channels_p)
 {
     T_channels *channels = channels_p;
 
@@ -1996,8 +1995,8 @@ static int parse_channels(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.animations.samplers' property. */
-static int parse_asamplers(FILE *file, T_token *token,
-                           size_t index, void *asamplers_p)
+static int parse_asamplers(FILE *file, T_token *token, size_t index,
+                           void *asamplers_p)
 {
     T_asamplers *asamplers = asamplers_p;
 
@@ -2054,8 +2053,8 @@ static int parse_asamplers(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.animations' property. */
-static int parse_animations(FILE *file, T_token *token,
-                            size_t index, void *animations_p)
+static int parse_animations(FILE *file, T_token *token, size_t index,
+                            void *animations_p)
 {
     T_animations *animations = animations_p;
 
@@ -2244,8 +2243,8 @@ static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
 }
 
 /* Parses the 'glTF.accessors' property. */
-static int parse_accessors(FILE *file, T_token *token,
-                           size_t index, void *accessors_p)
+static int parse_accessors(FILE *file, T_token *token, size_t index,
+                           void *accessors_p)
 {
     T_accessors *accessors = accessors_p;
 
@@ -2366,8 +2365,8 @@ static int parse_accessors(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.bufferViews' property. */
-static int parse_bufferviews(FILE *file, T_token *token,
-                             size_t index, void *bufferviews_p)
+static int parse_bufferviews(FILE *file, T_token *token, size_t index,
+                             void *bufferviews_p)
 {
     T_bufferviews *bufferviews = bufferviews_p;
 
@@ -2429,8 +2428,8 @@ static int parse_bufferviews(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.buffers' property. */
-static int parse_buffers(FILE *file, T_token *token,
-                         size_t index, void *buffers_p)
+static int parse_buffers(FILE *file, T_token *token, size_t index,
+                         void *buffers_p)
 {
     T_buffers *buffers = buffers_p;
 
@@ -2477,8 +2476,8 @@ static int parse_buffers(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.textures' property. */
-static int parse_textures(FILE *file, T_token *token,
-                          size_t index, void *textures_p)
+static int parse_textures(FILE *file, T_token *token, size_t index,
+                          void *textures_p)
 {
     T_textures *textures = textures_p;
 
@@ -2527,8 +2526,8 @@ static int parse_textures(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.images' property. */
-static int parse_images(FILE *file, T_token *token,
-                        size_t index, void *images_p)
+static int parse_images(FILE *file, T_token *token, size_t index,
+                        void *images_p)
 {
     T_images *images = images_p;
 
@@ -2581,8 +2580,8 @@ static int parse_images(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.samplers' property. */
-static int parse_samplers(FILE *file, T_token *token,
-                          size_t index, void *samplers_p)
+static int parse_samplers(FILE *file, T_token *token, size_t index,
+                          void *samplers_p)
 {
     T_samplers *samplers = samplers_p;
 
@@ -2686,8 +2685,8 @@ static int parse_spot(FILE *file, T_token *token, T_spot *spot)
 }
 
 /* Parses the 'glTF.extensions.KHR_lights_punctual.lights' property. */
-static int parse_lights(FILE *file, T_token *token,
-                        size_t index, void *lights_p)
+static int parse_lights(FILE *file, T_token *token, size_t index,
+                        void *lights_p)
 {
     T_lights *lights = lights_p;
 
@@ -3364,8 +3363,8 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
 }
 
 /* Seeks into data buffer as specified by an accessor or buffer view. */
-static FILE *seek_data(const T_gltf *gltf, T_fdata *fdata,
-                       T_int accessor, T_int buffer_view)
+static FILE *seek_data(const T_gltf *gltf, T_fdata *fdata, T_int accessor,
+                       T_int buffer_view)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
