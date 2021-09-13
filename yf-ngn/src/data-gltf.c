@@ -2675,6 +2675,86 @@ static int parse_lights(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.extensions.KHR_lights_punctual' property. */
+static int parse_punctual(FILE *file, T_token *token, T_gltf *gltf)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(gltf != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp("KHR_lights_punctual", token->data) == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("lights", token->data) == 0) {
+                if (parse_array(file, token, (void **)&gltf->ext.lights.v,
+                                &gltf->ext.lights.n, sizeof *gltf->ext.lights.v,
+                                parse_lights, &gltf->ext.lights) != 0)
+                    return -1;
+
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* Parses the 'glTF.extensions' property. */
+static int parse_extensions(FILE *file, T_token *token, T_gltf *gltf)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(gltf != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp("extensions", token->data) == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("KHR_lights_punctual", token->data) == 0) {
+                if (parse_punctual(file, token, gltf) != 0)
+                    return -1;
+
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the root glTF object. */
 static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
 {
@@ -2725,13 +2805,6 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
                 if (parse_array(file, token, (void **)&gltf->cameras.v,
                                 &gltf->cameras.n, sizeof *gltf->cameras.v,
                                 parse_cameras, &gltf->cameras) != 0)
-                    return -1;
-
-            } else if (strcmp("lights", token->data) == 0) {
-                /* FIXME: This is found under 'extensions'. */
-                if (parse_array(file, token, (void **)&gltf->ext.lights.v,
-                                &gltf->ext.lights.n, sizeof *gltf->ext.lights.v,
-                                parse_lights, &gltf->ext.lights) != 0)
                     return -1;
 
             } else if (strcmp("meshes", token->data) == 0) {
@@ -2793,6 +2866,10 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
                 if (parse_array(file, token, (void **)&gltf->samplers.v,
                                 &gltf->samplers.n, sizeof *gltf->samplers.v,
                                 parse_samplers, &gltf->samplers) != 0)
+                    return -1;
+
+            } else if (strcmp("extensions", token->data) == 0) {
+                if (parse_extensions(file, token, gltf) != 0)
                     return -1;
 
             } else {
@@ -5170,7 +5247,7 @@ static void print_gltf(const T_gltf *gltf)
             type = "spot";
             break;
         case YF_GLTF_LIGHT_DIRECT:
-            type = "direct";
+            type = "directional";
         }
         printf("    light '%s':\n"
                "     type: %s\n"
