@@ -992,6 +992,88 @@ static int parse_scenes(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.nodes.extensions.KHR_lights_punctual' property. */
+static int parse_node_punctual(FILE *file, T_token *token,
+                               size_t index, T_nodes *nodes)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(nodes != NULL);
+    assert(index < nodes->n);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp("KHR_lights_punctual", token->data) == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("light", token->data) == 0) {
+                if (parse_int(file, token, &nodes->v[index].ext.light) != 0)
+                    return -1;
+
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
+/* Parses the 'glTF.nodes.extensions' property. */
+static int parse_node_ext(FILE *file, T_token *token,
+                          size_t index, T_nodes *nodes)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(nodes != NULL);
+    assert(index < nodes->n);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp("extensions", token->data) == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("KHR_lights_punctual", token->data) == 0) {
+                if (parse_node_punctual(file, token, index, nodes) != 0)
+                    return -1;
+
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the 'glTF.nodes' property. */
 static int parse_nodes(FILE *file, T_token *token,
                        size_t index, void *nodes_p)
