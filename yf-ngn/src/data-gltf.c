@@ -4975,7 +4975,7 @@ static void print_gltf(const T_gltf *gltf)
 
         if (gltf->nodes.v[i].xform_mask == YF_GLTF_XFORM_NONE) {
             puts("    (no transform)");
-        } else if (gltf->nodes.v[i].xform_mask == YF_GLTF_XFORM_NONE) {
+        } else if (gltf->nodes.v[i].xform_mask == YF_GLTF_XFORM_M) {
             puts("    matrix:");
             for (size_t j = 0; j < 4; j++) {
                 for (size_t k = 0; k < 4; k++)
