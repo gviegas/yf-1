@@ -2038,6 +2038,10 @@ static int parse_materials(FILE *file, T_token *token, size_t index,
                 if (parse_str(file, token, &materials->v[index].name) != 0)
                     return -1;
 
+            } else if (strcmp("extensions", token->data) == 0) {
+                if (parse_material_ext(file, token, index, materials) != 0)
+                    return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
