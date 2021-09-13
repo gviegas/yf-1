@@ -5003,6 +5003,10 @@ static void print_gltf(const T_gltf *gltf)
         for (size_t j = 0; j < gltf->nodes.v[i].weight_n; j++)
             printf("%.6f ", gltf->nodes.v[i].weights[j]);
         puts("]");
+
+        printf("    extensions:\n"
+               "     light: %lld\n",
+               gltf->nodes.v[i].ext.light);
     }
 
     /* cameras */
