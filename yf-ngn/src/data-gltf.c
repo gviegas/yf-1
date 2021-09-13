@@ -521,6 +521,9 @@ typedef struct {
         T_num *weights;
         size_t weight_n;
         T_str name;
+        struct {
+            T_int light;
+        } ext;
     } *v;
     size_t n;
 } T_nodes;
@@ -1005,6 +1008,7 @@ static int parse_nodes(FILE *file, T_token *token,
     nodes->v[index].mesh = YF_INT_MIN;
     nodes->v[index].camera = YF_INT_MIN;
     nodes->v[index].skin = YF_INT_MIN;
+    nodes->v[index].ext.light = YF_INT_MIN;
 
     while (1) {
         switch (next_token(file, token)) {
