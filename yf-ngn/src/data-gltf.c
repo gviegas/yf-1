@@ -34,6 +34,7 @@
 #include "yf-scene.h"
 #include "yf-node.h"
 #include "yf-model.h"
+#include "yf-light.h"
 #include "yf-animation.h"
 
 /*
@@ -4056,6 +4057,7 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
     /* node object */
     const T_int mesh = gltf->nodes.v[node].mesh;
+    const T_int punctual = gltf->nodes.v[node].ext.light;
     if (mesh != YF_INT_MIN) {
         /* model */
         YF_model mdl = yf_model_init();
@@ -4093,6 +4095,36 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             skel = yf_skin_newest(cont->skins[skin]);
             yf_model_setskin(mdl, cont->skins[skin], skel);
         }
+
+    } else if (punctual != YF_INT_MIN) {
+        /* light */
+        int lightt;
+        switch (gltf->ext.lights.v[punctual].type) {
+        case YF_GLTF_LIGHT_POINT:
+            lightt = YF_LIGHTT_POINT;
+            break;
+        case YF_GLTF_LIGHT_SPOT:
+            lightt = YF_LIGHTT_SPOT;
+            break;
+        case YF_GLTF_LIGHT_DIRECT:
+            lightt = YF_LIGHTT_DIRECT;
+            break;
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+        const float *color = gltf->ext.lights.v[punctual].color;
+        float intensity = gltf->ext.lights.v[punctual].intensity;
+        float range  = gltf->ext.lights.v[punctual].range;
+        float inner_angle = gltf->ext.lights.v[punctual].spot.inner_cone_angle;
+        float outer_angle = gltf->ext.lights.v[punctual].spot.outer_cone_angle;
+
+        YF_light light = yf_light_init(lightt, color, intensity,
+                                       range, inner_angle, outer_angle);
+        if (light == NULL)
+            return -1;
+
+        cont->nodes[node] = yf_light_getnode(light);
 
     } else {
         /* none */
