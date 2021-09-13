@@ -3338,8 +3338,10 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
     }
     free(gltf->skins.v);
 
-    for (size_t i = 0; i < gltf->materials.n; i++)
+    for (size_t i = 0; i < gltf->materials.n; i++) {
         free(gltf->materials.v[i].name);
+        free(gltf->materials.v[i].ext.pbrsg);
+    }
     free(gltf->materials.v);
 
     for (size_t i = 0; i < gltf->animations.n; i++) {
