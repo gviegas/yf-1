@@ -1166,6 +1166,10 @@ static int parse_nodes(FILE *file, T_token *token,
                 if (parse_str(file, token, &nodes->v[index].name) != 0)
                     return -1;
 
+            } else if (strcmp("extensions", token->data) == 0) {
+                if (parse_node_ext(file, token, index, nodes) != 0)
+                    return -1;
+
             } else {
                 if (consume_prop(file, token) != 0)
                     return -1;
