@@ -1805,6 +1805,85 @@ static int parse_pbrspecgloss(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.materials.extensions' property. */
+static int parse_material_ext(FILE *file, T_token *token, size_t index,
+                              T_materials *materials)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(materials != NULL);
+    assert(index < materials->n);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp(token->data, "extensions") == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("KHR_materials_pbrSpeculatGlossiness",
+                       token->data) == 0) {
+
+                if (materials->v[index].ext.pbrsg != NULL ||
+                    materials->v[index].ext.unlit) {
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    return -1;
+                }
+
+                T_pbrspecgloss *pbrsg = malloc(sizeof *pbrsg);
+                if (pbrsg == NULL) {
+                    yf_seterr(YF_ERR_NOMEM, __func__);
+                    return -1;
+                }
+                pbrsg->diffuse_fac[0] = 1.0f;
+                pbrsg->diffuse_fac[1] = 1.0f;
+                pbrsg->diffuse_fac[2] = 1.0f;
+                pbrsg->diffuse_fac[3] = 1.0f;
+                pbrsg->diffuse_tex.index = YF_INT_MIN;
+                pbrsg->specular_fac[0] = 1.0f;
+                pbrsg->specular_fac[1] = 1.0f;
+                pbrsg->specular_fac[2] = 1.0f;
+                pbrsg->glossiness_fac = 1.0f;
+                pbrsg->spec_gloss_tex.index = YF_INT_MIN;
+
+                if (parse_pbrspecgloss(file, token, pbrsg) != 0) {
+                    free(pbrsg);
+                    return -1;
+                }
+                materials->v[index].ext.pbrsg = pbrsg;
+
+            } else if (strcmp("KHR_materials_unlit", token->data) == 0) {
+                if (materials->v[index].ext.pbrsg != NULL ||
+                    materials->v[index].ext.unlit) {
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    return -1;
+                }
+
+                if (consume_prop(file, token) != 0)
+                    return -1;
+                materials->v[index].ext.unlit = 1;
+
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the 'glTF.materials.pbrMetallicRoughness' property. */
 static int parse_pbrmetalrough(FILE *file, T_token *token,
                                T_pbrmetalrough *pbrmetalrough)
