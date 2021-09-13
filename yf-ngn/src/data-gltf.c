@@ -1735,6 +1735,76 @@ static int parse_textureinfo(FILE *file, T_token *token,
     return 0;
 }
 
+/* Parses the 'glTF.materials.extensions.KHR_materials_pbrSpecularGlossiness'
+   property. */
+static int parse_pbrspecgloss(FILE *file, T_token *token,
+                              T_pbrspecgloss *pbrspecgloss)
+{
+    assert(file != NULL && !feof(file));
+    assert(token != NULL);
+    assert(token->token == YF_TOKEN_STR);
+    assert(strcmp(token->data, "KHR_materials_pbrSpecularGlossiness") == 0);
+
+    next_token(file, token); /* ':' */
+    next_token(file, token); /* '{' */
+
+    while (1) {
+        switch (next_token(file, token)) {
+        case YF_TOKEN_STR:
+            if (strcmp("diffuseFactor", token->data) == 0) {
+                next_token(file, token); /* ':' */
+                next_token(file, token); /* '[' */
+                for (size_t i = 0; i < 4; i++) {
+                    if (parse_num(file, token,
+                                  pbrspecgloss->diffuse_fac+i) != 0)
+                        return -1;
+                }
+                next_token(file, token); /* ']' */
+
+            } else if (strcmp("diffuseTexture", token->data) == 0) {
+                if (parse_textureinfo(file, token,
+                                      &pbrspecgloss->diffuse_tex) != 0)
+                    return -1;
+
+            } else if (strcmp("specularFactor", token->data) == 0) {
+                next_token(file, token); /* ':' */
+                next_token(file, token); /* '[' */
+                for (size_t i = 0; i < 3; i++) {
+                    if (parse_num(file, token,
+                                  pbrspecgloss->specular_fac+i) != 0)
+                        return -1;
+                }
+                next_token(file, token); /* ']' */
+
+            } else if (strcmp("glossinessFactor", token->data) == 0) {
+                if (parse_num(file, token, &pbrspecgloss->glossiness_fac) != 0)
+                    return -1;
+
+            } else if (strcmp("specularGlossinessTexture", token->data) == 0) {
+                if (parse_textureinfo(file, token,
+                                      &pbrspecgloss->spec_gloss_tex) != 0)
+                    return -1;
+
+            } else {
+                if (consume_prop(file, token) != 0)
+                    return -1;
+            }
+            break;
+
+        case YF_TOKEN_OP:
+            if (token->data[0] == '}')
+                return 0;
+            break;
+
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            return -1;
+        }
+    }
+
+    return 0;
+}
+
 /* Parses the 'glTF.materials.pbrMetallicRoughness' property. */
 static int parse_pbrmetalrough(FILE *file, T_token *token,
                                T_pbrmetalrough *pbrmetalrough)
