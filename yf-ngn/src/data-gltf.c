@@ -632,6 +632,16 @@ typedef struct {
     };
 } T_textureinfo;
 
+/* Type defining the 'glTF.materials.extensions.-
+   KHR_materials_pbrSpecularGlossiness' property. */
+typedef struct {
+    T_num diffuse_fac[4];
+    T_textureinfo diffuse_tex;
+    T_num specular_fac[3];
+    T_num glossiness_fac;
+    T_textureinfo spec_gloss_tex;
+} T_pbrspecgloss;
+
 /* Type defining the 'glTF.materials.pbrMetallicRoughness' property. */
 typedef struct {
     T_num base_clr_fac[4];
@@ -656,6 +666,10 @@ typedef struct {
         T_num alpha_cutoff;
         T_bool double_sided;
         T_str name;
+        struct {
+            T_pbrspecgloss *pbrsg;
+            int unlit;
+        } ext;
     } *v;
     size_t n;
 } T_materials;
