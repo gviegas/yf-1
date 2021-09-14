@@ -1017,7 +1017,7 @@ static int parse_node_punctual(FILE *file, T_token *token, size_t index,
     assert(nodes != NULL);
     assert(index < nodes->n);
     assert(token->token == YF_TOKEN_STR);
-    assert(strcmp("KHR_lights_punctual", token->data) == 0);
+    assert(strcmp(token->data, "KHR_lights_punctual") == 0);
 
     next_token(file, token); /* ':' */
     next_token(file, token); /* '{' */
@@ -1058,7 +1058,7 @@ static int parse_node_ext(FILE *file, T_token *token, size_t index,
     assert(nodes != NULL);
     assert(index < nodes->n);
     assert(token->token == YF_TOKEN_STR);
-    assert(strcmp("extensions", token->data) == 0);
+    assert(strcmp(token->data, "extensions") == 0);
 
     next_token(file, token); /* ':' */
     next_token(file, token); /* '{' */
@@ -1742,6 +1742,7 @@ static int parse_pbrspecgloss(FILE *file, T_token *token,
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
+    assert(pbrspecgloss != NULL);
     assert(token->token == YF_TOKEN_STR);
     assert(strcmp(token->data, "KHR_materials_pbrSpecularGlossiness") == 0);
 
@@ -1890,6 +1891,7 @@ static int parse_pbrmetalrough(FILE *file, T_token *token,
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
+    assert(pbrmetalrough != NULL);
     assert(token->token == YF_TOKEN_STR);
     assert(strcmp(token->data, "pbrMetallicRoughness") == 0);
 
@@ -2939,7 +2941,7 @@ static int parse_punctual(FILE *file, T_token *token, T_gltf *gltf)
     assert(token != NULL);
     assert(gltf != NULL);
     assert(token->token == YF_TOKEN_STR);
-    assert(strcmp("KHR_lights_punctual", token->data) == 0);
+    assert(strcmp(token->data, "KHR_lights_punctual") == 0);
 
     next_token(file, token); /* ':' */
     next_token(file, token); /* '{' */
@@ -2980,7 +2982,7 @@ static int parse_extensions(FILE *file, T_token *token, T_gltf *gltf)
     assert(token != NULL);
     assert(gltf != NULL);
     assert(token->token == YF_TOKEN_STR);
-    assert(strcmp("extensions", token->data) == 0);
+    assert(strcmp(token->data, "extensions") == 0);
 
     next_token(file, token); /* ':' */
     next_token(file, token); /* '{' */
