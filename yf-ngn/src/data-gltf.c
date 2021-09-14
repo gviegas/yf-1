@@ -5332,32 +5332,69 @@ static void print_gltf(const T_gltf *gltf)
         printf("    normalTexture:\n"
                "     index: %lld\n"
                "     texCoord: %lld\n"
-               "     scale: %.6f\n"
-               "    occlusionTexture:\n"
-               "     index: %lld\n"
-               "     texCoord: %lld\n"
-               "     strength: %.6f\n"
-               "    emissiveFactor: [%.6f, %.6f, %.6f]\n"
-               "    emissiveTexture:\n"
-               "     index: %lld\n"
-               "     texCoord: %lld\n"
-               "    alphaMode: %d\n"
-               "    alphaCutoff: %.6f\n"
-               "    doubleSided: %s\n",
+               "     scale: %.6f\n",
                gltf->materials.v[i].normal_tex.index,
                gltf->materials.v[i].normal_tex.tex_coord,
-               gltf->materials.v[i].normal_tex.scale,
+               gltf->materials.v[i].normal_tex.scale);
+
+        printf("    occlusionTexture:\n"
+               "     index: %lld\n"
+               "     texCoord: %lld\n"
+               "     strength: %.6f\n",
                gltf->materials.v[i].occlusion_tex.index,
                gltf->materials.v[i].occlusion_tex.tex_coord,
-               gltf->materials.v[i].occlusion_tex.strength,
+               gltf->materials.v[i].occlusion_tex.strength);
+
+        printf("    emissiveFactor: [%.6f, %.6f, %.6f]\n"
+               "    emissiveTexture:\n"
+               "     index: %lld\n"
+               "     texCoord: %lld\n",
                gltf->materials.v[i].emissive_fac[0],
                gltf->materials.v[i].emissive_fac[1],
                gltf->materials.v[i].emissive_fac[2],
                gltf->materials.v[i].emissive_tex.index,
-               gltf->materials.v[i].emissive_tex.tex_coord,
+               gltf->materials.v[i].emissive_tex.tex_coord);
+
+        printf("    alphaMode: %d\n"
+               "    alphaCutoff: %.6f\n"
+               "    doubleSided: %s\n",
                gltf->materials.v[i].alpha_mode,
                gltf->materials.v[i].alpha_cutoff,
                (gltf->materials.v[i].double_sided ? "true" : "false"));
+
+        printf("    extensions:\n"
+               "     pbrSpecularGlossiness:");
+
+        if (gltf->materials.v[i].ext.pbrsg != NULL)
+            printf("\n"
+                   "      diffuseFactor: [%.6f, %.6f, %.6f, %.6f]\n"
+                   "      diffuseTexture:\n"
+                   "       index: %lld\n"
+                   "       texCoord: %lld\n"
+                   "      specularFactor: [%.6f, %.6f, %.6f]\n"
+                   "      glossinessFactor: %.6f\n"
+                   "      specularGlossinessTexture:\n"
+                   "       index: %lld\n"
+                   "       texCoord: %lld\n"
+                   "     unlit: %s\n",
+                   gltf->materials.v[i].ext.pbrsg->diffuse_fac[0],
+                   gltf->materials.v[i].ext.pbrsg->diffuse_fac[1],
+                   gltf->materials.v[i].ext.pbrsg->diffuse_fac[2],
+                   gltf->materials.v[i].ext.pbrsg->diffuse_fac[3],
+                   gltf->materials.v[i].ext.pbrsg->diffuse_tex.index,
+                   gltf->materials.v[i].ext.pbrsg->diffuse_tex.tex_coord,
+                   gltf->materials.v[i].ext.pbrsg->specular_fac[0],
+                   gltf->materials.v[i].ext.pbrsg->specular_fac[1],
+                   gltf->materials.v[i].ext.pbrsg->specular_fac[2],
+                   gltf->materials.v[i].ext.pbrsg->glossiness_fac,
+                   gltf->materials.v[i].ext.pbrsg->spec_gloss_tex.index,
+                   gltf->materials.v[i].ext.pbrsg->spec_gloss_tex.tex_coord,
+                   (gltf->materials.v[i].ext.unlit ? "!!!" : "no"));
+        else
+            printf(" no\n"
+                   "     unlit: %s\n",
+                   (gltf->materials.v[i].ext.unlit ? "yes" : "no"));
+
     }
 
     /* animations */
