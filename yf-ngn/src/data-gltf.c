@@ -4138,24 +4138,80 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     if (cont->matls[material] != NULL)
         return 0;
 
-    /* TODO: Specular-Glossiness and Unlit exts. */
+    YF_matlprop prop = {0};
+    T_int tex_i[5];
+    YF_texture *tex_p[5];
 
-    YF_matlprop prop;
+    if (!gltf->materials.v[material].ext.unlit) {
+        if (gltf->materials.v[material].ext.pbrsg != NULL) {
+            /* spec-gloss (extension) */
+            const T_pbrspecgloss *pbrsg = gltf->materials.v[material].ext.pbrsg;
 
-    prop.pbr = YF_PBR_METALROUGH;
-    memcpy(prop.pbrmr.color_fac,
-           gltf->materials.v[material].pbrmr.base_clr_fac,
-           sizeof prop.pbrmr.color_fac);
-    prop.pbrmr.metallic_fac = gltf->materials.v[material].pbrmr.metallic_fac;
-    prop.pbrmr.roughness_fac = gltf->materials.v[material].pbrmr.roughness_fac;
+            prop.pbr = YF_PBR_SPECGLOSS;
+            memcpy(prop.pbrsg.diffuse_fac, pbrsg->diffuse_fac,
+                   sizeof prop.pbrsg.diffuse_fac);
+            memcpy(prop.pbrsg.specular_fac, pbrsg->specular_fac,
+                   sizeof prop.pbrsg.specular_fac);
+            prop.pbrsg.glossiness_fac = pbrsg->glossiness_fac;
 
-    prop.normal.scale = gltf->materials.v[material].normal_tex.scale;
+            tex_i[0] = pbrsg->diffuse_tex.index;
+            tex_p[0] = &prop.pbrsg.diffuse_tex;
+            tex_i[1] = pbrsg->spec_gloss_tex.index;
+            tex_p[1] = &prop.pbrsg.spec_gloss_tex;
 
-    prop.occlusion.strength =
-        gltf->materials.v[material].occlusion_tex.strength;
+        } else {
+            /* metal-rough */
+            const T_pbrmetalrough *pbrmr = &gltf->materials.v[material].pbrmr;
 
-    memcpy(prop.emissive.factor, gltf->materials.v[material].emissive_fac,
-           sizeof prop.emissive.factor);
+            prop.pbr = YF_PBR_METALROUGH;
+            memcpy(prop.pbrmr.color_fac, pbrmr->base_clr_fac,
+                   sizeof prop.pbrmr.color_fac);
+            prop.pbrmr.metallic_fac = pbrmr->metallic_fac;
+            prop.pbrmr.roughness_fac = pbrmr->roughness_fac;
+
+            tex_i[0] = pbrmr->base_clr_tex.index;
+            tex_p[0] = &prop.pbrmr.color_tex;
+            tex_i[1] = pbrmr->metal_rough_tex.index;
+            tex_p[1] = &prop.pbrmr.metal_rough_tex;
+        }
+
+        prop.normal.scale = gltf->materials.v[material].normal_tex.scale;
+
+        prop.occlusion.strength =
+            gltf->materials.v[material].occlusion_tex.strength;
+
+        memcpy(prop.emissive.factor, gltf->materials.v[material].emissive_fac,
+               sizeof prop.emissive.factor);
+
+        tex_i[2] = gltf->materials.v[material].normal_tex.index;
+        tex_p[2] = &prop.normal.tex;
+        tex_i[3] = gltf->materials.v[material].occlusion_tex.index;
+        tex_p[3] = &prop.occlusion.tex;
+        tex_i[4] = gltf->materials.v[material].emissive_tex.index;
+        tex_p[4] = &prop.emissive.tex;
+
+    } else {
+        /* unlit (extension) */
+        prop.pbr = YF_PBR_NONE;
+        memcpy(prop.nopbr.color_fac,
+               gltf->materials.v[material].pbrmr.base_clr_fac,
+               sizeof prop.nopbr.color_fac);
+
+        tex_i[0] = gltf->materials.v[material].pbrmr.base_clr_tex.index;
+        tex_p[0] = &prop.nopbr.color_tex;
+        tex_i[1] = YF_INT_MIN;
+        tex_p[1] = NULL;
+
+        prop.normal.scale = 1.0f;
+        prop.occlusion.strength = 1.0f;
+
+        tex_i[2] = YF_INT_MIN;
+        tex_p[2] = NULL;
+        tex_i[3] = YF_INT_MIN;
+        tex_p[3] = NULL;
+        tex_i[4] = YF_INT_MIN;
+        tex_p[4] = NULL;
+    }
 
     switch (gltf->materials.v[material].alpha_mode) {
     case YF_GLTF_ALPHA_OPAQUE:
@@ -4173,27 +4229,9 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         return -1;
     }
 
-    const T_int tex_i[] = {
-        gltf->materials.v[material].pbrmr.base_clr_tex.index,
-        gltf->materials.v[material].pbrmr.metal_rough_tex.index,
-        gltf->materials.v[material].normal_tex.index,
-        gltf->materials.v[material].occlusion_tex.index,
-        gltf->materials.v[material].emissive_tex.index
-    };
-
-    YF_texture *const tex_p[] = {
-        &prop.pbrmr.color_tex,
-        &prop.pbrmr.metal_rough_tex,
-        &prop.normal.tex,
-        &prop.occlusion.tex,
-        &prop.emissive.tex
-    };
-
     for (size_t i = 0; i < (sizeof tex_i / sizeof *tex_i); i++) {
-        if (tex_i[i] == YF_INT_MIN) {
-            *tex_p[i] = NULL;
+        if (tex_i[i] == YF_INT_MIN)
             continue;
-        }
         if (load_texture(gltf, fdata, cont, tex_i[i]) != 0)
             return -1;
         *tex_p[i] = cont->imgs[cont->texs[tex_i[i]]];
