@@ -1822,7 +1822,7 @@ static int parse_material_ext(FILE *file, T_token *token, size_t index,
     while (1) {
         switch (next_token(file, token)) {
         case YF_TOKEN_STR:
-            if (strcmp("KHR_materials_pbrSpeculatGlossiness",
+            if (strcmp("KHR_materials_pbrSpecularGlossiness",
                        token->data) == 0) {
 
                 if (materials->v[index].ext.pbrsg != NULL ||
