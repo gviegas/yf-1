@@ -534,11 +534,14 @@ void yf_mesh_deinit(YF_mesh mesh)
     /* TODO: Consider resizing the buffer down if too much mem. goes unused. */
 
     free(mesh);
+#endif
 }
 
 YF_mesh yf_mesh_initdt(const YF_meshdt *data)
 {
     assert(data != NULL);
+    assert(data->prims != NULL && data->prim_n > 0);
+    assert(data->data != NULL && data->data_sz > 0);
 
     if (ctx_ == NULL) {
         if ((ctx_ = yf_getctx()) == NULL ||
