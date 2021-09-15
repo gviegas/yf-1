@@ -190,22 +190,18 @@ static int trim_mem(void)
         YF_mesh prev = blks_[i-1].prev_mesh;
         YF_mesh mesh = blks_[i].prev_mesh;
         diff += blks_[i-1].size;
-        do {
-            mesh->v.offset -= diff;
-            if (mesh->i.n > 0)
-                mesh->i.offset -= diff;
-        } while ((mesh = mesh->prev) != prev);
+        do
+            mesh->offset -= diff;
+        while ((mesh = mesh->prev) != prev);
     }
 
     if (blks_[blk_n_-1].prev_mesh != tail_) {
         YF_mesh prev = blks_[blk_n_-1].prev_mesh;
         YF_mesh mesh = tail_;
         diff += blks_[blk_n_-1].size;
-        do {
-            mesh->v.offset -= diff;
-            if (mesh->i.n > 0)
-                mesh->i.offset -= diff;
-        } while ((mesh = mesh->prev) != prev);
+        do
+            mesh->offset -= diff;
+        while ((mesh = mesh->prev) != prev);
     }
 
     /* unused memory is now contiguous */
@@ -501,7 +497,6 @@ void yf_mesh_deinit(YF_mesh mesh)
     /* TODO: Consider resizing the buffer down if too much mem. goes unused. */
 
     free(mesh);
-#endif
 }
 
 YF_mesh yf_mesh_initdt(const YF_meshdt *data)
