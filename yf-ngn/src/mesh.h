@@ -11,71 +11,38 @@
 #include "yf/core/yf-cmdbuf.h"
 
 #include "yf-mesh.h"
-#include "yf-vector.h"
-
-/* Type defining the vertex of model meshes. */
-#define YF_VTYPE_MDL 0
-typedef struct {
-    YF_vec3 pos;
-    YF_vec2 tc;
-    YF_vec3 norm;
-    YF_vec4 clr;
-    unsigned char jnts[4];
-    YF_vec4 wgts;
-    /* TODO */
-} YF_vmdl;
-
-/* Type defining the vertex of terrain meshes. */
-#define YF_VTYPE_TERR 1
-typedef struct {
-    YF_vec3 pos;
-    YF_vec2 tc;
-    YF_vec3 norm;
-    /* TODO */
-} YF_vterr;
-
-/* Type defining the vertex of particle system meshes. */
-#define YF_VTYPE_PART 2
-typedef struct {
-    YF_vec3 pos;
-    YF_vec4 clr;
-    /* TODO */
-} YF_vpart;
-
-/* Type defining the vertex of quad meshes. */
-#define YF_VTYPE_QUAD 3
-typedef struct {
-    YF_vec3 pos;
-    YF_vec2 tc;
-    YF_vec4 clr;
-    /* TODO */
-} YF_vquad;
-
-/* Type defining the vertex of label meshes. */
-#define YF_VTYPE_LABL 4
-typedef struct {
-    YF_vec3 pos;
-    YF_vec2 tc;
-    YF_vec4 clr;
-    /* TODO */
-} YF_vlabl;
 
 /* Index types that can be used for mesh indices. */
 #define YF_ITYPE_USHORT 0
 #define YF_ITYPE_UINT   1
 
-/* Type defining the mesh data. */
+/* Type defining primitive data. */
 typedef struct {
+    int primitive;
+    unsigned vert_n;
+    unsigned indx_n;
+    /* relative to 'meshdt.data' */
+    size_t data_off;
+
     struct {
-        int vtype;
-        void *data;
-        size_t n;
-    } v;
-    struct {
-        int itype;
-        void *data;
-        size_t n;
-    } i;
+        unsigned loc;
+        int vfmt;
+        /* relative to 'primdt.data_off' */
+        size_t data_off;
+    } *attrs;
+    unsigned attr_n;
+
+    int itype;
+    /* relative to 'primdt.data_off' */
+    size_t indx_data_off;
+} YF_primdt;
+
+/* Type defining mesh data. */
+typedef struct {
+    YF_primdt *prims;
+    unsigned prim_n;
+    void *data;
+    size_t data_sz;
 } YF_meshdt;
 
 /* Initializes a new mesh object from mesh data directly. */
