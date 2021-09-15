@@ -33,16 +33,10 @@
 #define YF_BLKMAX 256
 
 struct YF_mesh_o {
-    struct {
-        size_t offset;
-        unsigned stride;
-        unsigned n;
-    } v;
-    struct {
-        size_t offset;
-        short stride;
-        unsigned n;
-    } i;
+    YF_primdt *prims;
+    unsigned prim_n;
+    size_t offset;
+    size_t size;
 
     /* mesh whose buffer location precedes this one's */
     YF_mesh prev;
