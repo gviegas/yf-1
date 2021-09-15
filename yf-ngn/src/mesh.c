@@ -382,12 +382,9 @@ void yf_mesh_deinit(YF_mesh mesh)
     if (mesh == NULL)
         return;
 
-    const size_t sz = mesh->v.n * mesh->v.stride + mesh->i.n * mesh->i.stride;
-    const size_t off = mesh->v.offset;
     size_t blk_i = blk_n_;
-
     for (size_t i = 0; i < blk_n_; i++) {
-        if (blks_[i].offset > off) {
+        if (blks_[i].offset > mesh->offset) {
             blk_i = i;
             break;
         }
@@ -395,19 +392,19 @@ void yf_mesh_deinit(YF_mesh mesh)
 
     if (blk_n_ == 0) {
         /* no blocks */
-        blks_[0].offset = off;
-        blks_[0].size = sz;
+        blks_[0].offset = mesh->offset;
+        blks_[0].size = mesh->size;
         blks_[0].prev_mesh = mesh->prev;
         blk_n_++;
 
     } else if (blk_i == blk_n_) {
         /* no next blocks */
         T_memblk *prev = blks_+blk_i-1;
-        if (prev->offset + prev->size == off) {
-            prev->size += sz;
+        if (prev->offset + prev->size == mesh->offset) {
+            prev->size += mesh->size;
         } else if (blk_n_ < YF_BLKMAX) {
-            blks_[blk_i].offset = off;
-            blks_[blk_i].size = sz;
+            blks_[blk_i].offset = mesh->offset;
+            blks_[blk_i].size = mesh->size;
             blks_[blk_i].prev_mesh = mesh->prev;
             blk_n_++;
         } else {
@@ -421,14 +418,14 @@ void yf_mesh_deinit(YF_mesh mesh)
     } else if (blk_i == 0) {
         /* no previous blocks */
         T_memblk *next = blks_;
-        if (off + sz == next->offset) {
-            next->offset = off;
-            next->size += sz;
+        if (mesh->offset + mesh->size == next->offset) {
+            next->offset = mesh->offset;
+            next->size += mesh->size;
             next->prev_mesh = mesh->prev;
         } else if (blk_n_ < YF_BLKMAX) {
             memmove(next+1, next, blk_n_ * sizeof *blks_);
-            blks_[0].offset = off;
-            blks_[0].size = sz;
+            blks_[0].offset = mesh->offset;
+            blks_[0].size = mesh->size;
             blks_[0].prev_mesh = mesh->prev;
             blk_n_++;
         } else {
@@ -445,16 +442,16 @@ void yf_mesh_deinit(YF_mesh mesh)
         T_memblk *next = blks_+blk_i;
         int prev_merged = 0;
         int next_merged = 0;
-        if (prev->offset + prev->size == off) {
-            prev->size += sz;
+        if (prev->offset + prev->size == mesh->offset) {
+            prev->size += mesh->size;
             prev_merged = 1;
         }
-        if (off + sz == next->offset) {
+        if (mesh->offset + mesh->size == next->offset) {
             if (prev_merged) {
                 prev->size += next->size;
             } else {
-                next->offset = off;
-                next->size += sz;
+                next->offset = mesh->offset;
+                next->size += mesh->size;
                 next->prev_mesh = mesh->prev;
             }
             next_merged = 1;
@@ -462,8 +459,8 @@ void yf_mesh_deinit(YF_mesh mesh)
         if (!prev_merged && !next_merged) {
             if (blk_n_ < YF_BLKMAX) {
                 memmove(next+1, next, (blk_n_ - blk_i) * sizeof *blks_);
-                blks_[blk_i].offset = off;
-                blks_[blk_i].size = sz;
+                blks_[blk_i].offset = mesh->offset;
+                blks_[blk_i].size = mesh->size;
                 blks_[blk_i].prev_mesh = mesh->prev;
                 blk_n_++;
             } else {
