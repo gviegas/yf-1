@@ -535,19 +535,18 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
     return mesh;
 }
 
-int yf_mesh_setvtx(YF_mesh mesh, YF_slice range, const void *data)
+int yf_mesh_setdata(YF_mesh mesh, size_t offset, const void *data, size_t size)
 {
     assert(mesh != NULL);
-    assert(range.n > 0);
     assert(data != NULL);
+    assert(size > 0);
 
-    if (range.i + range.n > mesh->v.n) {
+    if (offset + size > mesh->size) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }
 
-    return yf_buffer_copy(buf_, mesh->v.offset + mesh->v.stride * range.i,
-                          data, mesh->v.stride * range.n);
+    return yf_buffer_copy(buf_, mesh->offset + offset, data, size);
 }
 
 void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)

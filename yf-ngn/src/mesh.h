@@ -48,8 +48,8 @@ typedef struct {
 /* Initializes a new mesh object from mesh data directly. */
 YF_mesh yf_mesh_initdt(const YF_meshdt *data);
 
-/* Replaces the contents of a mesh object's vertices. */
-int yf_mesh_setvtx(YF_mesh mesh, YF_slice range, const void *data);
+/* Replaces the contents of a mesh object's data buffer. */
+int yf_mesh_setdata(YF_mesh mesh, size_t offset, const void *data, size_t size);
 
 /* Encodes vertex/index state and draws a given mesh. */
 void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n);
