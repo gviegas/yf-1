@@ -238,46 +238,19 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
 {
     assert(mesh != NULL);
     assert(data != NULL);
-    assert(data->v.data != NULL);
-    assert(data->v.n > 0 && data->v.n <= UINT_MAX);
-    assert(data->i.n <= UINT_MAX);
+    assert(data->prims != NULL && data->prim_n > 0);
+    assert(data->data != NULL && data->data_sz > 0);
 
-    switch (data->v.vtype) {
-    case YF_VTYPE_MDL:
-        mesh->v.stride = sizeof(YF_vmdl);
-        break;
-    case YF_VTYPE_TERR:
-        mesh->v.stride = sizeof(YF_vterr);
-        break;
-    case YF_VTYPE_PART:
-        mesh->v.stride = sizeof(YF_vpart);
-        break;
-    case YF_VTYPE_QUAD:
-        mesh->v.stride = sizeof(YF_vquad);
-        break;
-    case YF_VTYPE_LABL:
-        mesh->v.stride = sizeof(YF_vlabl);
-        break;
-    default:
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return -1;
+#ifdef YF_DEVEL
+    for (unsigned i = 0; i < data->prim_n; i++) {
+        assert(data->prims[i].vert_n > 0 && data->prims[i].vert_n <= UINT_MAX);
+        assert(data->prims[i].indx_n <= UINT_MAX);
+        assert(data->prims[i].attrs != NULL && data->prims[i].attr_n > 0);
+        /* TODO... */
     }
+#endif
 
-    switch (data->i.itype) {
-    case YF_ITYPE_USHORT:
-        mesh->i.stride = 2;
-        break;
-    case YF_ITYPE_UINT:
-        mesh->i.stride = 4;
-        break;
-    default:
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return -1;
-    }
-
-    const size_t v_sz = data->v.n * mesh->v.stride;
-    const size_t i_sz = data->i.n * mesh->i.stride;
-    const size_t sz = v_sz + i_sz;
+    const size_t sz = data->data_sz;
     size_t blk_i = blk_n_;
 
     for (size_t i = 0; i < blk_n_; i++) {
@@ -330,14 +303,11 @@ no_resz:
     }
 
     const size_t off = blks_[blk_i].offset;
-    if (yf_buffer_copy(buf_, off, data->v.data, v_sz) != 0 ||
-        (i_sz > 0 && yf_buffer_copy(buf_, off+v_sz, data->i.data, i_sz) != 0))
+    if (yf_buffer_copy(buf_, off, data->data, sz) != 0)
         return -1;
 
-    mesh->v.offset = off;
-    mesh->v.n = data->v.n;
-    mesh->i.offset = off + v_sz;
-    mesh->i.n = data->i.n;
+    mesh->offset = off;
+    mesh->size = sz;
 
     mesh->prev = blks_[blk_i].prev_mesh;
     if (mesh->prev != NULL) {
