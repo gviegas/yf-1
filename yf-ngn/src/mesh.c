@@ -613,12 +613,10 @@ void yf_unsetmesh(void)
 
 #ifdef YF_DEVEL
 
-#define YF_SPANOFMESH(mesh, beg_p, end_p) do { \
-    *(beg_p) = (mesh)->v.offset; \
-    *(end_p) = (mesh)->v.stride * (mesh)->v.n; \
-    if ((mesh)->i.n > 0) \
-        *(end_p) += (mesh)->i.stride * (mesh)->i.n; \
-    *(end_p) += *(beg_p); } while (0)
+#define YF_SPANOFMESH(mesh, beg, end) do { \
+    beg = (mesh)->offset; \
+    end = (mesh)->size; \
+    end += beg; } while (0)
 
 void yf_print_mesh(YF_mesh mesh)
 {
@@ -636,7 +634,7 @@ void yf_print_mesh(YF_mesh mesh)
                    i, blks_[i].offset, blks_[i].size);
 
             if (blks_[i].prev_mesh != NULL) {
-                YF_SPANOFMESH(blks_[i].prev_mesh, &beg, &end);
+                YF_SPANOFMESH(blks_[i].prev_mesh, beg, end);
                 printf("  prev. mesh: \t[%zu, %zu)\n", beg, end);
             } else {
                 printf("  (no prev. mesh)\n");
@@ -647,16 +645,16 @@ void yf_print_mesh(YF_mesh mesh)
         puts("\n meshes:");
         YF_mesh next = head_;
         while (next != NULL) {
-            YF_SPANOFMESH(next, &beg, &end);
+            YF_SPANOFMESH(next, beg, end);
             printf("  [%zu, %zu)%s\n", beg, end,
                    next->invalid ? "\t<inval.>" : "");
             next = next->next;
         }
 
         if (head_) {
-            YF_SPANOFMESH(head_, &beg, &end);
+            YF_SPANOFMESH(head_, beg, end);
             printf("\n head: [%zu, %zu)", beg, end);
-            YF_SPANOFMESH(tail_, &beg, &end);
+            YF_SPANOFMESH(tail_, beg, end);
             printf("\n tail: [%zu, %zu)\n", beg, end);
         } else {
             printf("\n (no meshes)\n");
@@ -666,17 +664,37 @@ void yf_print_mesh(YF_mesh mesh)
 
     } else {
         printf(" mesh <%p>:\n"
-               "  vertex:\n"
-               "   offset: %zu\n"
-               "   stride: %u\n"
-               "   count:  %u\n"
-               "  index:\n"
-               "   offset: %zu\n"
-               "   stride: %hd\n"
-               "   count:  %u\n",
-               (void *)mesh,
-               mesh->v.offset, mesh->v.stride, mesh->v.n,
-               mesh->i.offset, mesh->i.stride, mesh->i.n);
+               "  offset: %zu\n"
+               "  size: %zu\n"
+               "  primitives (%u):\n",
+               (void *)mesh, mesh->offset, mesh->size, mesh->prim_n);
+
+        for (unsigned i = 0; i < mesh->prim_n; i++) {
+            printf("   primitive [%u]\n"
+                   "    primitive type: %d\n"
+                   "    vertex count: %u\n"
+                   "    index count: %u\n"
+                   "    data offset: %zu\n"
+                   "    attributes (%u):\n",
+                   i, mesh->prims[i].primitive, mesh->prims[i].vert_n,
+                   mesh->prims[i].indx_n, mesh->prims[i].data_off,
+                   mesh->prims[i].attr_n);
+
+            for (unsigned j = 0; j < mesh->prims[i].attr_n; j++)
+                printf("     attribute [%u]:\n"
+                       "      location: %u\n"
+                       "      vertex format: %d\n"
+                       "      vertex data offset: %zu\n",
+                       j, mesh->prims[i].attrs[j].loc,
+                       mesh->prims[i].attrs[j].vfmt,
+                       mesh->prims[i].attrs[j].data_off);
+
+            if (mesh->prims[i].indx_n > 0)
+                printf("    index type: %d\n"
+                       "    index data offset: %zu\n",
+                       mesh->prims[i].itype, mesh->prims[i].indx_data_off);
+
+        }
     }
 
     puts("");
