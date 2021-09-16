@@ -419,12 +419,19 @@ static int init_part(T_entry *entry)
     const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
-    const YF_vattr attrs[] = {
-        {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
-        {YF_RESLOC_CLR, YF_VFMT_FLOAT4, offsetof(YF_vpart, clr)}
-    };
     const YF_vinput vins[] = {
-        {attrs, sizeof attrs / sizeof *attrs, sizeof(YF_vpart), YF_VRATE_VERT}
+        [0] = {
+            .attrs = &(YF_vattr){YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+            .attr_n = 1,
+            .stride = sizeof(float[3]),
+            .vrate = YF_VRATE_VERT
+        },
+        [1] = {
+            .attrs = &(YF_vattr){YF_RESLOC_CLR, YF_VFMT_FLOAT4, 0},
+            .attr_n = 1,
+            .stride = sizeof(float[4]),
+            .vrate = YF_VRATE_VERT
+        }
     };
     const unsigned vin_n = sizeof vins / sizeof *vins;
 
