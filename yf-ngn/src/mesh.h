@@ -16,6 +16,14 @@
 #define YF_ITYPE_USHORT 0
 #define YF_ITYPE_UINT   1
 
+/* Type defining attribute data. */
+typedef struct {
+    unsigned loc;
+    int vfmt;
+    /* relative to 'primdt.data_off' */
+    size_t data_off;
+} YF_attrdt;
+
 /* Type defining primitive data. */
 typedef struct {
     int primitive;
@@ -24,12 +32,7 @@ typedef struct {
     /* relative to 'meshdt.data' */
     size_t data_off;
 
-    struct {
-        unsigned loc;
-        int vfmt;
-        /* relative to 'primdt.data_off' */
-        size_t data_off;
-    } *attrs;
+    YF_attrdt *attrs;
     unsigned attr_n;
 
     int itype;
