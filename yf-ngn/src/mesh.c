@@ -553,13 +553,40 @@ void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
 {
     assert(mesh != NULL);
     assert(cmdb != NULL);
+    assert(inst_n > 0);
 
-    yf_cmdbuf_setvbuf(cmdb, 0, buf_, mesh->v.offset);
-    if (mesh->i.n != 0) {
-        yf_cmdbuf_setibuf(cmdb, buf_, mesh->i.offset, mesh->i.stride);
-        yf_cmdbuf_drawi(cmdb, 0, 0, mesh->i.n, 0, inst_n);
-    } else {
-        yf_cmdbuf_draw(cmdb, 0, mesh->v.n, 0, inst_n);
+    /* TODO: Consider managing and binding the graphics states internally. */
+
+    /* FIXME: Multiple primitives may require different states. */
+    for (unsigned i = 0; i < mesh->prim_n; i++) {
+        const YF_primdt *prim = mesh->prims+i;
+        const size_t off = mesh->offset + prim->data_off;
+
+        for (unsigned j = 0; j < prim->attr_n; j++)
+            /* FIXME: This assumes an exactly match with state's 'vins'. */
+            yf_cmdbuf_setvbuf(cmdb, j, buf_, off + prim->attrs[j].data_off);
+
+        if (mesh->prims[i].indx_n > 0) {
+            /* indexed draw */
+            unsigned isz;
+            switch (mesh->prims[i].itype) {
+            case YF_ITYPE_UINT:
+                isz = 4;
+                break;
+            case YF_ITYPE_USHORT:
+                isz = 2;
+                break;
+            default:
+                assert(0);
+                abort();
+            }
+            yf_cmdbuf_setibuf(cmdb, buf_, off + prim->indx_data_off, isz);
+            yf_cmdbuf_drawi(cmdb, 0, 0, mesh->prims[i].indx_n, 0, inst_n);
+
+        } else {
+            /* non-indexed draw */
+            yf_cmdbuf_draw(cmdb, 0, mesh->prims[i].vert_n, 0, inst_n);
+        }
     }
 }
 
