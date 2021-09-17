@@ -258,29 +258,27 @@ YF_color yf_quad_getcolor(YF_quad quad, int corner)
 {
     assert(quad != NULL);
 
-    unsigned i = 0;
+    float *clr = quad->verts + YF_VQUAD_POSN + YF_VQUAD_TCN;
     switch (corner) {
     case YF_CORNER_TOPL:
     case YF_CORNER_TOP:
     case YF_CORNER_LEFT:
     case YF_CORNER_ALL:
-        i = 0;
         break;
     case YF_CORNER_TOPR:
     case YF_CORNER_RIGHT:
-        i = 3;
+        clr += 3 << 2;
         break;
     case YF_CORNER_BOTTOML:
     case YF_CORNER_BOTTOM:
-        i = 1;
+        clr += 1 << 2;
         break;
     case YF_CORNER_BOTTOMR:
-        i = 2;
+        clr += 2 << 2;
         break;
     }
 
-    const YF_vquad *v = quad->verts+i;
-    return (YF_color){v->clr[0], v->clr[1], v->clr[2], v->clr[3]};
+    return (YF_color){clr[0], clr[1], clr[2], clr[3]};
 }
 
 void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color)
