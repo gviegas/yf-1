@@ -527,6 +527,33 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
         return NULL;
     }
 
+    mesh->prims = malloc(data->prim_n * sizeof *data->prims);
+    if (mesh->prims == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(mesh);
+        return NULL;
+    }
+
+    for (unsigned i = 0; i < data->prim_n; i++) {
+        mesh->prims[i] = data->prims[i];
+        mesh->prims[i].attrs = malloc(data->prims[i].attr_n *
+                                      sizeof *data->prims->attrs);
+
+        if (mesh->prims[i].attrs == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            for (unsigned j = 0; j < i; j++)
+                free(mesh->prims[j].attrs);
+            free(mesh->prims);
+            free(mesh);
+            return NULL;
+        }
+
+        for (unsigned j = 0; j < data->prims[i].attr_n; j++)
+            mesh->prims[i].attrs[j] = data->prims[i].attrs[j];
+    }
+
+    mesh->prim_n = data->prim_n;
+
     if (copy_data(mesh, data) != 0) {
         yf_mesh_deinit(mesh);
         mesh = NULL;
