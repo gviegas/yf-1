@@ -14,16 +14,22 @@
 #include "yf-quad.h"
 #include "node.h"
 #include "mesh.h"
+#include "resmgr.h"
+
+#define YF_VQUAD_POSN (3 << 2)
+#define YF_VQUAD_TCN  (2 << 2)
+#define YF_VQUAD_CLRN (4 << 2)
+#define YF_VQUAD_N    (YF_VQUAD_POSN + YF_VQUAD_TCN + YF_VQUAD_CLRN)
 
 struct YF_quad_o {
     YF_node node;
-    YF_vquad verts[4];
+    float verts[YF_VQUAD_N];
     YF_mesh mesh;
     YF_texture tex;
     YF_rect rect;
 #define YF_PEND_NONE 0
-#define YF_PEND_TC   0x01 /* 'rect' changed, 'verts[].tc' not up to date */
-#define YF_PEND_CLR  0x02 /* 'verts[].clr' set but 'mesh' not up to date */
+#define YF_PEND_TC   0x01 /* 'rect' changed, 'verts.tc' not up to date */
+#define YF_PEND_CLR  0x02 /* 'verts.clr' set but 'mesh' not up to date */
     unsigned pend_mask;
     /* TODO: Other quad properties. */
 };
@@ -39,37 +45,69 @@ static int init_rect(YF_quad quad)
 # define YF_TEX_T 1.0f
 #endif
 
-    static const YF_vquad verts[4] = {
-        {
-            .pos = {-1.0f, -1.0f, 0.5f},
-            .tc = {0.0f, 1.0f - YF_TEX_T},
-            .clr = {1.0f, 1.0f, 1.0f, 1.0f}
-        },
-        {
-            .pos = {-1.0f, 1.0f, 0.5f},
-            .tc = {0.0f, YF_TEX_T},
-            .clr = {1.0f, 1.0f, 1.0f, 1.0f}
-        },
-        {
-            .pos = {1.0f, 1.0f, 0.5f},
-            .tc = {1.0f, YF_TEX_T},
-            .clr = {1.0f, 1.0f, 1.0f, 1.0f}
-        },
-        {
-            .pos = {1.0f, -1.0f, 0.5f},
-            .tc = {1.0f, 1.0f - YF_TEX_T},
-            .clr = {1.0f, 1.0f, 1.0, 1.0f}
-        }
+    static const float pos[] = {
+        -1.0f, -1.0f, 0.5f,
+        -1.0f, 1.0f, 0.5f,
+        1.0f, 1.0f, 0.5f,
+        1.0f, -1.0f, 0.5f
     };
-    static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
+
+    static const float tc[] = {
+        0.0f, 1.0f - YF_TEX_T,
+        0.0f, YF_TEX_T,
+        1.0f, YF_TEX_T,
+        1.0f, 1.0f - YF_TEX_T
+    };
+
+    static const float clr[] = {
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f
+    };
+
+    static const unsigned short indx[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+    static_assert(sizeof pos + sizeof tc + sizeof clr == sizeof quad->verts,
+                  "!sizeof");
+
+    memcpy(quad->verts, pos, sizeof pos);
+    memcpy((char *)quad->verts + sizeof pos, tc, sizeof tc);
+    memcpy((char *)quad->verts + sizeof pos + sizeof tc, clr, sizeof clr);
+
+    void *buf = malloc(sizeof quad->verts + sizeof indx);
+    if (buf == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+    memcpy(buf, quad->verts, sizeof quad->verts);
+    memcpy((char *)buf + sizeof quad->verts, indx, sizeof indx);
 
     const YF_meshdt data = {
-        .v = {YF_VTYPE_QUAD, (void *)verts, 4},
-        .i = {YF_ITYPE_USHORT, (void *)inds, 6}
+        .prims = &(YF_primdt){
+            .primitive = YF_PRIMITIVE_TRIANGLE,
+            .vert_n = 4,
+            .indx_n = 6,
+            .data_off = 0,
+            .attrs =  (YF_attrdt[]){
+                [0] = {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+                [1] = {YF_RESLOC_TC, YF_VFMT_FLOAT2, sizeof pos},
+                [2] = {YF_RESLOC_CLR, YF_VFMT_FLOAT4, sizeof pos + sizeof tc}
+            },
+            .attr_n = 3,
+            .itype = YF_ITYPE_USHORT,
+            .indx_data_off = sizeof pos + sizeof tc + sizeof clr
+        },
+        .prim_n = 1,
+        .data = buf,
+        .data_sz = sizeof quad->verts + sizeof indx
     };
 
     quad->mesh = yf_mesh_initdt(&data);
-    memcpy(quad->verts, verts, sizeof verts);
+    free(buf);
     return quad->mesh == NULL ? -1 : 0;
 }
 
