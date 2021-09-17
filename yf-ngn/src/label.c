@@ -400,28 +400,32 @@ void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color)
     assert(labl != NULL);
 
     if (corner_mask & YF_CORNER_TOPL) {
-        labl->verts[0].clr[0] = color.r;
-        labl->verts[0].clr[1] = color.g;
-        labl->verts[0].clr[2] = color.b;
-        labl->verts[0].clr[3] = color.a;
+        float *clr = labl->verts + YF_VLABL_POSN + YF_VLABL_TCN;
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_TOPR) {
-        labl->verts[3].clr[0] = color.r;
-        labl->verts[3].clr[1] = color.g;
-        labl->verts[3].clr[2] = color.b;
-        labl->verts[3].clr[3] = color.a;
+        float *clr = labl->verts + YF_VLABL_POSN + YF_VLABL_TCN + (3 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_BOTTOML) {
-        labl->verts[1].clr[0] = color.r;
-        labl->verts[1].clr[1] = color.g;
-        labl->verts[1].clr[2] = color.b;
-        labl->verts[1].clr[3] = color.a;
+        float *clr = labl->verts + YF_VLABL_POSN + YF_VLABL_TCN + (1 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_BOTTOMR) {
-        labl->verts[2].clr[0] = color.r;
-        labl->verts[2].clr[1] = color.g;
-        labl->verts[2].clr[2] = color.b;
-        labl->verts[2].clr[3] = color.a;
+        float *clr = labl->verts + YF_VLABL_POSN + YF_VLABL_TCN + (2 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
 
     labl->pend_mask |= YF_PEND_CLR;
