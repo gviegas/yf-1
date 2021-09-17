@@ -141,24 +141,40 @@ static void update_rect(YF_label labl)
             t1 = rz->dim.height / hgt + t0;
         }
 
-        labl->verts[0].tc[0] = s0;
-        labl->verts[0].tc[1] = t1;
+        float *tc = labl->verts + YF_VLABL_POSN;
 
-        labl->verts[1].tc[0] = s0;
-        labl->verts[1].tc[1] = t0;
+        tc[0] = s0;
+        tc[1] = t1;
 
-        labl->verts[2].tc[0] = s1;
-        labl->verts[2].tc[1] = t0;
+        tc[2] = s0;
+        tc[3] = t0;
 
-        labl->verts[3].tc[0] = s1;
-        labl->verts[3].tc[1] = t1;
+        tc[4] = s1;
+        tc[5] = t0;
+
+        tc[6] = s1;
+        tc[7] = t1;
     }
 
-    const YF_slice range = {0, 4};
+    size_t off = YF_VLABL_POSN * sizeof(float);
+    float *beg = labl->verts + YF_VLABL_POSN;
+    size_t sz;
+
+    if (labl->pend_mask & YF_PEND_TC) {
+        sz = sizeof(float) * (labl->pend_mask & YF_PEND_CLR ?
+                              YF_VLABL_TCN + YF_VLABL_CLRN :
+                              YF_VLABL_TCN);
+    } else {
+        off += YF_VLABL_TCN * sizeof(float);
+        beg += YF_VLABL_TCN;
+        sz = YF_VLABL_CLRN * sizeof(float);
+    }
+
 #ifdef YF_DEVEL
-    if (yf_mesh_setvtx(labl->mesh, range, labl->verts) != 0) assert(0);
+    if (yf_mesh_setdata(labl->mesh, off, beg, sz) != 0)
+        assert(0);
 #else
-    yf_mesh_setvtx(labl->mesh, range, labl->verts);
+    yf_mesh_setdata(labl->mesh, off, beg, sz);
 #endif
 }
 
