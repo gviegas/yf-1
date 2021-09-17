@@ -496,6 +496,9 @@ void yf_mesh_deinit(YF_mesh mesh)
 
     /* TODO: Consider resizing the buffer down if too much mem. goes unused. */
 
+    for (unsigned i = 0; i < mesh->prim_n; i++)
+        free(mesh->prims[i].attrs);
+    free(mesh->prims);
     free(mesh);
 }
 
