@@ -286,28 +286,32 @@ void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color)
     assert(quad != NULL);
 
     if (corner_mask & YF_CORNER_TOPL) {
-        quad->verts[0].clr[0] = color.r;
-        quad->verts[0].clr[1] = color.g;
-        quad->verts[0].clr[2] = color.b;
-        quad->verts[0].clr[3] = color.a;
+        float *clr = quad->verts + YF_VQUAD_POSN + YF_VQUAD_TCN;
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_TOPR) {
-        quad->verts[3].clr[0] = color.r;
-        quad->verts[3].clr[1] = color.g;
-        quad->verts[3].clr[2] = color.b;
-        quad->verts[3].clr[3] = color.a;
+        float *clr = quad->verts + YF_VQUAD_POSN + YF_VQUAD_TCN + (3 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_BOTTOML) {
-        quad->verts[1].clr[0] = color.r;
-        quad->verts[1].clr[1] = color.g;
-        quad->verts[1].clr[2] = color.b;
-        quad->verts[1].clr[3] = color.a;
+        float *clr = quad->verts + YF_VQUAD_POSN + YF_VQUAD_TCN + (1 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_BOTTOMR) {
-        quad->verts[2].clr[0] = color.r;
-        quad->verts[2].clr[1] = color.g;
-        quad->verts[2].clr[2] = color.b;
-        quad->verts[2].clr[3] = color.a;
+        float *clr = quad->verts + YF_VQUAD_POSN + YF_VQUAD_TCN + (2 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
 
     quad->pend_mask |= YF_PEND_CLR;
