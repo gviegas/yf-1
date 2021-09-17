@@ -142,24 +142,40 @@ static void update_rect(YF_quad quad)
         t1 = tmp;
 #endif
 
-        quad->verts[0].tc[0] = s0;
-        quad->verts[0].tc[1] = t0;
+        float *tc = quad->verts + YF_VQUAD_POSN;
 
-        quad->verts[1].tc[0] = s0;
-        quad->verts[1].tc[1] = t1;
+        tc[0] = s0;
+        tc[1] = t0;
 
-        quad->verts[2].tc[0] = s1;
-        quad->verts[2].tc[1] = t1;
+        tc[2] = s0;
+        tc[3] = t1;
 
-        quad->verts[3].tc[0] = s1;
-        quad->verts[3].tc[1] = t0;
+        tc[4] = s1;
+        tc[5] = t1;
+
+        tc[6] = s1;
+        tc[7] = t0;
     }
 
-    const YF_slice range = {0, 4};
+    size_t off = YF_VQUAD_POSN * sizeof(float);
+    float *beg = quad->verts + YF_VQUAD_POSN;
+    size_t sz;
+
+    if (quad->pend_mask & YF_PEND_TC) {
+        sz = sizeof(float) * (quad->pend_mask & YF_PEND_CLR ?
+                              YF_VQUAD_TCN + YF_VQUAD_CLRN :
+                              YF_VQUAD_TCN);
+    } else {
+        off += YF_VQUAD_TCN * sizeof(float);
+        beg += YF_VQUAD_TCN;
+        sz = YF_VQUAD_CLRN * sizeof(float);
+    }
+
 #ifdef YF_DEVEL
-    if (yf_mesh_setvtx(quad->mesh, range, quad->verts) != 0) assert(0);
+    if (yf_mesh_setdata(quad->mesh, off, beg, sz) != 0)
+        assert(0);
 #else
-    yf_mesh_setvtx(quad->mesh, range, quad->verts);
+    yf_mesh_setdata(quad->mesh, off, beg, sz);
 #endif
 }
 
