@@ -200,22 +200,20 @@ void yf_particle_simulate(YF_particle part, float tm)
     assert(tm >= 0.0f);
 
     const YF_psys *sys = &part->sys;
-    YF_vpart *pt;
-    T_pstate *st;
+    float *pos = part->pts;
+    float *clr = pos + 3 * part->count;
+    T_pstate *st = part->sts;
 
     for (unsigned i = 0; i < part->count; i++) {
-        pt = part->pts+i;
-        st = part->sts+i;
-
         switch (st->pstate) {
         case YF_PSTATE_UNSET:
-            pt->pos[0] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
-            pt->pos[1] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
-            pt->pos[2] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
-            pt->clr[0] = YF_LERP(sys->color.min[0], sys->color.max[0], YF_NRND);
-            pt->clr[1] = YF_LERP(sys->color.min[1], sys->color.max[1], YF_NRND);
-            pt->clr[2] = YF_LERP(sys->color.min[2], sys->color.max[2], YF_NRND);
-            pt->clr[3] = 0.0f;
+            pos[0] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
+            pos[1] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
+            pos[2] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
+            clr[0] = YF_LERP(sys->color.min[0], sys->color.max[0], YF_NRND);
+            clr[1] = YF_LERP(sys->color.min[1], sys->color.max[1], YF_NRND);
+            clr[2] = YF_LERP(sys->color.min[2], sys->color.max[2], YF_NRND);
+            clr[3] = 0.0f;
 
             st->tm = 0.0f;
             st->alpha = YF_LERP(sys->color.min[3], sys->color.max[3], YF_NRND);
@@ -239,14 +237,14 @@ void yf_particle_simulate(YF_particle part, float tm)
 
         case YF_PSTATE_SPAWNING:
             if (st->tm >= st->spawn) {
-                pt->clr[3] = st->alpha;
+                clr[3] = st->alpha;
                 st->tm -= st->spawn;
                 st->pstate = YF_PSTATE_SPAWNED;
             } else {
-                pt->pos[0] += st->vel[0];
-                pt->pos[1] += st->vel[1];
-                pt->pos[2] += st->vel[2];
-                pt->clr[3] = st->tm / st->spawn * st->alpha;
+                pos[0] += st->vel[0];
+                pos[1] += st->vel[1];
+                pos[2] += st->vel[2];
+                clr[3] = st->tm / st->spawn * st->alpha;
                 st->tm += tm;
             }
             break;
@@ -256,23 +254,23 @@ void yf_particle_simulate(YF_particle part, float tm)
                 st->tm -= st->dur;
                 st->pstate = YF_PSTATE_DYING;
             } else {
-                pt->pos[0] += st->vel[0];
-                pt->pos[1] += st->vel[1];
-                pt->pos[2] += st->vel[2];
+                pos[0] += st->vel[0];
+                pos[1] += st->vel[1];
+                pos[2] += st->vel[2];
                 st->tm += tm;
             }
             break;
 
         case YF_PSTATE_DYING:
             if (st->tm >= st->death) {
-                pt->clr[3] = 0.0f;
+                clr[3] = 0.0f;
                 st->tm -= st->death;
                 st->pstate = YF_PSTATE_DEAD;
             } else {
-                pt->pos[0] += st->vel[0];
-                pt->pos[1] += st->vel[1];
-                pt->pos[2] += st->vel[2];
-                pt->clr[3] = st->alpha - st->tm / st->death * st->alpha;
+                pos[0] += st->vel[0];
+                pos[1] += st->vel[1];
+                pos[2] += st->vel[2];
+                clr[3] = st->alpha - st->tm / st->death * st->alpha;
                 st->tm += tm;
             }
             break;
@@ -284,14 +282,19 @@ void yf_particle_simulate(YF_particle part, float tm)
             }
             break;
         }
+
+        pos += 3;
+        clr += 4;
+        st++;
     }
 
-    YF_slice range = {0, part->count};
 #ifdef YF_DEVEL
-    if (yf_mesh_setvtx(part->mesh, range, part->pts) != 0)
+    if (yf_mesh_setdata(part->mesh, 0, part->pts,
+                        sizeof(float[3 + 4]) * part->count) != 0)
         assert(0);
 #else
-    yf_mesh_setvtx(part->mesh, range, part->pts);
+    yf_mesh_setdata(part->mesh, 0, part->pts,
+                    sizeof(float[3 + 4]) * part->count);
 #endif
 }
 
