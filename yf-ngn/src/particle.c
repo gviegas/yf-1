@@ -14,6 +14,7 @@
 #include "yf-particle.h"
 #include "node.h"
 #include "mesh.h"
+#include "resmgr.h"
 
 #undef YF_NRND
 #define YF_NRND ((float)rand() / (float)RAND_MAX)
@@ -41,43 +42,63 @@ struct YF_particle_o {
     YF_node node;
     unsigned count;
     YF_psys sys;
-    YF_vpart *pts;
+    void *pts;
     T_pstate *sts;
     YF_mesh mesh;
     YF_texture tex;
     /* TODO: Other particle system properties. */
 };
 
-/* Initializes vertices, states and mesh object. */
+/* Initializes vertex data, states and mesh object. */
 static int init_points(YF_particle part)
 {
     assert(part != NULL);
 
-    part->pts = malloc(sizeof(YF_vpart) * part->count);
+    const size_t pos_sz = sizeof(float[3]) * part->count;
+    const size_t clr_sz = sizeof(float[4]) * part->count;
+
+    part->pts = malloc(pos_sz + clr_sz);
     part->sts = malloc(sizeof(T_pstate) * part->count);
     if (part->pts == NULL || part->sts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
 
-    const YF_vpart pt = {
-        .pos = {0.0f, 0.0f, 0.5f},
-        .clr = {1.0f, 1.0f, 1.0f, 1.0f}
-    };
+    const float pos[3] = {0.0f, 0.0f, 0.5f};
+    const float clr[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     const T_pstate st = {YF_PSTATE_UNSET, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, {0}};
+
+    float *pos_dt = part->pts;
+    float *clr_dt = pos_dt + pos_sz;
     for (unsigned i = 0; i < part->count; i++) {
-        memcpy(part->pts+i, &pt, sizeof pt);
+        memcpy(pos_dt, pos, sizeof pos);
+        pos_dt += sizeof pos;
+        memcpy(clr_dt, clr, sizeof clr);
+        clr_dt += sizeof clr;
         memcpy(part->sts+i, &st, sizeof st);
     }
 
-    const YF_meshdt dt = {
-        .v = {YF_VTYPE_PART, part->pts, part->count},
-        .i = {0}
+    const YF_meshdt data = {
+        .prims = &(YF_primdt){
+            .primitive = YF_PRIMITIVE_POINT,
+            .vert_n = part->count,
+            .indx_n = 0,
+            .data_off = 0,
+            .attrs = (YF_attrdt[]){
+                [0] = {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+                [1] = {YF_RESLOC_CLR, YF_VFMT_FLOAT4, pos_sz}
+            },
+            .attr_n = 2,
+            .itype = 0,
+            .indx_data_off = 0
+        },
+        .prim_n = 1,
+        .data = part->pts,
+        .data_sz = pos_sz + clr_sz
     };
-    if ((part->mesh = yf_mesh_initdt(&dt)) == NULL)
-        return -1;
 
-    return 0;
+    part->mesh = yf_mesh_initdt(&data);
+    return part->mesh == NULL ? -1 : 0;
 }
 
 /* Particle system deinitialization callback. */
