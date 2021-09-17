@@ -16,6 +16,7 @@
 #include "yf-label.h"
 #include "node.h"
 #include "mesh.h"
+#include "resmgr.h"
 #include "texture.h"
 #include "font.h"
 
@@ -26,17 +27,22 @@
 # define YF_DPI 72
 #endif
 
+#define YF_VLABL_POSN (3 << 2)
+#define YF_VLABL_TCN  (2 << 2)
+#define YF_VLABL_CLRN (4 << 2)
+#define YF_VLABL_N    (YF_VLABL_POSN + YF_VLABL_TCN + YF_VLABL_CLRN)
+
 struct YF_label_o {
     YF_node node;
-    YF_vlabl verts[4];
+    float verts[YF_VLABL_N];
     YF_mesh mesh;
     YF_fontrz rz;
     YF_font font;
     wchar_t *str;
     unsigned short pt;
 #define YF_PEND_NONE 0
-#define YF_PEND_TC   0x01 /* 'rz' changed, 'verts[].tc' not up to date */
-#define YF_PEND_CLR  0x02 /* 'verts[].clr' set but 'mesh' not up to date */
+#define YF_PEND_TC   0x01 /* 'rz' changed, 'verts.tc' not up to date */
+#define YF_PEND_CLR  0x02 /* 'verts.clr' set but 'mesh' not up to date */
 #define YF_PEND_RZ   0x04 /* font prop. changed, 'rz' not up to date */
     unsigned pend_mask;
 };
@@ -46,37 +52,69 @@ static int init_rect(YF_label labl)
 {
     assert(labl != NULL);
 
-    static const YF_vlabl verts[4] = {
-        {
-            .pos = {-1.0, -1.0, 0.5},
-            .tc = {0.0, 1.0,},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        },
-        {
-            .pos = {-1.0, 1.0, 0.5},
-            .tc = {0.0, 0.0},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        },
-        {
-            .pos = {1.0, 1.0, 0.5},
-            .tc = {1.0, 0.0},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        },
-        {
-            .pos = {1.0, -1.0, 0.5},
-            .tc = {1.0, 1.0},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        }
+    static const float pos[] = {
+        -1.0f, -1.0f, 0.5f,
+        -1.0f, 1.0f, 0.5f,
+        1.0f, 1.0f, 0.5f,
+        1.0f, -1.0f, 0.5f
     };
-    static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
+
+    static const float tc[] = {
+        0.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f
+    };
+
+    static const float clr[] = {
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f
+    };
+
+    static const unsigned short indx[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+    static_assert(sizeof pos + sizeof tc + sizeof clr == sizeof labl->verts,
+                  "!sizeof");
+
+    memcpy(labl->verts, pos, sizeof pos);
+    memcpy((char *)labl->verts + sizeof pos, tc, sizeof tc);
+    memcpy((char *)labl->verts + sizeof pos + sizeof tc, clr, sizeof clr);
+
+    void *buf = malloc(sizeof labl->verts + sizeof indx);
+    if (buf == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+    memcpy(buf, labl->verts, sizeof labl->verts);
+    memcpy((char *)buf + sizeof labl->verts, indx, sizeof indx);
 
     const YF_meshdt data = {
-        .v = {YF_VTYPE_LABL, (void *)verts, 4},
-        .i = {YF_ITYPE_USHORT, (void *)inds, 6}
+        .prims = &(YF_primdt){
+            .primitive = YF_PRIMITIVE_TRIANGLE,
+            .vert_n = 4,
+            .indx_n = 6,
+            .data_off = 0,
+            .attrs =  (YF_attrdt[]){
+                [0] = {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+                [1] = {YF_RESLOC_TC, YF_VFMT_FLOAT2, sizeof pos},
+                [2] = {YF_RESLOC_CLR, YF_VFMT_FLOAT4, sizeof pos + sizeof tc}
+            },
+            .attr_n = 3,
+            .itype = YF_ITYPE_USHORT,
+            .indx_data_off = sizeof labl->verts
+        },
+        .prim_n = 1,
+        .data = buf,
+        .data_sz = sizeof labl->verts + sizeof indx
     };
 
     labl->mesh = yf_mesh_initdt(&data);
-    memcpy(labl->verts, verts, sizeof verts);
+    free(buf);
     return labl->mesh == NULL ? -1 : 0;
 }
 
