@@ -230,27 +230,18 @@ static void try_release(void)
 }
 
 /* Copies mesh data to buffer instance and updates mesh object. */
-static int copy_data(YF_mesh mesh, const YF_meshdt *data)
+static int copy_data(YF_mesh mesh, const void *data, size_t size)
 {
     assert(mesh != NULL);
     assert(data != NULL);
-    assert(data->prims != NULL && data->prim_n > 0);
-    assert(data->data != NULL && data->data_sz > 0);
+    assert(size > 0);
+    assert(mesh->prims != NULL);
+    assert(mesh->prim_n > 0);
 
-#ifdef YF_DEVEL
-    for (unsigned i = 0; i < data->prim_n; i++) {
-        assert(data->prims[i].vert_n > 0 && data->prims[i].vert_n <= UINT_MAX);
-        assert(data->prims[i].indx_n <= UINT_MAX);
-        assert(data->prims[i].attrs != NULL && data->prims[i].attr_n > 0);
-        /* TODO... */
-    }
-#endif
-
-    const size_t sz = data->data_sz;
     size_t blk_i = blk_n_;
 
     for (size_t i = 0; i < blk_n_; i++) {
-        if (blks_[i].size >= sz) {
+        if (blks_[i].size >= size) {
             blk_i = i;
             break;
         }
@@ -262,7 +253,7 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
                 return -1;
             /* if enough memory is made available after trimming,
                buffer resizing can be omitted */
-            if (blks_[0].size >= sz) {
+            if (blks_[0].size >= size) {
                 blk_i = 0;
                 goto no_resz;
             }
@@ -270,7 +261,7 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
         }
 
         const size_t buf_len = yf_buffer_getsize(buf_);
-        size_t new_len = buf_len + sz;
+        size_t new_len = buf_len + size;
         int merge_last = 0;
 
         if (blk_n_ > 0) {
@@ -299,11 +290,11 @@ no_resz:
     }
 
     const size_t off = blks_[blk_i].offset;
-    if (yf_buffer_copy(buf_, off, data->data, sz) != 0)
+    if (yf_buffer_copy(buf_, off, data, size) != 0)
         return -1;
 
     mesh->offset = off;
-    mesh->size = sz;
+    mesh->size = size;
 
     mesh->prev = blks_[blk_i].prev_mesh;
     if (mesh->prev != NULL) {
@@ -325,9 +316,9 @@ no_resz:
 
     mesh->invalid = 0;
 
-    if (blks_[blk_i].size > sz) {
-        blks_[blk_i].offset += sz;
-        blks_[blk_i].size -= sz;
+    if (blks_[blk_i].size > size) {
+        blks_[blk_i].offset += size;
+        blks_[blk_i].size -= size;
         blks_[blk_i].prev_mesh = mesh;
     } else {
         if (blk_i + 1 != blk_n_) {
@@ -505,8 +496,20 @@ void yf_mesh_deinit(YF_mesh mesh)
 YF_mesh yf_mesh_initdt(const YF_meshdt *data)
 {
     assert(data != NULL);
-    assert(data->prims != NULL && data->prim_n > 0);
-    assert(data->data != NULL && data->data_sz > 0);
+    assert(data->prims != NULL);
+    assert(data->prim_n > 0);
+    assert(data->data != NULL);
+    assert(data->data_sz > 0);
+
+#ifdef YF_DEVEL
+    for (unsigned i = 0; i < data->prim_n; i++) {
+        assert(data->prims[i].vert_n > 0 && data->prims[i].vert_n <= UINT_MAX);
+        assert(data->prims[i].indx_n <= UINT_MAX);
+        assert(data->prims[i].attrs != NULL);
+        assert(data->prims[i].attr_n > 0);
+        /* TODO: More... */
+    }
+#endif
 
     if (ctx_ == NULL) {
         if ((ctx_ = yf_getctx()) == NULL ||
@@ -557,7 +560,7 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
 
     mesh->prim_n = data->prim_n;
 
-    if (copy_data(mesh, data) != 0) {
+    if (copy_data(mesh, data->data, data->data_sz) != 0) {
         yf_mesh_deinit(mesh);
         mesh = NULL;
     }
