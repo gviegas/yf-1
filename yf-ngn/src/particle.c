@@ -68,8 +68,8 @@ static int init_points(YF_particle part)
     const float clr[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     const T_pstate st = {YF_PSTATE_UNSET, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, {0}};
 
-    float *pos_dt = part->pts;
-    float *clr_dt = pos_dt + pos_sz;
+    unsigned char *pos_dt = part->pts;
+    unsigned char *clr_dt = pos_dt + pos_sz;
     for (unsigned i = 0; i < part->count; i++) {
         memcpy(pos_dt, pos, sizeof pos);
         pos_dt += sizeof pos;
