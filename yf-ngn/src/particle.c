@@ -14,6 +14,7 @@
 #include "yf-particle.h"
 #include "node.h"
 #include "mesh.h"
+#include "resmgr.h"
 
 #undef YF_NRND
 #define YF_NRND ((float)rand() / (float)RAND_MAX)
@@ -41,43 +42,63 @@ struct YF_particle_o {
     YF_node node;
     unsigned count;
     YF_psys sys;
-    YF_vpart *pts;
+    void *pts;
     T_pstate *sts;
     YF_mesh mesh;
     YF_texture tex;
     /* TODO: Other particle system properties. */
 };
 
-/* Initializes vertices, states and mesh object. */
+/* Initializes vertex data, states and mesh object. */
 static int init_points(YF_particle part)
 {
     assert(part != NULL);
 
-    part->pts = malloc(sizeof(YF_vpart) * part->count);
+    const size_t pos_sz = sizeof(float[3]) * part->count;
+    const size_t clr_sz = sizeof(float[4]) * part->count;
+
+    part->pts = malloc(pos_sz + clr_sz);
     part->sts = malloc(sizeof(T_pstate) * part->count);
     if (part->pts == NULL || part->sts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
 
-    const YF_vpart pt = {
-        .pos = {0.0f, 0.0f, 0.5f},
-        .clr = {1.0f, 1.0f, 1.0f, 1.0f}
-    };
+    const float pos[3] = {0.0f, 0.0f, 0.5f};
+    const float clr[4] = {1.0f, 1.0f, 1.0f, 1.0f};
     const T_pstate st = {YF_PSTATE_UNSET, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, {0}};
+
+    unsigned char *pos_dt = part->pts;
+    unsigned char *clr_dt = pos_dt + pos_sz;
     for (unsigned i = 0; i < part->count; i++) {
-        memcpy(part->pts+i, &pt, sizeof pt);
+        memcpy(pos_dt, pos, sizeof pos);
+        pos_dt += sizeof pos;
+        memcpy(clr_dt, clr, sizeof clr);
+        clr_dt += sizeof clr;
         memcpy(part->sts+i, &st, sizeof st);
     }
 
-    const YF_meshdt dt = {
-        .v = {YF_VTYPE_PART, part->pts, part->count},
-        .i = {0}
+    const YF_meshdt data = {
+        .prims = &(YF_primdt){
+            .primitive = YF_PRIMITIVE_POINT,
+            .vert_n = part->count,
+            .indx_n = 0,
+            .data_off = 0,
+            .attrs = (YF_attrdt[]){
+                [0] = {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+                [1] = {YF_RESLOC_CLR, YF_VFMT_FLOAT4, pos_sz}
+            },
+            .attr_n = 2,
+            .itype = 0,
+            .indx_data_off = 0
+        },
+        .prim_n = 1,
+        .data = part->pts,
+        .data_sz = pos_sz + clr_sz
     };
-    if ((part->mesh = yf_mesh_initdt(&dt)) == NULL)
-        return -1;
 
-    return 0;
+    part->mesh = yf_mesh_initdt(&data);
+    return part->mesh == NULL ? -1 : 0;
 }
 
 /* Particle system deinitialization callback. */
@@ -179,22 +200,20 @@ void yf_particle_simulate(YF_particle part, float tm)
     assert(tm >= 0.0f);
 
     const YF_psys *sys = &part->sys;
-    YF_vpart *pt;
-    T_pstate *st;
+    float *pos = part->pts;
+    float *clr = pos + 3 * part->count;
+    T_pstate *st = part->sts;
 
     for (unsigned i = 0; i < part->count; i++) {
-        pt = part->pts+i;
-        st = part->sts+i;
-
         switch (st->pstate) {
         case YF_PSTATE_UNSET:
-            pt->pos[0] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
-            pt->pos[1] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
-            pt->pos[2] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
-            pt->clr[0] = YF_LERP(sys->color.min[0], sys->color.max[0], YF_NRND);
-            pt->clr[1] = YF_LERP(sys->color.min[1], sys->color.max[1], YF_NRND);
-            pt->clr[2] = YF_LERP(sys->color.min[2], sys->color.max[2], YF_NRND);
-            pt->clr[3] = 0.0f;
+            pos[0] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
+            pos[1] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
+            pos[2] = sys->emitter.size * (2.0f * YF_NRND - 1.0f);
+            clr[0] = YF_LERP(sys->color.min[0], sys->color.max[0], YF_NRND);
+            clr[1] = YF_LERP(sys->color.min[1], sys->color.max[1], YF_NRND);
+            clr[2] = YF_LERP(sys->color.min[2], sys->color.max[2], YF_NRND);
+            clr[3] = 0.0f;
 
             st->tm = 0.0f;
             st->alpha = YF_LERP(sys->color.min[3], sys->color.max[3], YF_NRND);
@@ -218,14 +237,14 @@ void yf_particle_simulate(YF_particle part, float tm)
 
         case YF_PSTATE_SPAWNING:
             if (st->tm >= st->spawn) {
-                pt->clr[3] = st->alpha;
+                clr[3] = st->alpha;
                 st->tm -= st->spawn;
                 st->pstate = YF_PSTATE_SPAWNED;
             } else {
-                pt->pos[0] += st->vel[0];
-                pt->pos[1] += st->vel[1];
-                pt->pos[2] += st->vel[2];
-                pt->clr[3] = st->tm / st->spawn * st->alpha;
+                pos[0] += st->vel[0];
+                pos[1] += st->vel[1];
+                pos[2] += st->vel[2];
+                clr[3] = st->tm / st->spawn * st->alpha;
                 st->tm += tm;
             }
             break;
@@ -235,23 +254,23 @@ void yf_particle_simulate(YF_particle part, float tm)
                 st->tm -= st->dur;
                 st->pstate = YF_PSTATE_DYING;
             } else {
-                pt->pos[0] += st->vel[0];
-                pt->pos[1] += st->vel[1];
-                pt->pos[2] += st->vel[2];
+                pos[0] += st->vel[0];
+                pos[1] += st->vel[1];
+                pos[2] += st->vel[2];
                 st->tm += tm;
             }
             break;
 
         case YF_PSTATE_DYING:
             if (st->tm >= st->death) {
-                pt->clr[3] = 0.0f;
+                clr[3] = 0.0f;
                 st->tm -= st->death;
                 st->pstate = YF_PSTATE_DEAD;
             } else {
-                pt->pos[0] += st->vel[0];
-                pt->pos[1] += st->vel[1];
-                pt->pos[2] += st->vel[2];
-                pt->clr[3] = st->alpha - st->tm / st->death * st->alpha;
+                pos[0] += st->vel[0];
+                pos[1] += st->vel[1];
+                pos[2] += st->vel[2];
+                clr[3] = st->alpha - st->tm / st->death * st->alpha;
                 st->tm += tm;
             }
             break;
@@ -263,14 +282,19 @@ void yf_particle_simulate(YF_particle part, float tm)
             }
             break;
         }
+
+        pos += 3;
+        clr += 4;
+        st++;
     }
 
-    YF_slice range = {0, part->count};
 #ifdef YF_DEVEL
-    if (yf_mesh_setvtx(part->mesh, range, part->pts) != 0)
+    if (yf_mesh_setdata(part->mesh, 0, part->pts,
+                        sizeof(float[3 + 4]) * part->count) != 0)
         assert(0);
 #else
-    yf_mesh_setvtx(part->mesh, range, part->pts);
+    yf_mesh_setdata(part->mesh, 0, part->pts,
+                    sizeof(float[3 + 4]) * part->count);
 #endif
 }
 

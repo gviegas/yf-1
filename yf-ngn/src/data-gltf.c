@@ -575,14 +575,15 @@ typedef struct {
 typedef struct {
     struct {
 #define YF_GLTF_ATTR_POS  0
-#define YF_GLTF_ATTR_NORM 1
-#define YF_GLTF_ATTR_TGNT 2
-#define YF_GLTF_ATTR_TC0  3
-#define YF_GLTF_ATTR_TC1  4
-#define YF_GLTF_ATTR_CLR0 5
-#define YF_GLTF_ATTR_JNT0 6
-#define YF_GLTF_ATTR_WGT0 7
+#define YF_GLTF_ATTR_NORM 2
+#define YF_GLTF_ATTR_TGNT 3
+#define YF_GLTF_ATTR_TC0  1
+#define YF_GLTF_ATTR_TC1  7
+#define YF_GLTF_ATTR_CLR0 4
+#define YF_GLTF_ATTR_JNT0 5
+#define YF_GLTF_ATTR_WGT0 6
 #define YF_GLTF_ATTR_N    8
+        /* XXX: Expected to match shader locations. */
         T_int attributes[YF_GLTF_ATTR_N];
         T_int indices;
         T_int material;
@@ -3625,314 +3626,426 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     if (cont->meshes[mesh] != NULL)
         return 0;
 
-    const T_primitives *prim = &gltf->meshes.v[mesh].primitives;
-    switch (prim->n) {
-    case 0:
+    const T_primitives *primitives = &gltf->meshes.v[mesh].primitives;
+    if (primitives->n == 0) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
-    case 1:
-        break;
-    default:
-        /* TODO: Support for multiple primitives. */
-        yf_seterr(YF_ERR_UNSUP, __func__);
-        return -1;
     }
 
-    /* vertex data */
-    /* TODO: Endianness. */
-    struct { T_int acc, view, buf; } attrs[YF_GLTF_ATTR_N];
-    for (size_t i = 0; i < YF_GLTF_ATTR_N; i++) {
-        attrs[i].acc = prim->v[0].attributes[i];
-        if (attrs[i].acc != YF_INT_MIN) {
-            attrs[i].view = gltf->accessors.v[attrs[i].acc].buffer_view;
-            attrs[i].buf = gltf->bufferviews.v[attrs[i].view].buffer;
-        }
-    }
-    if (attrs[YF_GLTF_ATTR_POS].acc == YF_INT_MIN) {
-        yf_seterr(YF_ERR_UNSUP, __func__);
-        return -1;
-    }
-
-    const size_t v_n = gltf->accessors.v[attrs[YF_GLTF_ATTR_POS].acc].count;
-    YF_vmdl *verts = malloc(v_n * sizeof *verts);
-    if (verts == NULL) {
+    YF_meshdt data;
+    data.prims = malloc(primitives->n * sizeof *data.prims);
+    if (data.prims == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
+    data.prim_n = primitives->n;
+    data.data = NULL;
+    data.data_sz = 0;
 
-    for (size_t i = 0; i < YF_GLTF_ATTR_N; i++) {
-        if (attrs[i].acc == YF_INT_MIN) {
-            switch (i) {
-            case YF_GLTF_ATTR_NORM:
-                for (size_t i = 0; i < v_n; i++)
-                    yf_vec3_set(verts[i].norm, 0.0f);
+#define YF_DEALLOCDT(prim_n) do { \
+    for (unsigned prim_i = 0; prim_i < prim_n; prim_i++) \
+        free(data.prims[prim_i].attrs); \
+    free(data.prims); \
+    free(data.data); } while (0)
+
+    /* each of these correspond to a separate draw call */
+    for (size_t i = 0; i < primitives->n; i++) {
+        data.prims[i].data_off = data.data_sz;
+
+        /* primitive mode */
+        switch (primitives->v[i].mode) {
+        case YF_GLTF_MODE_PTS:
+            data.prims[i].primitive = YF_PRIMITIVE_POINT;
+            break;
+        case YF_GLTF_MODE_LNS:
+            data.prims[i].primitive = YF_PRIMITIVE_LINE;
+            break;
+        case YF_GLTF_MODE_TRIS:
+            data.prims[i].primitive = YF_PRIMITIVE_TRIANGLE;
+            break;
+        case YF_GLTF_MODE_LNLOOP:
+        case YF_GLTF_MODE_LNSTRIP:
+        case YF_GLTF_MODE_TRISTRIP:
+        case YF_GLTF_MODE_TRIFAN:
+            /* TODO: Support for this modes on core. */
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            YF_DEALLOCDT(i);
+            return -1;
+        default:
+            yf_seterr(YF_ERR_INVFILE, __func__);
+            YF_DEALLOCDT(i);
+            return -1;
+        }
+
+        /* vertex attributes */
+        /* TODO: Endianness. */
+        const T_int pos_acc = primitives->v[i].attributes[YF_GLTF_ATTR_POS];
+        if (pos_acc == YF_INT_MIN) {
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            YF_DEALLOCDT(i);
+            return -1;
+        }
+        data.prims[i].vert_n = gltf->accessors.v[pos_acc].count;
+
+        size_t attr_n = 0;
+        for (size_t j = 0; j < YF_GLTF_ATTR_N; j++) {
+            if (primitives->v[i].attributes[j] != YF_INT_MIN)
+                attr_n++;
+        }
+        data.prims[i].attrs = malloc(attr_n * sizeof *data.prims[i].attrs);
+        if (data.prims[i].attrs == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            YF_DEALLOCDT(i);
+            return -1;
+        }
+        data.prims[i].attr_n = attr_n;
+
+        for (size_t j = 0, k = 0; j < attr_n; k++) {
+            const T_int attr_acc = primitives->v[i].attributes[k];
+            if (attr_acc == YF_INT_MIN)
+                continue;
+
+            /* XXX */
+            data.prims[i].attrs[j].loc = k;
+
+            const T_int comp_type = gltf->accessors.v[attr_acc].comp_type;
+            const int type = gltf->accessors.v[attr_acc].type;
+            size_t comp_sz;
+            size_t comp_n;
+
+            /* need 'VFMT' value and component's size/count */
+            switch (comp_type) {
+            case YF_GLTF_COMP_BYTE:
+                comp_sz = 1;
+                switch (type) {
+                case YF_GLTF_TYPE_SCALAR:
+                    comp_n = 1;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_BYTE;
+                    break;
+                case YF_GLTF_TYPE_VEC2:
+                    comp_n = 2;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_BYTE2;
+                    break;
+                case YF_GLTF_TYPE_VEC3:
+                    comp_n = 3;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_BYTE3;
+                    break;
+                case YF_GLTF_TYPE_VEC4:
+                    comp_n = 4;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_BYTE4;
+                    break;
+                case YF_GLTF_TYPE_MAT2:
+                case YF_GLTF_TYPE_MAT3:
+                case YF_GLTF_TYPE_MAT4:
+                    /* TODO: Support for this types on core. */
+                    yf_seterr(YF_ERR_UNSUP, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                default:
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                }
                 break;
-            case YF_GLTF_ATTR_TC0:
-                for (size_t i = 0; i < v_n; i++)
-                    yf_vec2_set(verts[i].tc, 0.0f);
+
+            case YF_GLTF_COMP_UBYTE:
+                comp_sz = 1;
+                switch (type) {
+                case YF_GLTF_TYPE_SCALAR:
+                    comp_n = 1;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_UBYTE;
+                    break;
+                case YF_GLTF_TYPE_VEC2:
+                    comp_n = 2;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_UBYTE2;
+                    break;
+                case YF_GLTF_TYPE_VEC3:
+                    comp_n = 3;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_UBYTE3;
+                    break;
+                case YF_GLTF_TYPE_VEC4:
+                    comp_n = 4;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_UBYTE4;
+                    break;
+                case YF_GLTF_TYPE_MAT2:
+                case YF_GLTF_TYPE_MAT3:
+                case YF_GLTF_TYPE_MAT4:
+                    /* TODO: Support for this types on core. */
+                    yf_seterr(YF_ERR_UNSUP, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                default:
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                }
                 break;
-            case YF_GLTF_ATTR_CLR0:
-                for (size_t i = 0; i < v_n; i++)
-                    yf_vec4_set(verts[i].clr, 1.0f);
+
+            case YF_GLTF_COMP_SHORT:
+                comp_sz = 2;
+                switch (type) {
+                case YF_GLTF_TYPE_SCALAR:
+                    comp_n = 1;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_SHORT;
+                    break;
+                case YF_GLTF_TYPE_VEC2:
+                    comp_n = 2;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_SHORT2;
+                    break;
+                case YF_GLTF_TYPE_VEC3:
+                    comp_n = 3;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_SHORT3;
+                    break;
+                case YF_GLTF_TYPE_VEC4:
+                    comp_n = 4;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_SHORT4;
+                    break;
+                case YF_GLTF_TYPE_MAT2:
+                case YF_GLTF_TYPE_MAT3:
+                case YF_GLTF_TYPE_MAT4:
+                    /* TODO: Support for this types on core. */
+                    yf_seterr(YF_ERR_UNSUP, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                default:
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                }
                 break;
-            case YF_GLTF_ATTR_JNT0:
-                for (size_t i = 0; i < v_n; i++)
-                    memset(verts[i].jnts, 0, sizeof verts[i].jnts);
+
+            case YF_GLTF_COMP_USHORT:
+                comp_sz = 2;
+                switch (type) {
+                case YF_GLTF_TYPE_SCALAR:
+                    comp_n = 1;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_USHORT;
+                    break;
+                case YF_GLTF_TYPE_VEC2:
+                    comp_n = 2;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_USHORT2;
+                    break;
+                case YF_GLTF_TYPE_VEC3:
+                    comp_n = 3;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_USHORT3;
+                    break;
+                case YF_GLTF_TYPE_VEC4:
+                    comp_n = 4;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_USHORT4;
+                    break;
+                case YF_GLTF_TYPE_MAT2:
+                case YF_GLTF_TYPE_MAT3:
+                case YF_GLTF_TYPE_MAT4:
+                    /* TODO: Support for this types on core. */
+                    yf_seterr(YF_ERR_UNSUP, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                default:
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                }
                 break;
-            case YF_GLTF_ATTR_WGT0:
-                for (size_t i = 0; i < v_n; i++)
-                    yf_vec4_set(verts[i].wgts, 0.25f);
+
+            case YF_GLTF_COMP_UINT:
+                comp_sz = 4;
+                switch (type) {
+                case YF_GLTF_TYPE_SCALAR:
+                    comp_n = 1;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_UINT;
+                    break;
+                case YF_GLTF_TYPE_VEC2:
+                    comp_n = 2;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_UINT2;
+                    break;
+                case YF_GLTF_TYPE_VEC3:
+                    comp_n = 3;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_UINT3;
+                    break;
+                case YF_GLTF_TYPE_VEC4:
+                    comp_n = 4;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_UINT4;
+                    break;
+                case YF_GLTF_TYPE_MAT2:
+                case YF_GLTF_TYPE_MAT3:
+                case YF_GLTF_TYPE_MAT4:
+                    /* TODO: Support for this types on core. */
+                    yf_seterr(YF_ERR_UNSUP, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                default:
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                }
+                break;
+
+            case YF_GLTF_COMP_FLOAT:
+                comp_sz = 4;
+                switch (type) {
+                case YF_GLTF_TYPE_SCALAR:
+                    comp_n = 1;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_FLOAT;
+                    break;
+                case YF_GLTF_TYPE_VEC2:
+                    comp_n = 2;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_FLOAT2;
+                    break;
+                case YF_GLTF_TYPE_VEC3:
+                    comp_n = 3;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_FLOAT3;
+                    break;
+                case YF_GLTF_TYPE_VEC4:
+                    comp_n = 4;
+                    data.prims[i].attrs[j].vfmt = YF_VFMT_FLOAT4;
+                    break;
+                case YF_GLTF_TYPE_MAT2:
+                case YF_GLTF_TYPE_MAT3:
+                case YF_GLTF_TYPE_MAT4:
+                    /* TODO: Support for this types on core. */
+                    yf_seterr(YF_ERR_UNSUP, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                default:
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                }
+                break;
+
+            default:
+                yf_seterr(YF_ERR_INVFILE, __func__);
+                YF_DEALLOCDT(i + 1);
+                return -1;
+            }
+
+            data.prims[i].attrs[j].data_off =
+                data.data_sz - data.prims[i].data_off;
+
+            const size_t attr_sz = comp_sz * comp_n;
+            const size_t copy_sz = data.prims[i].vert_n * attr_sz;
+            size_t new_sz = data.data_sz + copy_sz;
+            if (new_sz & 3)
+                new_sz += 4 - (new_sz & 3);
+
+            unsigned char *dt = realloc(data.data, new_sz);
+            if (dt == NULL) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                YF_DEALLOCDT(i + 1);
+                return -1;
+            }
+            data.data = dt;
+            data.data_sz = new_sz;
+
+            FILE *file = seek_data(gltf, fdata, attr_acc, YF_INT_MIN);
+            if (file == NULL) {
+                YF_DEALLOCDT(i + 1);
+                return -1;
+            }
+
+            const T_int attr_view = gltf->accessors.v[attr_acc].buffer_view;
+            const T_int byte_strd = gltf->bufferviews.v[attr_view].byte_strd;
+
+            dt += data.prims[i].data_off + data.prims[i].attrs[j].data_off;
+            if (byte_strd == 0) {
+                /* tightly packed */
+                if (fread(dt, 1, copy_sz, file) != copy_sz) {
+                    yf_seterr(YF_ERR_INVFILE, __func__);
+                    YF_DEALLOCDT(i + 1);
+                    return -1;
+                }
+            } else {
+                /* interleaved */
+                const size_t strd = byte_strd - attr_sz;
+                size_t n = 0;
+                while (1) {
+                    if (fread(dt, 1, attr_sz, file) != attr_sz) {
+                        yf_seterr(YF_ERR_INVFILE, __func__);
+                        YF_DEALLOCDT(i + 1);
+                        return -1;
+                    }
+                    if (++n == data.prims[i].vert_n)
+                        break;
+                    if (fseek(file, strd, SEEK_CUR) != 0) {
+                        yf_seterr(YF_ERR_INVFILE, __func__);
+                        return -1;
+                    }
+                    dt += attr_sz;
+                }
+            }
+
+            j++;
+        }
+
+        /* vertex indices */
+        /* TODO: Endianness. */
+        const T_int indx_acc = primitives->v[i].indices;
+        if (indx_acc == YF_INT_MIN) {
+            data.prims[i].indx_n = 0;
+            data.prims[i].itype = 0;
+            data.prims[i].indx_data_off = 0;
+        } else {
+            data.prims[i].indx_n = gltf->accessors.v[indx_acc].count;
+
+            if (gltf->accessors.v[indx_acc].type != YF_GLTF_TYPE_SCALAR) {
+                yf_seterr(YF_ERR_UNSUP, __func__);
+                YF_DEALLOCDT(i + 1);
+                return -1;
+            }
+
+            size_t comp_sz;
+            switch (gltf->accessors.v[indx_acc].comp_type) {
+            case YF_GLTF_COMP_USHORT:
+                data.prims[i].itype = YF_ITYPE_USHORT;
+                comp_sz = 2;
+                break;
+            case YF_GLTF_COMP_UINT:
+                data.prims[i].itype = YF_ITYPE_UINT;
+                comp_sz = 4;
                 break;
             default:
-                break;
-            }
-
-            continue;
-        }
-
-        const T_int comp_type = gltf->accessors.v[attrs[i].acc].comp_type;
-        size_t comp_sz;
-        switch (comp_type) {
-        case YF_GLTF_COMP_BYTE:
-        case YF_GLTF_COMP_UBYTE:
-            comp_sz = 1;
-            break;
-        case YF_GLTF_COMP_SHORT:
-        case YF_GLTF_COMP_USHORT:
-            comp_sz = 2;
-            break;
-        case YF_GLTF_COMP_UINT:
-        case YF_GLTF_COMP_FLOAT:
-            comp_sz = 4;
-            break;
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            free(verts);
-            return -1;
-        }
-
-        const int type = gltf->accessors.v[attrs[i].acc].type;
-        size_t comp_n;
-        switch (type) {
-        case YF_GLTF_TYPE_SCALAR:
-            comp_n = 1;
-            break;
-        case YF_GLTF_TYPE_VEC2:
-            comp_n = 2;
-            break;
-        case YF_GLTF_TYPE_VEC3:
-            comp_n = 3;
-            break;
-        case YF_GLTF_TYPE_VEC4:
-        case YF_GLTF_TYPE_MAT2:
-            comp_n = 4;
-            break;
-        case YF_GLTF_TYPE_MAT3:
-            comp_n = 9;
-            break;
-        case YF_GLTF_TYPE_MAT4:
-            comp_n = 16;
-            break;
-        default:
-            yf_seterr(YF_ERR_INVFILE, __func__);
-            free(verts);
-            return -1;
-        }
-
-        size_t v_off;
-        switch (i) {
-        case YF_GLTF_ATTR_POS:
-            assert(comp_type == YF_GLTF_COMP_FLOAT);
-            assert(type == YF_GLTF_TYPE_VEC3);
-            v_off = offsetof(YF_vmdl, pos);
-            break;
-        case YF_GLTF_ATTR_NORM:
-            assert(comp_type == YF_GLTF_COMP_FLOAT);
-            assert(type == YF_GLTF_TYPE_VEC3);
-            v_off = offsetof(YF_vmdl, norm);
-            break;
-        case YF_GLTF_ATTR_TC0:
-            assert(type == YF_GLTF_TYPE_VEC2);
-            /* TODO: Support for UBYTE and USHORT component types. */
-            if (comp_type != YF_GLTF_COMP_FLOAT) {
                 yf_seterr(YF_ERR_UNSUP, __func__);
-                free(verts);
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
-            v_off = offsetof(YF_vmdl, tc);
-            break;
-        case YF_GLTF_ATTR_CLR0:
-            /* TODO: Support for VEC3 type & UBYTE/USHORT component types. */
-            if (type != YF_GLTF_TYPE_VEC4 || comp_type != YF_GLTF_COMP_FLOAT) {
-                yf_seterr(YF_ERR_UNSUP, __func__);
-                free(verts);
+
+            data.prims[i].indx_data_off =
+                data.data_sz - data.prims[i].data_off;
+
+            const size_t copy_sz = data.prims[i].indx_n * comp_sz;
+            size_t new_sz = data.data_sz + copy_sz;
+            if (new_sz & 3)
+                new_sz += 4 - (new_sz & 3);
+
+            unsigned char *dt = realloc(data.data, new_sz);
+            if (dt == NULL) {
+                yf_seterr(YF_ERR_NOMEM, __func__);
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
-            v_off = offsetof(YF_vmdl, clr);
-            break;
-        case YF_GLTF_ATTR_JNT0:
-            assert(type == YF_GLTF_TYPE_VEC4);
-            /* TODO: Support for USHORT component type. */
-            if (comp_type != YF_GLTF_COMP_UBYTE) {
-                yf_seterr(YF_ERR_UNSUP, __func__);
-                free(verts);
+            data.data = dt;
+            data.data_sz = new_sz;
+
+            FILE *file = seek_data(gltf, fdata, indx_acc, YF_INT_MIN);
+            if (file == NULL) {
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
-            v_off = offsetof(YF_vmdl, jnts);
-            break;
-        case YF_GLTF_ATTR_WGT0:
-            assert(type == YF_GLTF_TYPE_VEC4);
-            /* TODO: Support for UBYTE and USHORT component types. */
-            if (comp_type != YF_GLTF_COMP_FLOAT) {
-                yf_seterr(YF_ERR_UNSUP, __func__);
-                free(verts);
-                return -1;
-            }
-            v_off = offsetof(YF_vmdl, wgts);
-            break;
-        default:
-#ifdef YF_DEVEL
-            printf("\n[YF] WARNING (%s):\n glTF mesh attribute %zu ignored\n",
-                   __func__, i);
-#endif
-            continue;
-        }
 
-        FILE *file = seek_data(gltf, fdata, attrs[i].acc, YF_INT_MIN);
-        if (file == NULL) {
-            free(verts);
-            return -1;
-        }
-
-        const T_int byte_strd = gltf->bufferviews.v[attrs[i].view].byte_strd;
-        char *dt = (void *)verts;
-        if (byte_strd == 0) {
-            for (size_t j = 0; j < v_n; j++) {
-                if (fread(dt+v_off, comp_sz, comp_n, file) < comp_n) {
-                    yf_seterr(YF_ERR_INVFILE, __func__);
-                    free(verts);
-                    return -1;
-                }
-                dt += sizeof *verts;
-            }
-        } else {
-            const size_t strd = byte_strd - comp_sz * comp_n;
-            size_t j = 0;
-            while (1) {
-                if (fread(dt+v_off, comp_sz, comp_n, file) < comp_n) {
-                    yf_seterr(YF_ERR_INVFILE, __func__);
-                    free(verts);
-                    return -1;
-                }
-                if (++j == v_n)
-                    break;
-                if (fseek(file, strd, SEEK_CUR) != 0) {
-                    yf_seterr(YF_ERR_INVFILE, __func__);
-                    free(verts);
-                    return -1;
-                }
-                dt += sizeof *verts;
-            }
-        }
-    }
-
-    /* index data */
-    /* TODO: Endianness. */
-    const T_int i_acc = prim->v[0].indices;
-    size_t i_n;
-    void *inds;
-    int itype;
-
-    if (i_acc != YF_INT_MIN) {
-        size_t i_sz;
-        switch (gltf->accessors.v[i_acc].comp_type) {
-        case YF_GLTF_COMP_USHORT:
-            itype = YF_ITYPE_USHORT;
-            i_sz = 2;
-            break;
-        case YF_GLTF_COMP_UINT:
-            itype = YF_ITYPE_UINT;
-            i_sz = 4;
-            break;
-        default:
-            yf_seterr(YF_ERR_UNSUP, __func__);
-            free(verts);
-            return -1;
-        }
-
-        if (gltf->accessors.v[i_acc].type != YF_GLTF_TYPE_SCALAR) {
-            yf_seterr(YF_ERR_UNSUP, __func__);
-            free(verts);
-            return -1;
-        }
-
-        i_n = gltf->accessors.v[i_acc].count;
-        inds = malloc(i_n * i_sz);
-        if (inds == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            free(verts);
-            return -1;
-        }
-
-        FILE *file = seek_data(gltf, fdata, i_acc, YF_INT_MIN);
-        if (file == NULL) {
-            free(verts);
-            free(inds);
-            return -1;
-        }
-
-        const T_int i_view = gltf->accessors.v[i_acc].buffer_view;
-        const T_int byte_strd = gltf->bufferviews.v[i_view].byte_strd;
-        if (byte_strd == 0) {
-            if (fread(inds, i_sz, i_n, file) < i_n) {
+            dt += data.prims[i].data_off + data.prims[i].indx_data_off;
+            if (fread(dt, 1, copy_sz, file) != copy_sz) {
                 yf_seterr(YF_ERR_INVFILE, __func__);
-                free(verts);
-                free(inds);
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
-        } else {
-            const size_t strd = byte_strd - i_sz;
-            char *dt = inds;
-            size_t j = 0;
-            while (1) {
-                if (fread(dt+i_sz*j, i_sz, 1, file) < 1) {
-                    yf_seterr(YF_ERR_INVFILE, __func__);
-                    free(verts);
-                    free(inds);
-                    return -1;
-                }
-                if (++j == i_n)
-                    break;
-                if (fseek(file, strd, SEEK_CUR) != 0) {
-                    yf_seterr(YF_ERR_INVFILE, __func__);
-                    free(verts);
-                    free(inds);
-                    return -1;
-                }
-            }
         }
-    } else {
-        itype = i_n = 0;
-        inds = NULL;
     }
 
-    /* mesh */
-    YF_meshdt data = {
-        .v = {
-            .vtype = YF_VTYPE_MDL,
-            .data = verts,
-            .n = v_n
-        },
-        .i = {
-            .itype = itype,
-            .data = inds,
-            .n = i_n
-        }
-    };
     cont->meshes[mesh] = yf_mesh_initdt(&data);
-    free(data.v.data);
-    free(data.i.data);
+    YF_DEALLOCDT(data.prim_n);
     return cont->meshes[mesh] == NULL ? -1 : 0;
+
+#undef YF_DEALLOCDT
 }
 
 /* Loads a single texture from glTF contents. */

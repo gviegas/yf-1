@@ -14,16 +14,22 @@
 #include "yf-quad.h"
 #include "node.h"
 #include "mesh.h"
+#include "resmgr.h"
+
+#define YF_VQUAD_POSN (3 << 2)
+#define YF_VQUAD_TCN  (2 << 2)
+#define YF_VQUAD_CLRN (4 << 2)
+#define YF_VQUAD_N    (YF_VQUAD_POSN + YF_VQUAD_TCN + YF_VQUAD_CLRN)
 
 struct YF_quad_o {
     YF_node node;
-    YF_vquad verts[4];
+    float verts[YF_VQUAD_N];
     YF_mesh mesh;
     YF_texture tex;
     YF_rect rect;
 #define YF_PEND_NONE 0
-#define YF_PEND_TC   0x01 /* 'rect' changed, 'verts[].tc' not up to date */
-#define YF_PEND_CLR  0x02 /* 'verts[].clr' set but 'mesh' not up to date */
+#define YF_PEND_TC   0x01 /* 'rect' changed, 'verts.tc' not up to date */
+#define YF_PEND_CLR  0x02 /* 'verts.clr' set but 'mesh' not up to date */
     unsigned pend_mask;
     /* TODO: Other quad properties. */
 };
@@ -39,37 +45,69 @@ static int init_rect(YF_quad quad)
 # define YF_TEX_T 1.0f
 #endif
 
-    static const YF_vquad verts[4] = {
-        {
-            .pos = {-1.0f, -1.0f, 0.5f},
-            .tc = {0.0f, 1.0f - YF_TEX_T},
-            .clr = {1.0f, 1.0f, 1.0f, 1.0f}
-        },
-        {
-            .pos = {-1.0f, 1.0f, 0.5f},
-            .tc = {0.0f, YF_TEX_T},
-            .clr = {1.0f, 1.0f, 1.0f, 1.0f}
-        },
-        {
-            .pos = {1.0f, 1.0f, 0.5f},
-            .tc = {1.0f, YF_TEX_T},
-            .clr = {1.0f, 1.0f, 1.0f, 1.0f}
-        },
-        {
-            .pos = {1.0f, -1.0f, 0.5f},
-            .tc = {1.0f, 1.0f - YF_TEX_T},
-            .clr = {1.0f, 1.0f, 1.0, 1.0f}
-        }
+    static const float pos[] = {
+        -1.0f, -1.0f, 0.5f,
+        -1.0f, 1.0f, 0.5f,
+        1.0f, 1.0f, 0.5f,
+        1.0f, -1.0f, 0.5f
     };
-    static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
+
+    static const float tc[] = {
+        0.0f, 1.0f - YF_TEX_T,
+        0.0f, YF_TEX_T,
+        1.0f, YF_TEX_T,
+        1.0f, 1.0f - YF_TEX_T
+    };
+
+    static const float clr[] = {
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f
+    };
+
+    static const unsigned short indx[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+    static_assert(sizeof pos + sizeof tc + sizeof clr == sizeof quad->verts,
+                  "!sizeof");
+
+    memcpy(quad->verts, pos, sizeof pos);
+    memcpy((char *)quad->verts + sizeof pos, tc, sizeof tc);
+    memcpy((char *)quad->verts + sizeof pos + sizeof tc, clr, sizeof clr);
+
+    void *buf = malloc(sizeof quad->verts + sizeof indx);
+    if (buf == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+    memcpy(buf, quad->verts, sizeof quad->verts);
+    memcpy((char *)buf + sizeof quad->verts, indx, sizeof indx);
 
     const YF_meshdt data = {
-        .v = {YF_VTYPE_QUAD, (void *)verts, 4},
-        .i = {YF_ITYPE_USHORT, (void *)inds, 6}
+        .prims = &(YF_primdt){
+            .primitive = YF_PRIMITIVE_TRIANGLE,
+            .vert_n = 4,
+            .indx_n = 6,
+            .data_off = 0,
+            .attrs =  (YF_attrdt[]){
+                [0] = {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+                [1] = {YF_RESLOC_TC, YF_VFMT_FLOAT2, sizeof pos},
+                [2] = {YF_RESLOC_CLR, YF_VFMT_FLOAT4, sizeof pos + sizeof tc}
+            },
+            .attr_n = 3,
+            .itype = YF_ITYPE_USHORT,
+            .indx_data_off = sizeof pos + sizeof tc + sizeof clr
+        },
+        .prim_n = 1,
+        .data = buf,
+        .data_sz = sizeof quad->verts + sizeof indx
     };
 
     quad->mesh = yf_mesh_initdt(&data);
-    memcpy(quad->verts, verts, sizeof verts);
+    free(buf);
     return quad->mesh == NULL ? -1 : 0;
 }
 
@@ -104,24 +142,40 @@ static void update_rect(YF_quad quad)
         t1 = tmp;
 #endif
 
-        quad->verts[0].tc[0] = s0;
-        quad->verts[0].tc[1] = t0;
+        float *tc = quad->verts + YF_VQUAD_POSN;
 
-        quad->verts[1].tc[0] = s0;
-        quad->verts[1].tc[1] = t1;
+        tc[0] = s0;
+        tc[1] = t0;
 
-        quad->verts[2].tc[0] = s1;
-        quad->verts[2].tc[1] = t1;
+        tc[2] = s0;
+        tc[3] = t1;
 
-        quad->verts[3].tc[0] = s1;
-        quad->verts[3].tc[1] = t0;
+        tc[4] = s1;
+        tc[5] = t1;
+
+        tc[6] = s1;
+        tc[7] = t0;
     }
 
-    const YF_slice range = {0, 4};
+    size_t off = YF_VQUAD_POSN * sizeof(float);
+    float *beg = quad->verts + YF_VQUAD_POSN;
+    size_t sz;
+
+    if (quad->pend_mask & YF_PEND_TC) {
+        sz = sizeof(float) * (quad->pend_mask & YF_PEND_CLR ?
+                              YF_VQUAD_TCN + YF_VQUAD_CLRN :
+                              YF_VQUAD_TCN);
+    } else {
+        off += YF_VQUAD_TCN * sizeof(float);
+        beg += YF_VQUAD_TCN;
+        sz = YF_VQUAD_CLRN * sizeof(float);
+    }
+
 #ifdef YF_DEVEL
-    if (yf_mesh_setvtx(quad->mesh, range, quad->verts) != 0) assert(0);
+    if (yf_mesh_setdata(quad->mesh, off, beg, sz) != 0)
+        assert(0);
 #else
-    yf_mesh_setvtx(quad->mesh, range, quad->verts);
+    yf_mesh_setdata(quad->mesh, off, beg, sz);
 #endif
 }
 
@@ -204,29 +258,27 @@ YF_color yf_quad_getcolor(YF_quad quad, int corner)
 {
     assert(quad != NULL);
 
-    unsigned i = 0;
+    float *clr = quad->verts + YF_VQUAD_POSN + YF_VQUAD_TCN;
     switch (corner) {
     case YF_CORNER_TOPL:
     case YF_CORNER_TOP:
     case YF_CORNER_LEFT:
     case YF_CORNER_ALL:
-        i = 0;
         break;
     case YF_CORNER_TOPR:
     case YF_CORNER_RIGHT:
-        i = 3;
+        clr += 3 << 2;
         break;
     case YF_CORNER_BOTTOML:
     case YF_CORNER_BOTTOM:
-        i = 1;
+        clr += 1 << 2;
         break;
     case YF_CORNER_BOTTOMR:
-        i = 2;
+        clr += 2 << 2;
         break;
     }
 
-    const YF_vquad *v = quad->verts+i;
-    return (YF_color){v->clr[0], v->clr[1], v->clr[2], v->clr[3]};
+    return (YF_color){clr[0], clr[1], clr[2], clr[3]};
 }
 
 void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color)
@@ -234,28 +286,32 @@ void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color)
     assert(quad != NULL);
 
     if (corner_mask & YF_CORNER_TOPL) {
-        quad->verts[0].clr[0] = color.r;
-        quad->verts[0].clr[1] = color.g;
-        quad->verts[0].clr[2] = color.b;
-        quad->verts[0].clr[3] = color.a;
+        float *clr = quad->verts + YF_VQUAD_POSN + YF_VQUAD_TCN;
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_TOPR) {
-        quad->verts[3].clr[0] = color.r;
-        quad->verts[3].clr[1] = color.g;
-        quad->verts[3].clr[2] = color.b;
-        quad->verts[3].clr[3] = color.a;
+        float *clr = quad->verts + YF_VQUAD_POSN + YF_VQUAD_TCN + (3 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_BOTTOML) {
-        quad->verts[1].clr[0] = color.r;
-        quad->verts[1].clr[1] = color.g;
-        quad->verts[1].clr[2] = color.b;
-        quad->verts[1].clr[3] = color.a;
+        float *clr = quad->verts + YF_VQUAD_POSN + YF_VQUAD_TCN + (1 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_BOTTOMR) {
-        quad->verts[2].clr[0] = color.r;
-        quad->verts[2].clr[1] = color.g;
-        quad->verts[2].clr[2] = color.b;
-        quad->verts[2].clr[3] = color.a;
+        float *clr = quad->verts + YF_VQUAD_POSN + YF_VQUAD_TCN + (2 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
 
     quad->pend_mask |= YF_PEND_CLR;

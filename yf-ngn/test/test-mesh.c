@@ -15,23 +15,27 @@
 /* TODO: More tests. */
 int yf_test_mesh(void)
 {
-    YF_vmdl verts[128];
-    unsigned short inds[256];
+    unsigned char buf[2048];
 
-    printf("- sizeof(vmdl): %zu -\n", sizeof *verts);
-    printf("- sizeof(index): %zu -\n", sizeof *inds);
+    YF_primdt prim = {
+        .primitive = YF_PRIMITIVE_TRIANGLE,
+        .vert_n = 6,
+        .indx_n = 9,
+        .data_off = 0,
+        .attrs = (YF_attrdt[]){
+            [0] = {20, YF_VFMT_FLOAT3, 0},
+            [1] = {13, YF_VFMT_FLOAT4, 6 * sizeof(float[3])}
+        },
+        .attr_n = 2,
+        .itype = YF_ITYPE_USHORT,
+        .indx_data_off = 6 * sizeof(float[3 + 4])
+    };
 
     YF_meshdt data = {
-        .v = {
-            .vtype = YF_VTYPE_MDL,
-            .data = &verts,
-            .n = 6
-        },
-        .i = {
-            .itype = YF_ITYPE_USHORT,
-            .data = inds,
-            .n = 9
-        }
+        .prims = &prim,
+        .prim_n = 1,
+        .data = buf,
+        .data_sz = 6 * sizeof(float[3 + 4]) + 9 * sizeof(unsigned short)
     };
 
     YF_TEST_PRINT("initdt", "&data", "mesh");
@@ -72,7 +76,10 @@ int yf_test_mesh(void)
 
     yf_print_mesh(NULL);
 
-    data.v.n += 5;
+    prim.vert_n += 5;
+    prim.attrs[1].data_off += 5 * sizeof(float[3]);
+    prim.indx_data_off += 5 * sizeof(float[3 + 4]);
+    data.data_sz += 5 * sizeof(float[3 + 4]);
     puts("\n- data size increased -");
 
     YF_TEST_PRINT("initdt", "&data", "mesh");
@@ -82,7 +89,10 @@ int yf_test_mesh(void)
 
     yf_print_mesh(NULL);
 
-    data.v.n -= 6;
+    prim.vert_n -= 6;
+    prim.attrs[1].data_off -= 6 * sizeof(float[3]);
+    prim.indx_data_off -= 6 * sizeof(float[3 + 4]);
+    data.data_sz -= 6 * sizeof(float[3 + 4]);
     puts("\n- data size decreased -");
 
     YF_TEST_PRINT("initdt", "&data", "mesh3");

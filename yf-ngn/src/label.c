@@ -16,6 +16,7 @@
 #include "yf-label.h"
 #include "node.h"
 #include "mesh.h"
+#include "resmgr.h"
 #include "texture.h"
 #include "font.h"
 
@@ -26,17 +27,22 @@
 # define YF_DPI 72
 #endif
 
+#define YF_VLABL_POSN (3 << 2)
+#define YF_VLABL_TCN  (2 << 2)
+#define YF_VLABL_CLRN (4 << 2)
+#define YF_VLABL_N    (YF_VLABL_POSN + YF_VLABL_TCN + YF_VLABL_CLRN)
+
 struct YF_label_o {
     YF_node node;
-    YF_vlabl verts[4];
+    float verts[YF_VLABL_N];
     YF_mesh mesh;
     YF_fontrz rz;
     YF_font font;
     wchar_t *str;
     unsigned short pt;
 #define YF_PEND_NONE 0
-#define YF_PEND_TC   0x01 /* 'rz' changed, 'verts[].tc' not up to date */
-#define YF_PEND_CLR  0x02 /* 'verts[].clr' set but 'mesh' not up to date */
+#define YF_PEND_TC   0x01 /* 'rz' changed, 'verts.tc' not up to date */
+#define YF_PEND_CLR  0x02 /* 'verts.clr' set but 'mesh' not up to date */
 #define YF_PEND_RZ   0x04 /* font prop. changed, 'rz' not up to date */
     unsigned pend_mask;
 };
@@ -46,37 +52,69 @@ static int init_rect(YF_label labl)
 {
     assert(labl != NULL);
 
-    static const YF_vlabl verts[4] = {
-        {
-            .pos = {-1.0, -1.0, 0.5},
-            .tc = {0.0, 1.0,},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        },
-        {
-            .pos = {-1.0, 1.0, 0.5},
-            .tc = {0.0, 0.0},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        },
-        {
-            .pos = {1.0, 1.0, 0.5},
-            .tc = {1.0, 0.0},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        },
-        {
-            .pos = {1.0, -1.0, 0.5},
-            .tc = {1.0, 1.0},
-            .clr = {1.0, 1.0, 1.0, 1.0}
-        }
+    static const float pos[] = {
+        -1.0f, -1.0f, 0.5f,
+        -1.0f, 1.0f, 0.5f,
+        1.0f, 1.0f, 0.5f,
+        1.0f, -1.0f, 0.5f
     };
-    static const unsigned short inds[6] = {0, 1, 2, 0, 2, 3};
+
+    static const float tc[] = {
+        0.0f, 1.0f,
+        0.0f, 0.0f,
+        1.0f, 0.0f,
+        1.0f, 1.0f
+    };
+
+    static const float clr[] = {
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f,
+        1.0f, 1.0f, 1.0f, 1.0f
+    };
+
+    static const unsigned short indx[] = {
+        0, 1, 2,
+        0, 2, 3
+    };
+
+    static_assert(sizeof pos + sizeof tc + sizeof clr == sizeof labl->verts,
+                  "!sizeof");
+
+    memcpy(labl->verts, pos, sizeof pos);
+    memcpy((char *)labl->verts + sizeof pos, tc, sizeof tc);
+    memcpy((char *)labl->verts + sizeof pos + sizeof tc, clr, sizeof clr);
+
+    void *buf = malloc(sizeof labl->verts + sizeof indx);
+    if (buf == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return -1;
+    }
+    memcpy(buf, labl->verts, sizeof labl->verts);
+    memcpy((char *)buf + sizeof labl->verts, indx, sizeof indx);
 
     const YF_meshdt data = {
-        .v = {YF_VTYPE_LABL, (void *)verts, 4},
-        .i = {YF_ITYPE_USHORT, (void *)inds, 6}
+        .prims = &(YF_primdt){
+            .primitive = YF_PRIMITIVE_TRIANGLE,
+            .vert_n = 4,
+            .indx_n = 6,
+            .data_off = 0,
+            .attrs =  (YF_attrdt[]){
+                [0] = {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+                [1] = {YF_RESLOC_TC, YF_VFMT_FLOAT2, sizeof pos},
+                [2] = {YF_RESLOC_CLR, YF_VFMT_FLOAT4, sizeof pos + sizeof tc}
+            },
+            .attr_n = 3,
+            .itype = YF_ITYPE_USHORT,
+            .indx_data_off = sizeof labl->verts
+        },
+        .prim_n = 1,
+        .data = buf,
+        .data_sz = sizeof labl->verts + sizeof indx
     };
 
     labl->mesh = yf_mesh_initdt(&data);
-    memcpy(labl->verts, verts, sizeof verts);
+    free(buf);
     return labl->mesh == NULL ? -1 : 0;
 }
 
@@ -103,24 +141,40 @@ static void update_rect(YF_label labl)
             t1 = rz->dim.height / hgt + t0;
         }
 
-        labl->verts[0].tc[0] = s0;
-        labl->verts[0].tc[1] = t1;
+        float *tc = labl->verts + YF_VLABL_POSN;
 
-        labl->verts[1].tc[0] = s0;
-        labl->verts[1].tc[1] = t0;
+        tc[0] = s0;
+        tc[1] = t1;
 
-        labl->verts[2].tc[0] = s1;
-        labl->verts[2].tc[1] = t0;
+        tc[2] = s0;
+        tc[3] = t0;
 
-        labl->verts[3].tc[0] = s1;
-        labl->verts[3].tc[1] = t1;
+        tc[4] = s1;
+        tc[5] = t0;
+
+        tc[6] = s1;
+        tc[7] = t1;
     }
 
-    const YF_slice range = {0, 4};
+    size_t off = YF_VLABL_POSN * sizeof(float);
+    float *beg = labl->verts + YF_VLABL_POSN;
+    size_t sz;
+
+    if (labl->pend_mask & YF_PEND_TC) {
+        sz = sizeof(float) * (labl->pend_mask & YF_PEND_CLR ?
+                              YF_VLABL_TCN + YF_VLABL_CLRN :
+                              YF_VLABL_TCN);
+    } else {
+        off += YF_VLABL_TCN * sizeof(float);
+        beg += YF_VLABL_TCN;
+        sz = YF_VLABL_CLRN * sizeof(float);
+    }
+
 #ifdef YF_DEVEL
-    if (yf_mesh_setvtx(labl->mesh, range, labl->verts) != 0) assert(0);
+    if (yf_mesh_setdata(labl->mesh, off, beg, sz) != 0)
+        assert(0);
 #else
-    yf_mesh_setvtx(labl->mesh, range, labl->verts);
+    yf_mesh_setdata(labl->mesh, off, beg, sz);
 #endif
 }
 
@@ -318,29 +372,27 @@ YF_color yf_label_getcolor(YF_label labl, int corner)
 {
     assert(labl != NULL);
 
-    unsigned i = 0;
+    float *clr = labl->verts + YF_VLABL_POSN + YF_VLABL_TCN;
     switch (corner) {
     case YF_CORNER_TOPL:
     case YF_CORNER_TOP:
     case YF_CORNER_LEFT:
     case YF_CORNER_ALL:
-        i = 0;
         break;
     case YF_CORNER_TOPR:
     case YF_CORNER_RIGHT:
-        i = 3;
+        clr += 3 << 2;
         break;
     case YF_CORNER_BOTTOML:
     case YF_CORNER_BOTTOM:
-        i = 1;
+        clr += 1 << 2;
         break;
     case YF_CORNER_BOTTOMR:
-        i = 2;
+        clr += 2 << 2;
         break;
     }
 
-    const YF_vlabl *v = labl->verts+i;
-    return (YF_color){v->clr[0], v->clr[1], v->clr[2], v->clr[3]};
+    return (YF_color){clr[0], clr[1], clr[2], clr[3]};
 }
 
 void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color)
@@ -348,28 +400,32 @@ void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color)
     assert(labl != NULL);
 
     if (corner_mask & YF_CORNER_TOPL) {
-        labl->verts[0].clr[0] = color.r;
-        labl->verts[0].clr[1] = color.g;
-        labl->verts[0].clr[2] = color.b;
-        labl->verts[0].clr[3] = color.a;
+        float *clr = labl->verts + YF_VLABL_POSN + YF_VLABL_TCN;
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_TOPR) {
-        labl->verts[3].clr[0] = color.r;
-        labl->verts[3].clr[1] = color.g;
-        labl->verts[3].clr[2] = color.b;
-        labl->verts[3].clr[3] = color.a;
+        float *clr = labl->verts + YF_VLABL_POSN + YF_VLABL_TCN + (3 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_BOTTOML) {
-        labl->verts[1].clr[0] = color.r;
-        labl->verts[1].clr[1] = color.g;
-        labl->verts[1].clr[2] = color.b;
-        labl->verts[1].clr[3] = color.a;
+        float *clr = labl->verts + YF_VLABL_POSN + YF_VLABL_TCN + (1 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
     if (corner_mask & YF_CORNER_BOTTOMR) {
-        labl->verts[2].clr[0] = color.r;
-        labl->verts[2].clr[1] = color.g;
-        labl->verts[2].clr[2] = color.b;
-        labl->verts[2].clr[3] = color.a;
+        float *clr = labl->verts + YF_VLABL_POSN + YF_VLABL_TCN + (2 << 2);
+        clr[0] = color.r;
+        clr[1] = color.g;
+        clr[2] = color.b;
+        clr[3] = color.a;
     }
 
     labl->pend_mask |= YF_PEND_CLR;

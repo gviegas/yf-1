@@ -13,6 +13,7 @@
 #include "yf-terrain.h"
 #include "node.h"
 #include "mesh.h"
+#include "resmgr.h"
 
 struct YF_terrain_o {
     YF_node node;
@@ -33,56 +34,68 @@ static int init_grid(YF_terrain terr)
 
     const unsigned wdt = terr->width;
     const unsigned dep = terr->depth;
+    const unsigned vert_n = (wdt + 1) * (dep + 1);
+    const unsigned indx_n = wdt * dep * 6;
+    const size_t pos_sz = sizeof(float[3]) * vert_n;
+    const size_t tc_sz = sizeof(float[2]) * vert_n;
+    const size_t norm_sz = sizeof(float[3]) * vert_n;
 
-    YF_meshdt data = {0};
-    data.v.vtype = YF_VTYPE_TERR;
-    data.v.n = (wdt+1) * (dep+1);
-    size_t i_sz;
-    if (data.v.n < 65535) {
-        data.i.itype = YF_ITYPE_USHORT;
-        i_sz = 2;
+    int itype;
+    size_t indx_sz;
+    if (vert_n < (1 << 16)) {
+        itype = YF_ITYPE_USHORT;
+        indx_sz = indx_n << 1;
     } else {
-        data.i.itype = YF_ITYPE_UINT;
-        i_sz = 4;
+        itype = YF_ITYPE_UINT;
+        indx_sz = indx_n << 2;
     }
-    data.i.n = wdt * dep * 6;
 
-    data.v.data = malloc(data.v.n * sizeof(YF_vterr));
-    data.i.data = malloc(data.i.n * i_sz);
-    if (data.v.data == NULL || data.i.data == NULL) {
+    const YF_primdt prim = {
+        .primitive = YF_PRIMITIVE_TRIANGLE,
+        .vert_n = vert_n,
+        .indx_n = indx_n,
+        .data_off = 0,
+        .attrs = (YF_attrdt[]){
+            [0] = {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+            [1] = {YF_RESLOC_TC, YF_VFMT_FLOAT2, pos_sz},
+            [2] = {YF_RESLOC_NORM, YF_VFMT_FLOAT3, pos_sz + tc_sz}
+        },
+        .attr_n = 3,
+        .itype = itype,
+        .indx_data_off = pos_sz + tc_sz + norm_sz
+    };
+
+    const size_t data_sz = pos_sz + tc_sz + norm_sz + indx_sz;
+    YF_meshdt data = {&prim, 1, NULL, data_sz};
+    if ((data.data = malloc(data_sz)) == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        free(data.v.data);
-        free(data.i.data);
         return -1;
     }
 
 #define YF_GRID_CPYI() do { \
-    unsigned idx = 0; \
-    unsigned k; \
+    inds = (void *)( ((char *)data.data) + prim.indx_data_off ); \
     for (unsigned i = 0; i < wdt; i++) { \
         for (unsigned j = 0; j < dep; j++) { \
-            k = (dep+1) * i + j; \
-            inds[idx++] = k; \
-            inds[idx++] = k+1; \
-            inds[idx++] = k+dep+2; \
-            inds[idx++] = k; \
-            inds[idx++] = k+dep+2; \
-            inds[idx++] = k+dep+1; \
+            unsigned k = (dep + 1) * i + j; \
+            *inds++ = k; \
+            *inds++ = k + 1; \
+            *inds++ = k + dep + 2; \
+            *inds++ = k; \
+            *inds++ = k + dep + 2; \
+            *inds++ = k + dep + 1; \
         } \
     } } while (0)
 
-    if (i_sz < sizeof(unsigned)) {
-        unsigned short *inds = data.i.data;
+    if (itype == YF_ITYPE_USHORT) {
+        unsigned short *inds;
         YF_GRID_CPYI();
     } else {
-        unsigned *inds = data.i.data;
+        unsigned *inds;
         YF_GRID_CPYI();
     }
-
 #undef YF_GRID_CPYI
 
-    float x0, z0;
-    float pos_off;
+    float x0, z0, pos_off;
     if (wdt > dep) {
         x0 = -1.0f;
         z0 = -(float)dep / (float)wdt;
@@ -95,37 +108,34 @@ static int init_grid(YF_terrain terr)
     /* NxN textures are expected even for non-square grids */
     float tc_off = pos_off / 2.0f;
 
-    float x, z, s, t;
-    unsigned k;
-    YF_vterr *vdt = data.v.data;
+    float *pos_dt = data.data;
+    float *tc_dt = (float *)( (char *)pos_dt + pos_sz );
+    float *norm_dt = (float *)( (char *)tc_dt + tc_sz );
+
     for (unsigned i = 0; i <= wdt; i++) {
-        x = x0 + pos_off * (float)i;
-        s = tc_off * (float)i;
+        float x = x0 + pos_off * (float)i;
+        float s = tc_off * (float)i;
+
         for (unsigned j = 0; j <= dep; j++) {
-            z = z0 + pos_off * (float)j;
-#ifdef YF_FLIP_TEX
-            t = tc_off * (float)(dep-j);
-#else
-            t = 1.0f - tc_off * (float)(dep-j);
-#endif
-            k = (dep+1) * i + j;
-            vdt[k].pos[0] = x;
-            vdt[k].pos[1] = 0.0f;
-            vdt[k].pos[2] = z;
-            vdt[k].tc[0] = s;
-            vdt[k].tc[1] = t;
-            vdt[k].norm[0] = 0.0f;
-            vdt[k].norm[1] = 1.0f;
-            vdt[k].norm[2] = 0.0f;
+            float z = z0 + pos_off * (float)j;
+            float t = 1.0f - tc_off * (float)(dep - j);
+
+            *pos_dt++ = x;
+            *pos_dt++ = 0.0f;
+            *pos_dt++ = z;
+
+            *tc_dt++ = s;
+            *tc_dt++ = t;
+
+            *norm_dt++ = 0.0f;
+            *norm_dt++ = 1.0f;
+            *norm_dt++ = 0.0f;
         }
     }
 
     terr->mesh = yf_mesh_initdt(&data);
-    free(data.v.data);
-    free(data.i.data);
-    if (terr->mesh == NULL)
-        return -1;
-    return 0;
+    free(data.data);
+    return terr->mesh == NULL ? -1 : 0;
 }
 
 /* Terrain deinitialization callback. */

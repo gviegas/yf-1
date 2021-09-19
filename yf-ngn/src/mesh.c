@@ -33,16 +33,10 @@
 #define YF_BLKMAX 256
 
 struct YF_mesh_o {
-    struct {
-        size_t offset;
-        unsigned stride;
-        unsigned n;
-    } v;
-    struct {
-        size_t offset;
-        short stride;
-        unsigned n;
-    } i;
+    YF_primdt *prims;
+    unsigned prim_n;
+    size_t offset;
+    size_t size;
 
     /* mesh whose buffer location precedes this one's */
     YF_mesh prev;
@@ -196,22 +190,18 @@ static int trim_mem(void)
         YF_mesh prev = blks_[i-1].prev_mesh;
         YF_mesh mesh = blks_[i].prev_mesh;
         diff += blks_[i-1].size;
-        do {
-            mesh->v.offset -= diff;
-            if (mesh->i.n > 0)
-                mesh->i.offset -= diff;
-        } while ((mesh = mesh->prev) != prev);
+        do
+            mesh->offset -= diff;
+        while ((mesh = mesh->prev) != prev);
     }
 
     if (blks_[blk_n_-1].prev_mesh != tail_) {
         YF_mesh prev = blks_[blk_n_-1].prev_mesh;
         YF_mesh mesh = tail_;
         diff += blks_[blk_n_-1].size;
-        do {
-            mesh->v.offset -= diff;
-            if (mesh->i.n > 0)
-                mesh->i.offset -= diff;
-        } while ((mesh = mesh->prev) != prev);
+        do
+            mesh->offset -= diff;
+        while ((mesh = mesh->prev) != prev);
     }
 
     /* unused memory is now contiguous */
@@ -240,54 +230,18 @@ static void try_release(void)
 }
 
 /* Copies mesh data to buffer instance and updates mesh object. */
-static int copy_data(YF_mesh mesh, const YF_meshdt *data)
+static int copy_data(YF_mesh mesh, const void *data, size_t size)
 {
     assert(mesh != NULL);
     assert(data != NULL);
-    assert(data->v.data != NULL);
-    assert(data->v.n > 0 && data->v.n <= UINT_MAX);
-    assert(data->i.n <= UINT_MAX);
+    assert(size > 0);
+    assert(mesh->prims != NULL);
+    assert(mesh->prim_n > 0);
 
-    switch (data->v.vtype) {
-    case YF_VTYPE_MDL:
-        mesh->v.stride = sizeof(YF_vmdl);
-        break;
-    case YF_VTYPE_TERR:
-        mesh->v.stride = sizeof(YF_vterr);
-        break;
-    case YF_VTYPE_PART:
-        mesh->v.stride = sizeof(YF_vpart);
-        break;
-    case YF_VTYPE_QUAD:
-        mesh->v.stride = sizeof(YF_vquad);
-        break;
-    case YF_VTYPE_LABL:
-        mesh->v.stride = sizeof(YF_vlabl);
-        break;
-    default:
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return -1;
-    }
-
-    switch (data->i.itype) {
-    case YF_ITYPE_USHORT:
-        mesh->i.stride = 2;
-        break;
-    case YF_ITYPE_UINT:
-        mesh->i.stride = 4;
-        break;
-    default:
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return -1;
-    }
-
-    const size_t v_sz = data->v.n * mesh->v.stride;
-    const size_t i_sz = data->i.n * mesh->i.stride;
-    const size_t sz = v_sz + i_sz;
     size_t blk_i = blk_n_;
 
     for (size_t i = 0; i < blk_n_; i++) {
-        if (blks_[i].size >= sz) {
+        if (blks_[i].size >= size) {
             blk_i = i;
             break;
         }
@@ -299,7 +253,7 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
                 return -1;
             /* if enough memory is made available after trimming,
                buffer resizing can be omitted */
-            if (blks_[0].size >= sz) {
+            if (blks_[0].size >= size) {
                 blk_i = 0;
                 goto no_resz;
             }
@@ -307,7 +261,7 @@ static int copy_data(YF_mesh mesh, const YF_meshdt *data)
         }
 
         const size_t buf_len = yf_buffer_getsize(buf_);
-        size_t new_len = buf_len + sz;
+        size_t new_len = buf_len + size;
         int merge_last = 0;
 
         if (blk_n_ > 0) {
@@ -336,14 +290,11 @@ no_resz:
     }
 
     const size_t off = blks_[blk_i].offset;
-    if (yf_buffer_copy(buf_, off, data->v.data, v_sz) != 0 ||
-        (i_sz > 0 && yf_buffer_copy(buf_, off+v_sz, data->i.data, i_sz) != 0))
+    if (yf_buffer_copy(buf_, off, data, size) != 0)
         return -1;
 
-    mesh->v.offset = off;
-    mesh->v.n = data->v.n;
-    mesh->i.offset = off + v_sz;
-    mesh->i.n = data->i.n;
+    mesh->offset = off;
+    mesh->size = size;
 
     mesh->prev = blks_[blk_i].prev_mesh;
     if (mesh->prev != NULL) {
@@ -365,9 +316,9 @@ no_resz:
 
     mesh->invalid = 0;
 
-    if (blks_[blk_i].size > sz) {
-        blks_[blk_i].offset += sz;
-        blks_[blk_i].size -= sz;
+    if (blks_[blk_i].size > size) {
+        blks_[blk_i].offset += size;
+        blks_[blk_i].size -= size;
         blks_[blk_i].prev_mesh = mesh;
     } else {
         if (blk_i + 1 != blk_n_) {
@@ -418,12 +369,9 @@ void yf_mesh_deinit(YF_mesh mesh)
     if (mesh == NULL)
         return;
 
-    const size_t sz = mesh->v.n * mesh->v.stride + mesh->i.n * mesh->i.stride;
-    const size_t off = mesh->v.offset;
     size_t blk_i = blk_n_;
-
     for (size_t i = 0; i < blk_n_; i++) {
-        if (blks_[i].offset > off) {
+        if (blks_[i].offset > mesh->offset) {
             blk_i = i;
             break;
         }
@@ -431,19 +379,19 @@ void yf_mesh_deinit(YF_mesh mesh)
 
     if (blk_n_ == 0) {
         /* no blocks */
-        blks_[0].offset = off;
-        blks_[0].size = sz;
+        blks_[0].offset = mesh->offset;
+        blks_[0].size = mesh->size;
         blks_[0].prev_mesh = mesh->prev;
         blk_n_++;
 
     } else if (blk_i == blk_n_) {
         /* no next blocks */
         T_memblk *prev = blks_+blk_i-1;
-        if (prev->offset + prev->size == off) {
-            prev->size += sz;
+        if (prev->offset + prev->size == mesh->offset) {
+            prev->size += mesh->size;
         } else if (blk_n_ < YF_BLKMAX) {
-            blks_[blk_i].offset = off;
-            blks_[blk_i].size = sz;
+            blks_[blk_i].offset = mesh->offset;
+            blks_[blk_i].size = mesh->size;
             blks_[blk_i].prev_mesh = mesh->prev;
             blk_n_++;
         } else {
@@ -457,14 +405,14 @@ void yf_mesh_deinit(YF_mesh mesh)
     } else if (blk_i == 0) {
         /* no previous blocks */
         T_memblk *next = blks_;
-        if (off + sz == next->offset) {
-            next->offset = off;
-            next->size += sz;
+        if (mesh->offset + mesh->size == next->offset) {
+            next->offset = mesh->offset;
+            next->size += mesh->size;
             next->prev_mesh = mesh->prev;
         } else if (blk_n_ < YF_BLKMAX) {
             memmove(next+1, next, blk_n_ * sizeof *blks_);
-            blks_[0].offset = off;
-            blks_[0].size = sz;
+            blks_[0].offset = mesh->offset;
+            blks_[0].size = mesh->size;
             blks_[0].prev_mesh = mesh->prev;
             blk_n_++;
         } else {
@@ -481,16 +429,16 @@ void yf_mesh_deinit(YF_mesh mesh)
         T_memblk *next = blks_+blk_i;
         int prev_merged = 0;
         int next_merged = 0;
-        if (prev->offset + prev->size == off) {
-            prev->size += sz;
+        if (prev->offset + prev->size == mesh->offset) {
+            prev->size += mesh->size;
             prev_merged = 1;
         }
-        if (off + sz == next->offset) {
+        if (mesh->offset + mesh->size == next->offset) {
             if (prev_merged) {
                 prev->size += next->size;
             } else {
-                next->offset = off;
-                next->size += sz;
+                next->offset = mesh->offset;
+                next->size += mesh->size;
                 next->prev_mesh = mesh->prev;
             }
             next_merged = 1;
@@ -498,8 +446,8 @@ void yf_mesh_deinit(YF_mesh mesh)
         if (!prev_merged && !next_merged) {
             if (blk_n_ < YF_BLKMAX) {
                 memmove(next+1, next, (blk_n_ - blk_i) * sizeof *blks_);
-                blks_[blk_i].offset = off;
-                blks_[blk_i].size = sz;
+                blks_[blk_i].offset = mesh->offset;
+                blks_[blk_i].size = mesh->size;
                 blks_[blk_i].prev_mesh = mesh->prev;
                 blk_n_++;
             } else {
@@ -539,12 +487,29 @@ void yf_mesh_deinit(YF_mesh mesh)
 
     /* TODO: Consider resizing the buffer down if too much mem. goes unused. */
 
+    for (unsigned i = 0; i < mesh->prim_n; i++)
+        free(mesh->prims[i].attrs);
+    free(mesh->prims);
     free(mesh);
 }
 
 YF_mesh yf_mesh_initdt(const YF_meshdt *data)
 {
     assert(data != NULL);
+    assert(data->prims != NULL);
+    assert(data->prim_n > 0);
+    assert(data->data != NULL);
+    assert(data->data_sz > 0);
+
+#ifdef YF_DEVEL
+    for (unsigned i = 0; i < data->prim_n; i++) {
+        assert(data->prims[i].vert_n > 0 && data->prims[i].vert_n <= UINT_MAX);
+        assert(data->prims[i].indx_n <= UINT_MAX);
+        assert(data->prims[i].attrs != NULL);
+        assert(data->prims[i].attr_n > 0);
+        /* TODO: More... */
+    }
+#endif
 
     if (ctx_ == NULL) {
         if ((ctx_ = yf_getctx()) == NULL ||
@@ -568,7 +533,34 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
         return NULL;
     }
 
-    if (copy_data(mesh, data) != 0) {
+    mesh->prims = malloc(data->prim_n * sizeof *data->prims);
+    if (mesh->prims == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(mesh);
+        return NULL;
+    }
+
+    for (unsigned i = 0; i < data->prim_n; i++) {
+        mesh->prims[i] = data->prims[i];
+        mesh->prims[i].attrs = malloc(data->prims[i].attr_n *
+                                      sizeof *data->prims->attrs);
+
+        if (mesh->prims[i].attrs == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            for (unsigned j = 0; j < i; j++)
+                free(mesh->prims[j].attrs);
+            free(mesh->prims);
+            free(mesh);
+            return NULL;
+        }
+
+        for (unsigned j = 0; j < data->prims[i].attr_n; j++)
+            mesh->prims[i].attrs[j] = data->prims[i].attrs[j];
+    }
+
+    mesh->prim_n = data->prim_n;
+
+    if (copy_data(mesh, data->data, data->data_sz) != 0) {
         yf_mesh_deinit(mesh);
         mesh = NULL;
     }
@@ -576,32 +568,58 @@ YF_mesh yf_mesh_initdt(const YF_meshdt *data)
     return mesh;
 }
 
-int yf_mesh_setvtx(YF_mesh mesh, YF_slice range, const void *data)
+int yf_mesh_setdata(YF_mesh mesh, size_t offset, const void *data, size_t size)
 {
     assert(mesh != NULL);
-    assert(range.n > 0);
     assert(data != NULL);
+    assert(size > 0);
 
-    if (range.i + range.n > mesh->v.n) {
+    if (offset + size > mesh->size) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return -1;
     }
 
-    return yf_buffer_copy(buf_, mesh->v.offset + mesh->v.stride * range.i,
-                          data, mesh->v.stride * range.n);
+    return yf_buffer_copy(buf_, mesh->offset + offset, data, size);
 }
 
 void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
 {
     assert(mesh != NULL);
     assert(cmdb != NULL);
+    assert(inst_n > 0);
 
-    yf_cmdbuf_setvbuf(cmdb, 0, buf_, mesh->v.offset);
-    if (mesh->i.n != 0) {
-        yf_cmdbuf_setibuf(cmdb, buf_, mesh->i.offset, mesh->i.stride);
-        yf_cmdbuf_drawi(cmdb, 0, 0, mesh->i.n, 0, inst_n);
-    } else {
-        yf_cmdbuf_draw(cmdb, 0, mesh->v.n, 0, inst_n);
+    /* TODO: Consider managing and binding the graphics states internally. */
+
+    /* FIXME: Multiple primitives may require different states. */
+    for (unsigned i = 0; i < mesh->prim_n; i++) {
+        const YF_primdt *prim = mesh->prims+i;
+        const size_t off = mesh->offset + prim->data_off;
+
+        for (unsigned j = 0; j < prim->attr_n; j++)
+            /* FIXME: This assumes an exactly match with state's 'vins'. */
+            yf_cmdbuf_setvbuf(cmdb, j, buf_, off + prim->attrs[j].data_off);
+
+        if (mesh->prims[i].indx_n > 0) {
+            /* indexed draw */
+            unsigned isz;
+            switch (mesh->prims[i].itype) {
+            case YF_ITYPE_UINT:
+                isz = 4;
+                break;
+            case YF_ITYPE_USHORT:
+                isz = 2;
+                break;
+            default:
+                assert(0);
+                abort();
+            }
+            yf_cmdbuf_setibuf(cmdb, buf_, off + prim->indx_data_off, isz);
+            yf_cmdbuf_drawi(cmdb, 0, 0, mesh->prims[i].indx_n, 0, inst_n);
+
+        } else {
+            /* non-indexed draw */
+            yf_cmdbuf_draw(cmdb, 0, mesh->prims[i].vert_n, 0, inst_n);
+        }
     }
 }
 
@@ -628,12 +646,10 @@ void yf_unsetmesh(void)
 
 #ifdef YF_DEVEL
 
-#define YF_SPANOFMESH(mesh, beg_p, end_p) do { \
-    *(beg_p) = (mesh)->v.offset; \
-    *(end_p) = (mesh)->v.stride * (mesh)->v.n; \
-    if ((mesh)->i.n > 0) \
-        *(end_p) += (mesh)->i.stride * (mesh)->i.n; \
-    *(end_p) += *(beg_p); } while (0)
+#define YF_SPANOFMESH(mesh, beg, end) do { \
+    beg = (mesh)->offset; \
+    end = (mesh)->size; \
+    end += beg; } while (0)
 
 void yf_print_mesh(YF_mesh mesh)
 {
@@ -651,7 +667,7 @@ void yf_print_mesh(YF_mesh mesh)
                    i, blks_[i].offset, blks_[i].size);
 
             if (blks_[i].prev_mesh != NULL) {
-                YF_SPANOFMESH(blks_[i].prev_mesh, &beg, &end);
+                YF_SPANOFMESH(blks_[i].prev_mesh, beg, end);
                 printf("  prev. mesh: \t[%zu, %zu)\n", beg, end);
             } else {
                 printf("  (no prev. mesh)\n");
@@ -662,16 +678,16 @@ void yf_print_mesh(YF_mesh mesh)
         puts("\n meshes:");
         YF_mesh next = head_;
         while (next != NULL) {
-            YF_SPANOFMESH(next, &beg, &end);
+            YF_SPANOFMESH(next, beg, end);
             printf("  [%zu, %zu)%s\n", beg, end,
                    next->invalid ? "\t<inval.>" : "");
             next = next->next;
         }
 
         if (head_) {
-            YF_SPANOFMESH(head_, &beg, &end);
+            YF_SPANOFMESH(head_, beg, end);
             printf("\n head: [%zu, %zu)", beg, end);
-            YF_SPANOFMESH(tail_, &beg, &end);
+            YF_SPANOFMESH(tail_, beg, end);
             printf("\n tail: [%zu, %zu)\n", beg, end);
         } else {
             printf("\n (no meshes)\n");
@@ -681,17 +697,37 @@ void yf_print_mesh(YF_mesh mesh)
 
     } else {
         printf(" mesh <%p>:\n"
-               "  vertex:\n"
-               "   offset: %zu\n"
-               "   stride: %u\n"
-               "   count:  %u\n"
-               "  index:\n"
-               "   offset: %zu\n"
-               "   stride: %hd\n"
-               "   count:  %u\n",
-               (void *)mesh,
-               mesh->v.offset, mesh->v.stride, mesh->v.n,
-               mesh->i.offset, mesh->i.stride, mesh->i.n);
+               "  offset: %zu\n"
+               "  size: %zu\n"
+               "  primitives (%u):\n",
+               (void *)mesh, mesh->offset, mesh->size, mesh->prim_n);
+
+        for (unsigned i = 0; i < mesh->prim_n; i++) {
+            printf("   primitive [%u]\n"
+                   "    primitive type: %d\n"
+                   "    vertex count: %u\n"
+                   "    index count: %u\n"
+                   "    data offset: %zu\n"
+                   "    attributes (%u):\n",
+                   i, mesh->prims[i].primitive, mesh->prims[i].vert_n,
+                   mesh->prims[i].indx_n, mesh->prims[i].data_off,
+                   mesh->prims[i].attr_n);
+
+            for (unsigned j = 0; j < mesh->prims[i].attr_n; j++)
+                printf("     attribute [%u]:\n"
+                       "      location: %u\n"
+                       "      vertex format: %d\n"
+                       "      vertex data offset: %zu\n",
+                       j, mesh->prims[i].attrs[j].loc,
+                       mesh->prims[i].attrs[j].vfmt,
+                       mesh->prims[i].attrs[j].data_off);
+
+            if (mesh->prims[i].indx_n > 0)
+                printf("    index type: %d\n"
+                       "    index data offset: %zu\n",
+                       mesh->prims[i].itype, mesh->prims[i].indx_data_off);
+
+        }
     }
 
     puts("");
