@@ -575,14 +575,15 @@ typedef struct {
 typedef struct {
     struct {
 #define YF_GLTF_ATTR_POS  0
-#define YF_GLTF_ATTR_NORM 1
-#define YF_GLTF_ATTR_TGNT 2
-#define YF_GLTF_ATTR_TC0  3
-#define YF_GLTF_ATTR_TC1  4
-#define YF_GLTF_ATTR_CLR0 5
-#define YF_GLTF_ATTR_JNT0 6
-#define YF_GLTF_ATTR_WGT0 7
+#define YF_GLTF_ATTR_NORM 2
+#define YF_GLTF_ATTR_TGNT 3
+#define YF_GLTF_ATTR_TC0  1
+#define YF_GLTF_ATTR_TC1  7
+#define YF_GLTF_ATTR_CLR0 4
+#define YF_GLTF_ATTR_JNT0 5
+#define YF_GLTF_ATTR_WGT0 6
 #define YF_GLTF_ATTR_N    8
+        /* XXX: Expected to match shader locations. */
         T_int attributes[YF_GLTF_ATTR_N];
         T_int indices;
         T_int material;
@@ -3647,6 +3648,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     free(data.prims); \
     free(data.data); } while (0)
 
+    /* each of these correspond to a separate draw call */
     for (size_t i = 0; i < primitives->n; i++) {
         data.prims[i].data_off = data.data_sz;
 
@@ -3676,6 +3678,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
 
         /* vertex attributes */
+        /* TODO: Endianness. */
         const T_int pos_acc = primitives->v[i].attributes[YF_GLTF_ATTR_POS];
         if (pos_acc == YF_INT_MIN) {
             yf_seterr(YF_ERR_UNSUP, __func__);
@@ -3975,6 +3978,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
 
         /* vertex indices */
+        /* TODO: Endianness. */
         const T_int indx_acc = primitives->v[i].indices;
         if (indx_acc == YF_INT_MIN) {
             data.prims[i].indx_n = 0;
