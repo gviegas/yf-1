@@ -3690,13 +3690,13 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
         data.prims[i].attr_n = attr_n;
 
-        for (size_t j = 0; j < YF_GLTF_ATTR_N; j++) {
-            const T_int attr_acc = primitives->v[i].attributes[j];
+        for (size_t j = 0, k = 0; j < attr_n; k++) {
+            const T_int attr_acc = primitives->v[i].attributes[k];
             if (attr_acc == YF_INT_MIN)
                 continue;
 
             /* XXX */
-            data.prims[i].attrs[j].loc = j;
+            data.prims[i].attrs[j].loc = k;
 
             const T_int comp_type = gltf->accessors.v[attr_acc].comp_type;
             const int type = gltf->accessors.v[attr_acc].type;
@@ -3947,14 +3947,14 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             } else {
                 /* interleaved */
                 const size_t strd = byte_strd - attr_sz;
-                size_t k = 0;
+                size_t n = 0;
                 while (1) {
                     if (fread(dt, 1, attr_sz, file) != attr_sz) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
                         /* TODO */
                         return -1;
                     }
-                    if (++k == data.prims[i].vert_n)
+                    if (++n == data.prims[i].vert_n)
                         break;
                     if (fseek(file, strd, SEEK_CUR) != 0) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -3963,6 +3963,8 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                     dt += attr_sz;
                 }
             }
+
+            j++;
         }
 
         /* vertex indices */
