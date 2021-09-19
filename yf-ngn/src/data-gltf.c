@@ -3641,6 +3641,12 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     data.data = NULL;
     data.data_sz = 0;
 
+#define YF_DEALLOCDT(prim_n) do { \
+    for (unsigned prim_i = 0; prim_i < prim_n; prim_i++) \
+        free(data.prims[prim_i].attrs); \
+    free(data.prims); \
+    free(data.data); } while (0)
+
     for (size_t i = 0; i < primitives->n; i++) {
         data.prims[i].data_off = data.data_sz;
 
@@ -3661,10 +3667,11 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         case YF_GLTF_MODE_TRIFAN:
             /* TODO: Support for this modes on core. */
             yf_seterr(YF_ERR_UNSUP, __func__);
+            YF_DEALLOCDT(i);
             return -1;
         default:
             yf_seterr(YF_ERR_INVFILE, __func__);
-            /* TODO */
+            YF_DEALLOCDT(i);
             return -1;
         }
 
@@ -3672,7 +3679,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         const T_int pos_acc = primitives->v[i].attributes[YF_GLTF_ATTR_POS];
         if (pos_acc == YF_INT_MIN) {
             yf_seterr(YF_ERR_UNSUP, __func__);
-            /* TODO */
+            YF_DEALLOCDT(i);
             return -1;
         }
         data.prims[i].vert_n = gltf->accessors.v[pos_acc].count;
@@ -3685,7 +3692,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         data.prims[i].attrs = malloc(attr_n * sizeof *data.prims[i].attrs);
         if (data.prims[i].attrs == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            /* TODO */
+            YF_DEALLOCDT(i);
             return -1;
         }
         data.prims[i].attr_n = attr_n;
@@ -3729,11 +3736,11 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 case YF_GLTF_TYPE_MAT4:
                     /* TODO: Support for this types on core. */
                     yf_seterr(YF_ERR_UNSUP, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 default:
                     yf_seterr(YF_ERR_INVFILE, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 }
                 break;
@@ -3762,11 +3769,11 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 case YF_GLTF_TYPE_MAT4:
                     /* TODO: Support for this types on core. */
                     yf_seterr(YF_ERR_UNSUP, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 default:
                     yf_seterr(YF_ERR_INVFILE, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 }
                 break;
@@ -3795,11 +3802,11 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 case YF_GLTF_TYPE_MAT4:
                     /* TODO: Support for this types on core. */
                     yf_seterr(YF_ERR_UNSUP, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 default:
                     yf_seterr(YF_ERR_INVFILE, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 }
                 break;
@@ -3828,11 +3835,11 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 case YF_GLTF_TYPE_MAT4:
                     /* TODO: Support for this types on core. */
                     yf_seterr(YF_ERR_UNSUP, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 default:
                     yf_seterr(YF_ERR_INVFILE, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 }
                 break;
@@ -3861,11 +3868,11 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 case YF_GLTF_TYPE_MAT4:
                     /* TODO: Support for this types on core. */
                     yf_seterr(YF_ERR_UNSUP, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 default:
                     yf_seterr(YF_ERR_INVFILE, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 }
                 break;
@@ -3894,18 +3901,18 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 case YF_GLTF_TYPE_MAT4:
                     /* TODO: Support for this types on core. */
                     yf_seterr(YF_ERR_UNSUP, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 default:
                     yf_seterr(YF_ERR_INVFILE, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 }
                 break;
 
             default:
                 yf_seterr(YF_ERR_INVFILE, __func__);
-                /* TODO */
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
 
@@ -3921,7 +3928,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             unsigned char *dt = realloc(data.data, new_sz);
             if (dt == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
-                /* TODO */
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
             data.data = dt;
@@ -3929,7 +3936,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
             FILE *file = seek_data(gltf, fdata, attr_acc, YF_INT_MIN);
             if (file == NULL) {
-                /* TODO */
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
 
@@ -3941,7 +3948,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 /* tightly packed */
                 if (fread(dt, 1, copy_sz, file) != copy_sz) {
                     yf_seterr(YF_ERR_INVFILE, __func__);
-                    /* TODO */
+                    YF_DEALLOCDT(i + 1);
                     return -1;
                 }
             } else {
@@ -3951,7 +3958,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 while (1) {
                     if (fread(dt, 1, attr_sz, file) != attr_sz) {
                         yf_seterr(YF_ERR_INVFILE, __func__);
-                        /* TODO */
+                        YF_DEALLOCDT(i + 1);
                         return -1;
                     }
                     if (++n == data.prims[i].vert_n)
@@ -3978,7 +3985,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
             if (gltf->accessors.v[indx_acc].type != YF_GLTF_TYPE_SCALAR) {
                 yf_seterr(YF_ERR_UNSUP, __func__);
-                /* TODO */
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
 
@@ -3994,7 +4001,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 break;
             default:
                 yf_seterr(YF_ERR_UNSUP, __func__);
-                /* TODO */
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
 
@@ -4009,7 +4016,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             unsigned char *dt = realloc(data.data, new_sz);
             if (dt == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
-                /* TODO */
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
             data.data = dt;
@@ -4017,22 +4024,24 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
             FILE *file = seek_data(gltf, fdata, indx_acc, YF_INT_MIN);
             if (file == NULL) {
-                /* TODO */
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
 
             dt += data.prims[i].data_off + data.prims[i].indx_data_off;
             if (fread(dt, 1, copy_sz, file) != copy_sz) {
                 yf_seterr(YF_ERR_INVFILE, __func__);
-                /* TODO */
+                YF_DEALLOCDT(i + 1);
                 return -1;
             }
         }
     }
 
     cont->meshes[mesh] = yf_mesh_initdt(&data);
-    /* TODO: free data */
+    YF_DEALLOCDT(data.prim_n);
     return cont->meshes[mesh] == NULL ? -1 : 0;
+
+#undef YF_DEALLOCDT
 }
 
 /* Loads a single texture from glTF contents. */
