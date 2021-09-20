@@ -196,23 +196,12 @@ static int cmp_key(const void *a, const void *b)
            k1->dim.height != k2->dim.height;
 }
 
-YF_texture yf_texture_init(int filetype, const char *pathname)
+YF_texture yf_texture_init(const char *pathname)
 {
+    /* TODO: Consider checking the type of the file. */
     YF_texdt data = {0};
-
-    switch (filetype) {
-    case YF_FILETYPE_INTERNAL:
-        /* TODO */
-        assert(0);
+    if (yf_loadpng(pathname, &data) != 0)
         return NULL;
-    case YF_FILETYPE_PNG:
-        if (yf_loadpng(pathname, &data) != 0)
-            return NULL;
-        break;
-    default:
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return NULL;
-    }
 
     YF_texture tex = yf_texture_initdt(&data);
     free(data.data);

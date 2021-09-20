@@ -19,22 +19,13 @@ YF_DECLS_BEGIN
 typedef struct YF_texture_o *YF_texture;
 
 /**
- * Texture file types.
- */
-#define YF_FILETYPE_UNKNOWN  0
-#define YF_FILETYPE_INTERNAL 1
-#define YF_FILETYPE_PNG      48
-
-/**
  * Initializes a new texture.
  *
- * @param filetype: The 'YF_FILETYPE' value indicating the format of the
- *  texture file.
  * @param pathname: The pathname of the texture file.
  * @return: On success, returns a new texture. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_texture yf_texture_init(int filetype, const char *pathname);
+YF_texture yf_texture_init(const char *pathname);
 
 /**
  * Gets the dimensions of a texture.
