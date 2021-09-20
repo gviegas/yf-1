@@ -33,23 +33,12 @@ static int deinit_glyph(YF_UNUSED void *key, void *val, YF_UNUSED void *arg)
     return 0;
 }
 
-YF_font yf_font_init(int filetype, const char *pathname)
+YF_font yf_font_init(const char *pathname)
 {
+    /* TODO: Consider checking the type of the file. */
     YF_fontdt data = {0};
-
-    switch (filetype) {
-    case YF_FILETYPE_INTERNAL:
-        /* TODO */
-        assert(0);
+    if (yf_loadsfnt(pathname, &data) != 0)
         return NULL;
-    case YF_FILETYPE_TTF:
-        if (yf_loadsfnt(pathname, &data) != 0)
-            return NULL;
-        break;
-    default:
-        yf_seterr(YF_ERR_INVARG, __func__);
-        return NULL;
-    }
 
     YF_font font = yf_font_initdt(&data);
     if (font == NULL && data.deinit != NULL)

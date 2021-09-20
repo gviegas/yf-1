@@ -18,22 +18,13 @@ YF_DECLS_BEGIN
 typedef struct YF_font_o *YF_font;
 
 /**
- * Font file types.
- */
-#define YF_FILETYPE_UNKNOWN  0
-#define YF_FILETYPE_INTERNAL 1
-#define YF_FILETYPE_TTF      72
-
-/**
  * Initializes a new font.
  *
- * @param filetype: The 'YF_FILETYPE' value indicating the format of the font
- *  file.
  * @param pathname: The pathname of the font file.
  * @return: On success, returns a new font. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_font yf_font_init(int filetype, const char *pathname);
+YF_font yf_font_init(const char *pathname);
 
 /**
  * Deinitializes a font.
