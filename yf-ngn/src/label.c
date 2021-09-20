@@ -85,13 +85,13 @@ static int init_rect(YF_label labl)
     memcpy((char *)labl->verts + sizeof pos, tc, sizeof tc);
     memcpy((char *)labl->verts + sizeof pos + sizeof tc, clr, sizeof clr);
 
-    void *buf = malloc(sizeof labl->verts + sizeof indx);
-    if (buf == NULL) {
+    void *dt = malloc(sizeof labl->verts + sizeof indx);
+    if (dt == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
-    memcpy(buf, labl->verts, sizeof labl->verts);
-    memcpy((char *)buf + sizeof labl->verts, indx, sizeof indx);
+    memcpy(dt, labl->verts, sizeof labl->verts);
+    memcpy((char *)dt + sizeof labl->verts, indx, sizeof indx);
 
     const YF_meshdt data = {
         .prims = &(YF_primdt){
@@ -109,12 +109,12 @@ static int init_rect(YF_label labl)
             .indx_data_off = sizeof labl->verts
         },
         .prim_n = 1,
-        .data = buf,
+        .data = dt,
         .data_sz = sizeof labl->verts + sizeof indx
     };
 
     labl->mesh = yf_mesh_initdt(&data);
-    free(buf);
+    free(dt);
     return labl->mesh == NULL ? -1 : 0;
 }
 
