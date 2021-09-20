@@ -352,6 +352,12 @@ YF_mesh yf_mesh_init(const char *pathname, size_t index)
     return NULL;
 }
 
+unsigned yf_mesh_getprimn(YF_mesh mesh)
+{
+    assert(mesh != NULL);
+    return mesh->prim_n;
+}
+
 void yf_mesh_deinit(YF_mesh mesh)
 {
     if (mesh == NULL)

@@ -28,6 +28,15 @@ typedef struct YF_mesh_o *YF_mesh;
 YF_mesh yf_mesh_init(const char *pathname, size_t index);
 
 /**
+ * Gets the number of primitives of a mesh.
+ *
+ * @param mesh: The mesh.
+ * @return: The number of primitives of 'mesh'. This value corresponds to the
+ *  number of draw calls required to render the mesh.
+ */
+unsigned yf_mesh_getprimn(YF_mesh mesh);
+
+/**
  * Deinitializes a mesh.
  *
  * @param mesh: The mesh to deinitialize. Can be 'NULL'.
