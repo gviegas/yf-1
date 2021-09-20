@@ -601,19 +601,8 @@ void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
 
         if (mesh->prims[i].indx_n > 0) {
             /* indexed draw */
-            unsigned isz;
-            switch (mesh->prims[i].itype) {
-            case YF_ITYPE_UINT:
-                isz = 4;
-                break;
-            case YF_ITYPE_USHORT:
-                isz = 2;
-                break;
-            default:
-                assert(0);
-                abort();
-            }
-            yf_cmdbuf_setibuf(cmdb, buf_, off + prim->indx_data_off, isz);
+            yf_cmdbuf_setibuf(cmdb, buf_, off + prim->indx_data_off,
+                              prim->itype);
             yf_cmdbuf_drawi(cmdb, 0, 0, mesh->prims[i].indx_n, 0, inst_n);
 
         } else {
