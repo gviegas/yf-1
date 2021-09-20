@@ -289,9 +289,9 @@ int yf_test_composition(void)
     YF_mesh mesh2 = yf_mesh_init("tmp/cube2.glb", 0);
     assert(mesh2 != NULL);
 
-    YF_texture tex1 = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube.png");
+    YF_texture tex1 = yf_texture_init("tmp/cube.png");
     assert(tex1 != NULL);
-    YF_texture tex2 = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube2.png");
+    YF_texture tex2 = yf_texture_init("tmp/cube2.png");
     assert(tex2 != NULL);
 
     YF_font font1 = yf_font_init(YF_FILETYPE_TTF, "tmp/serif.ttf");
