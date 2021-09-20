@@ -343,24 +343,12 @@ static void invalidate(YF_mesh mesh)
     }
 }
 
-YF_mesh yf_mesh_init(int filetype, const char *pathname, size_t index)
+YF_mesh yf_mesh_init(const char *pathname, size_t index)
 {
-    switch (filetype) {
-    case YF_FILETYPE_INTERNAL:
-        /* TODO */
-        yf_seterr(YF_ERR_UNSUP, __func__);
-        break;
-
-    case YF_FILETYPE_GLTF: {
-        YF_datac datac;
-        if (yf_loadgltf(pathname, index, YF_DATAC_MESH, &datac) == 0)
-            return datac.mesh;
-    } break;
-
-    default:
-        yf_seterr(YF_ERR_INVARG, __func__);
-    }
-
+    /* TODO: Consider checking the type of the file. */
+    YF_datac datac;
+    if (yf_loadgltf(pathname, index, YF_DATAC_MESH, &datac) == 0)
+        return datac.mesh;
     return NULL;
 }
 

@@ -18,23 +18,14 @@ YF_DECLS_BEGIN
 typedef struct YF_mesh_o *YF_mesh;
 
 /**
- * Mesh file types.
- */
-#define YF_FILETYPE_UNKNOWN  0
-#define YF_FILETYPE_INTERNAL 1
-#define YF_FILETYPE_GLTF     24
-
-/**
  * Initializes a new mesh.
  *
- * @param filetype: The 'YF_FILETYPE' value indicating the format of the mesh
- *  file.
  * @param pathname: The pathname of the mesh file.
  * @param index: The index of the mesh to load.
  * @return: On success, returns a new mesh. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_mesh yf_mesh_init(int filetype, const char *pathname, size_t index);
+YF_mesh yf_mesh_init(const char *pathname, size_t index);
 
 /**
  * Deinitializes a mesh.
