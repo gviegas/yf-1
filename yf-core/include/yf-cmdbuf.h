@@ -160,6 +160,12 @@ void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
                        size_t offset);
 
 /**
+ * Index types.
+ */
+#define YF_ITYPE_USHORT 0
+#define YF_ITYPE_UINT   1
+
+/**
  * Sets the index buffer.
  *
  * CMDBUF_GRAPH
@@ -167,11 +173,9 @@ void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
  * @param cmdb: The command buffer.
  * @param buf: The index buffer.
  * @param offset: The offset from the beginning of the buffer.
- * @param stride: The stride between adjacent indices (i.e., the size of the
- *  underlying type).
+ * @param itype: The 'YF_ITYPE' value indicating the index type.
  */
-void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset,
-                       unsigned stride);
+void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset, int itype);
 
 /*
  * Clear
