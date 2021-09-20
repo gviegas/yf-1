@@ -274,8 +274,7 @@ void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
     }
 }
 
-void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset,
-                       unsigned stride)
+void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset, int itype)
 {
     assert(cmdb != NULL);
     assert(buf != NULL);
@@ -294,7 +293,7 @@ void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset,
         cmdb->cmds[i].cmd = YF_CMD_IBUF;
         cmdb->cmds[i].ibuf.buf = buf;
         cmdb->cmds[i].ibuf.offset = offset;
-        cmdb->cmds[i].ibuf.stride = stride;
+        cmdb->cmds[i].ibuf.itype = itype;
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
