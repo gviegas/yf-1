@@ -252,13 +252,13 @@ static int decode_vbuf(const YF_cmd *cmd)
 /* Decodes a 'set index buffer' command. */
 static int decode_ibuf(const YF_cmd *cmd)
 {
-    VkIndexType idx_type;
-    switch (cmd->ibuf.stride) {
-    case sizeof(unsigned):
-        idx_type = VK_INDEX_TYPE_UINT32;
+    VkIndexType indx_type;
+    switch (cmd->ibuf.itype) {
+    case YF_ITYPE_USHORT:
+        indx_type = VK_INDEX_TYPE_UINT16;
         break;
-    case sizeof(unsigned short):
-        idx_type = VK_INDEX_TYPE_UINT16;
+    case YF_ITYPE_UINT:
+        indx_type = VK_INDEX_TYPE_UINT32;
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
@@ -267,7 +267,7 @@ static int decode_ibuf(const YF_cmd *cmd)
     gdec_->gdec |= YF_GDEC_IBUF;
 
     vkCmdBindIndexBuffer(gdec_->cmdr->pool_res, cmd->ibuf.buf->buffer,
-                         cmd->ibuf.offset, idx_type);
+                         cmd->ibuf.offset, indx_type);
 
     return 0;
 }
