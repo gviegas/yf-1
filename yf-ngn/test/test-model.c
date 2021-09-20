@@ -202,7 +202,7 @@ int yf_test_model(void)
     vars_.mesh = yf_mesh_init("tmp/cube.glb", 0);
     assert(vars_.mesh != NULL);
 
-    YF_texture tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/cube.png");
+    YF_texture tex = yf_texture_init("tmp/cube.png");
     assert(tex != NULL);
     YF_matlprop mprop = {
         .pbr = YF_PBR_NONE,
