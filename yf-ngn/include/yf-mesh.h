@@ -10,6 +10,8 @@
 
 #include "yf/com/yf-defs.h"
 
+#include "yf-material.h"
+
 YF_DECLS_BEGIN
 
 /**
@@ -35,6 +37,15 @@ YF_mesh yf_mesh_init(const char *pathname, size_t index);
  *  number of draw calls required to render the mesh.
  */
 unsigned yf_mesh_getprimn(YF_mesh mesh);
+
+/**
+ * Gets the material of a mesh's primitive.
+ *
+ * @param mesh: The mesh.
+ * @param prim: The primitive's index.
+ * @return: The material used by the given primitive.
+ */
+YF_material yf_mesh_getmatl(YF_mesh mesh, unsigned prim);
 
 /**
  * Deinitializes a mesh.

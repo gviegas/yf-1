@@ -34,6 +34,9 @@ typedef struct {
     int itype;
     /* relative to 'primdt.data_off' */
     size_t indx_data_off;
+
+    /* XXX: Does not take ownership. */
+    YF_material matl;
 } YF_primdt;
 
 /* Type defining mesh data. */
