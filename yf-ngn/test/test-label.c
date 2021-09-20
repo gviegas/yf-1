@@ -286,7 +286,7 @@ int yf_test_label(void)
     vars_.scn = yf_scene_init();
     assert(vars_.scn != NULL);
 
-    vars_.font = yf_font_init(YF_FILETYPE_TTF, "tmp/font.ttf");
+    vars_.font = yf_font_init("tmp/font.ttf");
     assert(vars_.font != NULL);
 
     YF_TEST_PRINT("init", "", "labl");
