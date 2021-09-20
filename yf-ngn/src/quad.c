@@ -78,13 +78,13 @@ static int init_rect(YF_quad quad)
     memcpy((char *)quad->verts + sizeof pos, tc, sizeof tc);
     memcpy((char *)quad->verts + sizeof pos + sizeof tc, clr, sizeof clr);
 
-    void *buf = malloc(sizeof quad->verts + sizeof indx);
-    if (buf == NULL) {
+    void *dt = malloc(sizeof quad->verts + sizeof indx);
+    if (dt == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
-    memcpy(buf, quad->verts, sizeof quad->verts);
-    memcpy((char *)buf + sizeof quad->verts, indx, sizeof indx);
+    memcpy(dt, quad->verts, sizeof quad->verts);
+    memcpy((char *)dt + sizeof quad->verts, indx, sizeof indx);
 
     const YF_meshdt data = {
         .prims = &(YF_primdt){
@@ -99,15 +99,15 @@ static int init_rect(YF_quad quad)
             },
             .attr_n = 3,
             .itype = YF_ITYPE_USHORT,
-            .indx_data_off = sizeof pos + sizeof tc + sizeof clr
+            .indx_data_off = sizeof quad->verts
         },
         .prim_n = 1,
-        .data = buf,
+        .data = dt,
         .data_sz = sizeof quad->verts + sizeof indx
     };
 
     quad->mesh = yf_mesh_initdt(&data);
-    free(buf);
+    free(dt);
     return quad->mesh == NULL ? -1 : 0;
 }
 
