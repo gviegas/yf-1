@@ -169,7 +169,7 @@ int yf_test_particle(void)
     vars_.scn = yf_scene_init();
     assert(vars_.scn != NULL);
 
-    vars_.tex = yf_texture_init(YF_FILETYPE_PNG, "tmp/sprite.png");
+    vars_.tex = yf_texture_init("tmp/sprite.png");
     assert(vars_.tex != NULL);
 
     YF_TEST_PRINT("init", "1000", "part");
