@@ -12,10 +12,6 @@
 
 #include "yf-mesh.h"
 
-/* Index types that can be used for mesh indices. */
-#define YF_ITYPE_USHORT 0
-#define YF_ITYPE_UINT   1
-
 /* Type defining attribute data. */
 typedef struct {
     unsigned loc;
