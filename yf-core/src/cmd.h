@@ -52,7 +52,7 @@ typedef struct {
 typedef struct {
     YF_buffer buf;
     size_t offset;
-    unsigned stride;
+    int itype;
 } YF_cmd_ibuf;
 
 /* The parameters of a 'clear color' command. */
