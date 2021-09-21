@@ -47,7 +47,7 @@ int yf_test_gstate(void)
         .dtb_n = 1,
         .vins = &input,
         .vin_n = 1,
-        .primitive = YF_PRIMITIVE_TRIANGLE,
+        .topology = YF_TOPOLOGY_TRIANGLE,
         .polymode = YF_POLYMODE_FILL,
         .cullmode = YF_CULLMODE_BACK,
         .winding = YF_WINDING_CCW

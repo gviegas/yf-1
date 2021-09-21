@@ -160,7 +160,7 @@ static void init(void)
         1,
         &vin,
         1,
-        YF_PRIMITIVE_TRIANGLE,
+        YF_TOPOLOGY_TRIANGLE,
         YF_POLYMODE_FILL,
         YF_CULLMODE_BACK,
         YF_WINDING_CCW
