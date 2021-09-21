@@ -366,6 +366,16 @@ YF_material yf_mesh_getmatl(YF_mesh mesh, unsigned prim)
     return mesh->prims[prim].matl;
 }
 
+YF_material yf_mesh_setmatl(YF_mesh mesh, unsigned prim, YF_material matl)
+{
+    assert(mesh != NULL);
+    assert(prim < mesh->prim_n);
+
+    YF_material prev = mesh->prims[prim].matl;
+    mesh->prims[prim].matl = matl;
+    return prev;
+}
+
 void yf_mesh_deinit(YF_mesh mesh)
 {
     if (mesh == NULL)

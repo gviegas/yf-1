@@ -48,6 +48,16 @@ unsigned yf_mesh_getprimn(YF_mesh mesh);
 YF_material yf_mesh_getmatl(YF_mesh mesh, unsigned prim);
 
 /**
+ * Sets the material for a mesh's primitive.
+ *
+ * @param mesh: The mesh.
+ * @param prim: The primitive's index.
+ * @param matl: The material to set. Can be 'NULL'.
+ * @return: The replaced material.
+ */
+YF_material yf_mesh_setmatl(YF_mesh mesh, unsigned prim, YF_material matl);
+
+/**
  * Deinitializes a mesh.
  *
  * @param mesh: The mesh to deinitialize. Can be 'NULL'.
