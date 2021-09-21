@@ -827,19 +827,19 @@ typedef struct {
 /* Type defining the 'glTF.samplers' property. */
 typedef struct {
     struct {
+#define YF_GLTF_WRAP_CLAMP  33071
+#define YF_GLTF_WRAP_MIRROR 33648
+#define YF_GLTF_WRAP_REPEAT 10497
+        T_int wrap_s;
+        T_int wrap_t;
 #define YF_GLTF_FILTER_NEAREST 9728
 #define YF_GLTF_FILTER_LINEAR  9729
 #define YF_GLTF_FILTER_NRMIPNR 9984
 #define YF_GLTF_FILTER_LNMIPNR 9985
 #define YF_GLTF_FILTER_NRMIPLN 9986
 #define YF_GLTF_FILTER_LNMIPLN 9987
-        T_int min_filter;
         T_int mag_filter;
-#define YF_GLTF_WRAP_CLAMP  33071
-#define YF_GLTF_WRAP_MIRROR 33648
-#define YF_GLTF_WRAP_REPEAT 10497
-        T_int wrap_s;
-        T_int wrap_t;
+        T_int min_filter;
         T_str name;
     } *v;
     size_t n;
@@ -2768,20 +2768,20 @@ static int parse_samplers(FILE *file, T_token *token, size_t index,
     while (1) {
         switch (next_token(file, token)) {
         case YF_TOKEN_STR:
-            if (strcmp("minFilter", token->data) == 0) {
-                if (parse_int(file, token, &samplers->v[index].min_filter) != 0)
+            if (strcmp("wrapS", token->data) == 0) {
+                if (parse_int(file, token, &samplers->v[index].wrap_s) != 0)
+                    return -1;
+
+            } else if (strcmp("wrapT", token->data) == 0) {
+                if (parse_int(file, token, &samplers->v[index].wrap_t) != 0)
                     return -1;
 
             } else if (strcmp("magFilter", token->data) == 0) {
                 if (parse_int(file, token, &samplers->v[index].mag_filter) != 0)
                     return -1;
 
-            } else if (strcmp("wrapS", token->data) == 0) {
-                if (parse_int(file, token, &samplers->v[index].wrap_s) != 0)
-                    return -1;
-
-            } else if (strcmp("wrapT", token->data) == 0) {
-                if (parse_int(file, token, &samplers->v[index].wrap_t) != 0)
+            } else if (strcmp("minFilter", token->data) == 0) {
+                if (parse_int(file, token, &samplers->v[index].min_filter) != 0)
                     return -1;
 
             } else if (strcmp("name", token->data) == 0) {
@@ -4078,6 +4078,7 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     assert(cont->imgs != NULL);
     const T_int image = gltf->textures.v[texture].source;
     if (cont->imgs[image] != NULL) {
+        /* TODO: Texture samplers might differ. */
         cont->texs[texture] = image;
         return 0;
     }
@@ -4107,6 +4108,67 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         free(pathname);
         if (r != 0)
             return -1;
+    }
+
+    const T_int sampler = gltf->textures.v[texture].sampler;
+    if (sampler == YF_INT_MIN) {
+        /* default sampler */
+        data.splr.wrapmode.u = YF_WRAPMODE_REPEAT;
+        data.splr.wrapmode.v = YF_WRAPMODE_REPEAT;
+        data.splr.filter.mag = YF_FILTER_NEAREST;
+        data.splr.filter.min = YF_FILTER_NEAREST;
+        data.splr.filter.mipmap = YF_FILTER_NEAREST;
+    } else {
+        /* wrap modes */
+        struct {
+            const T_int from;
+            int *const to;
+        } wrap[2] = {
+            {gltf->samplers.v[sampler].wrap_s, &data.splr.wrapmode.u},
+            {gltf->samplers.v[sampler].wrap_t, &data.splr.wrapmode.v}
+        };
+        for (unsigned i = 0; i < 2; i++) {
+            switch (wrap[i].from) {
+            case YF_GLTF_WRAP_CLAMP:
+                *wrap[i].to = YF_WRAPMODE_CLAMP;
+                break;
+            case YF_GLTF_WRAP_MIRROR:
+                *wrap[i].to = YF_WRAPMODE_MIRROR;
+                break;
+            case YF_GLTF_WRAP_REPEAT:
+            default:
+                *wrap[i].to = YF_WRAPMODE_REPEAT;
+                break;
+            }
+        }
+        /* filters */
+        switch (gltf->samplers.v[sampler].mag_filter) {
+        case YF_GLTF_FILTER_LINEAR:
+            data.splr.filter.mag = YF_FILTER_LINEAR;
+            break;
+        default:
+            data.splr.filter.mag = YF_FILTER_NEAREST;
+            break;
+        }
+        switch (gltf->samplers.v[sampler].min_filter) {
+        case YF_GLTF_FILTER_LINEAR:
+        case YF_GLTF_FILTER_LNMIPLN:
+            data.splr.filter.min = YF_FILTER_LINEAR;
+            data.splr.filter.mipmap = YF_FILTER_LINEAR;
+            break;
+        case YF_GLTF_FILTER_LNMIPNR:
+            data.splr.filter.min = YF_FILTER_LINEAR;
+            data.splr.filter.mipmap = YF_FILTER_NEAREST;
+            break;
+        case YF_GLTF_FILTER_NRMIPLN:
+            data.splr.filter.min = YF_FILTER_NEAREST;
+            data.splr.filter.mipmap = YF_FILTER_LINEAR;
+            break;
+        default:
+            data.splr.filter.min = YF_FILTER_NEAREST;
+            data.splr.filter.mipmap = YF_FILTER_NEAREST;
+            break;
+        }
     }
 
     cont->imgs[image] = yf_texture_initdt(&data);
@@ -5719,13 +5781,13 @@ static void print_gltf(const T_gltf *gltf)
     printf("  samplers (%zu):\n", gltf->samplers.n);
     for (size_t i = 0; i < gltf->samplers.n; i++)
         printf("   sampler '%s':\n"
-               "    minFilter: %lld\n"
-               "    magFilter: %lld\n"
                "    wrapS: %lld\n"
-               "    wrapT: %lld\n",
-               gltf->samplers.v[i].name, gltf->samplers.v[i].min_filter,
-               gltf->samplers.v[i].mag_filter, gltf->samplers.v[i].wrap_s,
-               gltf->samplers.v[i].wrap_t);
+               "    wrapT: %lld\n"
+               "    magFilter: %lld\n"
+               "    minFilter: %lld\n",
+               gltf->samplers.v[i].wrap_s, gltf->samplers.v[i].wrap_t,
+               gltf->samplers.v[i].mag_filter, gltf->samplers.v[i].min_filter,
+               gltf->samplers.v[i].name);
 
     /* extensions */
     puts("  extensions:");
