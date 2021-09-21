@@ -51,6 +51,7 @@ typedef struct {
 struct YF_texture_o {
     T_imge *imge;
     unsigned layer;
+    YF_sampler splr;
 };
 
 /* Global context. */
@@ -174,6 +175,7 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
     val->lay_i = (layer+1) % layers;
     tex->imge = val;
     tex->layer = layer;
+    tex->splr = data->splr;
 
     return 0;
 }

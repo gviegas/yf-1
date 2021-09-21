@@ -17,6 +17,7 @@ typedef struct {
     void *data;
     int pixfmt;
     YF_dim2 dim;
+    YF_sampler splr;
 } YF_texdt;
 
 /* Initializes a new texture object from texture data directly. */
