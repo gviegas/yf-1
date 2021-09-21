@@ -347,9 +347,9 @@ int yf_test_composition(void)
     yf_model_setmesh(vars_.mdl,
                      yf_collection_getitem(vars_.coll, YF_CITEM_MESH,
                                            mdl_num == 1 ? "m1" : "m2"));
-    yf_model_setmatl(vars_.mdl,
-                     yf_collection_getitem(vars_.coll, YF_CITEM_MATERIAL,
-                                           mdl_num == 1 ? "m1" : "m2"));
+    yf_mesh_setmatl(yf_model_getmesh(vars_.mdl), 0,
+                    yf_collection_getitem(vars_.coll, YF_CITEM_MATERIAL,
+                                          mdl_num == 1 ? "m1" : "m2"));
 
     yf_node_insert(yf_scene_getnode(vars_.scn), yf_model_getnode(vars_.mdl));
 
