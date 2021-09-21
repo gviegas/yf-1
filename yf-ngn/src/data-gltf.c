@@ -4394,15 +4394,17 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
         yf_model_setmesh(mdl, cont->meshes[mesh]);
 
-        /* TODO: Support for multiple primitives. */
-        const T_int material = gltf->meshes.v[mesh].primitives.v[0].material;
-        if (material != YF_INT_MIN) {
-            if (load_material(gltf, fdata, cont, material) != 0) {
-                yf_model_deinit(mdl);
-                cont->nodes[node] = NULL;
-                return -1;
+        const T_primitives *primitives = &gltf->meshes.v[mesh].primitives;
+        for (size_t i = 0; i < primitives->n; i++) {
+            const T_int material = primitives->v[i].material;
+            if (material != YF_INT_MIN) {
+                if (load_material(gltf, fdata, cont, material) != 0) {
+                    yf_model_deinit(mdl);
+                    cont->nodes[node] = NULL;
+                    return -1;
+                }
+                yf_mesh_setmatl(cont->meshes[mesh], i, cont->matls[material]);
             }
-            yf_model_setmatl(mdl, cont->matls[material]);
         }
 
         const T_int skin = gltf->nodes.v[node].skin;
