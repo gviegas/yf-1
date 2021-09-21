@@ -70,7 +70,8 @@ static int init_grid(YF_terrain terr)
             },
             .attr_n = 3,
             .itype = itype,
-            .indx_data_off = pos_sz + tc_sz + norm_sz
+            .indx_data_off = pos_sz + tc_sz + norm_sz,
+            .matl = NULL
         },
         .prim_n = 1,
         .data = dt,
