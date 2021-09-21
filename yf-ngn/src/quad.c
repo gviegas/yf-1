@@ -99,7 +99,8 @@ static int init_rect(YF_quad quad)
             },
             .attr_n = 3,
             .itype = YF_ITYPE_USHORT,
-            .indx_data_off = sizeof quad->verts
+            .indx_data_off = sizeof quad->verts,
+            .matl = NULL
         },
         .prim_n = 1,
         .data = dt,
