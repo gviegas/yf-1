@@ -59,7 +59,7 @@ static int init_grid(YF_terrain terr)
 
     const YF_meshdt data = {
         .prims = &(YF_primdt){
-            .primitive = YF_PRIMITIVE_TRIANGLE,
+            .topology = YF_TOPOLOGY_TRIANGLE,
             .vert_n = vert_n,
             .indx_n = indx_n,
             .data_off = 0,
