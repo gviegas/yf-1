@@ -235,7 +235,7 @@ static int init_mdl(T_entry *entry, unsigned elements)
         dtb_n,
         vins,
         vin_n,
-        YF_PRIMITIVE_TRIANGLE,
+        YF_TOPOLOGY_TRIANGLE,
         YF_POLYMODE_FILL,
         YF_CULLMODE_BACK,
         YF_WINDING_CCW
@@ -343,7 +343,7 @@ static int init_terr(T_entry *entry)
         dtb_n,
         vins,
         vin_n,
-        YF_PRIMITIVE_TRIANGLE,
+        YF_TOPOLOGY_TRIANGLE,
         YF_POLYMODE_FILL,
         YF_CULLMODE_BACK,
         YF_WINDING_CCW
@@ -444,7 +444,7 @@ static int init_part(T_entry *entry)
         dtb_n,
         vins,
         vin_n,
-        YF_PRIMITIVE_POINT,
+        YF_TOPOLOGY_POINT,
         YF_POLYMODE_FILL,
         YF_CULLMODE_BACK,
         YF_WINDING_CCW
@@ -551,7 +551,7 @@ static int init_quad(T_entry *entry)
         dtb_n,
         vins,
         vin_n,
-        YF_PRIMITIVE_TRIANGLE,
+        YF_TOPOLOGY_TRIANGLE,
         YF_POLYMODE_FILL,
         YF_CULLMODE_BACK,
         YF_WINDING_CCW
@@ -658,7 +658,7 @@ static int init_labl(T_entry *entry)
         dtb_n,
         vins,
         vin_n,
-        YF_PRIMITIVE_TRIANGLE,
+        YF_TOPOLOGY_TRIANGLE,
         YF_POLYMODE_FILL,
         YF_CULLMODE_BACK,
         YF_WINDING_CCW
