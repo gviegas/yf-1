@@ -704,7 +704,7 @@ void yf_print_mesh(YF_mesh mesh)
                (void *)mesh, mesh->offset, mesh->size, mesh->prim_n);
 
         for (unsigned i = 0; i < mesh->prim_n; i++) {
-            printf("   primitive [%u]\n"
+            printf("   primitive [%u]:\n"
                    "    primitive type: %d\n"
                    "    vertex count: %u\n"
                    "    index count: %u\n"
@@ -728,6 +728,10 @@ void yf_print_mesh(YF_mesh mesh)
                        "    index data offset: %zu\n",
                        mesh->prims[i].itype, mesh->prims[i].indx_data_off);
 
+            if (mesh->prims[i].matl != NULL)
+                printf("    material: <%p>\n", (void *)mesh->prims[i].matl);
+            else
+                puts("    (no material)");
         }
     }
 
