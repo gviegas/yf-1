@@ -80,7 +80,7 @@ static int init_points(YF_particle part)
 
     const YF_meshdt data = {
         .prims = &(YF_primdt){
-            .primitive = YF_PRIMITIVE_POINT,
+            .topology = YF_TOPOLOGY_POINT,
             .vert_n = part->count,
             .indx_n = 0,
             .data_off = 0,
