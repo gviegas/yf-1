@@ -23,11 +23,14 @@ YF_DECLS_BEGIN
 typedef struct YF_gstate_o *YF_gstate;
 
 /**
- * Primitive type values.
+ * Primitive topology values.
  */
-#define YF_PRIMITIVE_POINT    0
-#define YF_PRIMITIVE_LINE     1
-#define YF_PRIMITIVE_TRIANGLE 2
+#define YF_TOPOLOGY_POINT    0
+#define YF_TOPOLOGY_LINE     1
+#define YF_TOPOLOGY_TRIANGLE 2
+#define YF_TOPOLOGY_LNSTRIP  3
+#define YF_TOPOLOGY_TRISTRIP 4
+#define YF_TOPOLOGY_TRIFAN   5
 
 /**
  * Polygon mode values.
