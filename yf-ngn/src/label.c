@@ -95,7 +95,7 @@ static int init_rect(YF_label labl)
 
     const YF_meshdt data = {
         .prims = &(YF_primdt){
-            .primitive = YF_PRIMITIVE_TRIANGLE,
+            .topology = YF_TOPOLOGY_TRIANGLE,
             .vert_n = 4,
             .indx_n = 6,
             .data_off = 0,
