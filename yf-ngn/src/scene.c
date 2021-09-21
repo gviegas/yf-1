@@ -1131,23 +1131,23 @@ static int render_mdl(YF_scene scn)
                 return -1;
             }
 
-            YF_material matl = yf_model_getmatl(mdls[rem]);
-            if (matl != NULL) {
-                if (copy_matl(matl, inst_dtb, inst_alloc) != 0) {
-                    yf_list_deinit(done);
-                    return -1;
-                }
-            } else {
-                /* TODO */
-                assert(0);
-                abort();
-            }
-
             yf_cmdbuf_setgstate(vars_.cb, gst);
             yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_INST, inst_alloc);
 
             YF_mesh mesh = yf_model_getmesh(mdls[rem]);
             if (mesh != NULL) {
+                /* TODO: Multiple materials. */
+                YF_material matl = yf_mesh_getmatl(mesh, 0);
+                if (matl != NULL) {
+                    if (copy_matl(matl, inst_dtb, inst_alloc) != 0) {
+                        yf_list_deinit(done);
+                        return -1;
+                    }
+                } else {
+                    /* TODO */
+                    assert(0);
+                    abort();
+                }
                 yf_mesh_draw(mesh, vars_.cb, n);
             } else {
                 /* TODO */
