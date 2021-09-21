@@ -32,10 +32,9 @@ void yf_print_nodeobj(YF_node node)
         printf(" NODEOBJ_MODEL <%p>:\n"
                "  mesh: %p\n"
                "  skin: %p\n"
-               "  skel: %p\n"
-               "  matl: %p\n",
+               "  skel: %p\n",
                (void *)mdl, (void *)yf_model_getmesh(mdl), (void *)skin,
-               (void *)skel, (void *)yf_model_getmatl(mdl));
+               (void *)skel);
     } break;
 
     case YF_NODEOBJ_TERRAIN: {
