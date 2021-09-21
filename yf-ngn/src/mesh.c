@@ -705,12 +705,12 @@ void yf_print_mesh(YF_mesh mesh)
 
         for (unsigned i = 0; i < mesh->prim_n; i++) {
             printf("   primitive [%u]:\n"
-                   "    primitive type: %d\n"
+                   "    topology: %d\n"
                    "    vertex count: %u\n"
                    "    index count: %u\n"
                    "    data offset: %zu\n"
                    "    attributes (%u):\n",
-                   i, mesh->prims[i].primitive, mesh->prims[i].vert_n,
+                   i, mesh->prims[i].topology, mesh->prims[i].vert_n,
                    mesh->prims[i].indx_n, mesh->prims[i].data_off,
                    mesh->prims[i].attr_n);
 
