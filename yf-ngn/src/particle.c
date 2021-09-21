@@ -90,7 +90,8 @@ static int init_points(YF_particle part)
             },
             .attr_n = 2,
             .itype = 0,
-            .indx_data_off = 0
+            .indx_data_off = 0,
+            .matl = NULL
         },
         .prim_n = 1,
         .data = part->pts,
