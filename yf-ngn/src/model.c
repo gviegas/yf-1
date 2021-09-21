@@ -18,7 +18,6 @@ struct YF_model_o {
     YF_mesh mesh;
     YF_skin skin;
     YF_skeleton skel;
-    YF_material matl;
 };
 
 /* Model deinitialization callback. */
@@ -77,18 +76,6 @@ void yf_model_setskin(YF_model mdl, YF_skin skin, YF_skeleton skel)
 
     mdl->skin = skin;
     mdl->skel = skel;
-}
-
-YF_material yf_model_getmatl(YF_model mdl)
-{
-    assert(mdl != NULL);
-    return mdl->matl;
-}
-
-void yf_model_setmatl(YF_model mdl, YF_material matl)
-{
-    assert(mdl != NULL);
-    mdl->matl = matl;
 }
 
 void yf_model_deinit(YF_model mdl)

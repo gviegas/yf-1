@@ -13,7 +13,6 @@
 #include "yf-node.h"
 #include "yf-mesh.h"
 #include "yf-skin.h"
-#include "yf-material.h"
 
 YF_DECLS_BEGIN
 
@@ -71,22 +70,6 @@ YF_skin yf_model_getskin(YF_model mdl, YF_skeleton *skel);
  * @param skel: The skeleton instance to set. Can be 'NULL'.
  */
 void yf_model_setskin(YF_model mdl, YF_skin skin, YF_skeleton skel);
-
-/**
- * Gets the material of a model.
- *
- * @param mdl: The model.
- * @return: The material used by the model, or 'NULL' if none is set.
- */
-YF_material yf_model_getmatl(YF_model mdl);
-
-/**
- * Sets the material for a model.
- *
- * @param mdl: The model.
- * @param matl: The material to set. Can be 'NULL'.
- */
-void yf_model_setmatl(YF_model mdl, YF_material matl);
 
 /**
  * Deinitializes a model.
