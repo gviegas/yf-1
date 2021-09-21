@@ -106,7 +106,8 @@ static int init_rect(YF_label labl)
             },
             .attr_n = 3,
             .itype = YF_ITYPE_USHORT,
-            .indx_data_off = sizeof labl->verts
+            .indx_data_off = sizeof labl->verts,
+            .matl = NULL
         },
         .prim_n = 1,
         .data = dt,
