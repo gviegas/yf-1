@@ -215,6 +215,8 @@ int yf_test_model(void)
     vars_.matl = yf_material_init(&mprop);
     assert(vars_.matl != NULL);
 
+    yf_mesh_setmatl(vars_.mesh, 0, vars_.matl);
+
     YF_TEST_PRINT("init", "", "mdl");
     vars_.mdl = yf_model_init();
     if (vars_.mdl == NULL)
@@ -247,17 +249,6 @@ int yf_test_model(void)
 
     YF_TEST_PRINT("getskin", "mdl, &skel", "");
     if (yf_model_getskin(vars_.mdl, &skel) != NULL)
-        return -1;
-
-    YF_TEST_PRINT("getmatl", "mdl", "");
-    if (yf_model_getmatl(vars_.mdl) != NULL)
-        return -1;
-
-    YF_TEST_PRINT("setmatl", "mdl, matl", "");
-    yf_model_setmatl(vars_.mdl, vars_.matl);
-
-    YF_TEST_PRINT("getmatl", "mdl", "");
-    if (yf_model_getmatl(vars_.mdl) != vars_.matl)
         return -1;
 
     yf_node_insert(yf_scene_getnode(vars_.scn), node);
