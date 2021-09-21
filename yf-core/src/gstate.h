@@ -23,17 +23,26 @@ typedef struct YF_gstate_o {
     VkPipeline pipeline;
 } YF_gstate_o;
 
-/* Converts from a 'YF_PRIMITIVE' value. */
-#define YF_PRIMITIVE_FROM(prim, to) do { \
-    switch (prim) { \
-    case YF_PRIMITIVE_POINT: \
+/* Converts from a 'YF_TOPOLOGY' value. */
+#define YF_TOPOLOGY_FROM(tl, to) do { \
+    switch (tl) { \
+    case YF_TOPOLOGY_POINT: \
         to = VK_PRIMITIVE_TOPOLOGY_POINT_LIST; \
         break; \
-    case YF_PRIMITIVE_LINE: \
+    case YF_TOPOLOGY_LINE: \
         to = VK_PRIMITIVE_TOPOLOGY_LINE_LIST; \
         break; \
-    case YF_PRIMITIVE_TRIANGLE: \
+    case YF_TOPOLOGY_TRIANGLE: \
         to = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST; \
+        break; \
+    case YF_TOPOLOGY_LNSTRIP: \
+        to = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP; \
+        break; \
+    case YF_TOPOLOGY_TRISTRIP: \
+        to = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP; \
+        break; \
+    case YF_TOPOLOGY_TRIFAN: \
+        to = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_FAN; \
         break; \
     default: \
         to = INT_MAX; \
