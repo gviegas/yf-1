@@ -72,7 +72,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
     VkPolygonMode polym;
     VkCullModeFlagBits cullm;
     VkFrontFace fface;
-    YF_PRIMITIVE_FROM(conf->primitive, topol);
+    YF_TOPOLOGY_FROM(conf->topology, topol);
     YF_POLYMODE_FROM(conf->polymode, polym);
     YF_CULLMODE_FROM(conf->cullmode, cullm);
     YF_WINDING_FROM(conf->winding, fface);
