@@ -4039,6 +4039,9 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 return -1;
             }
         }
+
+        /* XXX: Caller must explicitly load/set the material. */
+        data.prims[i].matl = NULL;
     }
 
     cont->meshes[mesh] = yf_mesh_initdt(&data);
