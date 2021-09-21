@@ -219,6 +219,9 @@ int yf_test_rendering(void)
     mprop->pbr = YF_PBR_METALROUGH;
     mprop->pbrmr.color_tex = vars_.tex2;
 
+    yf_mesh_setmatl(vars_.mesh1, 0, vars_.matl1);
+    yf_mesh_setmatl(vars_.mesh2, 0, vars_.matl2);
+
     YF_node scn1_nd = yf_scene_getnode(vars_.scn1);
     float tf = -YF_MDLN_1;
     for (size_t i = 0; i < YF_MDLN_1; i++) {
@@ -226,7 +229,6 @@ int yf_test_rendering(void)
         assert(vars_.mdls1[i] != NULL);
 
         yf_model_setmesh(vars_.mdls1[i], vars_.mesh1);
-        yf_model_setmatl(vars_.mdls1[i], vars_.matl1);
 
         YF_node nd = yf_model_getnode(vars_.mdls1[i]);
         YF_mat4 *m = yf_node_getxform(nd);
@@ -242,7 +244,6 @@ int yf_test_rendering(void)
         assert(vars_.mdls2[i] != NULL);
 
         yf_model_setmesh(vars_.mdls2[i], vars_.mesh2);
-        yf_model_setmatl(vars_.mdls2[i], vars_.matl2);
 
         YF_node nd = yf_model_getnode(vars_.mdls2[i]);
         YF_mat4 *m = yf_node_getxform(nd);
