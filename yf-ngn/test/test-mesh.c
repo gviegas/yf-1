@@ -22,7 +22,7 @@ int yf_test_mesh(void)
     assert(matl != NULL);
 
     YF_primdt prim = {
-        .primitive = YF_PRIMITIVE_TRIANGLE,
+        .topology = YF_TOPOLOGY_TRIANGLE,
         .vert_n = 6,
         .indx_n = 9,
         .data_off = 0,
