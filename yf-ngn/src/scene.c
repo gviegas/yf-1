@@ -144,7 +144,6 @@ typedef struct {
 typedef struct {
     struct {
         YF_mesh mesh;
-        YF_material matl;
     } key;
     union {
         YF_model mdl;
@@ -167,9 +166,8 @@ static int traverse_scn(YF_node node, void *arg)
     case YF_NODEOBJ_MODEL: {
         YF_model mdl = obj;
         YF_mesh mesh = yf_model_getmesh(mdl);
-        YF_material matl = yf_model_getmatl(mdl);
 
-        T_kv_mdl key = {{mesh, matl}, {NULL}, 0, 0};
+        T_kv_mdl key = {{mesh}, {NULL}, 0, 0};
         T_kv_mdl *val = yf_dict_search(vars_.mdls, &key);
 
         if (val == NULL) {
@@ -1377,7 +1375,7 @@ static size_t hash_mdl(const void *x)
     const T_kv_mdl *kv = x;
     return yf_hashv(&kv->key, sizeof kv->key, NULL);
 
-    static_assert(sizeof kv->key == 2*sizeof(void *), "!sizeof");
+    static_assert(sizeof kv->key == sizeof(void *), "!sizeof");
 }
 
 /* Compares a 'T_kv_mdl' to another. */
@@ -1386,7 +1384,7 @@ static int cmp_mdl(const void *a, const void *b)
     const T_kv_mdl *kv1 = a;
     const T_kv_mdl *kv2 = b;
 
-    return kv1->key.mesh != kv2->key.mesh || kv1->key.matl != kv2->key.matl;
+    return kv1->key.mesh != kv2->key.mesh;
 }
 
 /* Deallocates a 'T_kv_mdl'. */
