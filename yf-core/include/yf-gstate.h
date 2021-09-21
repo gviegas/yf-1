@@ -64,7 +64,7 @@ typedef struct {
     unsigned dtb_n;
     const YF_vinput *vins;
     unsigned vin_n;
-    int primitive;
+    int topology;
     int polymode;
     int cullmode;
     int winding;
