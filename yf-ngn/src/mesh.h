@@ -22,7 +22,7 @@ typedef struct {
 
 /* Type defining primitive data. */
 typedef struct {
-    int primitive;
+    int topology;
     unsigned vert_n;
     unsigned indx_n;
     /* relative to 'meshdt.data' */
