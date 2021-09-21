@@ -3655,19 +3655,25 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         /* primitive mode */
         switch (primitives->v[i].mode) {
         case YF_GLTF_MODE_PTS:
-            data.prims[i].primitive = YF_PRIMITIVE_POINT;
+            data.prims[i].topology = YF_TOPOLOGY_POINT;
             break;
         case YF_GLTF_MODE_LNS:
-            data.prims[i].primitive = YF_PRIMITIVE_LINE;
+            data.prims[i].topology = YF_TOPOLOGY_LINE;
             break;
         case YF_GLTF_MODE_TRIS:
-            data.prims[i].primitive = YF_PRIMITIVE_TRIANGLE;
+            data.prims[i].topology = YF_TOPOLOGY_TRIANGLE;
+            break;
+        case YF_GLTF_MODE_LNSTRIP:
+            data.prims[i].topology = YF_TOPOLOGY_LNSTRIP;
+            break;
+        case YF_GLTF_MODE_TRISTRIP:
+            data.prims[i].topology = YF_TOPOLOGY_TRISTRIP;
+            break;
+        case YF_GLTF_MODE_TRIFAN:
+            data.prims[i].topology = YF_TOPOLOGY_TRIFAN;
             break;
         case YF_GLTF_MODE_LNLOOP:
-        case YF_GLTF_MODE_LNSTRIP:
-        case YF_GLTF_MODE_TRISTRIP:
-        case YF_GLTF_MODE_TRIFAN:
-            /* TODO: Support for this modes on core. */
+            /* TODO */
             yf_seterr(YF_ERR_UNSUP, __func__);
             YF_DEALLOCDT(i);
             return -1;
