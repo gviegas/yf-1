@@ -177,7 +177,7 @@ static T_tree *gen_codes(const uint8_t *lengths, size_t length_n,
         return NULL;
     }
 
-    size_t idx = 0;
+    size_t indx = 0;
     for (size_t i = 0; i < length_n; i++) {
         if (lengths[i] == 0)
             continue;
@@ -185,21 +185,21 @@ static T_tree *gen_codes(const uint8_t *lengths, size_t length_n,
         for (int j = lengths[i]-1; j >= 0; j--) {
             uint8_t bit = codes[i]>>j&1;
             if (tree[cur].next[bit] == 0)
-                tree[cur].next[bit] = ++idx;
+                tree[cur].next[bit] = ++indx;
             cur = tree[cur].next[bit];
         }
-        tree[idx].leaf = 1;
-        tree[idx].value = i;
+        tree[indx].leaf = 1;
+        tree[indx].value = i;
     }
 
-    if ((idx+1) < tree_n) {
-        void *tmp = realloc(tree, (idx+1)*sizeof *tree);
+    if ((indx+1) < tree_n) {
+        void *tmp = realloc(tree, (indx+1)*sizeof *tree);
         if (tmp != NULL)
             tree = tmp;
     }
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
-    print_codes(lengths, length_n, codes, tree, idx+1, tree_n);
+    print_codes(lengths, length_n, codes, tree, indx+1, tree_n);
 #endif
 
     return tree;
@@ -331,13 +331,13 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
 
                 for (size_t i = 0; i < 2; i++) {
                     do {
-                        uint16_t idx = 0;
+                        uint16_t indx = 0;
                         do {
                             uint8_t bit = 0;
                             YF_NEXTBIT(bit, 0);
-                            idx = clength.tree[idx].next[bit];
-                        } while (!clength.tree[idx].leaf);
-                        uint32_t val = clength.tree[idx].value;
+                            indx = clength.tree[indx].next[bit];
+                        } while (!clength.tree[indx].leaf);
+                        uint32_t val = clength.tree[indx].value;
 
                         if (val < 16) {
                             /* code length */
@@ -404,13 +404,13 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
 
             /* data decoding */
             while (1) {
-                uint16_t idx = 0;
+                uint16_t indx = 0;
                 do {
                     uint8_t bit = 0;
                     YF_NEXTBIT(bit, 0);
-                    idx = literal.tree[idx].next[bit];
-                } while (!literal.tree[idx].leaf);
-                uint32_t val = literal.tree[idx].value;
+                    indx = literal.tree[indx].next[bit];
+                } while (!literal.tree[indx].leaf);
+                uint32_t val = literal.tree[indx].value;
 
                 if (val < 256) {
                     /* literal */
@@ -434,13 +434,13 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
                         len = 258;
                     }
 
-                    idx = 0;
+                    indx = 0;
                     do {
                         uint8_t bit = 0;
                         YF_NEXTBIT(bit, 0);
-                        idx = distance.tree[idx].next[bit];
-                    } while (!distance.tree[idx].leaf);
-                    val = distance.tree[idx].value;
+                        indx = distance.tree[indx].next[bit];
+                    } while (!distance.tree[indx].leaf);
+                    val = distance.tree[indx].value;
 
                     uint16_t dist;
                     if (val <= 3) {
@@ -687,13 +687,13 @@ static int load_texdt(const T_png *png, YF_texdt *data)
             }
             buf = tmp;
             size_t rgb_off = 0;
-            size_t idx_off = new_sz-buf_sz;
-            memmove(buf+idx_off, buf, buf_sz);
+            size_t indx_off = new_sz-buf_sz;
+            memmove(buf+indx_off, buf, buf_sz);
             for (size_t i = 0; i < height; i++) {
-                idx_off++;
+                indx_off++;
                 for (size_t j = 0; j < scln_sz-1; j++) {
-                    const uint8_t idx = buf[idx_off++];
-                    memcpy(buf+rgb_off, png->plte+idx, 3);
+                    const uint8_t indx = buf[indx_off++];
+                    memcpy(buf+rgb_off, png->plte+indx, 3);
                     rgb_off += 3;
                 }
             }
@@ -708,23 +708,24 @@ static int load_texdt(const T_png *png, YF_texdt *data)
             }
             buf = tmp;
             size_t rgb_off = 0;
-            size_t idx_off = new_sz-buf_sz;
+            size_t indx_off = new_sz-buf_sz;
             size_t bit_off = 0;
-            memmove(buf+idx_off, buf, buf_sz);
+            memmove(buf+indx_off, buf, buf_sz);
             for (size_t i = 0; i < height; i++) {
-                idx_off++;
+                indx_off++;
                 for (size_t j = 0; j < width; j++) {
-                    const uint8_t idx = buf[idx_off] >> (8-bit_depth-bit_off) &
-                        ((1<<bit_depth)-1);
-                    memcpy(buf+rgb_off, png->plte+idx, 3);
+                    const uint8_t indx = buf[indx_off] >>
+                                         (8-bit_depth-bit_off) &
+                                         ((1<<bit_depth)-1);
+                    memcpy(buf+rgb_off, png->plte+indx, 3);
                     rgb_off += 3;
                     const div_t d = div(bit_off+bit_depth, 8);
-                    idx_off += d.quot;
+                    indx_off += d.quot;
                     bit_off = d.rem;
                 }
                 if (bit_off != 0) {
                     bit_off = 0;
-                    idx_off++;
+                    indx_off++;
                 }
             }
         }
@@ -776,6 +777,8 @@ static int load_texdt(const T_png *png, YF_texdt *data)
     data->pixfmt = pixfmt;
     data->dim.width = width;
     data->dim.height = height;
+    /* XXX: Sampler params. set elsewhere. */
+    data->splr = (YF_sampler){0};
 
     return 0;
 }
