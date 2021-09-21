@@ -6,6 +6,7 @@
  */
 
 #include <stdio.h>
+#include <assert.h>
 
 #include "test.h"
 #include "print.h"
@@ -16,6 +17,9 @@
 int yf_test_mesh(void)
 {
     unsigned char buf[2048];
+
+    YF_material matl = yf_material_init(NULL);
+    assert(matl != NULL);
 
     YF_primdt prim = {
         .primitive = YF_PRIMITIVE_TRIANGLE,
@@ -28,7 +32,8 @@ int yf_test_mesh(void)
         },
         .attr_n = 2,
         .itype = YF_ITYPE_USHORT,
-        .indx_data_off = 6 * sizeof(float[3 + 4])
+        .indx_data_off = 6 * sizeof(float[3 + 4]),
+        .matl = NULL
     };
 
     YF_meshdt data = {
@@ -43,28 +48,76 @@ int yf_test_mesh(void)
     if (mesh == NULL)
         return -1;
 
+    yf_print_mesh(mesh);
     yf_print_mesh(NULL);
+
+    YF_TEST_PRINT("getprimn", "mesh", "");
+    if (yf_mesh_getprimn(mesh) != 1)
+        return -1;
+
+    YF_TEST_PRINT("getmatl", "mesh, 0", "");
+    if (yf_mesh_getmatl(mesh, 0) != NULL)
+        return -1;
+
+    YF_TEST_PRINT("setmatl", "mesh, 0, matl", "");
+    if (yf_mesh_setmatl(mesh, 0, matl) != NULL ||
+        yf_mesh_getmatl(mesh, 0) != matl)
+        return -1;
 
     YF_TEST_PRINT("initdt", "&data", "mesh2");
     YF_mesh mesh2 = yf_mesh_initdt(&data);
     if (mesh2 == NULL)
         return -1;
 
+    yf_print_mesh(mesh2);
     yf_print_mesh(NULL);
+
+    YF_TEST_PRINT("getprimn", "mesh2", "");
+    if (yf_mesh_getprimn(mesh2) != 1)
+        return -1;
+
+    YF_TEST_PRINT("getmatl", "mesh2, 0", "");
+    if (yf_mesh_getmatl(mesh2, 0) != NULL)
+        return -1;
 
     YF_TEST_PRINT("initdt", "&data", "mesh3");
     YF_mesh mesh3 = yf_mesh_initdt(&data);
     if (mesh3 == NULL)
         return -1;
 
+    yf_print_mesh(mesh3);
     yf_print_mesh(NULL);
+
+    YF_TEST_PRINT("getprimn", "mesh3", "");
+    if (yf_mesh_getprimn(mesh3) != 1)
+        return -1;
+
+    YF_TEST_PRINT("getmatl", "mesh3, 0", "");
+    if (yf_mesh_getmatl(mesh3, 0) != NULL)
+        return -1;
+
+    prim.matl = matl;
 
     YF_TEST_PRINT("initdt", "&data", "mesh4");
     YF_mesh mesh4 = yf_mesh_initdt(&data);
     if (mesh4 == NULL)
         return -1;
 
+    yf_print_mesh(mesh4);
     yf_print_mesh(NULL);
+
+    YF_TEST_PRINT("getprimn", "mesh4", "");
+    if (yf_mesh_getprimn(mesh4) != 1)
+        return -1;
+
+    YF_TEST_PRINT("getmatl", "mesh4, 0", "");
+    if (yf_mesh_getmatl(mesh4, 0) != matl)
+        return -1;
+
+    YF_TEST_PRINT("setmatl", "mesh4, 0, NULL", "");
+    if (yf_mesh_setmatl(mesh4, 0, NULL) != matl ||
+        yf_mesh_getmatl(mesh4, 0) != NULL)
+        return -1;
 
     YF_TEST_PRINT("deinit", "mesh", "");
     yf_mesh_deinit(mesh);
@@ -126,6 +179,8 @@ int yf_test_mesh(void)
     yf_mesh_deinit(mesh);
 
     yf_print_mesh(NULL);
+
+    yf_material_deinit(matl);
 
     return 0;
 }
