@@ -156,7 +156,8 @@ static int traverse(YF_node node, YF_UNUSED void *arg)
     return 0;
 }
 
-static int each_anim(YF_UNUSED const char *name, void *anim,
+static int each_anim(YF_UNUSED const char *name,
+                     void *anim,
                      YF_UNUSED void *arg)
 {
     yf_print_anim(anim);
@@ -186,7 +187,6 @@ static int each_anim(YF_UNUSED const char *name, void *anim,
         default:
             assert(0);
         }
-
     }
 
     return 0;
