@@ -10,6 +10,7 @@
 
 #include "yf/com/yf-defs.h"
 #include "yf/com/yf-types.h"
+#include "yf/core/yf-sampler.h"
 
 YF_DECLS_BEGIN
 
@@ -22,10 +23,13 @@ typedef struct YF_texture_o *YF_texture;
  * Initializes a new texture.
  *
  * @param pathname: The pathname of the texture file.
+ * @param index: The index of the texture to load.
+ * @param splr: The sampler to use with the texture. Can be 'NULL'.
  * @return: On success, returns a new texture. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_texture yf_texture_init(const char *pathname);
+YF_texture yf_texture_init(const char *pathname, size_t index,
+                           const YF_sampler *splr);
 
 /**
  * Gets the dimensions of a texture.

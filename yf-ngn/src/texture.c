@@ -198,8 +198,12 @@ static int cmp_key(const void *a, const void *b)
            k1->dim.height != k2->dim.height;
 }
 
-YF_texture yf_texture_init(const char *pathname)
+YF_texture yf_texture_init(const char *pathname, size_t index,
+                           const YF_sampler *splr)
 {
+    /* TODO */
+    assert(index == 0);
+
     /* TODO: Consider checking the type of the file. */
     YF_texdt data = {0};
     if (yf_loadpng(pathname, &data) != 0)
@@ -208,6 +212,9 @@ YF_texture yf_texture_init(const char *pathname)
     /* XXX: Sampler params. were set to zero. */
     YF_texture tex = yf_texture_initdt(&data);
     free(data.data);
+
+    if (tex != NULL && splr != NULL)
+        tex->splr = *splr;
 
     return tex;
 }
