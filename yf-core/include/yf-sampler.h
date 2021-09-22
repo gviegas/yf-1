@@ -11,9 +11,9 @@
 /**
  * Wrap modes.
  */
-#define YF_WRAPMODE_CLAMP  0
+#define YF_WRAPMODE_REPEAT 0
 #define YF_WRAPMODE_MIRROR 1
-#define YF_WRAPMODE_REPEAT 2
+#define YF_WRAPMODE_CLAMP  2
 
 /**
  * Filters.
@@ -26,10 +26,14 @@
  */
 typedef struct {
     struct {
-        int u, v, w;
+        int u;
+        int v;
+        int w;
     } wrapmode;
     struct {
-        int mag, min, mipmap;
+        int mag;
+        int min;
+        int mipmap;
     } filter;
 } YF_sampler;
 

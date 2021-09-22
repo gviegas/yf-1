@@ -33,14 +33,14 @@ void yf_sampler_unget(YF_context ctx, const YF_splrh *splrh);
 /* Converts from a 'YF_WRAPMODE' value. */
 #define YF_WRAPMODE_FROM(wm, to) do { \
     switch (wm) { \
-    case YF_WRAPMODE_CLAMP: \
-        to = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; \
+    case YF_WRAPMODE_REPEAT: \
+        to = VK_SAMPLER_ADDRESS_MODE_REPEAT; \
         break; \
     case YF_WRAPMODE_MIRROR: \
         to = VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT; \
         break; \
-    case YF_WRAPMODE_REPEAT: \
-        to = VK_SAMPLER_ADDRESS_MODE_REPEAT; \
+    case YF_WRAPMODE_CLAMP: \
+        to = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE; \
         break; \
     default: \
         to = INT_MAX; \

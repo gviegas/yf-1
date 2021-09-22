@@ -47,7 +47,7 @@ static VkSampler create_handle(YF_context ctx, const YF_sampler *splr)
     info.compareEnable = VK_FALSE;
     info.compareOp = VK_COMPARE_OP_NEVER;
     info.minLod = 0.0f;
-    info.maxLod = 0.0f;
+    info.maxLod = VK_LOD_CLAMP_NONE;
     info.borderColor = VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
     info.unnormalizedCoordinates = VK_FALSE;
 
