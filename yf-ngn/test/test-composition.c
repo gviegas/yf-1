@@ -289,9 +289,18 @@ int yf_test_composition(void)
     YF_mesh mesh2 = yf_mesh_init("tmp/cube2.glb", 0);
     assert(mesh2 != NULL);
 
-    YF_texture tex1 = yf_texture_init("tmp/cube.png");
+    const YF_sampler splr = {
+        .wrapmode = {
+            .u = YF_WRAPMODE_CLAMP,
+            .v = YF_WRAPMODE_CLAMP
+        },
+        .filter = {
+            .mag = YF_FILTER_LINEAR
+        }
+    };
+    YF_texture tex1 = yf_texture_init("tmp/cube.png", 0, &splr);
     assert(tex1 != NULL);
-    YF_texture tex2 = yf_texture_init("tmp/cube2.png");
+    YF_texture tex2 = yf_texture_init("tmp/cube2.png", 0, &splr);
     assert(tex2 != NULL);
 
     YF_font font1 = yf_font_init("tmp/serif.ttf");
