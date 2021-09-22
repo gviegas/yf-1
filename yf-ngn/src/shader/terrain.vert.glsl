@@ -60,7 +60,7 @@ layout(location=0) out IO_v {
 
 void main()
 {
-    const float y = textureLod(hmap_, tc_, 0.0).r;
+    const float y = texture(hmap_, tc_).r;
     gl_Position = globl_.p * inst_.mv * vec4(pos_.x, y, pos_.z, 1.0);
 
     v_.tc = tc_;

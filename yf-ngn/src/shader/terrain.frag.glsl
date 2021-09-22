@@ -21,5 +21,5 @@ layout(location=0) out vec4 clr_;
 
 void main()
 {
-    clr_ = textureLod(tex_, v_.tc, 0.0);
+    clr_ = texture(tex_, v_.tc);
 }

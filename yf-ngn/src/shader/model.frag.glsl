@@ -164,7 +164,7 @@ vec4 getclr()
     vec4 clr = v_.clr;
 
     if ((matl_.tex_mask & TEX_CLR) == TEX_CLR)
-        clr *= textureLod(clr_is_, v_.tc, 0.0);
+        clr *= texture(clr_is_, v_.tc);
     clr *= matl_.clr_fac;
 
     vec3 albedo, f0, f90;
@@ -175,7 +175,7 @@ vec4 getclr()
         vec3 specular = matl_.pbr_fac.rgb;
         float glossiness = matl_.pbr_fac.a;
         if ((matl_.tex_mask & TEX_PBR) == TEX_PBR) {
-            vec4 spec_gloss = textureLod(pbr_is_, v_.tc, 0.0);
+            vec4 spec_gloss = texture(pbr_is_, v_.tc);
             specular *= spec_gloss.rgb;
             glossiness *= spec_gloss.a;
         }
@@ -190,7 +190,7 @@ vec4 getclr()
         float metallic = matl_.pbr_fac[0];
         float roughness = matl_.pbr_fac[1];
         if ((matl_.tex_mask & TEX_PBR) == TEX_PBR) {
-            vec4 metal_rough = textureLod(pbr_is_, v_.tc, 0.0);
+            vec4 metal_rough = texture(pbr_is_, v_.tc);
             metallic *= metal_rough.b;
             roughness *= metal_rough.g;
         }

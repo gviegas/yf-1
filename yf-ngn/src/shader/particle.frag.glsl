@@ -20,5 +20,5 @@ layout(location=0) out vec4 clr_;
 
 void main()
 {
-    clr_ = v_.clr * textureLod(tex_, gl_PointCoord, 0.0);
+    clr_ = v_.clr * texture(tex_, gl_PointCoord);
 }
