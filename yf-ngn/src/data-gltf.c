@@ -5785,9 +5785,9 @@ static void print_gltf(const T_gltf *gltf)
                "    wrapT: %lld\n"
                "    magFilter: %lld\n"
                "    minFilter: %lld\n",
-               gltf->samplers.v[i].wrap_s, gltf->samplers.v[i].wrap_t,
-               gltf->samplers.v[i].mag_filter, gltf->samplers.v[i].min_filter,
-               gltf->samplers.v[i].name);
+               gltf->samplers.v[i].name, gltf->samplers.v[i].wrap_s,
+               gltf->samplers.v[i].wrap_t, gltf->samplers.v[i].mag_filter,
+               gltf->samplers.v[i].min_filter);
 
     /* extensions */
     puts("  extensions:");
