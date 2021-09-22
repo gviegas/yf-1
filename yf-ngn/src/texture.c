@@ -355,8 +355,20 @@ void yf_print_tex(YF_texture tex)
     } else {
         printf(" texture <%p>:\n"
                "  imge: %p\n"
-               "  layer: %u\n",
-               (void *)tex, (void *)(tex->imge), tex->layer);
+               "  layer: %u\n"
+               "  sampler:\n"
+               "   wrapmode:\n"
+               "    u: %d\n"
+               "    v: %d\n"
+               "    w: %d\n"
+               "   filter:\n"
+               "    mag: %d\n"
+               "    min: %d\n"
+               "    mipmap: %d\n",
+               (void *)tex, (void *)(tex->imge), tex->layer,
+               tex->splr.wrapmode.u, tex->splr.wrapmode.v,
+               tex->splr.wrapmode.w, tex->splr.filter.mag,
+               tex->splr.filter.min, tex->splr.filter.mipmap);
     }
 
     puts("");
