@@ -137,10 +137,10 @@ int yf_test_terrain(void)
     vars_.scn = yf_scene_init();
     assert(vars_.scn != NULL);
 
-    vars_.hmap = yf_texture_init("tmp/hmap.png");
+    vars_.hmap = yf_texture_init("tmp/hmap.png", 0, NULL);
     assert(vars_.hmap != NULL);
 
-    vars_.tex = yf_texture_init("tmp/terrain.png");
+    vars_.tex = yf_texture_init("tmp/terrain.png", 0, NULL);
     assert(vars_.tex != NULL);
 
     YF_TEST_PRINT("init", "160, 160", "terr");
