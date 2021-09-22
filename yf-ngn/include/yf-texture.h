@@ -40,6 +40,14 @@ YF_texture yf_texture_init(const char *pathname, size_t index,
 YF_dim2 yf_texture_getdim(YF_texture tex);
 
 /**
+ * Gets the sampler of a texture.
+ *
+ * @param tex: The texture.
+ * @return: The texture sampler.
+ */
+YF_sampler *yf_texture_getsplr(YF_texture tex);
+
+/**
  * Deinitializes a texture.
  *
  * @param tex: The texture to deinitialize. Can be 'NULL'.

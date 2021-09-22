@@ -228,6 +228,12 @@ YF_dim2 yf_texture_getdim(YF_texture tex)
     return (YF_dim2){dim.width, dim.height};
 }
 
+YF_sampler *yf_texture_getsplr(YF_texture tex)
+{
+    assert(tex != NULL);
+    return &tex->splr;
+}
+
 void yf_texture_deinit(YF_texture tex)
 {
     if (tex == NULL)
