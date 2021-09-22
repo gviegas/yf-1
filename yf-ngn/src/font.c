@@ -170,7 +170,8 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
 
     rz->off = (YF_off2){0};
     rz->dim = dim;
-    YF_texdt data;
+    /* XXX: Sampler params. set to zero. */
+    YF_texdt data = {0};
     data.dim = dim;
 
     switch (((YF_glyph *)yf_dict_next(font->glyphs, NULL, NULL))->bpp) {
