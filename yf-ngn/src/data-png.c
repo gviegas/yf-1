@@ -160,17 +160,16 @@ static T_tree *gen_codes(const uint8_t *lengths, size_t length_n,
 
     /* code gen. */
     memset(codes, 0, length_n*sizeof *codes);
+    size_t code_n = 0;
     for (size_t i = 0; i < length_n; i++) {
-        uint8_t len = lengths[i];
-        if (len != 0)
-            codes[i] = next_code[len]++;
+        if (lengths[i] != 0) {
+            codes[i] = next_code[lengths[i]]++;
+            code_n++;
+        }
     }
 
     /* tree creation */
-    size_t tree_n = 1;
-    /* XXX: This may overestimate considerably. */
-    for (size_t i = 1; i <= len_max; i++)
-        tree_n += len_count[i]*i;
+    size_t tree_n = code_n << 1;
     T_tree *tree = calloc(tree_n, sizeof *tree);
     if (tree == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
@@ -190,12 +189,6 @@ static T_tree *gen_codes(const uint8_t *lengths, size_t length_n,
         }
         tree[indx].leaf = 1;
         tree[indx].value = i;
-    }
-
-    if ((indx+1) < tree_n) {
-        void *tmp = realloc(tree, (indx+1)*sizeof *tree);
-        if (tmp != NULL)
-            tree = tmp;
     }
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
