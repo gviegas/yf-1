@@ -20,7 +20,8 @@ int yf_test_texture(void)
     YF_texdt data = {
         .data = bytes,
         .pixfmt = YF_PIXFMT_RGBA8UNORM,
-        .dim = {16, 16}
+        .dim = {16, 16},
+        .splr = {{YF_WRAPMODE_CLAMP}, {YF_FILTER_LINEAR}}
     };
 
     YF_TEST_PRINT("initdt", "&data", "tex");
@@ -31,6 +32,11 @@ int yf_test_texture(void)
     yf_print_tex(tex);
     yf_print_tex(NULL);
 
+    YF_TEST_PRINT("getdim", "tex", "");
+    YF_dim2 dim = yf_texture_getdim(tex);
+    if (dim.width != data.dim.width || dim.height != data.dim.height)
+        return -1;
+
     YF_TEST_PRINT("initdt", "&data", "tex2");
     YF_texture tex2 = yf_texture_initdt(&data);
     if (tex2 == NULL)
@@ -38,6 +44,16 @@ int yf_test_texture(void)
 
     yf_print_tex(tex2);
     yf_print_tex(NULL);
+
+    YF_TEST_PRINT("getsplr", "tex2", "");
+    YF_sampler splr = *yf_texture_getsplr(tex2);
+    if (splr.wrapmode.u != data.splr.wrapmode.u ||
+        splr.wrapmode.v != data.splr.wrapmode.v ||
+        splr.wrapmode.w != data.splr.wrapmode.w ||
+        splr.filter.mag != data.splr.filter.mag ||
+        splr.filter.min != data.splr.filter.min ||
+        splr.filter.mipmap != data.splr.filter.mipmap)
+        return -1;
 
     YF_TEST_PRINT("initdt", "&data", "tex3");
     YF_texture tex3 = yf_texture_initdt(&data);
@@ -58,6 +74,13 @@ int yf_test_texture(void)
     yf_print_tex(tex4);
     yf_print_tex(NULL);
 
+    YF_TEST_PRINT("getdim", "tex4", "");
+    dim = yf_texture_getdim(tex4);
+    if (dim.width != data.dim.width || dim.height != data.dim.height ||
+        dim.width == yf_texture_getdim(tex3).width ||
+        dim.height != yf_texture_getdim(tex3).height)
+        return -1;
+
     YF_TEST_PRINT("initdt", "&data", "tex5");
     YF_texture tex5 = yf_texture_initdt(&data);
     if (tex5 == NULL)
@@ -76,6 +99,20 @@ int yf_test_texture(void)
 
     yf_print_tex(tex6);
     yf_print_tex(NULL);
+
+    YF_TEST_PRINT("getsplr", "tex6", "");
+    yf_texture_getsplr(tex6)->wrapmode.v = YF_WRAPMODE_CLAMP;
+    yf_texture_getsplr(tex6)->filter.min = YF_FILTER_LINEAR;
+    splr = *yf_texture_getsplr(tex6);
+    if (splr.wrapmode.u != data.splr.wrapmode.u ||
+        splr.wrapmode.v == data.splr.wrapmode.v ||
+        splr.wrapmode.w != data.splr.wrapmode.w ||
+        splr.filter.mag != data.splr.filter.mag ||
+        splr.filter.min == data.splr.filter.min ||
+        splr.filter.mipmap != data.splr.filter.mipmap)
+        return -1;
+
+    yf_print_tex(tex6);
 
     YF_TEST_PRINT("deinit", "tex4", "");
     yf_texture_deinit(tex4);
