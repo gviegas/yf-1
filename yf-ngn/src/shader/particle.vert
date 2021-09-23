@@ -1,6 +1,6 @@
 /*
  * YF
- * particle.vert.glsl
+ * particle.vert
  *
  * Copyright © 2021 Gustavo C. Viegas.
  */

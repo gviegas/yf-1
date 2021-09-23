@@ -1,6 +1,6 @@
 /*
  * YF
- * terrain.frag.glsl
+ * terrain.frag
  *
  * Copyright © 2021 Gustavo C. Viegas.
  */

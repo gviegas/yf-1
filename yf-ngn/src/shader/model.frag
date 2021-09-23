@@ -1,8 +1,8 @@
 /*
  * YF
- * model.frag.glsl
+ * model.frag
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2021 Gustavo C. Viegas.
  */
 
 #version 460 core

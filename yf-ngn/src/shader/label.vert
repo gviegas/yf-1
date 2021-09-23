@@ -1,6 +1,6 @@
 /*
  * YF
- * terrain.vert.glsl
+ * label.vert
  *
  * Copyright © 2021 Gustavo C. Viegas.
  */
@@ -17,27 +17,26 @@
 layout(set=1, binding=0) uniform U_inst {
     mat4 m;
     mat4 mv;
+    float wdt;
+    float hgt;
 } inst_;
-
-/**
- * Height map.
- */
-layout(set=1, binding=2) uniform sampler2D hmap_;
 
 layout(location=0) in vec3 pos_;
 layout(location=1) in vec2 tc_;
-layout(location=2) in vec3 norm_;
+layout(location=4) in vec4 clr_;
 
 layout(location=0) out IO_v {
     vec2 tc;
-    vec3 norm;
+    vec4 clr;
 } v_;
 
 void main()
 {
-    const float y = texture(hmap_, tc_).r;
-    gl_Position = globl_.p * inst_.mv * vec4(pos_.x, y, pos_.z, 1.0);
+    vec2 s = vec2(inst_.wdt / globl_.vport[0].wdt,
+                  inst_.hgt / globl_.vport[0].hgt);
+
+    gl_Position = globl_.o * inst_.m * vec4(pos_.xy * s, pos_.z, 1.0);
 
     v_.tc = tc_;
-    v_.norm = norm_;
+    v_.clr = clr_;
 }

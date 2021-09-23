@@ -1,6 +1,6 @@
 /*
  * YF
- * quad.vert.glsl
+ * quad.vert
  *
  * Copyright © 2021 Gustavo C. Viegas.
  */
