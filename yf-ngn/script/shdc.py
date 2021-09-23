@@ -33,7 +33,7 @@ frag_srcs = [
 
 src_dir = 'tmp/shd/'
 dst_dir = 'bin/'
-lang = '.glsl'
+lang = ''
 
 compiler = 'tmp/shdc'
 
