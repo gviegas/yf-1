@@ -7,34 +7,9 @@
 
 #version 460 core
 
-#ifndef VPORT_N
-# error "VPORT_N not defined"
-#endif
+#extension GL_GOOGLE_include_directive : require
 
-layout(std140, column_major) uniform;
-
-/**
- * Type defining a viewport.
- */
-struct T_vport {
-    float x;
-    float y;
-    float wdt;
-    float hgt;
-    float near;
-    float far;
-};
-
-/**
- * Global uniform data.
- */
-layout(set=0, binding=0) uniform U_globl {
-    mat4 v;
-    mat4 p;
-    mat4 o;
-    mat4 vp;
-    T_vport vport[VPORT_N];
-} globl_;
+#include "shared.glsl"
 
 /**
  * Instance's uniform data.
