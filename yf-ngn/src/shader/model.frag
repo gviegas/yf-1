@@ -7,13 +7,9 @@
 
 #version 460 core
 
-#ifndef LIGHT_N
-# error "LIGHT_N not defined"
-#endif
+#extension GL_GOOGLE_include_directive : require
 
-#define TYPE_POINT  0
-#define TYPE_SPOT   1
-#define TYPE_DIRECT 2
+#include "light.glsl"
 
 #define METHOD_PBRSG 0
 #define METHOD_PBRMR 1
@@ -32,28 +28,6 @@
 #define ONE_OVER_PI 0.31830988618379067154
 
 layout(std140, column_major) uniform;
-
-/**
- * Type defining a light source.
- */
-struct T_light {
-    int unused;
-    int type;
-    float inten;
-    float range;
-    vec3 clr;
-    float ang_scale;
-    vec3 pos;
-    float ang_off;
-    vec3 dir;
-};
-
-/**
- * Light.
- */
-layout(set=0, binding=1) uniform U_light {
-    T_light l[LIGHT_N];
-} light_;
 
 /**
  * Material.
@@ -87,25 +61,6 @@ layout(location=0) in IO_v {
 } v_;
 
 layout(location=0) out vec4 clr_;
-
-/**
- * Range attenuation.
- */
-float attenuation(float dist, float range)
-{
-    return range > 0.0 ?
-           clamp(1.0 - pow(dist / range, 4.0), 0.0, 1.0) / pow(dist, 2.0) :
-           1.0 / pow(dist, 2.0);
-}
-
-/**
- * Angular attenuation.
- */
-float attenuation(vec3 dir, vec3 l, float ang_scale, float ang_off)
-{
-    float atn = clamp(dot(dir, -l) * ang_scale + ang_off, 0.0, 1.0);
-    return atn * atn;
-}
 
 /**
  * Microfacet (D).
