@@ -13,8 +13,8 @@
 layout(set=1, binding=1) uniform sampler2D tex_;
 
 layout(location=0) in IO_v {
-    vec2 tc;
     vec3 norm;
+    vec2 tc;
 } v_;
 
 layout(location=0) out vec4 clr_;
