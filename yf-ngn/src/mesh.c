@@ -607,9 +607,14 @@ void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
         const YF_primdt *prim = mesh->prims+i;
         const size_t off = mesh->offset + prim->data_off;
 
-        for (unsigned j = 0; j < prim->attr_n; j++)
+        for (unsigned j = 0; j < prim->attr_n; j++) {
             /* FIXME: This assumes an exactly match with state's 'vins'. */
-            yf_cmdbuf_setvbuf(cmdb, j, buf_, off + prim->attrs[j].data_off);
+            int vsemt = prim->attrs[j].vsemt;
+            unsigned vin = 0;
+            while ((vsemt >>= 1) != 0)
+                vin++;
+            yf_cmdbuf_setvbuf(cmdb, vin, buf_, off + prim->attrs[j].data_off);
+        }
 
         if (mesh->prims[i].indx_n > 0) {
             /* indexed draw */
