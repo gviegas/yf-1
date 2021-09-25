@@ -24,7 +24,7 @@
 
 /* Type defining attribute data. */
 typedef struct {
-    unsigned loc;
+    int vsemt;
     int vfmt;
     /* relative to 'primdt.data_off' */
     size_t data_off;
