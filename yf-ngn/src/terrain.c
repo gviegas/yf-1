@@ -62,6 +62,7 @@ static int init_grid(YF_terrain terr)
             .vert_n = vert_n,
             .indx_n = indx_n,
             .data_off = 0,
+            .vsemt_mask = YF_VSEMT_POS | YF_VSEMT_NORM | YF_VSEMT_TC,
             .attrs = (YF_attrdt[]){
                 [0] = {YF_VSEMT_POS, YF_VFMT_FLOAT3, 0},
                 [1] = {YF_VSEMT_NORM, YF_VFMT_FLOAT3, pos_sz},
