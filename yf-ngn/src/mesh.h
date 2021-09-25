@@ -38,6 +38,7 @@ typedef struct {
     /* relative to 'meshdt.data' */
     size_t data_off;
 
+    unsigned vsemt_mask;
     YF_attrdt *attrs;
     unsigned attr_n;
 
