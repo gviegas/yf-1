@@ -19,9 +19,9 @@ layout(set=1, binding=0) uniform U_inst {
     mat4 mv;
 } inst_;
 
-/* TODO: Other per-particle params., e.g. clrN, size... */
+/* TODO: Other particle attributes. */
 layout(location=0) in vec3 pos_;
-layout(location=4) in vec4 clr_;
+layout(location=5) in vec4 clr_;
 
 layout(location=0) out IO_v {
     vec4 clr;
