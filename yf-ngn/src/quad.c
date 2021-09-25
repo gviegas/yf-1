@@ -91,6 +91,7 @@ static int init_rect(YF_quad quad)
             .vert_n = 4,
             .indx_n = 6,
             .data_off = 0,
+            .vsemt_mask = YF_VSEMT_POS | YF_VSEMT_TC | YF_VSEMT_CLR,
             .attrs =  (YF_attrdt[]){
                 [0] = {YF_VSEMT_POS, YF_VFMT_FLOAT3, 0},
                 [1] = {YF_VSEMT_TC, YF_VFMT_FLOAT2, sizeof pos},
