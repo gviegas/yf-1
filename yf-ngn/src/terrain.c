@@ -13,7 +13,6 @@
 #include "yf-terrain.h"
 #include "node.h"
 #include "mesh.h"
-#include "resmgr.h"
 
 struct YF_terrain_o {
     YF_node node;
@@ -37,8 +36,8 @@ static int init_grid(YF_terrain terr)
     const unsigned vert_n = (wdt + 1) * (dep + 1);
     const unsigned indx_n = wdt * dep * 6;
     const size_t pos_sz = sizeof(float[3]) * vert_n;
-    const size_t tc_sz = sizeof(float[2]) * vert_n;
     const size_t norm_sz = sizeof(float[3]) * vert_n;
+    const size_t tc_sz = sizeof(float[2]) * vert_n;
 
     int itype;
     size_t indx_sz;
@@ -50,7 +49,7 @@ static int init_grid(YF_terrain terr)
         indx_sz = indx_n << 2;
     }
 
-    const size_t data_sz = pos_sz + tc_sz + norm_sz + indx_sz;
+    const size_t data_sz = pos_sz + norm_sz + tc_sz + indx_sz;
     void *dt = malloc(data_sz);
     if (dt == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
@@ -64,13 +63,13 @@ static int init_grid(YF_terrain terr)
             .indx_n = indx_n,
             .data_off = 0,
             .attrs = (YF_attrdt[]){
-                [0] = {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
-                [1] = {YF_RESLOC_TC, YF_VFMT_FLOAT2, pos_sz},
-                [2] = {YF_RESLOC_NORM, YF_VFMT_FLOAT3, pos_sz + tc_sz}
+                [0] = {YF_VSEMT_POS, YF_VFMT_FLOAT3, 0},
+                [1] = {YF_VSEMT_NORM, YF_VFMT_FLOAT3, pos_sz},
+                [2] = {YF_VSEMT_TC, YF_VFMT_FLOAT2, pos_sz + norm_sz}
             },
             .attr_n = 3,
             .itype = itype,
-            .indx_data_off = pos_sz + tc_sz + norm_sz,
+            .indx_data_off = pos_sz + norm_sz + tc_sz,
             .matl = NULL
         },
         .prim_n = 1,
@@ -115,8 +114,8 @@ static int init_grid(YF_terrain terr)
     float tc_off = pos_off / 2.0f;
 
     float *pos_dt = dt;
-    float *tc_dt = (float *)( (char *)pos_dt + pos_sz );
-    float *norm_dt = (float *)( (char *)tc_dt + tc_sz );
+    float *norm_dt = (float *)( (char *)pos_dt + pos_sz );
+    float *tc_dt = (float *)( (char *)norm_dt + norm_sz );
 
     for (unsigned i = 0; i <= wdt; i++) {
         float x = x0 + pos_off * (float)i;
@@ -134,12 +133,12 @@ static int init_grid(YF_terrain terr)
             *pos_dt++ = 0.0f;
             *pos_dt++ = z;
 
-            *tc_dt++ = s;
-            *tc_dt++ = t;
-
             *norm_dt++ = 0.0f;
             *norm_dt++ = 1.0f;
             *norm_dt++ = 0.0f;
+
+            *tc_dt++ = s;
+            *tc_dt++ = t;
         }
     }
 
