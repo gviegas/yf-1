@@ -41,6 +41,59 @@ static YF_dtable globl_ = NULL;
 /* Sizes used for instance allocations, indexed by 'resrq' values. */
 static unsigned allocn_[YF_RESRQ_N] = {0};
 
+/* Vertex inputs. */
+/* TODO: This should be shared with mesh. */
+static const YF_vinput vins_[] = {
+    [0] = {
+        .attrs = &(YF_vattr){YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+        .attr_n = 1,
+        .stride = sizeof(float[3]),
+        .vrate = YF_VRATE_VERT
+    },
+    [1] = {
+        .attrs = &(YF_vattr){YF_RESLOC_NORM, YF_VFMT_FLOAT3, 0},
+        .attr_n = 1,
+        .stride = sizeof(float[3]),
+        .vrate = YF_VRATE_VERT
+    },
+    [2] = {
+        .attrs = &(YF_vattr){YF_RESLOC_TGNT, YF_VFMT_FLOAT4, 0},
+        .attr_n = 1,
+        .stride = sizeof(float[4]),
+        .vrate = YF_VRATE_VERT
+    },
+    [3] = {
+        .attrs = &(YF_vattr){YF_RESLOC_TC, YF_VFMT_FLOAT2, 0},
+        .attr_n = 1,
+        .stride = sizeof(float[2]),
+        .vrate = YF_VRATE_VERT
+    },
+    [4] = {
+        .attrs = &(YF_vattr){YF_RESLOC_TC1, YF_VFMT_FLOAT2, 0},
+        .attr_n = 1,
+        .stride = sizeof(float[2]),
+        .vrate = YF_VRATE_VERT
+    },
+    [5] = {
+        .attrs = &(YF_vattr){YF_RESLOC_CLR, YF_VFMT_FLOAT4, 0},
+        .attr_n = 1,
+        .stride = sizeof(float[4]),
+        .vrate = YF_VRATE_VERT
+    },
+    [6] = {
+        .attrs = &(YF_vattr){YF_RESLOC_JNTS, YF_VFMT_UBYTE4, 0},
+        .attr_n = 1,
+        .stride = 4,
+        .vrate = YF_VRATE_VERT
+    },
+    [7] = {
+        .attrs = &(YF_vattr){YF_RESLOC_WGTS, YF_VFMT_FLOAT4, 0},
+        .attr_n = 1,
+        .stride = sizeof(float[4]),
+        .vrate = YF_VRATE_VERT
+    }
+};
+
 /* Makes a string to use as the pathname of a shader module.
    The caller is responsible for deallocating the returned string. */
 static char *make_shdpath(int nodeobj, int stage, unsigned elements)
@@ -185,58 +238,8 @@ static int init_mdl(T_entry *entry, unsigned elements)
     const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
-    /* TODO: This should be shared with mesh. */
-    const YF_vinput vins[] = {
-        [0] = {
-            .attrs = &(YF_vattr){YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[3]),
-            .vrate = YF_VRATE_VERT
-        },
-        [1] = {
-            .attrs = &(YF_vattr){YF_RESLOC_NORM, YF_VFMT_FLOAT3, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[3]),
-            .vrate = YF_VRATE_VERT
-        },
-        [2] = {
-            .attrs = &(YF_vattr){YF_RESLOC_TGNT, YF_VFMT_FLOAT4, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[4]),
-            .vrate = YF_VRATE_VERT
-        },
-        [3] = {
-            .attrs = &(YF_vattr){YF_RESLOC_TC, YF_VFMT_FLOAT2, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[2]),
-            .vrate = YF_VRATE_VERT
-        },
-        [4] = {
-            .attrs = &(YF_vattr){YF_RESLOC_TC1, YF_VFMT_FLOAT2, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[2]),
-            .vrate = YF_VRATE_VERT
-        },
-        [5] = {
-            .attrs = &(YF_vattr){YF_RESLOC_CLR, YF_VFMT_FLOAT4, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[4]),
-            .vrate = YF_VRATE_VERT
-        },
-        [6] = {
-            .attrs = &(YF_vattr){YF_RESLOC_JNTS, YF_VFMT_UBYTE4, 0},
-            .attr_n = 1,
-            .stride = 4,
-            .vrate = YF_VRATE_VERT
-        },
-        [7] = {
-            .attrs = &(YF_vattr){YF_RESLOC_WGTS, YF_VFMT_FLOAT4, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[4]),
-            .vrate = YF_VRATE_VERT
-        }
-    };
-    const unsigned vin_n = sizeof vins / sizeof *vins;
+    const YF_vinput *vins = vins_;
+    const unsigned vin_n = sizeof vins_ / sizeof *vins_;
 
     /* graphics state */
     const YF_gconf conf = {
@@ -324,27 +327,8 @@ static int init_terr(T_entry *entry)
     const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
-    const YF_vinput vins[] = {
-        [0] = {
-            .attrs = &(YF_vattr){YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[3]),
-            .vrate = YF_VRATE_VERT
-        },
-        [1] = {
-            .attrs = &(YF_vattr){YF_RESLOC_NORM, YF_VFMT_FLOAT3, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[3]),
-            .vrate = YF_VRATE_VERT
-        },
-        [2] = {
-            .attrs = &(YF_vattr){YF_RESLOC_TC, YF_VFMT_FLOAT2, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[2]),
-            .vrate = YF_VRATE_VERT
-        }
-    };
-    const unsigned vin_n = sizeof vins / sizeof *vins;
+    const YF_vinput *vins = vins_;
+    const unsigned vin_n = sizeof vins_ / sizeof *vins_;
 
     /* graphics state */
     const YF_gconf conf = {
@@ -431,21 +415,8 @@ static int init_part(T_entry *entry)
     const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
-    const YF_vinput vins[] = {
-        [0] = {
-            .attrs = &(YF_vattr){YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[3]),
-            .vrate = YF_VRATE_VERT
-        },
-        [1] = {
-            .attrs = &(YF_vattr){YF_RESLOC_CLR, YF_VFMT_FLOAT4, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[4]),
-            .vrate = YF_VRATE_VERT
-        }
-    };
-    const unsigned vin_n = sizeof vins / sizeof *vins;
+    const YF_vinput *vins = vins_;
+    const unsigned vin_n = sizeof vins_ / sizeof *vins_;
 
     /* graphics state */
     const YF_gconf conf = {
@@ -532,27 +503,8 @@ static int init_quad(T_entry *entry)
     const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
-    const YF_vinput vins[] = {
-        [0] = {
-            .attrs = &(YF_vattr){YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[3]),
-            .vrate = YF_VRATE_VERT
-        },
-        [1] = {
-            .attrs = &(YF_vattr){YF_RESLOC_TC, YF_VFMT_FLOAT2, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[2]),
-            .vrate = YF_VRATE_VERT
-        },
-        [2] = {
-            .attrs = &(YF_vattr){YF_RESLOC_CLR, YF_VFMT_FLOAT4, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[4]),
-            .vrate = YF_VRATE_VERT
-        }
-    };
-    const unsigned vin_n = sizeof vins / sizeof *vins;
+    const YF_vinput *vins = vins_;
+    const unsigned vin_n = sizeof vins_ / sizeof *vins_;
 
     /* graphics state */
     const YF_gconf conf = {
@@ -639,27 +591,8 @@ static int init_labl(T_entry *entry)
     const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
-    const YF_vinput vins[] = {
-        [0] = {
-            .attrs = &(YF_vattr){YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[3]),
-            .vrate = YF_VRATE_VERT
-        },
-        [1] = {
-            .attrs = &(YF_vattr){YF_RESLOC_TC, YF_VFMT_FLOAT2, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[2]),
-            .vrate = YF_VRATE_VERT
-        },
-        [2] = {
-            .attrs = &(YF_vattr){YF_RESLOC_CLR, YF_VFMT_FLOAT4, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[4]),
-            .vrate = YF_VRATE_VERT
-        }
-    };
-    const unsigned vin_n = sizeof vins / sizeof *vins;
+    const YF_vinput *vins = vins_;
+    const unsigned vin_n = sizeof vins_ / sizeof *vins_;
 
     /* graphics state */
     const YF_gconf conf = {
