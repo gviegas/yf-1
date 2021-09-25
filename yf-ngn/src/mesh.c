@@ -714,7 +714,7 @@ void yf_print_mesh(YF_mesh mesh)
                    "    vertex count: %u\n"
                    "    index count: %u\n"
                    "    data offset: %zu\n"
-                   "    vertex sematic mask: 0x%.4x\n"
+                   "    vertex sematic mask: %xh\n"
                    "    attributes (%u):\n",
                    i, mesh->prims[i].topology, mesh->prims[i].vert_n,
                    mesh->prims[i].indx_n, mesh->prims[i].data_off,
@@ -722,7 +722,7 @@ void yf_print_mesh(YF_mesh mesh)
 
             for (unsigned j = 0; j < mesh->prims[i].attr_n; j++)
                 printf("     attribute [%u]:\n"
-                       "      vertex semantic: %d\n"
+                       "      vertex semantic: %xh\n"
                        "      vertex format: %d\n"
                        "      vertex data offset: %zu\n",
                        j, mesh->prims[i].attrs[j].vsemt,
