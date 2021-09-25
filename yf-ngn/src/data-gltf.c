@@ -575,15 +575,15 @@ typedef struct {
 typedef struct {
     struct {
 #define YF_GLTF_ATTR_POS  0
-#define YF_GLTF_ATTR_NORM 2
-#define YF_GLTF_ATTR_TGNT 3
-#define YF_GLTF_ATTR_TC0  1
-#define YF_GLTF_ATTR_TC1  7
-#define YF_GLTF_ATTR_CLR0 4
-#define YF_GLTF_ATTR_JNT0 5
-#define YF_GLTF_ATTR_WGT0 6
+#define YF_GLTF_ATTR_NORM 1
+#define YF_GLTF_ATTR_TGNT 2
+#define YF_GLTF_ATTR_TC0  3
+#define YF_GLTF_ATTR_TC1  4
+#define YF_GLTF_ATTR_CLR0 5
+#define YF_GLTF_ATTR_JNT0 6
+#define YF_GLTF_ATTR_WGT0 7
 #define YF_GLTF_ATTR_N    8
-        /* XXX: Expected to match shader locations. */
+        /* XXX: Expected to match 'VSEMT' order. */
         T_int attributes[YF_GLTF_ATTR_N];
         T_int indices;
         T_int material;
@@ -3712,7 +3712,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 continue;
 
             /* XXX */
-            data.prims[i].attrs[j].loc = k;
+            data.prims[i].attrs[j].vsemt = 1 << k;
 
             const T_int comp_type = gltf->accessors.v[attr_acc].comp_type;
             const int type = gltf->accessors.v[attr_acc].type;
