@@ -716,10 +716,10 @@ void yf_print_mesh(YF_mesh mesh)
 
             for (unsigned j = 0; j < mesh->prims[i].attr_n; j++)
                 printf("     attribute [%u]:\n"
-                       "      location: %u\n"
+                       "      vertex semantic: %d\n"
                        "      vertex format: %d\n"
                        "      vertex data offset: %zu\n",
-                       j, mesh->prims[i].attrs[j].loc,
+                       j, mesh->prims[i].attrs[j].vsemt,
                        mesh->prims[i].attrs[j].vfmt,
                        mesh->prims[i].attrs[j].data_off);
 
