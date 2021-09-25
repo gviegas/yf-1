@@ -14,7 +14,6 @@
 #include "yf-particle.h"
 #include "node.h"
 #include "mesh.h"
-#include "resmgr.h"
 
 #undef YF_NRND
 #define YF_NRND ((float)rand() / (float)RAND_MAX)
@@ -85,8 +84,8 @@ static int init_points(YF_particle part)
             .indx_n = 0,
             .data_off = 0,
             .attrs = (YF_attrdt[]){
-                [0] = {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
-                [1] = {YF_RESLOC_CLR, YF_VFMT_FLOAT4, pos_sz}
+                [0] = {YF_VSEMT_POS, YF_VFMT_FLOAT3, 0},
+                [1] = {YF_VSEMT_CLR, YF_VFMT_FLOAT4, pos_sz}
             },
             .attr_n = 2,
             .itype = 0,
