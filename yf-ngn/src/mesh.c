@@ -714,10 +714,11 @@ void yf_print_mesh(YF_mesh mesh)
                    "    vertex count: %u\n"
                    "    index count: %u\n"
                    "    data offset: %zu\n"
+                   "    vertex sematic mask: 0x%.4x\n"
                    "    attributes (%u):\n",
                    i, mesh->prims[i].topology, mesh->prims[i].vert_n,
                    mesh->prims[i].indx_n, mesh->prims[i].data_off,
-                   mesh->prims[i].attr_n);
+                   mesh->prims[i].vsemt_mask, mesh->prims[i].attr_n);
 
             for (unsigned j = 0; j < mesh->prims[i].attr_n; j++)
                 printf("     attribute [%u]:\n"
