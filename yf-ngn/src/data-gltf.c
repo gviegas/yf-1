@@ -3693,6 +3693,8 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
         data.prims[i].vert_n = gltf->accessors.v[pos_acc].count;
 
+        data.prims[i].vsemt_mask = 0;
+
         size_t attr_n = 0;
         for (size_t j = 0; j < YF_GLTF_ATTR_N; j++) {
             if (primitives->v[i].attributes[j] != YF_INT_MIN)
@@ -3713,6 +3715,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
             /* XXX */
             data.prims[i].attrs[j].vsemt = 1 << k;
+            data.prims[i].vsemt_mask |= 1 << k;
 
             const T_int comp_type = gltf->accessors.v[attr_acc].comp_type;
             const int type = gltf->accessors.v[attr_acc].type;
