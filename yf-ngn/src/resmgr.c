@@ -194,30 +194,42 @@ static int init_mdl(T_entry *entry, unsigned elements)
             .vrate = YF_VRATE_VERT
         },
         [1] = {
-            .attrs = &(YF_vattr){YF_RESLOC_TC, YF_VFMT_FLOAT2, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[2]),
-            .vrate = YF_VRATE_VERT
-        },
-        [2] = {
             .attrs = &(YF_vattr){YF_RESLOC_NORM, YF_VFMT_FLOAT3, 0},
             .attr_n = 1,
             .stride = sizeof(float[3]),
             .vrate = YF_VRATE_VERT
         },
+        [2] = {
+            .attrs = &(YF_vattr){YF_RESLOC_TGNT, YF_VFMT_FLOAT4, 0},
+            .attr_n = 1,
+            .stride = sizeof(float[4]),
+            .vrate = YF_VRATE_VERT
+        },
         [3] = {
+            .attrs = &(YF_vattr){YF_RESLOC_TC, YF_VFMT_FLOAT2, 0},
+            .attr_n = 1,
+            .stride = sizeof(float[2]),
+            .vrate = YF_VRATE_VERT
+        },
+        [4] = {
+            .attrs = &(YF_vattr){YF_RESLOC_TC1, YF_VFMT_FLOAT2, 0},
+            .attr_n = 1,
+            .stride = sizeof(float[2]),
+            .vrate = YF_VRATE_VERT
+        },
+        [5] = {
             .attrs = &(YF_vattr){YF_RESLOC_CLR, YF_VFMT_FLOAT4, 0},
             .attr_n = 1,
             .stride = sizeof(float[4]),
             .vrate = YF_VRATE_VERT
         },
-        [4] = {
+        [6] = {
             .attrs = &(YF_vattr){YF_RESLOC_JNTS, YF_VFMT_UBYTE4, 0},
             .attr_n = 1,
             .stride = 4,
             .vrate = YF_VRATE_VERT
         },
-        [5] = {
+        [7] = {
             .attrs = &(YF_vattr){YF_RESLOC_WGTS, YF_VFMT_FLOAT4, 0},
             .attr_n = 1,
             .stride = sizeof(float[4]),
@@ -320,15 +332,15 @@ static int init_terr(T_entry *entry)
             .vrate = YF_VRATE_VERT
         },
         [1] = {
-            .attrs = &(YF_vattr){YF_RESLOC_TC, YF_VFMT_FLOAT2, 0},
-            .attr_n = 1,
-            .stride = sizeof(float[2]),
-            .vrate = YF_VRATE_VERT
-        },
-        [2] = {
             .attrs = &(YF_vattr){YF_RESLOC_NORM, YF_VFMT_FLOAT3, 0},
             .attr_n = 1,
             .stride = sizeof(float[3]),
+            .vrate = YF_VRATE_VERT
+        },
+        [2] = {
+            .attrs = &(YF_vattr){YF_RESLOC_TC, YF_VFMT_FLOAT2, 0},
+            .attr_n = 1,
+            .stride = sizeof(float[2]),
             .vrate = YF_VRATE_VERT
         }
     };

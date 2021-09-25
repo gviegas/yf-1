@@ -71,18 +71,13 @@ void yf_resmgr_clear(void);
 #define YF_RESBIND_EMIS  6
 
 /* Vertex input locations. */
-#define YF_RESLOC_POS   0
-#define YF_RESLOC_TC    1
-#define YF_RESLOC_NORM  2
-#define YF_RESLOC_TGNT  3
-#define YF_RESLOC_CLR   4
-#define YF_RESLOC_JNTS  5
-#define YF_RESLOC_WGTS  6
-#define YF_RESLOC_TC1   7
-#define YF_RESLOC_TC2   8
-#define YF_RESLOC_CLR1  9
-#define YF_RESLOC_CLR2  10
-#define YF_RESLOC_JNTS1 11
-#define YF_RESLOC_WGTS1 12
+#define YF_RESLOC_POS  0
+#define YF_RESLOC_NORM 1
+#define YF_RESLOC_TGNT 2
+#define YF_RESLOC_TC   3
+#define YF_RESLOC_TC1  4
+#define YF_RESLOC_CLR  5
+#define YF_RESLOC_JNTS 6
+#define YF_RESLOC_WGTS 7
 
 #endif /* YF_RESMGR_H */
