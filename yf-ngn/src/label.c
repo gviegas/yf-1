@@ -16,7 +16,6 @@
 #include "yf-label.h"
 #include "node.h"
 #include "mesh.h"
-#include "resmgr.h"
 #include "texture.h"
 #include "font.h"
 
@@ -100,9 +99,9 @@ static int init_rect(YF_label labl)
             .indx_n = 6,
             .data_off = 0,
             .attrs =  (YF_attrdt[]){
-                [0] = {YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
-                [1] = {YF_RESLOC_TC, YF_VFMT_FLOAT2, sizeof pos},
-                [2] = {YF_RESLOC_CLR, YF_VFMT_FLOAT4, sizeof pos + sizeof tc}
+                [0] = {YF_VSEMT_POS, YF_VFMT_FLOAT3, 0},
+                [1] = {YF_VSEMT_TC, YF_VFMT_FLOAT2, sizeof pos},
+                [2] = {YF_VSEMT_CLR, YF_VFMT_FLOAT4, sizeof pos + sizeof tc}
             },
             .attr_n = 3,
             .itype = YF_ITYPE_USHORT,
