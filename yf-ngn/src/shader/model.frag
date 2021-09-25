@@ -14,8 +14,8 @@
 
 layout(location=0) in IO_v {
     vec3 pos;
-    vec2 tc;
     vec3 norm;
+    vec2 tc;
     vec4 clr;
     vec3 eye;
 } v_;

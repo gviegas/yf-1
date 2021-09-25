@@ -38,17 +38,18 @@ layout(set=1, binding=0) uniform U_inst {
 } inst_;
 
 layout(location=0) in vec3 pos_;
-layout(location=1) in vec2 tc_;
-layout(location=2) in vec3 norm_;
-layout(location=3) in vec4 tgnt_;
-layout(location=4) in vec4 clr_;
-layout(location=5) in uvec4 jnts_;
-layout(location=6) in vec4 wgts_;
+layout(location=1) in vec3 norm_;
+layout(location=2) in vec4 tgnt_;
+layout(location=3) in vec2 tc_;
+layout(location=4) in vec2 tc1_;
+layout(location=5) in vec4 clr_;
+layout(location=6) in uvec4 jnts_;
+layout(location=7) in vec4 wgts_;
 
 layout(location=0) out IO_v {
     vec3 pos;
-    vec2 tc;
     vec3 norm;
+    vec2 tc;
     vec4 clr;
     vec3 eye;
 } v_;
@@ -93,8 +94,8 @@ void main()
     gl_Position = globl_.vp * pos;
 
     v_.pos = pos.xyz / pos.w;
-    v_.tc = tc_;
     v_.norm = norm;
+    v_.tc = tc_;
     v_.clr = clr_;
     v_.eye = globl_.v[3].xyz - pos.xyz;
 }
