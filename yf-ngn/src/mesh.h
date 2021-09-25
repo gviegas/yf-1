@@ -12,6 +12,16 @@
 
 #include "yf-mesh.h"
 
+/* Vertex attribute semantics. */
+#define YF_VSEMT_POS  0x0001
+#define YF_VSEMT_NORM 0x0002
+#define YF_VSEMT_TGNT 0x0004
+#define YF_VSEMT_TC   0x0008
+#define YF_VSEMT_TC1  0x0010
+#define YF_VSEMT_CLR  0x0020
+#define YF_VSEMT_JNTS 0x0040
+#define YF_VSEMT_WGTS 0x0080
+
 /* Type defining attribute data. */
 typedef struct {
     unsigned loc;
