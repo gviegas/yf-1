@@ -26,9 +26,10 @@ int yf_test_mesh(void)
         .vert_n = 6,
         .indx_n = 9,
         .data_off = 0,
+        .vsemt_mask = YF_VSEMT_POS | YF_VSEMT_CLR,
         .attrs = (YF_attrdt[]){
-            [0] = {20, YF_VFMT_FLOAT3, 0},
-            [1] = {13, YF_VFMT_FLOAT4, 6 * sizeof(float[3])}
+            [0] = {YF_VSEMT_POS, YF_VFMT_FLOAT3, 0},
+            [1] = {YF_VSEMT_CLR, YF_VFMT_FLOAT4, 6 * sizeof(float[3])}
         },
         .attr_n = 2,
         .itype = YF_ITYPE_USHORT,
