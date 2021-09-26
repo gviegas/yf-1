@@ -923,27 +923,27 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
     unif.tex_mask = 0;
 
     /* normal map */
-    if (prop->normal.tex != NULL) {
-        if (yf_texture_copyres(prop->normal.tex, inst_dtb, inst_alloc,
-                               YF_RESBIND_NORM, 0) != 0)
+    if (prop->normal.tex.tex != NULL) {
+        if (yf_texture_copyres2(&prop->normal.tex, inst_dtb, inst_alloc,
+                                YF_RESBIND_NORM, 0) != 0)
             return -1;
         unif.tex_mask |= YF_TNORM;
     }
     unif.norm_fac = prop->normal.scale;
 
     /* occlusion map */
-    if (prop->occlusion.tex != NULL) {
-        if (yf_texture_copyres(prop->occlusion.tex, inst_dtb, inst_alloc,
-                               YF_RESBIND_OCC, 0) != 0)
+    if (prop->occlusion.tex.tex != NULL) {
+        if (yf_texture_copyres2(&prop->occlusion.tex, inst_dtb, inst_alloc,
+                                YF_RESBIND_OCC, 0) != 0)
             return -1;
         unif.tex_mask |= YF_TOCC;
     }
     unif.occ_fac = prop->occlusion.strength;
 
     /* emissive map */
-    if (prop->emissive.tex != NULL) {
-        if (yf_texture_copyres(prop->emissive.tex, inst_dtb, inst_alloc,
-                               YF_RESBIND_EMIS, 0) != 0)
+    if (prop->emissive.tex.tex != NULL) {
+        if (yf_texture_copyres2(&prop->emissive.tex, inst_dtb, inst_alloc,
+                                YF_RESBIND_EMIS, 0) != 0)
             return -1;
         unif.tex_mask |= YF_TEMIS;
     }
@@ -952,16 +952,16 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
     /* pbr */
     switch (prop->pbr) {
     case YF_PBR_SPECGLOSS:
-        if (prop->pbrsg.diffuse_tex != NULL) {
-            if (yf_texture_copyres(prop->pbrsg.diffuse_tex, inst_dtb,
-                                   inst_alloc, YF_RESBIND_CLR, 0) != 0)
+        if (prop->pbrsg.diffuse_tex.tex != NULL) {
+            if (yf_texture_copyres2(&prop->pbrsg.diffuse_tex, inst_dtb,
+                                    inst_alloc, YF_RESBIND_CLR, 0) != 0)
                 return -1;
             unif.tex_mask |= YF_TCLR;
         }
 
-        if (prop->pbrsg.spec_gloss_tex != NULL) {
-            if (yf_texture_copyres(prop->pbrsg.spec_gloss_tex, inst_dtb,
-                                   inst_alloc, YF_RESBIND_PBR, 0) != 0)
+        if (prop->pbrsg.spec_gloss_tex.tex != NULL) {
+            if (yf_texture_copyres2(&prop->pbrsg.spec_gloss_tex, inst_dtb,
+                                    inst_alloc, YF_RESBIND_PBR, 0) != 0)
                 return -1;
             unif.tex_mask |= YF_TPBR;
         }
@@ -974,16 +974,16 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
         break;
 
     case YF_PBR_METALROUGH:
-        if (prop->pbrmr.color_tex != NULL) {
-            if (yf_texture_copyres(prop->pbrmr.color_tex, inst_dtb,
-                                   inst_alloc, YF_RESBIND_CLR, 0) != 0)
+        if (prop->pbrmr.color_tex.tex != NULL) {
+            if (yf_texture_copyres2(&prop->pbrmr.color_tex, inst_dtb,
+                                    inst_alloc, YF_RESBIND_CLR, 0) != 0)
                 return -1;
             unif.tex_mask |= YF_TCLR;
         }
 
-        if (prop->pbrmr.metal_rough_tex != NULL) {
-            if (yf_texture_copyres(prop->pbrmr.metal_rough_tex, inst_dtb,
-                                   inst_alloc, YF_RESBIND_PBR, 0) != 0)
+        if (prop->pbrmr.metal_rough_tex.tex != NULL) {
+            if (yf_texture_copyres2(&prop->pbrmr.metal_rough_tex, inst_dtb,
+                                    inst_alloc, YF_RESBIND_PBR, 0) != 0)
                 return -1;
             unif.tex_mask |= YF_TPBR;
         }
@@ -997,9 +997,9 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
         break;
 
     case YF_PBR_NONE:
-        if (prop->nopbr.color_tex != NULL) {
-            if (yf_texture_copyres(prop->nopbr.color_tex, inst_dtb,
-                                   inst_alloc, YF_RESBIND_CLR, 0) != 0)
+        if (prop->nopbr.color_tex.tex != NULL) {
+            if (yf_texture_copyres2(&prop->nopbr.color_tex, inst_dtb,
+                                    inst_alloc, YF_RESBIND_CLR, 0) != 0)
                 return -1;
             unif.tex_mask |= YF_TCLR;
         }
