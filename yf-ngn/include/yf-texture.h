@@ -49,6 +49,15 @@ YF_texture yf_texture_init(const char *pathname, size_t index,
                            const YF_sampler *splr, int uvset);
 
 /**
+ * Gets the default reference of a texture.
+ *
+ * @param tex: The texture.
+ * @param ref: The destination for the reference.
+ * @return: 'ref'.
+ */
+YF_texref *yf_texture_getref(YF_texture tex, YF_texref *ref);
+
+/**
  * Gets the dimensions of a texture.
  *
  * @param tex: The texture.

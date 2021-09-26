@@ -223,6 +223,17 @@ YF_texture yf_texture_init(const char *pathname, size_t index,
     return tex;
 }
 
+YF_texref *yf_texture_getref(YF_texture tex, YF_texref *ref)
+{
+    assert(tex != NULL);
+    assert(ref != NULL);
+
+    ref->tex = tex;
+    ref->splr = tex->splr;
+    ref->uvset = tex->uvset;
+    return ref;
+}
+
 YF_dim2 yf_texture_getdim(YF_texture tex)
 {
     assert(tex != NULL);
