@@ -298,9 +298,9 @@ int yf_test_composition(void)
             .mag = YF_FILTER_LINEAR
         }
     };
-    YF_texture tex1 = yf_texture_init("tmp/cube.png", 0, &splr);
+    YF_texture tex1 = yf_texture_init("tmp/cube.png", 0, &splr, YF_UVSET_0);
     assert(tex1 != NULL);
-    YF_texture tex2 = yf_texture_init("tmp/cube2.png", 0, &splr);
+    YF_texture tex2 = yf_texture_init("tmp/cube2.png", 0, &splr, YF_UVSET_0);
     assert(tex2 != NULL);
 
     YF_font font1 = yf_font_init("tmp/serif.ttf");
