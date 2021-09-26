@@ -120,7 +120,7 @@ int yf_test_quad(void)
     vars_.scn = yf_scene_init();
     assert(vars_.scn != NULL);
 
-    vars_.tex = yf_texture_init("tmp/quad.png", 0, NULL);
+    vars_.tex = yf_texture_init("tmp/quad.png", 0, NULL, YF_UVSET_0);
     assert(vars_.tex != NULL);
 
     YF_TEST_PRINT("init", "", "quad");
