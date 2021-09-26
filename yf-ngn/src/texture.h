@@ -32,4 +32,8 @@ int yf_texture_setdata(YF_texture tex, YF_off2 off, YF_dim2 dim,
 int yf_texture_copyres(YF_texture tex, YF_dtable dtb, unsigned alloc_i,
                        unsigned binding, unsigned element);
 
+/* Copies image data from a texture reference to a dtable resource. */
+int yf_texture_copyres2(const YF_texref *ref, YF_dtable dtb, unsigned alloc_i,
+                        unsigned binding, unsigned element);
+
 #endif /* YF_TEXTURE_H */

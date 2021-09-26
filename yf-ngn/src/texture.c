@@ -336,6 +336,19 @@ int yf_texture_copyres(YF_texture tex, YF_dtable dtb, unsigned alloc_i,
                              &tex->imge->img, &tex->layer, &tex->splr);
 }
 
+int yf_texture_copyres2(const YF_texref *ref, YF_dtable dtb, unsigned alloc_i,
+                        unsigned binding, unsigned element)
+{
+    assert(ref != NULL);
+    assert(dtb != NULL);
+    assert(ref->tex != NULL);
+
+    YF_slice elem = {element, 1};
+    YF_texture tex = ref->tex;
+    return yf_dtable_copyimg(dtb, alloc_i, binding, elem,
+                             &tex->imge->img, &tex->layer, &ref->splr);
+}
+
 /* Called by 'coreobj' on exit. */
 void yf_unsettex(void)
 {
