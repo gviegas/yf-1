@@ -64,6 +64,14 @@ YF_sampler *yf_texture_getsplr(YF_texture tex);
 int yf_texture_getuv(YF_texture tex);
 
 /**
+ * Sets the 'UVSET' value for a texture.
+ *
+ * @param tex: The texture.
+ * @param uvset: The 'UVSET' value to set.
+ */
+void yf_texture_setuv(YF_texture tex, int uvset);
+
+/**
  * Deinitializes a texture.
  *
  * @param tex: The texture to deinitialize. Can be 'NULL'.

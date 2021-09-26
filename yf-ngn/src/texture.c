@@ -244,6 +244,14 @@ int yf_texture_getuv(YF_texture tex)
     return tex->uvset;
 }
 
+void yf_texture_setuv(YF_texture tex, int uvset)
+{
+    assert(tex != NULL);
+    assert(uvset == YF_UVSET_0 || uvset == YF_UVSET_1);
+
+    tex->uvset = uvset;
+}
+
 void yf_texture_deinit(YF_texture tex)
 {
     if (tex == NULL)
