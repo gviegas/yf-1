@@ -4174,6 +4174,9 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
     }
 
+    /* XXX: Default 'UVSET' value. */
+    data.uvset = YF_UVSET_0;
+
     cont->imgs[image] = yf_texture_initdt(&data);
     free(data.data);
     if (cont->imgs[image] == NULL)
