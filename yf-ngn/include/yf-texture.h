@@ -20,6 +20,12 @@ YF_DECLS_BEGIN
 typedef struct YF_texture_o *YF_texture;
 
 /**
+ * Texture coordinate sets.
+ */
+#define YF_UVSET_0 0
+#define YF_UVSET_1 1
+
+/**
  * Initializes a new texture.
  *
  * @param pathname: The pathname of the texture file.
