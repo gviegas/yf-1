@@ -77,12 +77,12 @@ void yf_print_matl(YF_material matl)
                "   spec-gloss texture: %p\n"
                "   specular factor: [%.4f, %.4f, %.4f]\n"
                "   glossiness factor: %.4f\n",
-               (void *)matl->prop.pbrsg.diffuse_tex,
+               (void *)matl->prop.pbrsg.diffuse_tex.tex,
                matl->prop.pbrsg.diffuse_fac[0],
                matl->prop.pbrsg.diffuse_fac[1],
                matl->prop.pbrsg.diffuse_fac[2],
                matl->prop.pbrsg.diffuse_fac[3],
-               (void *)matl->prop.pbrsg.spec_gloss_tex,
+               (void *)matl->prop.pbrsg.spec_gloss_tex.tex,
                matl->prop.pbrsg.specular_fac[0],
                matl->prop.pbrsg.specular_fac[1],
                matl->prop.pbrsg.specular_fac[2],
@@ -95,17 +95,17 @@ void yf_print_matl(YF_material matl)
                "   metal-rough texture: %p\n"
                "   metallic factor: %.4f\n"
                "   roughness factor: %.4f\n",
-               (void *)matl->prop.pbrmr.color_tex,
+               (void *)matl->prop.pbrmr.color_tex.tex,
                matl->prop.pbrmr.color_fac[0], matl->prop.pbrmr.color_fac[1],
                matl->prop.pbrmr.color_fac[2], matl->prop.pbrmr.color_fac[3],
-               (void *)matl->prop.pbrmr.metal_rough_tex,
+               (void *)matl->prop.pbrmr.metal_rough_tex.tex,
                matl->prop.pbrmr.metallic_fac, matl->prop.pbrmr.roughness_fac);
         break;
     case YF_PBR_NONE:
         printf("  pbr: PBR_NONE\n"
                "   color texture: %p\n"
                "   color factor: [%.4f, %.4f, %.4f, %.4f]\n",
-               (void *)matl->prop.nopbr.color_tex,
+               (void *)matl->prop.nopbr.color_tex.tex,
                matl->prop.nopbr.color_fac[0], matl->prop.nopbr.color_fac[1],
                matl->prop.nopbr.color_fac[2], matl->prop.nopbr.color_fac[3]);
         break;
@@ -123,9 +123,9 @@ void yf_print_matl(YF_material matl)
            "   texture: %p\n"
            "   factor: [%.4f, %.4f, %.4f]\n"
            "  alpha mode: ALPHAMODE_",
-           (void*)matl->prop.normal.tex, matl->prop.normal.scale,
-           (void*)matl->prop.occlusion.tex, matl->prop.occlusion.strength,
-           (void*)matl->prop.emissive.tex, matl->prop.emissive.factor[0],
+           (void*)matl->prop.normal.tex.tex, matl->prop.normal.scale,
+           (void*)matl->prop.occlusion.tex.tex, matl->prop.occlusion.strength,
+           (void*)matl->prop.emissive.tex.tex, matl->prop.emissive.factor[0],
            matl->prop.emissive.factor[1], matl->prop.emissive.factor[2]);
 
     switch (matl->prop.alphamode) {
