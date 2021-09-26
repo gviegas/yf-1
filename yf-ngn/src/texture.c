@@ -238,6 +238,12 @@ YF_sampler *yf_texture_getsplr(YF_texture tex)
     return &tex->splr;
 }
 
+int yf_texture_getuv(YF_texture tex)
+{
+    assert(tex != NULL);
+    return tex->uvset;
+}
+
 void yf_texture_deinit(YF_texture tex)
 {
     if (tex == NULL)

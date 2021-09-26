@@ -56,6 +56,14 @@ YF_dim2 yf_texture_getdim(YF_texture tex);
 YF_sampler *yf_texture_getsplr(YF_texture tex);
 
 /**
+ * Gets the 'UVSET' value of a texture.
+ *
+ * @param tex: The texture.
+ * @return: The texture 'UVSET'.
+ */
+int yf_texture_getuv(YF_texture tex);
+
+/**
  * Deinitializes a texture.
  *
  * @param tex: The texture to deinitialize. Can be 'NULL'.
