@@ -202,8 +202,8 @@ int yf_test_rendering(void)
     assert(vars_.mesh1 != NULL);
     assert(vars_.mesh2 != NULL);
 
-    vars_.tex1 = yf_texture_init("tmp/cube.png", 0, NULL);
-    vars_.tex2 = yf_texture_init("tmp/cube2.png", 0, NULL);
+    vars_.tex1 = yf_texture_init("tmp/cube.png", 0, NULL, YF_UVSET_0);
+    vars_.tex2 = yf_texture_init("tmp/cube2.png", 0, NULL, YF_UVSET_0);
     assert(vars_.tex1 != NULL);
     assert(vars_.tex2 != NULL);
 
