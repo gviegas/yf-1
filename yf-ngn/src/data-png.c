@@ -770,8 +770,9 @@ static int load_texdt(const T_png *png, YF_texdt *data)
     data->pixfmt = pixfmt;
     data->dim.width = width;
     data->dim.height = height;
-    /* XXX: Sampler params. set elsewhere. */
+    /* XXX: Default sampler params. and 'UVSET' value. */
     data->splr = (YF_sampler){0};
+    data->uvset = YF_UVSET_0;
 
     return 0;
 }
