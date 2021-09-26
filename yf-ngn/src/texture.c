@@ -380,11 +380,12 @@ void yf_print_tex(YF_texture tex)
                "   filter:\n"
                "    mag: %d\n"
                "    min: %d\n"
-               "    mipmap: %d\n",
+               "    mipmap: %d\n"
+               "  uvset: %d\n",
                (void *)tex, (void *)(tex->imge), tex->layer,
                tex->splr.wrapmode.u, tex->splr.wrapmode.v,
                tex->splr.wrapmode.w, tex->splr.filter.mag,
-               tex->splr.filter.min, tex->splr.filter.mipmap);
+               tex->splr.filter.min, tex->splr.filter.mipmap, tex->uvset);
     }
 
     puts("");
