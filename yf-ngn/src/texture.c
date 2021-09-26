@@ -177,6 +177,7 @@ static int copy_data(YF_texture tex, const YF_texdt *data)
     tex->imge = val;
     tex->layer = layer;
     tex->splr = data->splr;
+    tex->uvset = data->uvset;
 
     return 0;
 }
