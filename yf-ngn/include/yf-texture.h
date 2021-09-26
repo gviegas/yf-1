@@ -26,6 +26,15 @@ typedef struct YF_texture_o *YF_texture;
 #define YF_UVSET_1 1
 
 /**
+ * Type defining a texture with custom sampler and coordinate set.
+ */
+typedef struct {
+    YF_texture tex;
+    YF_sampler splr;
+    int uvset;
+} YF_texref;
+
+/**
  * Initializes a new texture.
  *
  * @param pathname: The pathname of the texture file.
