@@ -41,36 +41,36 @@ typedef struct {
     union {
         /* PBR specular-glossiness. */
         struct {
-            YF_texture diffuse_tex;
+            YF_texref diffuse_tex;
             YF_vec4 diffuse_fac;
-            YF_texture spec_gloss_tex;
+            YF_texref spec_gloss_tex;
             YF_vec3 specular_fac;
             float glossiness_fac;
         } pbrsg;
         /* PBR metallic-roughness. */
         struct {
-            YF_texture color_tex;
+            YF_texref color_tex;
             YF_vec4 color_fac;
-            YF_texture metal_rough_tex;
+            YF_texref metal_rough_tex;
             float metallic_fac;
             float roughness_fac;
         } pbrmr;
         /* Unlit. */
         struct {
-            YF_texture color_tex;
+            YF_texref color_tex;
             YF_vec4 color_fac;
         } nopbr;
     };
     struct {
-        YF_texture tex;
+        YF_texref tex;
         float scale;
     } normal;
     struct {
-        YF_texture tex;
+        YF_texref tex;
         float strength;
     } occlusion;
     struct {
-        YF_texture tex;
+        YF_texref tex;
         YF_vec3 factor;
     } emissive;
     int alphamode;
