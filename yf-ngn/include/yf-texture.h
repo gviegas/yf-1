@@ -31,11 +31,13 @@ typedef struct YF_texture_o *YF_texture;
  * @param pathname: The pathname of the texture file.
  * @param index: The index of the texture to load.
  * @param splr: The sampler to use with the texture. Can be 'NULL'.
+ * @param uvset: The 'YF_UVSET' value indicating the texture coordinate set
+ *  to use.
  * @return: On success, returns a new texture. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
 YF_texture yf_texture_init(const char *pathname, size_t index,
-                           const YF_sampler *splr);
+                           const YF_sampler *splr, int uvset);
 
 /**
  * Gets the dimensions of a texture.

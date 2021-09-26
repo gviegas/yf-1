@@ -52,6 +52,7 @@ struct YF_texture_o {
     T_imge *imge;
     unsigned layer;
     YF_sampler splr;
+    int uvset;
 };
 
 /* Global context. */
@@ -199,10 +200,11 @@ static int cmp_key(const void *a, const void *b)
 }
 
 YF_texture yf_texture_init(const char *pathname, size_t index,
-                           const YF_sampler *splr)
+                           const YF_sampler *splr, int uvset)
 {
     /* TODO */
     assert(index == 0);
+    assert(uvset == YF_UVSET_0 || uvset == YF_UVSET_1);
 
     /* TODO: Consider checking the type of the file. */
     YF_texdt data = {0};
@@ -216,6 +218,7 @@ YF_texture yf_texture_init(const char *pathname, size_t index,
     if (tex != NULL && splr != NULL)
         tex->splr = *splr;
 
+    tex->uvset = uvset;
     return tex;
 }
 
