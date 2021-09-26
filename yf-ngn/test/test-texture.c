@@ -21,7 +21,8 @@ int yf_test_texture(void)
         .data = bytes,
         .pixfmt = YF_PIXFMT_RGBA8UNORM,
         .dim = {16, 16},
-        .splr = {{YF_WRAPMODE_CLAMP}, {YF_FILTER_LINEAR}}
+        .splr = {{YF_WRAPMODE_CLAMP}, {YF_FILTER_LINEAR}},
+        .uvset = YF_UVSET_1
     };
 
     YF_TEST_PRINT("initdt", "&data", "tex");
@@ -62,6 +63,17 @@ int yf_test_texture(void)
 
     yf_print_tex(tex3);
     yf_print_tex(NULL);
+
+    YF_TEST_PRINT("getuv", "tex3", "");
+    if (yf_texture_getuv(tex3) != YF_UVSET_1)
+        return -1;
+
+    YF_TEST_PRINT("setuv", "tex3, UVSET_0", "");
+    yf_texture_setuv(tex3, YF_UVSET_0);
+    if (yf_texture_getuv(tex3) != YF_UVSET_0)
+        return -1;
+
+    yf_print_tex(tex3);
 
     data.dim.width = 24;
     printf("- dim. changed -\n");
