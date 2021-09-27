@@ -25,7 +25,7 @@ typedef struct YF_terrain_o *YF_terrain;
  * Initializes a new terrain.
  *
  * @param width: The width of the terrain, in grid cells.
- * @param height: The height of the terrain, in grid cells.
+ * @param depth: The depth of the terrain, in grid cells.
  * @return: On success, returns a new terrain. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
