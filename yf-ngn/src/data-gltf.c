@@ -4117,6 +4117,9 @@ static int load_sampler(const T_gltf *gltf, T_cont *cont, T_int sampler)
         }
     }
 
+    /* XXX: Currently unused. */
+    cont->splrs[sampler].wrapmode.w = YF_WRAPMODE_REPEAT;
+
     /* filters */
     switch (gltf->samplers.v[sampler].mag_filter) {
     case YF_GLTF_FILTER_LINEAR:
