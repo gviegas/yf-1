@@ -3290,8 +3290,7 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             }
             free(cont->anims);
         }
-        if (cont->texs != NULL)
-            free(cont->texs);
+        free(cont->texs);
         if (cont->imgs != NULL) {
             if (cont->deinit) {
                 for (size_t i = 0; i < gltf->images.n; i++)
@@ -3299,8 +3298,7 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             }
             free(cont->imgs);
         }
-        if (cont->splrs != NULL)
-            free(cont->splrs);
+        free(cont->splrs);
     }
 
     for (size_t i = 0; i < gltf->ext_used_n; i++)
