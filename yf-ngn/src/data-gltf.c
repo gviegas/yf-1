@@ -4369,8 +4369,8 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         return 0;
 
     YF_matlprop prop = {0};
-    T_int tex_i[5];
-    YF_texture *tex_p[5];
+    const T_textureinfo *infos[5];
+    YF_texref *refs[5];
 
     if (!gltf->materials.v[material].ext.unlit) {
         if (gltf->materials.v[material].ext.pbrsg != NULL) {
@@ -4384,10 +4384,10 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                    sizeof prop.pbrsg.specular_fac);
             prop.pbrsg.glossiness_fac = pbrsg->glossiness_fac;
 
-            tex_i[0] = pbrsg->diffuse_tex.index;
-            tex_p[0] = &prop.pbrsg.diffuse_tex;
-            tex_i[1] = pbrsg->spec_gloss_tex.index;
-            tex_p[1] = &prop.pbrsg.spec_gloss_tex;
+            infos[0] = &pbrsg->diffuse_tex;
+            refs[0] = &prop.pbrsg.diffuse_tex;
+            infos[1] = &pbrsg->spec_gloss_tex;
+            refs[1] = &prop.pbrsg.spec_gloss_tex;
 
         } else {
             /* metal-rough */
@@ -4399,10 +4399,10 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             prop.pbrmr.metallic_fac = pbrmr->metallic_fac;
             prop.pbrmr.roughness_fac = pbrmr->roughness_fac;
 
-            tex_i[0] = pbrmr->base_clr_tex.index;
-            tex_p[0] = &prop.pbrmr.color_tex;
-            tex_i[1] = pbrmr->metal_rough_tex.index;
-            tex_p[1] = &prop.pbrmr.metal_rough_tex;
+            infos[0] = &pbrmr->base_clr_tex;
+            refs[0] = &prop.pbrmr.color_tex;
+            infos[1] = &pbrmr->metal_rough_tex;
+            refs[1] = &prop.pbrmr.metal_rough_tex;
         }
 
         prop.normal.scale = gltf->materials.v[material].normal_tex.scale;
@@ -4413,12 +4413,12 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         memcpy(prop.emissive.factor, gltf->materials.v[material].emissive_fac,
                sizeof prop.emissive.factor);
 
-        tex_i[2] = gltf->materials.v[material].normal_tex.index;
-        tex_p[2] = &prop.normal.tex;
-        tex_i[3] = gltf->materials.v[material].occlusion_tex.index;
-        tex_p[3] = &prop.occlusion.tex;
-        tex_i[4] = gltf->materials.v[material].emissive_tex.index;
-        tex_p[4] = &prop.emissive.tex;
+        infos[2] = &gltf->materials.v[material].normal_tex;
+        refs[2] = &prop.normal.tex;
+        infos[3] = &gltf->materials.v[material].occlusion_tex;
+        refs[3] = &prop.occlusion.tex;
+        infos[4] = &gltf->materials.v[material].emissive_tex;
+        refs[4] = &prop.emissive.tex;
 
     } else {
         /* unlit (extension) */
@@ -4427,20 +4427,20 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                gltf->materials.v[material].pbrmr.base_clr_fac,
                sizeof prop.nopbr.color_fac);
 
-        tex_i[0] = gltf->materials.v[material].pbrmr.base_clr_tex.index;
-        tex_p[0] = &prop.nopbr.color_tex;
-        tex_i[1] = YF_INT_MIN;
-        tex_p[1] = NULL;
+        infos[0] = &gltf->materials.v[material].pbrmr.base_clr_tex;
+        refs[0] = &prop.nopbr.color_tex;
+        infos[1] = NULL;
+        refs[1] = NULL;
 
         prop.normal.scale = 1.0f;
         prop.occlusion.strength = 1.0f;
 
-        tex_i[2] = YF_INT_MIN;
-        tex_p[2] = NULL;
-        tex_i[3] = YF_INT_MIN;
-        tex_p[3] = NULL;
-        tex_i[4] = YF_INT_MIN;
-        tex_p[4] = NULL;
+        infos[2] = NULL;
+        refs[2] = NULL;
+        infos[3] = NULL;
+        refs[3] = NULL;
+        infos[4] = NULL;
+        refs[4] = NULL;
     }
 
     switch (gltf->materials.v[material].alpha_mode) {
@@ -4459,12 +4459,35 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         return -1;
     }
 
-    for (size_t i = 0; i < (sizeof tex_i / sizeof *tex_i); i++) {
-        if (tex_i[i] == YF_INT_MIN)
+    for (size_t i = 0; i < (sizeof infos / sizeof *infos); i++) {
+        if (infos[i] == NULL || infos[i]->index == YF_INT_MIN)
             continue;
-        if (load_texture(gltf, fdata, cont, tex_i[i]) != 0)
+
+        const T_int texture = infos[i]->index;
+        if (load_texture(gltf, fdata, cont, texture) != 0)
             return -1;
-        *tex_p[i] = cont->imgs[cont->texs[tex_i[i]]];
+        refs[i]->tex = cont->imgs[cont->texs[texture]];
+
+        const T_int sampler = gltf->textures.v[texture].sampler;
+        if (sampler == YF_INT_MIN) {
+            refs[i]->splr = cont->dft_splr;
+        } else {
+            if (load_sampler(gltf, cont, sampler) != 0)
+                return -1;
+            refs[i]->splr = cont->splrs[sampler];
+        }
+
+        switch (infos[i]->tex_coord) {
+        case 0:
+            refs[i]->uvset = YF_UVSET_0;
+            break;
+        case 1:
+            refs[i]->uvset = YF_UVSET_1;
+            break;
+        default:
+            yf_seterr(YF_ERR_UNSUP, __func__);
+            return -1;
+        }
     }
 
     cont->matls[material] = yf_material_init(&prop);
