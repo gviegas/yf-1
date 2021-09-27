@@ -3184,6 +3184,7 @@ typedef struct {
     /* default sampler is used when not specified */
     YF_sampler dft_splr;
     YF_sampler *splrs;
+#define YF_NILSPLR(splr) ((splr).wrapmode.u < 0)
 
     /* flag indicating that the contents must be destroyed
        when not set, only the allocated lists are freed */
@@ -3298,6 +3299,8 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             }
             free(cont->imgs);
         }
+        if (cont->splrs != NULL)
+            free(cont->splrs);
     }
 
     for (size_t i = 0; i < gltf->ext_used_n; i++)
@@ -3529,6 +3532,16 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         }
         for (size_t i = 0; i < gltf->textures.n; i++)
             cont->texs[i] = YF_INT_MIN;
+    }
+    if (gltf->samplers.n > 0) {
+        cont->splrs = malloc(gltf->samplers.n * sizeof *cont->splrs);
+        if (cont->splrs == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            deinit_gltf(gltf, fdata, cont);
+            return -1;
+        }
+        for (size_t i = 0; i < gltf->samplers.n; i++)
+            cont->splrs[i].wrapmode.u = -1;
     }
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
