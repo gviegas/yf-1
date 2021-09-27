@@ -3181,6 +3181,10 @@ typedef struct {
     T_int *texs;
     YF_texture *imgs;
 
+    /* default sampler is used when not specified */
+    YF_sampler dft_splr;
+    YF_sampler *splrs;
+
     /* flag indicating that the contents must be destroyed
        when not set, only the allocated lists are freed */
     int deinit;
