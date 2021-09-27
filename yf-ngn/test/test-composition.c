@@ -336,12 +336,12 @@ int yf_test_composition(void)
     YF_matlprop *mprop;
     mprop = yf_material_getprop(matl1);
     mprop->pbr = YF_PBR_METALROUGH;
-    mprop->pbrmr.color_tex = yf_collection_getitem(vars_.coll,
-                                                   YF_CITEM_TEXTURE, "t1");
+    mprop->pbrmr.color_tex.tex = yf_collection_getitem(vars_.coll,
+                                                       YF_CITEM_TEXTURE, "t1");
     mprop = yf_material_getprop(matl2);
     mprop->pbr = YF_PBR_METALROUGH;
-    mprop->pbrmr.color_tex = yf_collection_getitem(vars_.coll,
-                                                   YF_CITEM_TEXTURE, "t2");
+    mprop->pbrmr.color_tex.tex = yf_collection_getitem(vars_.coll,
+                                                       YF_CITEM_TEXTURE, "t2");
 
     if (yf_collection_manage(vars_.coll, YF_CITEM_MATERIAL, "m1",
                              matl1) != 0 ||
