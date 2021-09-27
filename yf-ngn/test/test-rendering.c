@@ -214,10 +214,10 @@ int yf_test_rendering(void)
     YF_matlprop *mprop;
     mprop = yf_material_getprop(vars_.matl1);
     mprop->pbr = YF_PBR_METALROUGH;
-    mprop->pbrmr.color_tex = vars_.tex1;
+    mprop->pbrmr.color_tex.tex = vars_.tex1;
     mprop = yf_material_getprop(vars_.matl2);
     mprop->pbr = YF_PBR_METALROUGH;
-    mprop->pbrmr.color_tex = vars_.tex2;
+    mprop->pbrmr.color_tex.tex = vars_.tex2;
 
     yf_mesh_setmatl(vars_.mesh1, 0, vars_.matl1);
     yf_mesh_setmatl(vars_.mesh2, 0, vars_.matl2);
