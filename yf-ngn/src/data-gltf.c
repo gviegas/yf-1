@@ -4077,6 +4077,79 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 #undef YF_DEALLOCDT
 }
 
+/* Loads a single sampler from glTF contents. */
+static int load_sampler(const T_gltf *gltf, T_cont *cont, T_int sampler)
+{
+    assert(gltf != NULL);
+    assert(cont != NULL);
+    assert(sampler >= 0);
+
+    if (gltf->samplers.n <= (size_t)sampler) {
+        yf_seterr(YF_ERR_INVARG, __func__);
+        return -1;
+    }
+
+    assert(cont->splrs != NULL);
+    if (!YF_NILSPLR(cont->splrs[sampler]))
+        return 0;
+
+    /* wrap modes */
+    struct {
+        const T_int from;
+        int *const to;
+    } wrap[2] = {
+        {gltf->samplers.v[sampler].wrap_s, &cont->splrs[sampler].wrapmode.u},
+        {gltf->samplers.v[sampler].wrap_t, &cont->splrs[sampler].wrapmode.v}
+    };
+
+    for (unsigned i = 0; i < 2; i++) {
+        switch (wrap[i].from) {
+        case YF_GLTF_WRAP_CLAMP:
+            *wrap[i].to = YF_WRAPMODE_CLAMP;
+            break;
+        case YF_GLTF_WRAP_MIRROR:
+            *wrap[i].to = YF_WRAPMODE_MIRROR;
+            break;
+        case YF_GLTF_WRAP_REPEAT:
+        default:
+            *wrap[i].to = YF_WRAPMODE_REPEAT;
+            break;
+        }
+    }
+
+    /* filters */
+    switch (gltf->samplers.v[sampler].mag_filter) {
+    case YF_GLTF_FILTER_LINEAR:
+        cont->splrs[sampler].filter.mag = YF_FILTER_LINEAR;
+        break;
+    default:
+        cont->splrs[sampler].filter.mag = YF_FILTER_NEAREST;
+        break;
+    }
+
+    switch (gltf->samplers.v[sampler].min_filter) {
+    case YF_GLTF_FILTER_LINEAR:
+    case YF_GLTF_FILTER_LNMIPLN:
+        cont->splrs[sampler].filter.min = YF_FILTER_LINEAR;
+        cont->splrs[sampler].filter.mipmap = YF_FILTER_LINEAR;
+        break;
+    case YF_GLTF_FILTER_LNMIPNR:
+        cont->splrs[sampler].filter.min = YF_FILTER_LINEAR;
+        cont->splrs[sampler].filter.mipmap = YF_FILTER_NEAREST;
+        break;
+    case YF_GLTF_FILTER_NRMIPLN:
+        cont->splrs[sampler].filter.min = YF_FILTER_NEAREST;
+        cont->splrs[sampler].filter.mipmap = YF_FILTER_LINEAR;
+        break;
+    default:
+        cont->splrs[sampler].filter.min = YF_FILTER_NEAREST;
+        cont->splrs[sampler].filter.mipmap = YF_FILTER_NEAREST;
+        break;
+    }
+
+    return 0;
+}
+
 /* Loads a single texture from glTF contents. */
 static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                         T_int texture)
