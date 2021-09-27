@@ -206,10 +206,7 @@ int yf_test_model(void)
     assert(tex != NULL);
     YF_matlprop mprop = {
         .pbr = YF_PBR_NONE,
-        .nopbr = {tex, {1.0f, 1.0f, 1.0f, 1.0f}},
-        .normal = {0},
-        .occlusion = {0},
-        .emissive = {0},
+        .nopbr = {{tex}, {1.0f, 1.0f, 1.0f, 1.0f}},
         .alphamode = YF_ALPHAMODE_OPAQUE
     };
     vars_.matl = yf_material_init(&mprop);
