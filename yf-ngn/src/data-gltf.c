@@ -4171,7 +4171,7 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     assert(cont->imgs != NULL);
     const T_int image = gltf->textures.v[texture].source;
     if (cont->imgs[image] != NULL) {
-        /* TODO: Texture samplers might differ. */
+        /* XXX: Texture samplers might differ. */
         cont->texs[texture] = image;
         return 0;
     }
@@ -4205,63 +4205,11 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
     const T_int sampler = gltf->textures.v[texture].sampler;
     if (sampler == YF_INT_MIN) {
-        /* default sampler */
-        data.splr.wrapmode.u = YF_WRAPMODE_REPEAT;
-        data.splr.wrapmode.v = YF_WRAPMODE_REPEAT;
-        data.splr.filter.mag = YF_FILTER_NEAREST;
-        data.splr.filter.min = YF_FILTER_NEAREST;
-        data.splr.filter.mipmap = YF_FILTER_NEAREST;
+        data.splr = cont->dft_splr;
     } else {
-        /* wrap modes */
-        struct {
-            const T_int from;
-            int *const to;
-        } wrap[2] = {
-            {gltf->samplers.v[sampler].wrap_s, &data.splr.wrapmode.u},
-            {gltf->samplers.v[sampler].wrap_t, &data.splr.wrapmode.v}
-        };
-        for (unsigned i = 0; i < 2; i++) {
-            switch (wrap[i].from) {
-            case YF_GLTF_WRAP_CLAMP:
-                *wrap[i].to = YF_WRAPMODE_CLAMP;
-                break;
-            case YF_GLTF_WRAP_MIRROR:
-                *wrap[i].to = YF_WRAPMODE_MIRROR;
-                break;
-            case YF_GLTF_WRAP_REPEAT:
-            default:
-                *wrap[i].to = YF_WRAPMODE_REPEAT;
-                break;
-            }
-        }
-        /* filters */
-        switch (gltf->samplers.v[sampler].mag_filter) {
-        case YF_GLTF_FILTER_LINEAR:
-            data.splr.filter.mag = YF_FILTER_LINEAR;
-            break;
-        default:
-            data.splr.filter.mag = YF_FILTER_NEAREST;
-            break;
-        }
-        switch (gltf->samplers.v[sampler].min_filter) {
-        case YF_GLTF_FILTER_LINEAR:
-        case YF_GLTF_FILTER_LNMIPLN:
-            data.splr.filter.min = YF_FILTER_LINEAR;
-            data.splr.filter.mipmap = YF_FILTER_LINEAR;
-            break;
-        case YF_GLTF_FILTER_LNMIPNR:
-            data.splr.filter.min = YF_FILTER_LINEAR;
-            data.splr.filter.mipmap = YF_FILTER_NEAREST;
-            break;
-        case YF_GLTF_FILTER_NRMIPLN:
-            data.splr.filter.min = YF_FILTER_NEAREST;
-            data.splr.filter.mipmap = YF_FILTER_LINEAR;
-            break;
-        default:
-            data.splr.filter.min = YF_FILTER_NEAREST;
-            data.splr.filter.mipmap = YF_FILTER_NEAREST;
-            break;
-        }
+        if (load_sampler(gltf, cont, sampler) != 0)
+            return -1;
+        data.splr = cont->splrs[sampler];
     }
 
     /* XXX: Default 'UVSET' value. */
