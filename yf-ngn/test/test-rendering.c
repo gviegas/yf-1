@@ -112,12 +112,14 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(double elapsed_time, YF_UNUSED void *arg)
+static int update(double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
-        yf_view_stop(vars_.view);
+        return -1;
 
     static unsigned scn_i = 1;
+    /* TODO: view_swap() */
+    /*
     if (vars_.input.swap) {
         vars_.input.swap = 0;
         if (scn_i != 1) {
@@ -129,6 +131,7 @@ static void update(double elapsed_time, YF_UNUSED void *arg)
         }
         return;
     }
+    */
 
     YF_camera cam = yf_scene_getcam(scn_i == 1 ? vars_.scn1 : vars_.scn2);
     const float md = 16.0 * elapsed_time;
@@ -160,7 +163,7 @@ static void update(double elapsed_time, YF_UNUSED void *arg)
         yf_camera_turnr(cam, td);
 
     if (scn_i == 1)
-        return;
+        return 0;
 
     if (vars_.input.drop && YF_MDLN_2 > 1) {
         vars_.input.drop = 0;
@@ -178,6 +181,8 @@ static void update(double elapsed_time, YF_UNUSED void *arg)
             yf_node_insert(yf_model_getnode(vars_.mdls2[i-1]),
                            yf_model_getnode(vars_.mdls2[i]));
     }
+
+    return 0;
 }
 
 /* Tests rendering. */
@@ -288,8 +293,7 @@ int yf_test_rendering(void)
     yf_scene_setcolor(vars_.scn1, YF_COLOR_YELLOW);
     yf_scene_setcolor(vars_.scn2, YF_COLOR_BLUE);
 
-    yf_view_setscene(vars_.view, vars_.scn1);
-    yf_view_start(vars_.view, YF_FPS, update, NULL);
+    yf_view_loop(vars_.view, vars_.scn1, YF_FPS, update, NULL);
 
     for (size_t i = 0; i < YF_MDLN_1; i++)
         yf_model_deinit(vars_.mdls1[i]);
