@@ -145,6 +145,34 @@ YF_view yf_view_init(YF_window win)
     return view;
 }
 
+int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
+                 int (*update)(double elapsed_time, void *arg), void *arg)
+{
+    assert(view != NULL);
+    assert(scn != NULL);
+    assert(update != NULL);
+
+    const double rate = (fps == 0) ? (0.0) : (1.0 / (double)fps);
+    double dt = 0.0;
+    double tm = yf_gettime();
+    int r = 0;
+
+    while (update(dt, arg) == 0) {
+        /* TODO: Scene as param. for 'render()' */
+        if ((r = yf_view_render(view)) != 0)
+            break;
+
+        if ((dt = yf_gettime() - tm) < rate) {
+            yf_sleep(rate - dt);
+            dt = yf_gettime() - tm;
+        }
+
+        tm += dt;
+    }
+
+    return r;
+}
+
 YF_scene yf_view_getscene(YF_view view)
 {
     assert(view != NULL);
