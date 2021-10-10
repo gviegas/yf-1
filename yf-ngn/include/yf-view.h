@@ -50,6 +50,15 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
                  int (*update)(double elapsed_time, void *arg), void *arg);
 
 /**
+ * Swaps the scene in a view's loop.
+ *
+ * @param view: The view.
+ * @param scn: The new scene to render.
+ * @return: The old scene.
+ */
+YF_scene yf_view_swap(YF_view view, YF_scene scn);
+
+/**
  * Renders a given scene in a view.
  *
  * @param view: The view.
