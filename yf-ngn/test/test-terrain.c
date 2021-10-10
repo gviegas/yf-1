@@ -87,10 +87,10 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(double elapsed_time, YF_UNUSED void *arg)
+static int update(double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
-        yf_view_stop(vars_.view);
+        return -1;
 
     YF_camera cam = yf_scene_getcam(vars_.scn);
     const float md = 16.0 * elapsed_time;
@@ -120,6 +120,8 @@ static void update(double elapsed_time, YF_UNUSED void *arg)
         yf_camera_turnl(cam, td);
     if (vars_.input.turn[3])
         yf_camera_turnr(cam, td);
+
+    return 0;
 }
 
 /* Tests terrain. */
@@ -189,9 +191,7 @@ int yf_test_terrain(void)
     yf_camera_place(cam, pos);
     yf_camera_point(cam, tgt);
 
-    yf_view_setscene(vars_.view, vars_.scn);
-
-    if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
+    if (yf_view_loop(vars_.view, vars_.scn, YF_FPS, update, NULL) != 0)
         assert(0);
 
     YF_TEST_PRINT("deinit", "terr", "");
