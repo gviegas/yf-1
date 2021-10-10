@@ -38,6 +38,10 @@ YF_view yf_view_init(YF_window win);
 /**
  * Starts a view's rendering loop.
  *
+ * This function executes the provided callback once per frame, before calling
+ * 'view_render()' to render the scene. The loop ends when 'update' returns a
+ * non-zero value, or if an error occurs during rendering.
+ *
  * @param view: The view.
  * @param scn: The scene to render.
  * @param fps: The preferred FPS.
@@ -52,6 +56,8 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
 /**
  * Swaps the scene in a view's loop.
  *
+ * NOTE: This function must only be called from the view's loop.
+ *
  * @param view: The view.
  * @param scn: The new scene to render.
  * @return: The old scene.
@@ -60,6 +66,8 @@ YF_scene yf_view_swap(YF_view view, YF_scene scn);
 
 /**
  * Renders a given scene in a view.
+ *
+ * NOTE: 'view_loop()' implicitly calls this function once per frame.
  *
  * @param view: The view.
  * @param scn: The scene to render.
