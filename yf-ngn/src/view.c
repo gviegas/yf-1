@@ -32,8 +32,6 @@ struct YF_view_o {
     YF_pass pass;
     YF_target *tgts;
     unsigned tgt_n;
-    YF_scene scn;
-    int started;
 };
 
 /* Global pass instance. */
