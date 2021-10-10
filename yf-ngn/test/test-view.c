@@ -28,14 +28,17 @@ static int update(double elapsed_time, void *arg)
         return -1;
     }
 
-    /* TODO: view_swap() */
-    /*
     if (tm > 0.625 && !swapped) {
-        YF_TEST_PRINT("setscene", "view_, scns_[arg]", "");
-        yf_view_setscene(view_, scns_[(size_t)arg]);
+        size_t new = (size_t)arg;
+        size_t cur = (new + 1) % 2;
+        char s1[128], *s2 = s1 + 64;
+        snprintf(s1, 64, "view_, scns_[%zu]", new);
+        snprintf(s2, 64, "scns_[%zu]", cur);
+        YF_TEST_PRINT("swap", s1, s2);
+        if (yf_view_swap(view_, scns_[new]) != scns_[cur])
+            assert(0);
         swapped = 1;
     }
-    */
 
     tm += elapsed_time;
     return 0;
