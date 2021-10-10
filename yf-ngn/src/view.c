@@ -158,8 +158,7 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
     int r = 0;
 
     while (update(dt, arg) == 0) {
-        /* TODO: Scene as param. for 'render()' */
-        if ((r = yf_view_render(view)) != 0)
+        if ((r = yf_view_render(view, scn)) != 0)
             break;
 
         if ((dt = yf_gettime() - tm) < rate) {
@@ -173,16 +172,12 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
     return r;
 }
 
-int yf_view_render(YF_view view)
+int yf_view_render(YF_view view, YF_scene scn)
 {
     assert(view != NULL);
+    assert(scn != NULL);
 
     yf_pollevt(YF_EVT_ANY);
-
-    if (view->scn == NULL) {
-        yf_seterr(YF_ERR_NILPTR, __func__);
-        return -1;
-    }
 
     int next = yf_wsi_next(view->wsi, 0);
     if (next < 0) {
@@ -196,7 +191,7 @@ int yf_view_render(YF_view view)
 
     YF_dim2 dim;
     yf_window_getsize(view->win, &dim.width, &dim.height);
-    if (yf_scene_render(view->scn, view->pass, view->tgts[next], dim) != 0)
+    if (yf_scene_render(scn, view->pass, view->tgts[next], dim) != 0)
         return -1;
 
     if (yf_wsi_present(view->wsi, next) != 0) {

@@ -50,13 +50,14 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
                  int (*update)(double elapsed_time, void *arg), void *arg);
 
 /**
- * Renders the current scene of a view.
+ * Renders a given scene in a view.
  *
  * @param view: The view.
+ * @param scn: The scene to render.
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_view_render(YF_view view);
+int yf_view_render(YF_view view, YF_scene scn);
 
 /**
  * Deinitializes a view.
