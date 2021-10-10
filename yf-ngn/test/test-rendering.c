@@ -17,7 +17,7 @@
 #define YF_WINW 640
 #define YF_WINH 480
 #define YF_WINT "Rendering"
-#define YF_FPS  60
+#define YF_FPS 60
 #define YF_MDLN_1 10
 #define YF_MDLN_2 5
 #define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
@@ -118,20 +118,17 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
         return -1;
 
     static unsigned scn_i = 1;
-    /* TODO: view_swap() */
-    /*
     if (vars_.input.swap) {
         vars_.input.swap = 0;
         if (scn_i != 1) {
-            yf_view_setscene(vars_.view, vars_.scn1);
+            yf_view_swap(vars_.view, vars_.scn1);
             scn_i = 1;
         } else {
-            yf_view_setscene(vars_.view, vars_.scn2);
+            yf_view_swap(vars_.view, vars_.scn2);
             scn_i = 2;
         }
-        return;
+        return 0;
     }
-    */
 
     YF_camera cam = yf_scene_getcam(scn_i == 1 ? vars_.scn1 : vars_.scn2);
     const float md = 16.0 * elapsed_time;
