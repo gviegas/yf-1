@@ -36,6 +36,20 @@ typedef struct YF_view_o *YF_view;
 YF_view yf_view_init(YF_window win);
 
 /**
+ * Starts a view's rendering loop.
+ *
+ * @param view: The view.
+ * @param scn: The scene to render.
+ * @param fps: The preferred FPS.
+ * @param update: The function to call before rendering takes place.
+ * @param arg: The generic argument to pass on 'update' calls. Can be 'NULL'.
+ * @return: On success, returns zero. Otherwise, 'NULL' is returned and the
+ *  global error is set to indicate the cause.
+ */
+int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
+                 int (*update)(double elapsed_time, void *arg), void *arg);
+
+/**
  * Gets a view's scene.
  *
  * @param view: The view.
