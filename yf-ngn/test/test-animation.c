@@ -95,10 +95,10 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(double elapsed_time, YF_UNUSED void *arg)
+static int update(double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
-        yf_view_stop(vars_.view);
+        return -1;
 
     YF_camera cam = yf_scene_getcam(vars_.scn);
     const float md = 16.0 * elapsed_time;
@@ -143,6 +143,8 @@ static void update(double elapsed_time, YF_UNUSED void *arg)
         else
             dt += elapsed_time;
     }
+
+    return 0;
 }
 
 static int traverse(YF_node node, YF_UNUSED void *arg)
@@ -376,8 +378,7 @@ int yf_test_animation(void)
     YF_TEST_PRINT("traverse", "getnode(scn), traverse, NULL", "");
     yf_node_traverse(yf_scene_getnode(vars_.scn), traverse, NULL);
 
-    yf_view_setscene(vars_.view, vars_.scn);
-    yf_view_start(vars_.view, YF_FPS, update, NULL);
+    yf_view_loop(vars_.view, vars_.scn, YF_FPS, update, NULL);
 
     puts("\n- no explicit 'deinit()' call for managed animation -\n");
 
