@@ -17,26 +17,28 @@ static YF_view view_ = NULL;
 static YF_window wins_[2] = {0};
 static YF_scene scns_[2] = {0};
 
-static void update(double elapsed_time, void *arg)
+static int update(double elapsed_time, void *arg)
 {
     static double tm = 0.0;
     static int swapped = 0;
 
     if (tm > 1.25) {
-        YF_TEST_PRINT("stop", "view_", "");
-        yf_view_stop(view_);
         tm = 0.0;
         swapped = 0;
-        return;
+        return -1;
     }
 
+    /* TODO: view_swap() */
+    /*
     if (tm > 0.625 && !swapped) {
         YF_TEST_PRINT("setscene", "view_, scns_[arg]", "");
         yf_view_setscene(view_, scns_[(size_t)arg]);
         swapped = 1;
     }
+    */
 
     tm += elapsed_time;
+    return 0;
 }
 
 /* Tests view. */
@@ -58,23 +60,8 @@ int yf_test_view(void)
     if (view_ == NULL)
         return -1;
 
-    YF_TEST_PRINT("getscene", "view_", "");
-    if (yf_view_getscene(view_) != NULL)
-        return -1;
-
-    YF_TEST_PRINT("setscene", "view_, scns_[0]", "");
-    yf_view_setscene(view_, scns_[0]);
-
-    YF_TEST_PRINT("getscene", "view_", "");
-    if (yf_view_getscene(view_) != scns_[0])
-        return -1;
-
-    YF_TEST_PRINT("start", "view_, 30, update, 1", "");
-    if (yf_view_start(view_, 30, update, (void *)1) != 0)
-        return -1;
-
-    YF_TEST_PRINT("getscene", "view_", "");
-    if (yf_view_getscene(view_) != scns_[1])
+    YF_TEST_PRINT("loop", "view_, scns_[0], 30, update, 1", "");
+    if (yf_view_loop(view_, scns_[0], 30, update, (void *)1) != 0)
         return -1;
 
     YF_TEST_PRINT("init", "wins_[1]", "(nil)");
@@ -91,19 +78,8 @@ int yf_test_view(void)
     if (view_ == NULL)
         return -1;
 
-    YF_TEST_PRINT("setscene", "view_, scns_[1]", "");
-    yf_view_setscene(view_, scns_[1]);
-
-    YF_TEST_PRINT("getscene", "view_", "");
-    if (yf_view_getscene(view_) != scns_[1])
-        return -1;
-
-    YF_TEST_PRINT("start", "view_, 30, update, 0", "");
-    if (yf_view_start(view_, 30, update, 0) != 0)
-        return -1;
-
-    YF_TEST_PRINT("getscene", "view_", "");
-    if (yf_view_getscene(view_) != scns_[0])
+    YF_TEST_PRINT("loop", "view_, scns_[1], 30, update, 0", "");
+    if (yf_view_loop(view_, scns_[1], 30, update, 0) != 0)
         return -1;
 
     YF_TEST_PRINT("deinit", "view_", "");
