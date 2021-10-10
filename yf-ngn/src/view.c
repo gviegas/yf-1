@@ -151,13 +151,19 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
     assert(scn != NULL);
     assert(update != NULL);
 
+    if (view->scn != NULL) {
+        yf_seterr(YF_ERR_BUSY, __func__);
+        return -1;
+    }
+
+    view->scn = scn;
     const double rate = (fps == 0) ? (0.0) : (1.0 / (double)fps);
     double dt = 0.0;
     double tm = yf_gettime();
     int r = 0;
 
     while (update(dt, arg) == 0) {
-        if ((r = yf_view_render(view, scn)) != 0)
+        if ((r = yf_view_render(view, view->scn)) != 0)
             break;
 
         if ((dt = yf_gettime() - tm) < rate) {
@@ -168,6 +174,7 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
         tm += dt;
     }
 
+    view->scn = NULL;
     return r;
 }
 
