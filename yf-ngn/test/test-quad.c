@@ -47,10 +47,10 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
+static int update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
-        yf_view_stop(vars_.view);
+        return -1;
 
     static double tm = 0.0;
     static double tm2 = 0.0;
@@ -103,6 +103,8 @@ static void update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
 
         tm2 = 0.0;
     }
+
+    return 0;
 }
 
 /* Tests quad. */
@@ -164,9 +166,7 @@ int yf_test_quad(void)
 
     yf_node_insert(yf_scene_getnode(vars_.scn), node);
 
-    yf_view_setscene(vars_.view, vars_.scn);
-
-    if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
+    if (yf_view_loop(vars_.view, vars_.scn, YF_FPS, update, NULL) != 0)
         assert(0);
 
     YF_TEST_PRINT("deinit", "quad", "");
