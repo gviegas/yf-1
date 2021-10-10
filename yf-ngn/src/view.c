@@ -32,6 +32,7 @@ struct YF_view_o {
     YF_pass pass;
     YF_target *tgts;
     unsigned tgt_n;
+    YF_scene scn;
 };
 
 /* Global pass instance. */
@@ -168,6 +169,17 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
     }
 
     return r;
+}
+
+YF_scene yf_view_swap(YF_view view, YF_scene scn)
+{
+    assert(view != NULL);
+    assert(scn != NULL);
+    assert(view->scn != NULL);
+
+    YF_scene cur = view->scn;
+    view->scn = scn;
+    return cur;
 }
 
 int yf_view_render(YF_view view, YF_scene scn)
