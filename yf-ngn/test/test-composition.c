@@ -133,10 +133,10 @@ static void on_button(int btn, int state, int x, int y, YF_UNUSED void *arg)
 }
 
 /* Updates content. */
-static void update(double elapsed_time, YF_UNUSED void *arg)
+static int update(double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
-        yf_view_stop(vars_.view);
+        return -1;
 
     YF_camera cam = yf_scene_getcam(vars_.scn);
 
@@ -256,6 +256,8 @@ static void update(double elapsed_time, YF_UNUSED void *arg)
             yf_node_insert(yf_scene_getnode(vars_.scn), vars_.labl_node);
         vars_.input.toggle = 0;
     }
+
+    return 0;
 }
 
 /* Tests object composition. */
@@ -438,8 +440,7 @@ int yf_test_composition(void)
     yf_camera_place(cam, pos);
     yf_camera_point(cam, tgt);
 
-    yf_view_setscene(vars_.view, vars_.scn);
-    if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
+    if (yf_view_loop(vars_.view, vars_.scn, YF_FPS, update, NULL) != 0)
         assert(0);
 
     yf_view_deinit(vars_.view);
