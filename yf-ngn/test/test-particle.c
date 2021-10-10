@@ -106,10 +106,10 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(double elapsed_time, YF_UNUSED void *arg)
+static int update(double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
-        yf_view_stop(vars_.view);
+        return -1;
 
     YF_camera cam = yf_scene_getcam(vars_.scn);
     const float md = 16.0 * elapsed_time;;
@@ -150,6 +150,8 @@ static void update(double elapsed_time, YF_UNUSED void *arg)
     snprintf(s, sizeof s, "part, %.6f", elapsed_time);
     YF_TEST_PRINT("simulate", s, "");
     yf_particle_simulate(vars_.part, elapsed_time);
+
+    return 0;
 }
 
 /* Tests particle. */
@@ -235,9 +237,7 @@ int yf_test_particle(void)
 
     yf_node_insert(yf_scene_getnode(vars_.scn), node);
 
-    yf_view_setscene(vars_.view, vars_.scn);
-
-    if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
+    if (yf_view_loop(vars_.view, vars_.scn, YF_FPS, update, NULL) != 0)
         assert(0);
 
     yf_print_nodeobj(node);
