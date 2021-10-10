@@ -173,18 +173,6 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
     return r;
 }
 
-YF_scene yf_view_getscene(YF_view view)
-{
-    assert(view != NULL);
-    return view->scn;
-}
-
-void yf_view_setscene(YF_view view, YF_scene scn)
-{
-    assert(view != NULL);
-    view->scn = scn;
-}
-
 int yf_view_render(YF_view view)
 {
     assert(view != NULL);

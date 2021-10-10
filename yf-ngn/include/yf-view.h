@@ -50,22 +50,6 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
                  int (*update)(double elapsed_time, void *arg), void *arg);
 
 /**
- * Gets a view's scene.
- *
- * @param view: The view.
- * @return: The scene currently set for 'view', or 'NULL' if none is set.
- */
-YF_scene yf_view_getscene(YF_view view);
-
-/**
- * Sets a view's scene.
- *
- * @param view: The view.
- * @param scn: The scene to set. Can be 'NULL'.
- */
-void yf_view_setscene(YF_view view, YF_scene scn);
-
-/**
  * Renders the current scene of a view.
  *
  * @param view: The view.
