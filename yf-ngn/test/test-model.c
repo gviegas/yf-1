@@ -136,10 +136,10 @@ static void on_key(int key, int state,
 }
 
 /* Updates content. */
-static void update(double elapsed_time, YF_UNUSED void *arg)
+static int update(double elapsed_time, YF_UNUSED void *arg)
 {
     if (vars_.input.quit)
-        yf_view_stop(vars_.view);
+        return -1;
 
     YF_camera cam = yf_scene_getcam(vars_.scn);
     const float md = 16.0 * elapsed_time;
@@ -182,6 +182,8 @@ static void update(double elapsed_time, YF_UNUSED void *arg)
                      xforms_[xform_i]);
         vars_.input.prev = 0;
     }
+
+    return 0;
 }
 
 /* Tests model. */
@@ -250,9 +252,7 @@ int yf_test_model(void)
 
     yf_node_insert(yf_scene_getnode(vars_.scn), node);
 
-    yf_view_setscene(vars_.view, vars_.scn);
-
-    if (yf_view_start(vars_.view, YF_FPS, update, NULL) != 0)
+    if (yf_view_loop(vars_.view, vars_.scn, YF_FPS, update, NULL) != 0)
         assert(0);
 
     YF_TEST_PRINT("deinit", "mdl", "");
