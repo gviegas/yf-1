@@ -75,32 +75,6 @@ void yf_view_setscene(YF_view view, YF_scene scn);
 int yf_view_render(YF_view view);
 
 /**
- * Starts a view's rendering loop.
- *
- * This function implicitly calls 'yf_view_render()' on every loop iteration,
- * thus one should not attempt to render a scene on the provided callback.
- *
- * Setting a different scene from the 'update' callback is allowed. The view
- * will start rendering the new scene as soon as the callback returns.
- *
- * @param view: The view.
- * @param fps: The preferred FPS.
- * @param update: The function to call before rendering takes place.
- * @param arg: The generic argument to pass on 'update' calls. Can be 'NULL'.
- * @return: On success, returns zero. Otherwise, 'NULL' is returned and the
- *  global error is set to indicate the cause.
- */
-int yf_view_start(YF_view view, unsigned fps,
-                  void (*update)(double elapsed_time, void *arg), void *arg);
-
-/**
- * Stops a view's rendering loop.
- *
- * @param view: The view.
- */
-void yf_view_stop(YF_view view);
-
-/**
  * Deinitializes a view.
  *
  * @param view: The view to deinitialize. Can be 'NULL'.

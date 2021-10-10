@@ -224,44 +224,6 @@ int yf_view_render(YF_view view)
     return 0;
 }
 
-int yf_view_start(YF_view view, unsigned fps,
-                  void (*update)(double elapsed_time, void *arg), void *arg)
-{
-    assert(view != NULL);
-    assert(update != NULL);
-
-    if (view->started) {
-        yf_seterr(YF_ERR_BUSY, __func__);
-        return -1;
-    }
-    view->started = 1;
-
-    const double rate = (fps == 0) ? (0.0) : (1.0 / (double)fps);
-    double dt = 0.0, tm = yf_gettime();
-    int r = 0;
-    do {
-        update(dt, arg);
-
-        if ((r = yf_view_render(view)) != 0)
-            break;
-
-        dt = yf_gettime() - tm;
-        if (dt < rate) {
-            yf_sleep(rate - dt);
-            dt = yf_gettime() - tm;
-        }
-        tm += dt;
-    } while (view->started);
-
-    return r;
-}
-
-void yf_view_stop(YF_view view)
-{
-    assert(view != NULL);
-    view->started = 0;
-}
-
 void yf_view_deinit(YF_view view)
 {
     if (view == NULL)
