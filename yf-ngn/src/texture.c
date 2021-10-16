@@ -24,7 +24,7 @@
 /* TODO: Thread-safe. */
 
 /* TODO: Should be defined elsewhere. */
-#define YF_LAYCAP 64
+#define YF_LAYCAP 16
 
 /* Type defining an image object and associated layer state. */
 /* XXX: This assumes that a single image object will suffice. */
