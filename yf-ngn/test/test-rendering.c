@@ -290,7 +290,8 @@ int yf_test_rendering(void)
     yf_scene_setcolor(vars_.scn1, YF_COLOR_YELLOW);
     yf_scene_setcolor(vars_.scn2, YF_COLOR_BLUE);
 
-    yf_view_loop(vars_.view, vars_.scn1, YF_FPS, update, NULL);
+    if (yf_view_loop(vars_.view, vars_.scn1, YF_FPS, update, NULL) != 0)
+        assert(0);
 
     for (size_t i = 0; i < YF_MDLN_1; i++)
         yf_model_deinit(vars_.mdls1[i]);
