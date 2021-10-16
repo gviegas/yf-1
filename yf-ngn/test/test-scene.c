@@ -202,7 +202,8 @@ int yf_test_scene(void)
     YF_TEST_PRINT("traverse", "node, traverse, NULL", "");
     yf_node_traverse(node, traverse, NULL);
 
-    yf_view_loop(vars_.view, vars_.scn, YF_FPS, update, NULL);
+    if (yf_view_loop(vars_.view, vars_.scn, YF_FPS, update, NULL) != 0)
+        assert(0);
 
     puts("\n- no explicit 'deinit()' call for managed scene -\n");
 
