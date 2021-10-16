@@ -216,10 +216,12 @@ YF_texture yf_texture_init(const char *pathname, size_t index,
     YF_texture tex = yf_texture_initdt(&data);
     free(data.data);
 
-    if (tex != NULL && splr != NULL)
-        tex->splr = *splr;
+    if (tex != NULL) {
+        if (splr != NULL)
+            tex->splr = *splr;
+        tex->uvset = uvset;
+    }
 
-    tex->uvset = uvset;
     return tex;
 }
 
