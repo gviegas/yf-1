@@ -625,6 +625,7 @@ static int init_entry(int resrq)
 {
     assert(resrq >= 0 && resrq < YF_RESRQ_N);
     assert(allocn_[resrq] > 0);
+    assert(entries_[resrq].obtained == NULL);
 
     if (yf_resmgr_getglobl() == NULL)
         return -1;
@@ -638,34 +639,53 @@ static int init_entry(int resrq)
     entries_[resrq].n = n;
     entries_[resrq].i = 0;
 
+    int r = -1;
+
     /* TODO: Consider using spec. constants to set the number of elements. */
     switch (resrq) {
     case YF_RESRQ_MDL:
-        return init_mdl(entries_+resrq, 1);
+        r = init_mdl(entries_+resrq, 1);
+        break;
     case YF_RESRQ_MDL2:
-        return init_mdl(entries_+resrq, 2);
+        r = init_mdl(entries_+resrq, 2);
+        break;
     case YF_RESRQ_MDL4:
-        return init_mdl(entries_+resrq, 4);
+        r = init_mdl(entries_+resrq, 4);
+        break;
     case YF_RESRQ_MDL8:
-        return init_mdl(entries_+resrq, 8);
+        r = init_mdl(entries_+resrq, 8);
+        break;
     case YF_RESRQ_MDL16:
-        return init_mdl(entries_+resrq, 16);
+        r = init_mdl(entries_+resrq, 16);
+        break;
     case YF_RESRQ_MDL32:
-        return init_mdl(entries_+resrq, 32);
+        r = init_mdl(entries_+resrq, 32);
+        break;
     case YF_RESRQ_MDL64:
-        return init_mdl(entries_+resrq, 64);
+        r = init_mdl(entries_+resrq, 64);
+        break;
     case YF_RESRQ_TERR:
-        return init_terr(entries_+resrq);
+        r = init_terr(entries_+resrq);
+        break;
     case YF_RESRQ_PART:
-        return init_part(entries_+resrq);
+        r = init_part(entries_+resrq);
+        break;
     case YF_RESRQ_QUAD:
-        return init_quad(entries_+resrq);
+        r = init_quad(entries_+resrq);
+        break;
     case YF_RESRQ_LABL:
-        return init_labl(entries_+resrq);
-    default:
-        assert(0);
-        abort();
+        r = init_labl(entries_+resrq);
+        break;
     }
+
+    if (r != 0) {
+        /* TODO: Move other deinitialization code from 'init_{obj}()' to
+           this function.*/
+        free(entries_[resrq].obtained);
+        memset(entries_+resrq, 0, sizeof *entries_);
+    }
+
+    return r;
 }
 
 /* Deinitializes the entry of a given 'resrq' value. */
