@@ -378,7 +378,8 @@ int yf_test_animation(void)
     YF_TEST_PRINT("traverse", "getnode(scn), traverse, NULL", "");
     yf_node_traverse(yf_scene_getnode(vars_.scn), traverse, NULL);
 
-    yf_view_loop(vars_.view, vars_.scn, YF_FPS, update, NULL);
+    if (yf_view_loop(vars_.view, vars_.scn, YF_FPS, update, NULL) != 0)
+        assert(0);
 
     puts("\n- no explicit 'deinit()' call for managed animation -\n");
 
