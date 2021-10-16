@@ -130,8 +130,10 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
                 return -1;
             }
 
-            if (yf_dict_insert(font->glyphs, key, glyph) != 0)
+            if (yf_dict_insert(font->glyphs, key, glyph) != 0) {
+                free(glyph);
                 return -1;
+            }
 
             /* TODO: Consider ignoring failure here. */
             if (font->data.glyph(font->data.font, str[i], pt, dpi, glyph) != 0)
