@@ -259,8 +259,10 @@ const YF_cmdres *yf_cmdpool_getprio(YF_context ctx,
         }
         e->callb = callb;
         e->arg = arg;
-        if (yf_list_insert(priv->callbs, e) != 0)
+        if (yf_list_insert(priv->callbs, e) != 0) {
+            free(e);
             return NULL;
+        }
     }
 
     return &priv->prio;
