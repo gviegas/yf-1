@@ -301,6 +301,9 @@ static void deinit_queue(YF_context ctx, T_cmde *cmde)
     if (cmde == NULL)
         return;
 
+    if (cmde == &((T_priv *)ctx->cmde.priv)->prio)
+        yf_cmdpool_notifyprio(ctx, -1);
+
     reset_queue(ctx, cmde);
     free(cmde->buffers);
     free(cmde->entries);
