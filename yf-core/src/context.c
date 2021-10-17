@@ -416,6 +416,7 @@ static int init_device(YF_context ctx)
     res = vkEnumeratePhysicalDevices(ctx->instance, &phy_n, phy_devs);
     if (res != VK_SUCCESS) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
+        free(phy_devs);
         return -1;
     }
 
@@ -431,6 +432,7 @@ static int init_device(YF_context ctx)
         qf_props = malloc(sizeof(VkQueueFamilyProperties) * qf_n);
         if (qf_props == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
+            free(phy_devs);
             return -1;
         }
         vkGetPhysicalDeviceQueueFamilyProperties(ctx->phy_dev, &qf_n, qf_props);
@@ -468,6 +470,8 @@ static int init_device(YF_context ctx)
             break;
         }
     }
+
+    free(phy_devs);
 
     if (ctx->queue_i == -1) {
         yf_seterr(YF_ERR_DEVGEN, __func__);
