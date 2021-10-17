@@ -199,6 +199,8 @@ void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr)
 
     T_priv *priv = ctx->cmdp.priv;
 
+    assert(priv->cmdp.entries[cmdr->res_id].in_use);
+
     priv->cmdp.entries[cmdr->res_id].in_use = 0;
     priv->cmdp.last_i = cmdr->res_id;
     priv->cmdp.cur_n--;
