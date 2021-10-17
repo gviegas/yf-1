@@ -33,11 +33,11 @@ typedef struct {
 /* Deallocates a staging buffer. */
 static void dealloc_stgbuf(int res, void *arg)
 {
+    yf_buffer_deinit((YF_buffer)arg);
+
     if (res != 0) {
         /* TODO */
     }
-
-    yf_buffer_deinit((YF_buffer)arg);
 }
 
 /* Sets image layout. */
@@ -422,6 +422,10 @@ void yf_image_deinit(YF_image img)
 
     yf_publish(img, YF_PUBSUB_DEINIT);
     yf_setpub(img, YF_PUBSUB_NONE);
+
+    /* cannot let 'cmdpool' call 'set_layout()' with a dangling ptr */
+    if (img->layout != img->next_layout)
+        yf_cmdexec_execprio(img->ctx);
 
     YF_iter it = YF_NILIT;
     YF_iview *iv;
