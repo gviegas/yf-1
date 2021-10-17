@@ -33,7 +33,10 @@ typedef struct {
 /* Deallocates a staging buffer. */
 static void dealloc_stgbuf(int res, void *arg)
 {
-    assert(res == 0);
+    if (res != 0) {
+        /* TODO */
+    }
+
     yf_buffer_deinit((YF_buffer)arg);
 }
 
