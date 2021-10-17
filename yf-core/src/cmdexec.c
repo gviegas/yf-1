@@ -451,6 +451,7 @@ void yf_cmdexec_resetprio(YF_context ctx)
     assert(ctx->cmde.priv != NULL);
 
     reset_queue(ctx, &((T_priv *)ctx->cmde.priv)->prio);
+    yf_cmdpool_notifyprio(ctx, -1);
 }
 
 void yf_cmdexec_waitfor(YF_context ctx, VkSemaphore sem,
