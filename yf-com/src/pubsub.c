@@ -30,6 +30,26 @@ typedef struct {
 /* Dictionary containing all publishers. */
 static YF_dict pubs_ = NULL;
 
+/* On exit deinitialization. */
+static void deinit(void)
+{
+    if (pubs_ == NULL)
+        return;
+
+    YF_iter it = YF_NILIT;
+    T_pub *pub;
+    while ((pub = yf_dict_next(pubs_, &it, NULL)) != NULL) {
+        YF_iter it2 = YF_NILIT;
+        T_sub *sub;
+        while ((sub = yf_dict_next(pub->subs, &it2, NULL)) != NULL)
+            free(sub);
+        yf_dict_deinit(pub->subs);
+        free(pub);
+    }
+
+    yf_dict_deinit(pubs_);
+}
+
 int yf_setpub(const void *pub, unsigned pubsub_mask)
 {
     if (pub == NULL) {
@@ -37,8 +57,12 @@ int yf_setpub(const void *pub, unsigned pubsub_mask)
         return -1;
     }
 
-    if (pubs_ == NULL && (pubs_ = yf_dict_init(NULL, NULL)) == NULL)
-        return -1;
+    if (pubs_ == NULL) {
+        if ((pubs_ = yf_dict_init(NULL, NULL)) == NULL)
+            return -1;
+
+        atexit(deinit);
+    }
 
     T_pub *val = yf_dict_search(pubs_, pub);
 
