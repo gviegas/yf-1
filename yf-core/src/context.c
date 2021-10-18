@@ -620,6 +620,7 @@ void yf_context_deinit(YF_context ctx)
         free(ctx->dev_exts[i]);
     free(ctx->dev_exts);
 
+    vkDestroyPipelineCache(ctx->device, ctx->pl_cache, NULL);
     vkDestroyDevice(ctx->device, NULL);
     vkDestroyInstance(ctx->instance, NULL);
     free(ctx);
