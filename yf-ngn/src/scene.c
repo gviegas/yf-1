@@ -1166,8 +1166,12 @@ static int render_mdl(YF_scene scn)
         }
     }
 
-    while ((val = yf_list_removeat(done, NULL)) != NULL)
+    while ((val = yf_list_removeat(done, NULL)) != NULL) {
         yf_dict_remove(vars_.mdls, val);
+        if (val->mdl_cap > 1)
+            free(val->mdls);
+        free(val);
+    }
 
     yf_list_deinit(done);
 
