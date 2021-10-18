@@ -179,7 +179,7 @@ cancel:
 
                     memset(ctrl, 0, sizeof *ctrl * (1ULL<<ctrl_w));
 
-                    /* rolling back to previous state do not require new
+                    /* rolling back to previous state does not require new
                        allocations, thus it is guaranteed to succeed */
                     goto cancel;
                 }

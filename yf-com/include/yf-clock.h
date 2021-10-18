@@ -15,7 +15,7 @@ YF_DECLS_BEGIN
 /**
  * Gets the elapsed time relative to some unspecified point in the past.
  *
- * Values returned by subsequent calls to 'yf_gettime' can be used to
+ * Values returned by subsequent calls to 'yf_gettime()' can be used to
  * calculate elapsed time. The precision is implementation-dependent.
  *
  * @return: The elapsed time, in seconds.
