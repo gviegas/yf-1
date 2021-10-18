@@ -10,7 +10,7 @@
 
 #include "yf-event.h"
 
-/* Type defining a specific event implementation. */
+/* Specific event implementation. */
 typedef struct {
     int (*poll)(unsigned evt_mask);
 

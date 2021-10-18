@@ -185,7 +185,7 @@ static void *addrs_[sizeof names_ / sizeof *names_] = {0};
     *(void **)(&fn) = addrs_[YF_SYM_CHANGE_KEYBOARD_CONTROL_CHECKED]; \
     res = fn(connection, value_mask, value_list); } while (0)
 
-/* Type defining the data of a window object. */
+/* Data of a window object. */
 typedef struct {
     YF_window wrapper;
     unsigned creat_mask;

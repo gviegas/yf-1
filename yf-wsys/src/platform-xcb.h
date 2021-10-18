@@ -23,7 +23,7 @@ void yf_unldxcb(void);
 extern const YF_win_imp yf_g_winxcb;
 extern const YF_evt_imp yf_g_evtxcb;
 
-/* Type defining global xcb variables. */
+/* Global xcb variables. */
 typedef struct {
     xcb_connection_t *conn;
     xcb_visualid_t visual;

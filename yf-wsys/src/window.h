@@ -10,7 +10,7 @@
 
 #include "yf-window.h"
 
-/* Type defining a specific window implementation. */
+/* Specific window implementation. */
 typedef struct {
     /* Implementations return a pointer to their internal data on 'init()',
        which is then provided as parameter when calling other window functions.

@@ -10,7 +10,7 @@
 
 #include "event.h"
 
-/* Type defining an event function and its generic argument. */
+/* Event function/generic argument pair. */
 typedef struct {
     YF_evtfn fn;
     void *arg;
