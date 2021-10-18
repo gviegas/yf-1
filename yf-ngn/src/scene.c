@@ -179,9 +179,10 @@ static int traverse_scn(YF_node node, void *arg)
                 return -1;
             }
 
-            *val = key;
+            val->key = key.key;
             if (yf_dict_insert(vars_.mdls, val, val) != 0) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
+                free(val);
                 *(int *)arg = -1;
                 return -1;
             }
