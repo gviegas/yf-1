@@ -150,5 +150,7 @@ int yf_test_skin(void)
     YF_TEST_PRINT("deinit", "skin2", "");
     yf_skin_deinit(skin2);
 
+    yf_node_deinit(node);
+
     return 0;
 }
