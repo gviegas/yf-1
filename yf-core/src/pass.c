@@ -129,8 +129,10 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
         YF_SAMPLES_FROM(depth_stencil->samples, dscs[dsc_i].samples);
         YF_LOADOP_FROM(depth_stencil->depth_loadop, dscs[dsc_i].loadOp);
         YF_STOREOP_FROM(depth_stencil->depth_storeop, dscs[dsc_i].storeOp);
-        YF_LOADOP_FROM(depth_stencil->stencil_loadop, dscs[dsc_i].loadOp);
-        YF_STOREOP_FROM(depth_stencil->stencil_storeop, dscs[dsc_i].storeOp);
+        YF_LOADOP_FROM(depth_stencil->stencil_loadop,
+                       dscs[dsc_i].stencilLoadOp);
+        YF_STOREOP_FROM(depth_stencil->stencil_storeop,
+                        dscs[dsc_i].stencilStoreOp);
         dscs[dsc_i].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         dscs[dsc_i].finalLayout =
             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
