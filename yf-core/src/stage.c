@@ -30,6 +30,15 @@ static void destroy_priv(YF_context ctx)
         return;
 
     T_priv *priv = ctx->stg.priv;
+
+    YF_iter it = YF_NILIT;
+    do {
+        VkShaderModule val = yf_dict_next(priv->shds, &it, NULL);
+        if (YF_IT_ISNIL(it))
+            break;
+        vkDestroyShaderModule(ctx->device, val, NULL);
+    } while (1);
+
     yf_dict_deinit(priv->shds);
     free(priv);
     ctx->stg.priv = NULL;
