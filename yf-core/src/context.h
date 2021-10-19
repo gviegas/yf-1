@@ -11,7 +11,7 @@
 #include "yf-context.h"
 #include "vk.h"
 
-/* Type defining data that is kept in a context but managed externally. */
+/* Data that is kept in a context but managed externally. */
 typedef struct {
     void *priv;
     void (*deinit_callb)(YF_context);

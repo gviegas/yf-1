@@ -21,7 +21,7 @@
 #include "buffer.h"
 #include "yf-limits.h"
 
-/* Type defining the private data of a 'YF_iview'. */
+/* The private data of a 'YF_iview'. */
 typedef struct {
     struct {
         YF_slice layers;

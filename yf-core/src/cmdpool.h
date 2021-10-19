@@ -11,7 +11,7 @@
 #include "yf-context.h"
 #include "vk.h"
 
-/* Type defining a resource acquired from the command pool. */
+/* Resource acquired from the command pool. */
 typedef struct {
     VkCommandBuffer pool_res;
     int res_id;

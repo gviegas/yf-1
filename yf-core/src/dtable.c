@@ -19,7 +19,7 @@
 #include "image.h"
 #include "yf-limits.h"
 
-/* Type defining key/value for the iss dictionary. */
+/* Key/value for the 'iss' dictionary. */
 typedef struct {
     struct {
         unsigned alloc_i;

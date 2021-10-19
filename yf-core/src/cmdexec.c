@@ -23,14 +23,14 @@
 
 #define YF_CMDEWAIT 16666666UL
 
-/* Type defining an entry in the queue. */
+/* Queue entry. */
 typedef struct {
     YF_cmdres cmdr;
     void (*callb)(int, void *);
     void *arg;
 } T_entry;
 
-/* Type defining a command execution queue. */
+/* Execution queue. */
 typedef struct {
     T_entry *entries;
     VkCommandBuffer *buffers;
@@ -39,7 +39,7 @@ typedef struct {
     VkSubmitInfo subm_info;
 } T_cmde;
 
-/* Type defining submission state. */
+/* Submission state. */
 typedef struct {
     VkFence fence;
     VkSemaphore prio_sem;
@@ -48,7 +48,7 @@ typedef struct {
     YF_list wait_stgs;
 } T_subm;
 
-/* Type defining execution queues stored in a context. */
+/* Execution queues stored in a context. */
 typedef struct {
     T_cmde cmde;
     T_cmde prio;

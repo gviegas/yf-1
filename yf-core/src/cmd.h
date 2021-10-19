@@ -116,7 +116,26 @@ typedef struct {
     unsigned layer_n;
 } YF_cmd_cpyimg;
 
-/* Type defining a single command. */
+/* Command types. */
+#define YF_CMD_GST     0
+#define YF_CMD_CST     1
+#define YF_CMD_TGT     2
+#define YF_CMD_VPORT   3
+#define YF_CMD_SCISS   4
+#define YF_CMD_DTB     5
+#define YF_CMD_VBUF    6
+#define YF_CMD_IBUF    7
+#define YF_CMD_CLRCOL  8
+#define YF_CMD_CLRDEP  9
+#define YF_CMD_CLRSTEN 10
+#define YF_CMD_DRAW    11
+#define YF_CMD_DRAWI   12
+#define YF_CMD_DISP    13
+#define YF_CMD_CPYBUF  14
+#define YF_CMD_CPYIMG  15
+#define YF_CMD_SYNC    16
+
+/* Command of a given type. */
 typedef struct {
     int cmd;
     union {
@@ -138,24 +157,5 @@ typedef struct {
         YF_cmd_cpyimg cpyimg;
     };
 } YF_cmd;
-
-/* Command types. */
-#define YF_CMD_GST     0
-#define YF_CMD_CST     1
-#define YF_CMD_TGT     2
-#define YF_CMD_VPORT   3
-#define YF_CMD_SCISS   4
-#define YF_CMD_DTB     5
-#define YF_CMD_VBUF    6
-#define YF_CMD_IBUF    7
-#define YF_CMD_CLRCOL  8
-#define YF_CMD_CLRDEP  9
-#define YF_CMD_CLRSTEN 10
-#define YF_CMD_DRAW    11
-#define YF_CMD_DRAWI   12
-#define YF_CMD_DISP    13
-#define YF_CMD_CPYBUF  14
-#define YF_CMD_CPYIMG  15
-#define YF_CMD_SYNC    16
 
 #endif /* YF_CMD_H */

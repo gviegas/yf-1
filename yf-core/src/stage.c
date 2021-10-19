@@ -15,7 +15,7 @@
 #include "stage.h"
 #include "context.h"
 
-/* Type defining stage variables stored in a context. */
+/* Stage variables stored in a context. */
 typedef struct {
     YF_dict shds;
     YF_shdid cur;

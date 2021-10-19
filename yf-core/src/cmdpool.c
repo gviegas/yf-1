@@ -20,14 +20,14 @@
 #define YF_CMDPMIN 1
 #define YF_CMDPMAX 32
 
-/* Type representing a resource entry in the pool. */
+/* Pool resource. */
 typedef struct {
     VkCommandPool pool;
     VkCommandBuffer buffer;
     int in_use;
 } T_entry;
 
-/* Type defining a command pool. */
+/* Command pool. */
 typedef struct {
     T_entry *entries;
     unsigned last_i;
@@ -35,14 +35,14 @@ typedef struct {
     unsigned cap;
 } T_cmdp;
 
-/* Type defining command pool variables stored in a context. */
+/* Command pool variables stored in a context. */
 typedef struct {
     T_cmdp cmdp;
     YF_cmdres prio;
     YF_list callbs;
 } T_priv;
 
-/* Type storing a callback from priority resource acquisition. */
+/* Callback from priority resource acquisition. */
 typedef struct {
     void (*callb)(int, void *);
     void *arg;

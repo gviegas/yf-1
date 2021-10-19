@@ -29,7 +29,7 @@
 #include "vk.h"
 #include "yf-limits.h"
 
-/* Type defining graphics decoding state. */
+/* Graphics decoding state. */
 typedef struct {
     YF_context ctx;
     const YF_cmdres *cmdr;
@@ -69,7 +69,7 @@ typedef struct {
     } clrsten;
 } T_gdec;
 
-/* Type defining compute decoding state. */
+/* Compute decoding state. */
 typedef struct {
     YF_context ctx;
     const YF_cmdres *cmdr;
@@ -85,7 +85,7 @@ typedef struct {
     } dtb;
 } T_cdec;
 
-/* Type defining transfer decoding state. */
+/* Transfer decoding state. */
 typedef struct {
     YF_context ctx;
     const YF_cmdres *cmdr;

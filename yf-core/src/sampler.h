@@ -12,7 +12,7 @@
 #include "yf-sampler.h"
 #include "vk.h"
 
-/* Type defining a managed sampler. */
+/* Managed sampler. */
 typedef struct {
     VkSampler handle;
     YF_sampler splr;
