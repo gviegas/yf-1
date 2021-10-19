@@ -24,7 +24,7 @@
 #define YF_DATAC_SKIN 3
 #define YF_DATAC_MATL 4
 
-/* Type defining data contents that can be loaded. */
+/* Data contents that can be loaded. */
 typedef union {
     YF_collection coll;
     YF_mesh mesh;

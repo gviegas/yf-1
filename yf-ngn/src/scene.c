@@ -109,7 +109,7 @@ struct YF_scene_o {
     YF_rect sciss;
 };
 
-/* Type defining shared variables available to all scenes. */
+/* Shared variables available to all scenes. */
 typedef struct {
     YF_context ctx;
     YF_buffer buf;
@@ -134,13 +134,13 @@ typedef struct {
     unsigned light_n;
 } T_vars;
 
-/* Type defining an entry in the list of obtained resources. */
+/* Entry in the list of obtained resources. */
 typedef struct {
     int resrq;
     unsigned inst_alloc;
 } T_reso;
 
-/* Type defining key/value pair for the model dictionary. */
+/* Key/value pair for the model dictionary. */
 typedef struct {
     struct {
         YF_mesh mesh;

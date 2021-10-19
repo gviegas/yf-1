@@ -21,7 +21,7 @@
 #undef YF_LERP
 #define YF_LERP(a, b, t) ((1.0f - (t)) * (a) + (t) * (b))
 
-/* Type defining the state of a single particle. */
+/* State of a single particle. */
 typedef struct {
 #define YF_PSTATE_UNSET    0
 #define YF_PSTATE_SPAWNING 1

@@ -51,7 +51,7 @@
 
 #define YF_TOKENMAX 1024
 
-/* Type defining a token. */
+/* Token type/data. */
 typedef struct {
     int token;
     char data[YF_TOKENMAX];
@@ -203,18 +203,18 @@ static int next_token(FILE *file, T_token *token)
  * Type parsing
  */
 
-/* Type defining a string. */
+/* String. */
 typedef char *T_str;
 
-/* Type defining a floating-point number. */
+/* Floating-point number. */
 typedef float T_num;
 
-/* Type defining an integer number. */
+/* Integer number. */
 typedef long long T_int;
 #define YF_INT_MIN LLONG_MIN
 #define YF_INT_MAX LLONG_MAX
 
-/* Type defining a boolean value. */
+/* Boolean value. */
 typedef int T_bool;
 #define YF_TRUE  1
 #define YF_FALSE 0
@@ -484,7 +484,7 @@ static int consume_prop(FILE *file, T_token *token)
     return 0;
 }
 
-/* Type defining the 'glTF.asset' property. */
+/* The 'glTF.asset' property. */
 typedef struct {
     T_str copyright;
     T_str generator;
@@ -492,7 +492,7 @@ typedef struct {
     T_str min_version;
 } T_asset;
 
-/* Type defining the 'glTF.scenes' property. */
+/* The 'glTF.scenes' property. */
 typedef struct {
     struct {
         T_int *nodes;
@@ -502,7 +502,7 @@ typedef struct {
     size_t n;
 } T_scenes;
 
-/* Type defining the 'glTF.nodes' property. */
+/* The 'glTF.nodes' property. */
 typedef struct {
     struct {
         T_int *children;
@@ -530,7 +530,7 @@ typedef struct {
     size_t n;
 } T_nodes;
 
-/* Type defining the 'glTF.cameras.perspective' property. */
+/* The 'glTF.cameras.perspective' property. */
 typedef struct {
     T_num yfov;
     T_num aspect_ratio;
@@ -538,7 +538,7 @@ typedef struct {
     T_num zfar;
 } T_perspective;
 
-/* Type defining the 'glTF.cameras.orthographic' property. */
+/* The 'glTF.cameras.orthographic' property. */
 typedef struct {
     T_num xmag;
     T_num ymag;
@@ -546,7 +546,7 @@ typedef struct {
     T_num zfar;
 } T_orthographic;
 
-/* Type defining the 'glTF.cameras' property. */
+/* The 'glTF.cameras' property. */
 typedef struct {
     struct {
 #define YF_GLTF_CAMERA_PERSP 0
@@ -561,7 +561,7 @@ typedef struct {
     size_t n;
 } T_cameras;
 
-/* Type defining the 'glTF.meshes.primitives.targets' property. */
+/* The 'glTF.meshes.primitives.targets' property. */
 typedef struct {
     struct {
         T_int position;
@@ -571,7 +571,7 @@ typedef struct {
     size_t n;
 } T_targets;
 
-/* Type defining the 'glTF.meshes.primitives' property. */
+/* The 'glTF.meshes.primitives' property. */
 typedef struct {
     struct {
 #define YF_GLTF_ATTR_POS  0
@@ -600,7 +600,7 @@ typedef struct {
     size_t n;
 } T_primitives;
 
-/* Type defining the 'glTF.meshes' property. */
+/* The 'glTF.meshes' property. */
 typedef struct {
     struct {
         T_primitives primitives;
@@ -611,7 +611,7 @@ typedef struct {
     size_t n;
 } T_meshes;
 
-/* Type defining the 'glTF.skins' property. */
+/* The 'glTF.skins' property. */
 typedef struct {
     struct {
         T_int inv_bind_matrices;
@@ -623,7 +623,7 @@ typedef struct {
     size_t n;
 } T_skins;
 
-/* Type defining the 'glTF.*.textureInfo' property. */
+/* The 'glTF.*.textureInfo' property. */
 typedef struct {
     T_int index;
     T_int tex_coord;
@@ -633,8 +633,8 @@ typedef struct {
     };
 } T_textureinfo;
 
-/* Type defining the 'glTF.materials.extensions.-
-   KHR_materials_pbrSpecularGlossiness' property. */
+/* The 'glTF.materials.extensions.KHR_materials_pbrSpecularGlossiness'
+   property. */
 typedef struct {
     T_num diffuse_fac[4];
     T_textureinfo diffuse_tex;
@@ -643,7 +643,7 @@ typedef struct {
     T_textureinfo spec_gloss_tex;
 } T_pbrspecgloss;
 
-/* Type defining the 'glTF.materials.pbrMetallicRoughness' property. */
+/* The 'glTF.materials.pbrMetallicRoughness' property. */
 typedef struct {
     T_num base_clr_fac[4];
     T_textureinfo base_clr_tex;
@@ -652,7 +652,7 @@ typedef struct {
     T_textureinfo metal_rough_tex;
 } T_pbrmetalrough;
 
-/* Type defining the 'glTF.materials' property. */
+/* The 'glTF.materials' property. */
 typedef struct {
     struct {
         T_pbrmetalrough pbrmr;
@@ -675,7 +675,7 @@ typedef struct {
     size_t n;
 } T_materials;
 
-/* Type defining the 'glTF.animations.channels.target' property. */
+/* The 'glTF.animations.channels.target' property. */
 typedef struct {
     T_int node;
 #define YF_GLTF_PATH_XLATE  0
@@ -685,7 +685,7 @@ typedef struct {
     int path;
 } T_ctarget;
 
-/* Type defining the 'glTF.animations.channels' property. */
+/* The 'glTF.animations.channels' property. */
 typedef struct {
     struct {
         T_int sampler;
@@ -694,7 +694,7 @@ typedef struct {
     size_t n;
 } T_channels;
 
-/* Type defining the 'glTF.animations.samplers' property. */
+/* The 'glTF.animations.samplers' property. */
 typedef struct {
     struct {
         T_int input;
@@ -707,7 +707,7 @@ typedef struct {
     size_t n;
 } T_asamplers;
 
-/* Type defining the 'glTF.animations' property. */
+/* The 'glTF.animations' property. */
 typedef struct {
     struct {
         T_channels channels;
@@ -717,7 +717,7 @@ typedef struct {
     size_t n;
 } T_animations;
 
-/* Type defining the 'glTF.accessors.sparse.indices' property. */
+/* The 'glTF.accessors.sparse.indices' property. */
 typedef struct {
     T_int buffer_view;
     T_int byte_off;
@@ -727,20 +727,20 @@ typedef struct {
     T_int comp_type;
 } T_sindices;
 
-/* Type defining the 'glTF.accessors.sparse.values' property. */
+/* The 'glTF.accessors.sparse.values' property. */
 typedef struct {
     T_int buffer_view;
     T_int byte_off;
 } T_svalues;
 
-/* Type defining the 'glTF.accessors.sparse' property. */
+/* The 'glTF.accessors.sparse' property. */
 typedef struct {
     T_int count;
     T_sindices indices;
     T_svalues values;
 } T_sparse;
 
-/* Type defining the 'glTF.accessors' property. */
+/* The 'glTF.accessors' property. */
 typedef struct {
     struct {
         T_int buffer_view;
@@ -778,7 +778,7 @@ typedef struct {
     size_t n;
 } T_accessors;
 
-/* Type defining the 'glTF.bufferViews' property. */
+/* The 'glTF.bufferViews' property. */
 typedef struct {
     struct {
         T_int buffer;
@@ -793,7 +793,7 @@ typedef struct {
     size_t n;
 } T_bufferviews;
 
-/* Type defining the 'glTF.buffers' property. */
+/* The 'glTF.buffers' property. */
 typedef struct {
     struct {
         T_int byte_len;
@@ -803,7 +803,7 @@ typedef struct {
     size_t n;
 } T_buffers;
 
-/* Type defining the 'glTF.textures' property. */
+/* The 'glTF.textures' property. */
 typedef struct {
     struct {
         T_int sampler;
@@ -813,7 +813,7 @@ typedef struct {
     size_t n;
 } T_textures;
 
-/* Type defining the 'glTF.images' property. */
+/* The 'glTF.images' property. */
 typedef struct {
     struct {
         T_str uri;
@@ -824,7 +824,7 @@ typedef struct {
     size_t n;
 } T_images;
 
-/* Type defining the 'glTF.samplers' property. */
+/* The 'glTF.samplers' property. */
 typedef struct {
     struct {
 #define YF_GLTF_WRAP_CLAMP  33071
@@ -845,14 +845,13 @@ typedef struct {
     size_t n;
 } T_samplers;
 
-/* Type defining the 'glTF.extensions.KHR_lights_punctual.lights.spot'
-   property. */
+/* The 'glTF.extensions.KHR_lights_punctual.lights.spot' property. */
 typedef struct {
     T_num inner_cone_angle;
     T_num outer_cone_angle;
 } T_spot;
 
-/* Type defining the 'glTF.extensions.KHR_lights_punctual.lights' property. */
+/* The 'glTF.extensions.KHR_lights_punctual.lights' property. */
 typedef struct {
     struct {
 #define YF_GLTF_LIGHT_POINT  0
@@ -868,7 +867,7 @@ typedef struct {
     size_t n;
 } T_lights;
 
-/* Type defining the root glTF object. */
+/* The root glTF object. */
 typedef struct {
     T_str *ext_used;
     size_t ext_used_n;
@@ -3156,7 +3155,7 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
  * Data
  */
 
-/* Type defining data for binary buffer access. */
+/* Data for binary buffer access. */
 typedef struct {
     char *path;
     /* offset into the embedded binary buffer (0), when applicable */
@@ -3168,7 +3167,7 @@ typedef struct {
     };
 } T_fdata;
 
-/* Type defining lists of contents mapping to a gltf object. */
+/* Lists of contents mapping to a gltf object. */
 typedef struct {
     YF_scene *scns;
     YF_node *nodes;

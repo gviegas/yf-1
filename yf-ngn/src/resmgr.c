@@ -24,7 +24,7 @@
 # define YF_SHD_FILEEXT ""
 #endif
 
-/* Type defining an entry in the resource list. */
+/* Resource entry. */
 typedef struct {
     YF_gstate gst;
     char *obtained;

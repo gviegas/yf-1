@@ -47,7 +47,7 @@ struct YF_mesh_o {
     int invalid;
 };
 
-/* Type defining an unused range of memory. */
+/* Unused range of memory. */
 typedef struct {
     size_t offset;
     size_t size;

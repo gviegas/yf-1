@@ -26,7 +26,7 @@
 /* TODO: Should be defined elsewhere. */
 #define YF_LAYCAP 16
 
-/* Type defining an image object and associated layer state. */
+/* Image object and associated layer state. */
 /* XXX: This assumes that a single image object will suffice. */
 typedef struct {
     YF_image img;
@@ -35,14 +35,14 @@ typedef struct {
     unsigned lay_i;
 } T_imge;
 
-/* Type defining a key for the dictionary of 'T_imge' values. */
+/* Key for the dictionary of 'T_imge' values. */
 /* TODO: Add levels and samples as key. */
 typedef struct {
     int pixfmt;
     YF_dim2 dim;
 } T_key;
 
-/* Type defining key/value pair for the dictionary of 'T_imge' values. */
+/* Key/value pair for the dictionary of 'T_imge' values. */
 typedef struct {
     T_key key;
     T_imge val;

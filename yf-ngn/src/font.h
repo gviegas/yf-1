@@ -15,7 +15,7 @@
 #include "yf-font.h"
 #include "yf-texture.h"
 
-/* Type defining a font glyph. */
+/* Font glyph. */
 typedef struct {
     uint16_t width;
     uint16_t height;
@@ -33,7 +33,7 @@ typedef struct {
     int16_t lsb;
 } YF_glyph;
 
-/* Type defining the font data. */
+/* Font data. */
 typedef struct {
     /* Font implementation. */
     void *font;
@@ -55,7 +55,7 @@ typedef struct {
 /* Initializes a new font object from font data directly. */
 YF_font yf_font_initdt(const YF_fontdt *data);
 
-/* Type defining rasterized font glyphs on a texture. */
+/* Font rasterization output. */
 typedef struct {
     YF_texture tex;
     YF_off2 off;

@@ -22,7 +22,7 @@
 #define YF_VSEMT_JNTS 0x0040
 #define YF_VSEMT_WGTS 0x0080
 
-/* Type defining attribute data. */
+/* Vertex attribute data. */
 typedef struct {
     int vsemt;
     int vfmt;
@@ -30,7 +30,7 @@ typedef struct {
     size_t data_off;
 } YF_attrdt;
 
-/* Type defining primitive data. */
+/* Primitive data. */
 typedef struct {
     int topology;
     unsigned vert_n;
@@ -50,7 +50,7 @@ typedef struct {
     YF_material matl;
 } YF_primdt;
 
-/* Type defining mesh data. */
+/* Mesh data. */
 typedef struct {
     YF_primdt *prims;
     unsigned prim_n;

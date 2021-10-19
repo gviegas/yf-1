@@ -12,7 +12,7 @@
 
 #include "yf-texture.h"
 
-/* Type defining the texture data. */
+/* Texture data. */
 typedef struct {
     void *data;
     int pixfmt;

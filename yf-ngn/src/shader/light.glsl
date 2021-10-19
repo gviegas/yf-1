@@ -16,7 +16,7 @@
 layout(std140, column_major) uniform;
 
 /**
- * Type defining a light source.
+ * Light source type.
  */
 struct T_light {
     int unused;

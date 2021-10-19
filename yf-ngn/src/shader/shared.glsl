@@ -12,7 +12,7 @@
 layout(std140, column_major) uniform;
 
 /**
- * Type defining a viewport.
+ * Viewport.
  */
 struct T_vport {
     float x;

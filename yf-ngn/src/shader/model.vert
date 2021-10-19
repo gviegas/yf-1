@@ -20,7 +20,7 @@
 #endif
 
 /**
- * Type defining instance-specific data.
+ * Instance-specific data.
  */
 struct T_inst {
     mat4 m;
