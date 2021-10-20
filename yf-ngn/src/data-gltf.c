@@ -5037,9 +5037,9 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return 0;
 }
 
-/* Loads a node subgraph from glTF contents. */
-static int load_subgraph(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
-                         T_int node)
+/* Loads a node graph from glTF contents. */
+static int load_graph(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
+                      T_int node)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
@@ -5055,8 +5055,8 @@ static int load_subgraph(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
     /* descendants will have been created by the time of insertion */
     for (size_t i = 0; i < gltf->nodes.v[node].child_n; i++) {
-        if (load_subgraph(gltf, fdata, cont,
-                          gltf->nodes.v[node].children[i]) != 0)
+        if (load_graph(gltf, fdata, cont,
+                       gltf->nodes.v[node].children[i]) != 0)
             return -1;
     }
 
@@ -5095,8 +5095,8 @@ static int load_scene(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     YF_node node = yf_scene_getnode(cont->scns[scene]);
     yf_node_setname(node, gltf->scenes.v[scene].name);
     for (size_t i = 0; i < gltf->scenes.v[scene].node_n; i++) {
-        if (load_subgraph(gltf, fdata, cont,
-                          gltf->scenes.v[scene].nodes[i]) != 0) {
+        if (load_graph(gltf, fdata, cont,
+                       gltf->scenes.v[scene].nodes[i]) != 0) {
             yf_scene_deinit(cont->scns[scene]);
             cont->scns[scene] = NULL;
             return -1;
