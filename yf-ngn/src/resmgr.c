@@ -21,10 +21,10 @@
 # define YF_SHD_DIR "bin/"
 #endif
 #ifndef YF_SHD_PREFIX
-# define YF_SHD_PREFIX "out."
+# define YF_SHD_PREFIX "shd."
 #endif
 #ifndef YF_SHD_SUFFIX
-# define YF_SHD_SUFFIX ""
+# define YF_SHD_SUFFIX ".bin"
 #endif
 
 /* Resource entry. */
