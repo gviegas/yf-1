@@ -34,13 +34,15 @@ frag_srcs = [
 src_dir = 'tmp/shd/'
 dst_dir = 'bin/'
 lang = ''
+prefix = 'shd.'
+suffix = '.bin'
 
 compiler = 'tmp/shdc'
 
 def compile(src, type, out, extra):
-    subprocess.run([compiler, '-V', src_dir + src + type + lang,
-                   '-o', dst_dir + (src if out == '' else out) + type]
-                   + extra)
+    i = src_dir + src + type + lang
+    o = dst_dir + prefix + (src if out == '' else out) + type + suffix
+    subprocess.run([compiler, '-V', i, '-o', o] + extra)
 
 def compile_vert():
     for src, out, extra in vert_srcs:
