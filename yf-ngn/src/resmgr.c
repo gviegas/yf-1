@@ -158,7 +158,7 @@ static char *make_shdpath(int nodeobj, int stage, unsigned elements)
         }
     }
 
-    const char *fmt = YF_SHD_DIR "%s%s.%s" YF_SHD_FILEEXT;
+    const char *fmt = YF_SHD_DIR YF_SHD_PREFIX "%s%s.%s" YF_SHD_SUFFIX;
     char *str = NULL;
     int len = snprintf(str, 0, fmt, obj_name, elem_str, stg_name);
     if (len < 0) {
