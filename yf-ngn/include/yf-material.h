@@ -76,6 +76,7 @@ typedef struct {
     } emissive;
     int alphamode;
     float alpha_cutoff;
+    int double_sided;
 } YF_matlprop;
 
 /**
