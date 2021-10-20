@@ -4726,6 +4726,7 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             }
         }
         free(unparented.is);
+        free(hier);
         assert(root != YF_INT_MIN);
 
     } else {
