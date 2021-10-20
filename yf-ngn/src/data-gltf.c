@@ -4448,9 +4448,9 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         prop.alphamode = YF_ALPHAMODE_OPAQUE;
         break;
     case YF_GLTF_ALPHA_MASK:
-        /* TODO */
-        yf_seterr(YF_ERR_UNSUP, __func__);
-        return -1;
+        prop.alphamode = YF_ALPHAMODE_MASK;
+        prop.alpha_cutoff = gltf->materials.v[material].alpha_cutoff;
+        break;
     case YF_GLTF_ALPHA_BLEND:
         prop.alphamode = YF_ALPHAMODE_BLEND;
         break;
