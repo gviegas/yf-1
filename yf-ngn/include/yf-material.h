@@ -32,6 +32,7 @@ typedef struct YF_material_o *YF_material;
  */
 #define YF_ALPHAMODE_OPAQUE 0
 #define YF_ALPHAMODE_BLEND  1
+#define YF_ALPHAMODE_MASK   2
 
 /**
  * Type defining the material properties of an object.
@@ -74,6 +75,7 @@ typedef struct {
         YF_vec3 factor;
     } emissive;
     int alphamode;
+    float alpha_cutoff;
 } YF_matlprop;
 
 /**
