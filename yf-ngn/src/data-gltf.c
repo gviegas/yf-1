@@ -4459,6 +4459,8 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         return -1;
     }
 
+    prop.double_sided = gltf->materials.v[material].double_sided;
+
     for (size_t i = 0; i < (sizeof infos / sizeof *infos); i++) {
         if (infos[i] == NULL || infos[i]->index == YF_INT_MIN)
             continue;
