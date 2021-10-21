@@ -44,8 +44,8 @@ int yf_test_mesh(void)
         .data_sz = 6 * sizeof(float[3 + 4]) + 9 * sizeof(unsigned short)
     };
 
-    YF_TEST_PRINT("initdt", "&data", "mesh");
-    YF_mesh mesh = yf_mesh_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "mesh");
+    YF_mesh mesh = yf_mesh_init(&data);
     if (mesh == NULL)
         return -1;
 
@@ -65,8 +65,8 @@ int yf_test_mesh(void)
         yf_mesh_getmatl(mesh, 0) != matl)
         return -1;
 
-    YF_TEST_PRINT("initdt", "&data", "mesh2");
-    YF_mesh mesh2 = yf_mesh_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "mesh2");
+    YF_mesh mesh2 = yf_mesh_init(&data);
     if (mesh2 == NULL)
         return -1;
 
@@ -81,8 +81,8 @@ int yf_test_mesh(void)
     if (yf_mesh_getmatl(mesh2, 0) != NULL)
         return -1;
 
-    YF_TEST_PRINT("initdt", "&data", "mesh3");
-    YF_mesh mesh3 = yf_mesh_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "mesh3");
+    YF_mesh mesh3 = yf_mesh_init(&data);
     if (mesh3 == NULL)
         return -1;
 
@@ -99,8 +99,8 @@ int yf_test_mesh(void)
 
     prim.matl = matl;
 
-    YF_TEST_PRINT("initdt", "&data", "mesh4");
-    YF_mesh mesh4 = yf_mesh_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "mesh4");
+    YF_mesh mesh4 = yf_mesh_init(&data);
     if (mesh4 == NULL)
         return -1;
 
@@ -136,8 +136,8 @@ int yf_test_mesh(void)
     data.data_sz += 5 * sizeof(float[3 + 4]);
     puts("\n- data size increased -");
 
-    YF_TEST_PRINT("initdt", "&data", "mesh");
-    mesh = yf_mesh_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "mesh");
+    mesh = yf_mesh_init(&data);
     if (mesh == NULL)
         return -1;
 
@@ -149,8 +149,8 @@ int yf_test_mesh(void)
     data.data_sz -= 6 * sizeof(float[3 + 4]);
     puts("\n- data size decreased -");
 
-    YF_TEST_PRINT("initdt", "&data", "mesh3");
-    mesh3 = yf_mesh_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "mesh3");
+    mesh3 = yf_mesh_init(&data);
     if (mesh3 == NULL)
         return -1;
 
