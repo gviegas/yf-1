@@ -201,7 +201,7 @@ int yf_test_model(void)
     vars_.scn = yf_scene_init();
     assert(vars_.scn != NULL);
 
-    vars_.mesh = yf_mesh_init("tmp/cube.glb", 0);
+    vars_.mesh = yf_mesh_load("tmp/cube.glb", 0, NULL);
     assert(vars_.mesh != NULL);
 
     YF_texture tex = yf_texture_init("tmp/cube.png", 0, NULL, YF_UVSET_0);
