@@ -143,7 +143,7 @@ static int init_grid(YF_terrain terr)
         }
     }
 
-    terr->mesh = yf_mesh_initdt(&data);
+    terr->mesh = yf_mesh_init(&data);
     free(dt);
     return terr->mesh == NULL ? -1 : 0;
 }
