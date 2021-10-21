@@ -4067,7 +4067,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         data.prims[i].matl = NULL;
     }
 
-    cont->meshes[mesh] = yf_mesh_initdt(&data);
+    cont->meshes[mesh] = yf_mesh_init(&data);
     YF_DEALLOCDT(data.prim_n);
     return cont->meshes[mesh] == NULL ? -1 : 0;
 
