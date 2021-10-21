@@ -10,6 +10,7 @@
 
 #include "yf/com/yf-defs.h"
 
+#include "yf-collection.h"
 #include "yf-material.h"
 
 YF_DECLS_BEGIN
@@ -20,14 +21,15 @@ YF_DECLS_BEGIN
 typedef struct YF_mesh_o *YF_mesh;
 
 /**
- * Initializes a new mesh.
+ * Loads a new mesh from file.
  *
  * @param pathname: The pathname of the mesh file.
  * @param index: The index of the mesh to load.
+ * @param coll: The collection for the new mesh.
  * @return: On success, returns a new mesh. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_mesh yf_mesh_init(const char *pathname, size_t index);
+YF_mesh yf_mesh_load(const char *pathname, size_t index, YF_collection coll);
 
 /**
  * Gets the number of primitives of a mesh.
