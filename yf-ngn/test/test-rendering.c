@@ -199,8 +199,8 @@ int yf_test_rendering(void)
     assert(vars_.scn1 != NULL);
     assert(vars_.scn2 != NULL);
 
-    vars_.mesh1 = yf_mesh_init("tmp/cube.glb", 0);
-    vars_.mesh2 = yf_mesh_init("tmp/cube2.glb", 0);
+    vars_.mesh1 = yf_mesh_load("tmp/cube.glb", 0, NULL);
+    vars_.mesh2 = yf_mesh_load("tmp/cube2.glb", 0, NULL);
     assert(vars_.mesh1 != NULL);
     assert(vars_.mesh2 != NULL);
 
