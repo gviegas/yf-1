@@ -107,7 +107,7 @@ static int init_rect(YF_quad quad)
         .data_sz = sizeof quad->verts + sizeof indx
     };
 
-    quad->mesh = yf_mesh_initdt(&data);
+    quad->mesh = yf_mesh_init(&data);
     free(dt);
     return quad->mesh == NULL ? -1 : 0;
 }
