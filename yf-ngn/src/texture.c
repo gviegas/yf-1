@@ -200,12 +200,11 @@ static int cmp_key(const void *a, const void *b)
            k1->dim.height != k2->dim.height;
 }
 
-YF_texture yf_texture_init(const char *pathname, size_t index,
-                           const YF_sampler *splr, int uvset)
+YF_texture yf_texture_load(const char *pathname, size_t index,
+                           YF_collection coll)
 {
     /* TODO */
     assert(index == 0);
-    assert(uvset == YF_UVSET_0 || uvset == YF_UVSET_1);
 
     /* TODO: Consider checking the type of the file. */
     YF_texdt data = {0};
@@ -216,11 +215,9 @@ YF_texture yf_texture_init(const char *pathname, size_t index,
     YF_texture tex = yf_texture_initdt(&data);
     free(data.data);
 
-    if (tex != NULL) {
-        if (splr != NULL)
-            tex->splr = *splr;
-        tex->uvset = uvset;
-    }
+    if (coll != NULL)
+        /* TODO */
+        assert(0);
 
     return tex;
 }
