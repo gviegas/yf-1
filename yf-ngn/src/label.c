@@ -114,7 +114,7 @@ static int init_rect(YF_label labl)
         .data_sz = sizeof labl->verts + sizeof indx
     };
 
-    labl->mesh = yf_mesh_initdt(&data);
+    labl->mesh = yf_mesh_init(&data);
     free(dt);
     return labl->mesh == NULL ? -1 : 0;
 }
