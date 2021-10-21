@@ -44,23 +44,23 @@ YF_mesh yf_mesh_load(const char *pathname, size_t index, YF_collection coll);
 #define YF_VSEMT_WGTS 0x80
 
 /**
- * Vertex attribute data.
+ * Type defining vertex attribute data.
  */
 typedef struct {
     int vsemt;
     int vfmt;
-    /* relative to 'primdt.data_off' */
+    /* Offset into 'meshdt.data', relative to 'primdt.data_off'. */
     size_t data_off;
 } YF_attrdt;
 
 /**
- * Primitive data.
+ * Type defining primitive data.
  */
 typedef struct {
     int topology;
     unsigned vert_n;
     unsigned indx_n;
-    /* relative to 'meshdt.data' */
+    /* Offset into 'meshdt.data'. */
     size_t data_off;
 
     unsigned vsemt_mask;
@@ -68,7 +68,7 @@ typedef struct {
     unsigned attr_n;
 
     int itype;
-    /* relative to 'primdt.data_off' */
+    /* Offset into 'meshdt.data', relative to 'primdt.data_off'. */
     size_t indx_data_off;
 
     /* XXX: Does not take ownership. */
@@ -76,7 +76,7 @@ typedef struct {
 } YF_primdt;
 
 /**
- * Mesh data.
+ * Type defining mesh data.
  */
 typedef struct {
     YF_primdt *prims;
