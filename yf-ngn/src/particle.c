@@ -98,7 +98,7 @@ static int init_points(YF_particle part)
         .data_sz = pos_sz + clr_sz
     };
 
-    part->mesh = yf_mesh_initdt(&data);
+    part->mesh = yf_mesh_init(&data);
     return part->mesh == NULL ? -1 : 0;
 }
 
