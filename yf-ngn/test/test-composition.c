@@ -286,9 +286,9 @@ int yf_test_composition(void)
     vars_.labl_node = yf_node_init();
     assert(vars_.labl_node != NULL);
 
-    YF_mesh mesh1 = yf_mesh_init("tmp/cube.glb", 0);
+    YF_mesh mesh1 = yf_mesh_load("tmp/cube.glb", 0, NULL);
     assert(mesh1 != NULL);
-    YF_mesh mesh2 = yf_mesh_init("tmp/cube2.glb", 0);
+    YF_mesh mesh2 = yf_mesh_load("tmp/cube2.glb", 0, NULL);
     assert(mesh2 != NULL);
 
     const YF_sampler splr = {
