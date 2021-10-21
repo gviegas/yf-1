@@ -12,9 +12,6 @@
 
 #include "yf-mesh.h"
 
-/* Initializes a new mesh object from mesh data directly. */
-YF_mesh yf_mesh_initdt(const YF_meshdt *data);
-
 /* Replaces the contents of a mesh object's data buffer. */
 int yf_mesh_setdata(YF_mesh mesh, size_t offset, const void *data, size_t size);
 

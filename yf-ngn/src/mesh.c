@@ -357,6 +357,81 @@ YF_mesh yf_mesh_load(const char *pathname, size_t index, YF_collection coll)
     return datac.mesh;
 }
 
+YF_mesh yf_mesh_init(const YF_meshdt *data)
+{
+    assert(data != NULL);
+    assert(data->prims != NULL);
+    assert(data->prim_n > 0);
+    assert(data->data != NULL);
+    assert(data->data_sz > 0);
+
+#ifdef YF_DEVEL
+    for (unsigned i = 0; i < data->prim_n; i++) {
+        assert(data->prims[i].vert_n > 0 && data->prims[i].vert_n <= UINT_MAX);
+        assert(data->prims[i].indx_n <= UINT_MAX);
+        assert(data->prims[i].attrs != NULL);
+        assert(data->prims[i].attr_n > 0);
+        /* TODO: More... */
+    }
+#endif
+
+    if (ctx_ == NULL) {
+        if ((ctx_ = yf_getctx()) == NULL ||
+            (buf_ = yf_buffer_init(ctx_, YF_BUFLEN)) == NULL)
+            return (ctx_ = NULL, NULL);
+
+        blks_[0].offset = 0;
+        blks_[0].size = yf_buffer_getsize(buf_);
+        blks_[0].prev_mesh = NULL;
+        blk_n_ = 1;
+
+        head_ = NULL;
+        tail_ = NULL;
+
+        inval_n_ = 0;
+    }
+
+    YF_mesh mesh = calloc(1, sizeof(struct YF_mesh_o));
+    if (mesh == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return NULL;
+    }
+
+    mesh->prims = malloc(data->prim_n * sizeof *data->prims);
+    if (mesh->prims == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        free(mesh);
+        return NULL;
+    }
+
+    for (unsigned i = 0; i < data->prim_n; i++) {
+        mesh->prims[i] = data->prims[i];
+        mesh->prims[i].attrs = malloc(data->prims[i].attr_n *
+                                      sizeof *data->prims->attrs);
+
+        if (mesh->prims[i].attrs == NULL) {
+            yf_seterr(YF_ERR_NOMEM, __func__);
+            for (unsigned j = 0; j < i; j++)
+                free(mesh->prims[j].attrs);
+            free(mesh->prims);
+            free(mesh);
+            return NULL;
+        }
+
+        for (unsigned j = 0; j < data->prims[i].attr_n; j++)
+            mesh->prims[i].attrs[j] = data->prims[i].attrs[j];
+    }
+
+    mesh->prim_n = data->prim_n;
+
+    if (copy_data(mesh, data->data, data->data_sz) != 0) {
+        yf_mesh_deinit(mesh);
+        mesh = NULL;
+    }
+
+    return mesh;
+}
+
 unsigned yf_mesh_getprimn(YF_mesh mesh)
 {
     assert(mesh != NULL);
@@ -508,81 +583,6 @@ void yf_mesh_deinit(YF_mesh mesh)
         free(mesh->prims[i].attrs);
     free(mesh->prims);
     free(mesh);
-}
-
-YF_mesh yf_mesh_initdt(const YF_meshdt *data)
-{
-    assert(data != NULL);
-    assert(data->prims != NULL);
-    assert(data->prim_n > 0);
-    assert(data->data != NULL);
-    assert(data->data_sz > 0);
-
-#ifdef YF_DEVEL
-    for (unsigned i = 0; i < data->prim_n; i++) {
-        assert(data->prims[i].vert_n > 0 && data->prims[i].vert_n <= UINT_MAX);
-        assert(data->prims[i].indx_n <= UINT_MAX);
-        assert(data->prims[i].attrs != NULL);
-        assert(data->prims[i].attr_n > 0);
-        /* TODO: More... */
-    }
-#endif
-
-    if (ctx_ == NULL) {
-        if ((ctx_ = yf_getctx()) == NULL ||
-            (buf_ = yf_buffer_init(ctx_, YF_BUFLEN)) == NULL)
-            return (ctx_ = NULL, NULL);
-
-        blks_[0].offset = 0;
-        blks_[0].size = yf_buffer_getsize(buf_);
-        blks_[0].prev_mesh = NULL;
-        blk_n_ = 1;
-
-        head_ = NULL;
-        tail_ = NULL;
-
-        inval_n_ = 0;
-    }
-
-    YF_mesh mesh = calloc(1, sizeof(struct YF_mesh_o));
-    if (mesh == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return NULL;
-    }
-
-    mesh->prims = malloc(data->prim_n * sizeof *data->prims);
-    if (mesh->prims == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        free(mesh);
-        return NULL;
-    }
-
-    for (unsigned i = 0; i < data->prim_n; i++) {
-        mesh->prims[i] = data->prims[i];
-        mesh->prims[i].attrs = malloc(data->prims[i].attr_n *
-                                      sizeof *data->prims->attrs);
-
-        if (mesh->prims[i].attrs == NULL) {
-            yf_seterr(YF_ERR_NOMEM, __func__);
-            for (unsigned j = 0; j < i; j++)
-                free(mesh->prims[j].attrs);
-            free(mesh->prims);
-            free(mesh);
-            return NULL;
-        }
-
-        for (unsigned j = 0; j < data->prims[i].attr_n; j++)
-            mesh->prims[i].attrs[j] = data->prims[i].attrs[j];
-    }
-
-    mesh->prim_n = data->prim_n;
-
-    if (copy_data(mesh, data->data, data->data_sz) != 0) {
-        yf_mesh_deinit(mesh);
-        mesh = NULL;
-    }
-
-    return mesh;
 }
 
 int yf_mesh_setdata(YF_mesh mesh, size_t offset, const void *data, size_t size)

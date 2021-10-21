@@ -86,6 +86,15 @@ typedef struct {
 } YF_meshdt;
 
 /**
+ * Initializes a new mesh.
+ *
+ * @param data: The data from which to initialize the mesh.
+ * @return: On success, returns a new mesh. Otherwise, 'NULL' is returned and
+ *  the global error is set to indicate the cause.
+ */
+YF_mesh yf_mesh_init(const YF_meshdt *data);
+
+/**
  * Gets the number of primitives of a mesh.
  *
  * @param mesh: The mesh.
