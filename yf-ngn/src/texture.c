@@ -212,7 +212,7 @@ YF_texture yf_texture_load(const char *pathname, size_t index,
         return NULL;
 
     /* XXX: Sampler params. were set to zero. */
-    YF_texture tex = yf_texture_initdt(&data);
+    YF_texture tex = yf_texture_init(&data);
     free(data.data);
 
     if (coll != NULL)
