@@ -23,6 +23,8 @@
 #include "yf-animation.h"
 #include "yf-font.h"
 #include "data-gltf.h"
+#include "data-png.h"
+#include "data-sfnt.h"
 
 struct YF_collection_o {
     YF_dict items[YF_CITEM_N];
@@ -100,31 +102,70 @@ void *yf_collection_loaditem(YF_collection coll, int citem,
     assert(coll != NULL);
     assert(citem >= 0 && citem < YF_CITEM_N);
 
+    if (citem == YF_CITEM_TEXTURE) {
+        YF_texdt data = {0};
+        if (yf_loadpng(pathname, &data) == 0) {
+            YF_texture tex = yf_texture_init(&data);
+            free(data.data);
+            return tex;
+        }
+        /* try 'loadgltf()' otherwise */
+    } else if (citem == YF_CITEM_FONT) {
+        YF_fontdt data = {0};
+        if (yf_loadsfnt(pathname, &data) == 0) {
+            YF_font font = yf_font_init(&data);
+            if (font == NULL && data.deinit != NULL)
+                data.deinit(data.font);
+            return font;
+        }
+        /* TODO: 'loadgltf()' font loading. */
+        return NULL;
+    }
+
+    YF_datac datac;
+    datac.coll = coll;
+
     switch (citem) {
     case YF_CITEM_SCENE:
-        /* TODO */
+        datac.datac = YF_DATAC_SCN;
+        if (yf_loadgltf(pathname, index, &datac) == 0)
+            return datac.scn;
         break;
     case YF_CITEM_NODE:
-        /* TODO */
+        datac.datac = YF_DATAC_NODE;
+        if (yf_loadgltf(pathname, index, &datac) == 0)
+            return datac.node;
         break;
     case YF_CITEM_MESH:
-        /* TODO */
+        datac.datac = YF_DATAC_MESH;
+        if (yf_loadgltf(pathname, index, &datac) == 0)
+            return datac.mesh;
         break;
     case YF_CITEM_SKIN:
-        /* TODO */
+        datac.datac = YF_DATAC_SKIN;
+        if (yf_loadgltf(pathname, index, &datac) == 0)
+            return datac.skin;
         break;
     case YF_CITEM_MATERIAL:
-        /* TODO */
+        datac.datac = YF_DATAC_MATL;
+        if (yf_loadgltf(pathname, index, &datac) == 0)
+            return datac.matl;
         break;
     case YF_CITEM_TEXTURE:
-        /* TODO */
+        datac.datac = YF_DATAC_TEX;
+        if (yf_loadgltf(pathname, index, &datac) == 0)
+            return datac.tex;
         break;
     case YF_CITEM_ANIMATION:
-        /* TODO */
+        datac.datac = YF_DATAC_ANIM;
+        if (yf_loadgltf(pathname, index, &datac) == 0)
+            return datac.anim;
         break;
+#if 0
     case YF_CITEM_FONT:
         /* TODO */
         break;
+#endif
     default:
         abort();
     }
