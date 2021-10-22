@@ -25,8 +25,8 @@ int yf_test_texture(void)
         .uvset = YF_UVSET_1
     };
 
-    YF_TEST_PRINT("initdt", "&data", "tex");
-    YF_texture tex = yf_texture_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "tex");
+    YF_texture tex = yf_texture_init(&data);
     if (tex == NULL)
         return -1;
 
@@ -38,8 +38,8 @@ int yf_test_texture(void)
     if (dim.width != data.dim.width || dim.height != data.dim.height)
         return -1;
 
-    YF_TEST_PRINT("initdt", "&data", "tex2");
-    YF_texture tex2 = yf_texture_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "tex2");
+    YF_texture tex2 = yf_texture_init(&data);
     if (tex2 == NULL)
         return -1;
 
@@ -56,8 +56,8 @@ int yf_test_texture(void)
         splr.filter.mipmap != data.splr.filter.mipmap)
         return -1;
 
-    YF_TEST_PRINT("initdt", "&data", "tex3");
-    YF_texture tex3 = yf_texture_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "tex3");
+    YF_texture tex3 = yf_texture_init(&data);
     if (tex3 == NULL)
         return -1;
 
@@ -78,8 +78,8 @@ int yf_test_texture(void)
     data.dim.width = 24;
     printf("- dim. changed -\n");
 
-    YF_TEST_PRINT("initdt", "&data", "tex4");
-    YF_texture tex4 = yf_texture_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "tex4");
+    YF_texture tex4 = yf_texture_init(&data);
     if (tex4 == NULL)
         return -1;
 
@@ -93,8 +93,8 @@ int yf_test_texture(void)
         dim.height != yf_texture_getdim(tex3).height)
         return -1;
 
-    YF_TEST_PRINT("initdt", "&data", "tex5");
-    YF_texture tex5 = yf_texture_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "tex5");
+    YF_texture tex5 = yf_texture_init(&data);
     if (tex5 == NULL)
         return -1;
 
@@ -104,8 +104,8 @@ int yf_test_texture(void)
     data.pixfmt = YF_PIXFMT_BGRA8SRGB;
     printf("- pixfmt changed -\n");
 
-    YF_TEST_PRINT("initdt", "&data", "tex6");
-    YF_texture tex6 = yf_texture_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "tex6");
+    YF_texture tex6 = yf_texture_init(&data);
     if (tex6 == NULL)
         return -1;
 
