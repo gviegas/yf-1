@@ -40,6 +40,17 @@ YF_texture yf_texture_load(const char *pathname, size_t index,
 #define YF_UVSET_1 1
 
 /**
+ * Type defining texture data.
+ */
+typedef struct {
+    void *data;
+    int pixfmt;
+    YF_dim2 dim;
+    YF_sampler splr;
+    int uvset;
+} YF_texdt;
+
+/**
  * Type defining a texture with custom sampler and coordinate set.
  */
 typedef struct {

@@ -12,15 +12,6 @@
 
 #include "yf-texture.h"
 
-/* Texture data. */
-typedef struct {
-    void *data;
-    int pixfmt;
-    YF_dim2 dim;
-    YF_sampler splr;
-    int uvset;
-} YF_texdt;
-
 /* Initializes a new texture object from texture data directly. */
 YF_texture yf_texture_initdt(const YF_texdt *data);
 
