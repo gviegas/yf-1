@@ -50,7 +50,7 @@ typedef struct {
 } YF_datac;
 
 /* Loads contents from a glTF file. */
-int yf_loadgltf(const char *pathname, size_t index, int datac, YF_datac *dst);
+int yf_loadgltf(const char *pathname, size_t index, YF_datac *datac);
 
 /* Loads contents from a file containing glTF data.
    Decoding begins at the file's current position, and all data must be
