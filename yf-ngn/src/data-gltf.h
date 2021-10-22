@@ -11,26 +11,42 @@
 #include <stdio.h>
 
 #include "yf-collection.h"
+#include "yf-scene.h"
+#include "yf-node.h"
 #include "yf-mesh.h"
-#include "yf-texture.h"
 #include "yf-skin.h"
 #include "yf-material.h"
+#include "yf-texture.h"
+#include "yf-animation.h"
 
 /* Data content types. */
-/* TODO: scene, node, subgraph, ... */
 #define YF_DATAC_COLL 0
-#define YF_DATAC_MESH 1
-#define YF_DATAC_TEX  2
-#define YF_DATAC_SKIN 3
-#define YF_DATAC_MATL 4
+#define YF_DATAC_SCN  1
+#define YF_DATAC_NODE 2
+#define YF_DATAC_MESH 3
+#define YF_DATAC_SKIN 4
+#define YF_DATAC_MATL 5
+#define YF_DATAC_TEX  6
+#define YF_DATAC_ANIM 7
 
-/* Data contents that can be loaded. */
-typedef union {
+/* Data contents. */
+typedef struct {
+    int datac;
+
+    /* contents will be stored in this collection */
     YF_collection coll;
-    YF_mesh mesh;
-    YF_texture tex;
-    YF_skin skin;
-    YF_material matl;
+
+    /* for 'datac' values other than 'COLL', this union will contain
+       the created object (already inserted into 'coll') */
+    union {
+        YF_scene scn;
+        YF_node node;
+        YF_mesh mesh;
+        YF_skin skin;
+        YF_material matl;
+        YF_texture tex;
+        YF_animation anim;
+    };
 } YF_datac;
 
 /* Loads contents from a glTF file. */
