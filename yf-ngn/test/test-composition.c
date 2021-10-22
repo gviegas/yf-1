@@ -296,9 +296,9 @@ int yf_test_composition(void)
     YF_texture tex2 = yf_texture_load("tmp/cube2.png", 0, NULL);
     assert(tex2 != NULL);
 
-    YF_font font1 = yf_font_init("tmp/serif.ttf");
+    YF_font font1 = yf_font_load("tmp/serif.ttf", 0, NULL);
     assert(font1 != NULL);
-    YF_font font2 = yf_font_init("tmp/sans.ttf");
+    YF_font font2 = yf_font_load("tmp/sans.ttf", 0, NULL);
     assert(font2 != NULL);
 
     vars_.coll = yf_collection_init(NULL);
