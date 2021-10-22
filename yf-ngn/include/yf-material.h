@@ -40,7 +40,7 @@ typedef struct YF_material_o *YF_material;
 typedef struct {
     int pbr;
     union {
-        /* PBR specular-glossiness. */
+        /* PBR specular-glossiness ('PBR_SPECGLOSS'). */
         struct {
             YF_texref diffuse_tex;
             YF_vec4 diffuse_fac;
@@ -48,7 +48,8 @@ typedef struct {
             YF_vec3 specular_fac;
             float glossiness_fac;
         } pbrsg;
-        /* PBR metallic-roughness. */
+
+        /* PBR metallic-roughness ('PBR_METALROUGH'). */
         struct {
             YF_texref color_tex;
             YF_vec4 color_fac;
@@ -56,12 +57,16 @@ typedef struct {
             float metallic_fac;
             float roughness_fac;
         } pbrmr;
-        /* Unlit. */
+
+        /* Unlit ('PBR_NONE'). */
         struct {
             YF_texref color_tex;
             YF_vec4 color_fac;
         } nopbr;
     };
+
+    /* Additional maps.
+       These are ignored when 'pbr' is 'PBR_NONE'. */
     struct {
         YF_texref tex;
         float scale;
@@ -74,8 +79,12 @@ typedef struct {
         YF_texref tex;
         YF_vec3 factor;
     } emissive;
+
+    /* For alpha modes other than 'MASK', cutoff value is ignored. */
     int alphamode;
     float alpha_cutoff;
+
+    /* Disables back-face culling. */
     int double_sided;
 } YF_matlprop;
 
