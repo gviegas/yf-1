@@ -43,9 +43,10 @@ typedef struct {
     /* Greyscale format, either 8 or 16 bits per pixel. */
     uint16_t bpp;
     union {
-        uint8_t *u8;
-        uint16_t *u16;
-    } bitmap;
+        /* XXX: Does take ownership. */
+        uint8_t *bm8;
+        uint16_t *bm16;
+    };
 
     /* Horizontal metrics. */
     int16_t base_h;
