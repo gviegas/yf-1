@@ -5385,10 +5385,11 @@ int yf_loadgltf(const char *pathname, size_t index, YF_datac *datac)
     return r;
 }
 
-int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
+int yf_loadgltf2(FILE *file, size_t index, YF_datac *datac)
 {
     assert(file != NULL && !feof(file));
-    assert(dst != NULL);
+    assert(datac != NULL);
+    assert(datac->coll != NULL);
 
     T_gltf gltf = {0};
     T_fdata fdata = {0};
@@ -5400,34 +5401,49 @@ int yf_loadgltf2(FILE *file, size_t index, int datac, YF_datac *dst)
        the whole data is embedded. */
 
     int r;
-    switch (datac) {
+    switch (datac->datac) {
     case YF_DATAC_COLL:
-        if ((r = load_contents(&gltf, &fdata, &cont)) == 0)
-            r = manage_contents(&gltf, &cont, dst->coll);
+        r = load_contents(&gltf, &fdata, &cont);
+        break;
+    case YF_DATAC_SCN:
+        if ((r = load_scene(&gltf, &fdata, &cont, index)) == 0)
+            datac->scn = cont.scns[index];
+        break;
+    case YF_DATAC_NODE:
+        if ((r = load_node(&gltf, &fdata, &cont, index)) == 0)
+            datac->node = cont.nodes[index];
         break;
     case YF_DATAC_MESH:
         if ((r = load_mesh(&gltf, &fdata, &cont, index)) == 0)
-            dst->mesh = cont.meshes[index];
-        break;
-    case YF_DATAC_TEX:
-        if ((r = load_texture(&gltf, &fdata, &cont, index)) == 0)
-            dst->tex = cont.imgs[cont.texs[index]];
+            datac->mesh = cont.meshes[index];
         break;
     case YF_DATAC_SKIN:
         if ((r = load_skin(&gltf, &fdata, &cont, index)) == 0)
-            dst->skin = cont.skins[index];
+            datac->skin = cont.skins[index];
         break;
     case YF_DATAC_MATL:
         if ((r = load_material(&gltf, &fdata, &cont, index)) == 0)
-            dst->matl = cont.matls[index];
+            datac->matl = cont.matls[index];
+        break;
+    case YF_DATAC_TEX:
+        if ((r = load_texture(&gltf, &fdata, &cont, index)) == 0)
+            datac->tex = cont.imgs[cont.texs[index]];
+        break;
+    case YF_DATAC_ANIM:
+        if ((r = load_animation(&gltf, &fdata, &cont, index)) == 0)
+            datac->anim = cont.anims[index];
         break;
     default:
         yf_seterr(YF_ERR_INVARG, __func__);
         r = -1;
     }
 
+    if (r == 0)
+        r = manage_contents(&gltf, &cont, datac->coll);
+
     cont.deinit = r;
     deinit_gltf(&gltf, &fdata, &cont);
+
     return r;
 }
 
