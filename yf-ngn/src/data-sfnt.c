@@ -2176,7 +2176,7 @@ static int rasterize(T_outline *outln, YF_glyph *glyph)
         glyph->width = YF_SFNT_FIXTOINT(outln->x_max - outln->x_min);
         glyph->height = YF_SFNT_FIXTOINT(outln->y_max - outln->y_min);
         glyph->bpp = 8;
-        glyph->bitmap.u8 = NULL;
+        glyph->bm8 = NULL;
         glyph->base_h = YF_SFNT_FIXTOINT(outln->y_min);
         glyph->adv_wdt = roundf(outln->scale*outln->adv_wdt);
         glyph->lsb = roundf(outln->scale*outln->lsb);
@@ -2308,7 +2308,7 @@ static int rasterize(T_outline *outln, YF_glyph *glyph)
     glyph->width = YF_SFNT_FIXTOINT(w);
     glyph->height = YF_SFNT_FIXTOINT(h);
     glyph->bpp = 8;
-    glyph->bitmap.u8 = bitmap;
+    glyph->bm8 = bitmap;
     glyph->base_h = YF_SFNT_FIXTOINT(outln->y_min);
     glyph->adv_wdt = roundf(outln->scale*outln->adv_wdt);
     glyph->lsb = roundf(outln->scale*outln->lsb);
