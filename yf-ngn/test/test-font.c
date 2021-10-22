@@ -38,14 +38,14 @@ static int create_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
 
     if (fnt->bpp == 16) {
         size_t sz = (glyph->width * glyph->height) << 1;
-        if ((glyph->bitmap.u16 = malloc(sz)) == NULL)
+        if ((glyph->bm16 = malloc(sz)) == NULL)
             return -1;
-        memset(glyph->bitmap.u16, 255, sz);
+        memset(glyph->bm16, 255, sz);
     } else if (fnt->bpp == 8) {
         size_t sz = glyph->width * glyph->height;
-        if ((glyph->bitmap.u8 = malloc(sz)) == NULL)
+        if ((glyph->bm8 = malloc(sz)) == NULL)
             return -1;
-        memset(glyph->bitmap.u8, 255, sz);
+        memset(glyph->bm8, 255, sz);
     } else {
         assert(0);
     }
