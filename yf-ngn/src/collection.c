@@ -84,8 +84,8 @@ YF_collection yf_collection_init(const char *pathname)
     }
 
     if (pathname != NULL) {
-        YF_datac datac = {.coll = coll};
-        if (yf_loadgltf(pathname, 0, YF_DATAC_COLL, &datac) != 0) {
+        YF_datac datac = {.datac = YF_DATAC_COLL, .coll = coll};
+        if (yf_loadgltf(pathname, 0, &datac) != 0) {
             yf_collection_deinit(coll);
             return NULL;
         }
