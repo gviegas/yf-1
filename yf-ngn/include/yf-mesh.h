@@ -8,6 +8,8 @@
 #ifndef YF_YF_MESH_H
 #define YF_YF_MESH_H
 
+#include <stddef.h>
+
 #include "yf/com/yf-defs.h"
 
 #include "yf-collection.h"
