@@ -8,6 +8,8 @@
 #ifndef YF_YF_TEXTURE_H
 #define YF_YF_TEXTURE_H
 
+#include <stddef.h>
+
 #include "yf/com/yf-defs.h"
 #include "yf/com/yf-types.h"
 #include "yf/core/yf-sampler.h"
