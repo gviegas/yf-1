@@ -122,8 +122,8 @@ int yf_test_font(void)
         .deinit = deinit_font
     };
 
-    YF_TEST_PRINT("initdt", "&data", "font");
-    YF_font font = yf_font_initdt(&data);
+    YF_TEST_PRINT("init", "&data", "font");
+    YF_font font = yf_font_init(&data);
     if (font == NULL)
         return -1;
 
