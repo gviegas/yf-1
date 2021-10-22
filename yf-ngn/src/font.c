@@ -28,7 +28,7 @@ struct YF_font_o {
 /* Deinitializes a glyph. */
 static int deinit_glyph(YF_UNUSED void *key, void *val, YF_UNUSED void *arg)
 {
-    free(((YF_glyph *)val)->bitmap.u8);
+    free(((YF_glyph *)val)->bm8);
     free(val);
     return 0;
 }
@@ -219,14 +219,14 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
         const uintptr_t code = chrs[i].code;
         YF_glyph *glyph = yf_dict_search(font->glyphs, (void *)code);
 
-        if (glyph->bitmap.u8 == NULL)
+        if (glyph->bm8 == NULL)
             continue;
 
         off.x = bias.x + chrs[i].off.x;
         off.y = bias.y - chrs[i].off.y + (glyph->base_h - y_min);
         dim = (YF_dim2){glyph->width, glyph->height};
 
-        if (yf_texture_setdata(rz->tex, off, dim, glyph->bitmap.u8) != 0)
+        if (yf_texture_setdata(rz->tex, off, dim, glyph->bm8) != 0)
             return -1;
     }
 
