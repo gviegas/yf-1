@@ -57,21 +57,7 @@ YF_font yf_font_load(const char *pathname, size_t index, YF_collection coll)
     return font;
 }
 
-void yf_font_deinit(YF_font font)
-{
-    if (font == NULL)
-        return;
-
-    if (font->data.deinit != NULL)
-        font->data.deinit(font->data.font);
-
-    yf_dict_each(font->glyphs, deinit_glyph, NULL);
-    yf_dict_deinit(font->glyphs);
-
-    free(font);
-}
-
-YF_font yf_font_initdt(const YF_fontdt *data)
+YF_font yf_font_init(const YF_fontdt *data)
 {
     assert(data != NULL);
 
@@ -90,6 +76,20 @@ YF_font yf_font_initdt(const YF_fontdt *data)
     }
 
     return font;
+}
+
+void yf_font_deinit(YF_font font)
+{
+    if (font == NULL)
+        return;
+
+    if (font->data.deinit != NULL)
+        font->data.deinit(font->data.font);
+
+    yf_dict_each(font->glyphs, deinit_glyph, NULL);
+    yf_dict_deinit(font->glyphs);
+
+    free(font);
 }
 
 int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,

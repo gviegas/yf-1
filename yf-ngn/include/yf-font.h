@@ -75,6 +75,15 @@ typedef struct {
 } YF_fontdt;
 
 /**
+ * Initializes a new font.
+ *
+ * @param data: The data from which to initialize the font.
+ * @return: On success, returns a new font. Otherwise, 'NULL' is returned and
+ *  the global error is set to indicate the cause.
+ */
+YF_font yf_font_init(const YF_fontdt *data);
+
+/**
  * Deinitializes a font.
  *
  * @param font: The font to deinitialize. Can be 'NULL'.

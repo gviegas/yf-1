@@ -13,9 +13,6 @@
 #include "yf-font.h"
 #include "yf-texture.h"
 
-/* Initializes a new font object from font data directly. */
-YF_font yf_font_initdt(const YF_fontdt *data);
-
 /* Font rasterization output. */
 typedef struct {
     YF_texture tex;
