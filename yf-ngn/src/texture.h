@@ -12,9 +12,6 @@
 
 #include "yf-texture.h"
 
-/* Initializes a new texture object from texture data directly. */
-YF_texture yf_texture_initdt(const YF_texdt *data);
-
 /* Replaces the contents of a texture object's image. */
 int yf_texture_setdata(YF_texture tex, YF_off2 off, YF_dim2 dim,
                        const void *data);

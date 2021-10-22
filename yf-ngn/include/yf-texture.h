@@ -51,6 +51,15 @@ typedef struct {
 } YF_texdt;
 
 /**
+ * Initializes a new texture.
+ *
+ * @param data: The data from which to initialize the texture.
+ * @return: On success, returns a new texture. Otherwise, 'NULL' is returned
+ *  and the global error is set to indicate the cause.
+ */
+YF_texture yf_texture_init(const YF_texdt *data);
+
+/**
  * Type defining a texture with custom sampler and coordinate set.
  */
 typedef struct {

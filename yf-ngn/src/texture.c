@@ -222,6 +222,29 @@ YF_texture yf_texture_load(const char *pathname, size_t index,
     return tex;
 }
 
+YF_texture yf_texture_init(const YF_texdt *data)
+{
+    assert(data != NULL);
+
+    if (ctx_ == NULL && (ctx_ = yf_getctx()) == NULL)
+        return NULL;
+    if (imges_ == NULL && (imges_ = yf_dict_init(hash_key, cmp_key)) == NULL)
+        return NULL;
+
+    YF_texture tex = calloc(1, sizeof(struct YF_texture_o));
+    if (tex == NULL) {
+        yf_seterr(YF_ERR_NOMEM, __func__);
+        return NULL;
+    }
+
+    if (copy_data(tex, data) != 0) {
+        yf_texture_deinit(tex);
+        return NULL;
+    }
+
+    return tex;
+}
+
 YF_texref *yf_texture_getref(YF_texture tex, YF_texref *ref)
 {
     assert(tex != NULL);
@@ -287,29 +310,6 @@ void yf_texture_deinit(YF_texture tex)
     }
 
     free(tex);
-}
-
-YF_texture yf_texture_initdt(const YF_texdt *data)
-{
-    assert(data != NULL);
-
-    if (ctx_ == NULL && (ctx_ = yf_getctx()) == NULL)
-        return NULL;
-    if (imges_ == NULL && (imges_ = yf_dict_init(hash_key, cmp_key)) == NULL)
-        return NULL;
-
-    YF_texture tex = calloc(1, sizeof(struct YF_texture_o));
-    if (tex == NULL) {
-        yf_seterr(YF_ERR_NOMEM, __func__);
-        return NULL;
-    }
-
-    if (copy_data(tex, data) != 0) {
-        yf_texture_deinit(tex);
-        return NULL;
-    }
-
-    return tex;
 }
 
 int yf_texture_setdata(YF_texture tex, YF_off2 off, YF_dim2 dim,
