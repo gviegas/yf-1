@@ -43,7 +43,7 @@ YF_font yf_font_load(const char *pathname, size_t index, YF_collection coll)
     if (yf_loadsfnt(pathname, &data) != 0)
         return NULL;
 
-    YF_font font = yf_font_initdt(&data);
+    YF_font font = yf_font_init(&data);
     if (font == NULL) {
         if (data.deinit != NULL)
             data.deinit(data.font);
