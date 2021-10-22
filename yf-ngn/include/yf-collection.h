@@ -42,6 +42,19 @@ typedef struct YF_collection_o *YF_collection;
 YF_collection yf_collection_init(const char *pathname);
 
 /**
+ * Loads a new item into a collection.
+ *
+ * @param coll: The collection.
+ * @param citem: The 'YF_CITEM' value indicating the item type.
+ * @param pathname: The pathname of the asset file.
+ * @param index: The index of the item in the asset file.
+ * @return: On success, returns the new item. Otherwise, 'NULL' is returned
+ *  and the global error is set to indicate the cause.
+ */
+void *yf_collection_loaditem(YF_collection coll, int citem,
+                             const char *pathname, size_t index);
+
+/**
  * Gets an item stored in a collection.
  *
  * @param coll: The collection.

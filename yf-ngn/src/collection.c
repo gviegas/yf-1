@@ -94,6 +94,44 @@ YF_collection yf_collection_init(const char *pathname)
     return coll;
 }
 
+void *yf_collection_loaditem(YF_collection coll, int citem,
+                             const char *pathname, size_t index)
+{
+    assert(coll != NULL);
+    assert(citem >= 0 && citem < YF_CITEM_N);
+
+    switch (citem) {
+    case YF_CITEM_SCENE:
+        /* TODO */
+        break;
+    case YF_CITEM_NODE:
+        /* TODO */
+        break;
+    case YF_CITEM_MESH:
+        /* TODO */
+        break;
+    case YF_CITEM_SKIN:
+        /* TODO */
+        break;
+    case YF_CITEM_MATERIAL:
+        /* TODO */
+        break;
+    case YF_CITEM_TEXTURE:
+        /* TODO */
+        break;
+    case YF_CITEM_ANIMATION:
+        /* TODO */
+        break;
+    case YF_CITEM_FONT:
+        /* TODO */
+        break;
+    default:
+        abort();
+    }
+
+    return NULL;
+}
+
 void *yf_collection_getitem(YF_collection coll, int citem, const char *name)
 {
     assert(coll != NULL);
