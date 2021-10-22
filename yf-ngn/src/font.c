@@ -196,7 +196,7 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
         return -1;
     }
 
-    rz->tex = yf_texture_initdt(&data);
+    rz->tex = yf_texture_init(&data);
     free(data.data);
 
     if (rz->tex == NULL)
