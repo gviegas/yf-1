@@ -107,15 +107,31 @@ void *yf_collection_loaditem(YF_collection coll, int citem,
         if (yf_loadpng(pathname, &data) == 0) {
             YF_texture tex = yf_texture_init(&data);
             free(data.data);
+            if (tex == NULL)
+                return NULL;
+            if (yf_collection_manage(coll, YF_CITEM_TEXTURE, NULL, tex) != 0) {
+                yf_texture_deinit(tex);
+                return NULL;
+            }
             return tex;
         }
         /* try 'loadgltf()' otherwise */
+
     } else if (citem == YF_CITEM_FONT) {
         YF_fontdt data = {0};
         if (yf_loadsfnt(pathname, &data) == 0) {
             YF_font font = yf_font_init(&data);
-            if (font == NULL && data.deinit != NULL)
-                data.deinit(data.font);
+            if (font == NULL) {
+                if (data.deinit != NULL)
+                    data.deinit(data.font);
+                return NULL;
+            }
+            if (yf_collection_manage(coll, YF_CITEM_FONT, NULL, font) != 0) {
+                if (data.deinit != NULL)
+                    data.deinit(data.font);
+                yf_font_deinit(font);
+                return NULL;
+            }
             return font;
         }
         /* TODO: 'loadgltf()' font loading. */
