@@ -203,23 +203,10 @@ static int cmp_key(const void *a, const void *b)
 YF_texture yf_texture_load(const char *pathname, size_t index,
                            YF_collection coll)
 {
-    /* TODO */
-    assert(index == 0);
-
     /* TODO: Consider checking the type of the file. */
-    YF_texdt data = {0};
-    if (yf_loadpng(pathname, &data) != 0)
-        return NULL;
-
-    /* XXX: Sampler params. were set to zero. */
-    YF_texture tex = yf_texture_init(&data);
-    free(data.data);
-
-    if (coll != NULL)
-        /* TODO */
-        assert(0);
-
-    return tex;
+    if (coll == NULL)
+        coll = yf_collection_get();
+    return yf_collection_loaditem(coll, YF_CITEM_TEXTURE, pathname, index);
 }
 
 YF_texture yf_texture_init(const YF_texdt *data)
