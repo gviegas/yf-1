@@ -32,6 +32,9 @@ struct YF_collection_o {
     unsigned ids[YF_CITEM_N];
 };
 
+/* Default collection. */
+static YF_collection coll_ = NULL;
+
 /* Deinitializes a collection's item. */
 static int deinit_item(void *key, void *val, void *arg)
 {
