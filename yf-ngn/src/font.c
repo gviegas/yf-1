@@ -35,26 +35,10 @@ static int deinit_glyph(YF_UNUSED void *key, void *val, YF_UNUSED void *arg)
 
 YF_font yf_font_load(const char *pathname, size_t index, YF_collection coll)
 {
-    /* TODO */
-    assert(index == 0);
-
     /* TODO: Consider checking the type of the file. */
-    YF_fontdt data = {0};
-    if (yf_loadsfnt(pathname, &data) != 0)
-        return NULL;
-
-    YF_font font = yf_font_init(&data);
-    if (font == NULL) {
-        if (data.deinit != NULL)
-            data.deinit(data.font);
-        return NULL;
-    }
-
-    if (coll != NULL)
-        /* TODO */
-        assert(0);
-
-    return font;
+    if (coll == NULL)
+        coll = yf_collection_get();
+    return yf_collection_loaditem(coll, YF_CITEM_FONT, pathname, index);
 }
 
 YF_font yf_font_init(const YF_fontdt *data)
