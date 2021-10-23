@@ -286,72 +286,59 @@ int yf_test_composition(void)
     vars_.labl_node = yf_node_init();
     assert(vars_.labl_node != NULL);
 
-    YF_mesh mesh1 = yf_mesh_load("tmp/cube.glb", 0, NULL);
-    assert(mesh1 != NULL);
-    YF_mesh mesh2 = yf_mesh_load("tmp/cube2.glb", 0, NULL);
-    assert(mesh2 != NULL);
-
-    YF_texture tex1 = yf_texture_load("tmp/cube.png", 0, NULL);
-    assert(tex1 != NULL);
-    YF_texture tex2 = yf_texture_load("tmp/cube2.png", 0, NULL);
-    assert(tex2 != NULL);
-
-    YF_font font1 = yf_font_load("tmp/serif.ttf", 0, NULL);
-    assert(font1 != NULL);
-    YF_font font2 = yf_font_load("tmp/sans.ttf", 0, NULL);
-    assert(font2 != NULL);
-
     vars_.coll = yf_collection_init(NULL);
     assert(vars_.coll != NULL);
 
     if (yf_collection_manage(vars_.coll, YF_CITEM_SCENE, "scn",
                              vars_.scn) != 0 ||
         yf_collection_manage(vars_.coll, YF_CITEM_NODE, "labl",
-                             vars_.labl_node) != 0 ||
-        yf_collection_manage(vars_.coll, YF_CITEM_MESH, "m1",
-                             mesh1) != 0 ||
-        yf_collection_manage(vars_.coll, YF_CITEM_MESH, "m2",
-                             mesh2) != 0 ||
-        yf_collection_manage(vars_.coll, YF_CITEM_TEXTURE, "t1",
-                             tex1) != 0 ||
-        yf_collection_manage(vars_.coll, YF_CITEM_TEXTURE, "t2",
-                             tex2) != 0 ||
-        yf_collection_manage(vars_.coll, YF_CITEM_FONT, "f1",
-                             font1) != 0 ||
-        yf_collection_manage(vars_.coll, YF_CITEM_FONT, "f2",
-                             font2) != 0)
+                             vars_.labl_node) != 0)
         assert(0);
 
+    YF_mesh mesh1 = yf_collection_loaditem(vars_.coll, YF_CITEM_MESH,
+                                           "tmp/cube.glb", 0);
+    YF_mesh mesh2 = yf_collection_loaditem(vars_.coll, YF_CITEM_MESH,
+                                           "tmp/cube2.glb", 0);
+    assert(mesh1 != NULL);
+    assert(mesh2 != NULL);
+
+    YF_texture tex1 = yf_collection_loaditem(vars_.coll, YF_CITEM_TEXTURE,
+                                             "tmp/cube.png", 0);
+    YF_texture tex2 = yf_collection_loaditem(vars_.coll, YF_CITEM_TEXTURE,
+                                             "tmp/cube2.png", 0);
+    assert(tex1 != NULL);
+    assert(tex2 != NULL);
+
+    YF_font font1 = yf_collection_loaditem(vars_.coll, YF_CITEM_FONT,
+                                           "tmp/serif.ttf", 0);
+    YF_font font2 = yf_collection_loaditem(vars_.coll, YF_CITEM_FONT,
+                                           "tmp/sans.ttf", 0);
+    assert(font1 != NULL);
+    assert(font2 != NULL);
+
     YF_material matl1 = yf_material_init(NULL);
-    assert(matl1 != NULL);
     YF_material matl2 = yf_material_init(NULL);
+    assert(matl1 != NULL);
     assert(matl2 != NULL);
     YF_matlprop *mprop;
     mprop = yf_material_getprop(matl1);
     mprop->pbr = YF_PBR_METALROUGH;
-    mprop->pbrmr.color_tex.tex = yf_collection_getitem(vars_.coll,
-                                                       YF_CITEM_TEXTURE, "t1");
+    mprop->pbrmr.color_tex.tex = tex1;
     mprop = yf_material_getprop(matl2);
     mprop->pbr = YF_PBR_METALROUGH;
-    mprop->pbrmr.color_tex.tex = yf_collection_getitem(vars_.coll,
-                                                       YF_CITEM_TEXTURE, "t2");
+    mprop->pbrmr.color_tex.tex = tex2;
 
-    if (yf_collection_manage(vars_.coll, YF_CITEM_MATERIAL, "m1",
-                             matl1) != 0 ||
-        yf_collection_manage(vars_.coll, YF_CITEM_MATERIAL, "m2",
-                             matl2) != 0)
+    if (yf_collection_manage(vars_.coll, YF_CITEM_MATERIAL, "m1", matl1) != 0 ||
+        yf_collection_manage(vars_.coll, YF_CITEM_MATERIAL, "m2", matl2) != 0)
         assert(0);
 
     vars_.mdl = yf_model_init();
     assert(vars_.mdl != NULL);
 
     const int mdl_num = rand()&1 ? 1 : 2;
-    yf_model_setmesh(vars_.mdl,
-                     yf_collection_getitem(vars_.coll, YF_CITEM_MESH,
-                                           mdl_num == 1 ? "m1" : "m2"));
+    yf_model_setmesh(vars_.mdl, mdl_num == 1 ? mesh1 : mesh2);
     yf_mesh_setmatl(yf_model_getmesh(vars_.mdl), 0,
-                    yf_collection_getitem(vars_.coll, YF_CITEM_MATERIAL,
-                                          mdl_num == 1 ? "m1" : "m2"));
+                    mdl_num == 1 ? matl1 : matl2);
 
     yf_node_insert(yf_scene_getnode(vars_.scn), yf_model_getnode(vars_.mdl));
 
@@ -360,9 +347,7 @@ int yf_test_composition(void)
         vars_.labls[i] = yf_label_init();
         assert(vars_.labls[i] != NULL);
 
-        yf_label_setfont(vars_.labls[i],
-                         yf_collection_getitem(vars_.coll, YF_CITEM_FONT,
-                                               i == 0 ? "f1" : "f2"));
+        yf_label_setfont(vars_.labls[i], i ? font2 : font1);
         YF_mat4 *m = yf_node_getxform(yf_label_getnode(vars_.labls[i]));
 
         switch (i) {
@@ -435,11 +420,7 @@ int yf_test_composition(void)
         assert(0);
 
     yf_view_deinit(vars_.view);
-    /* managed... */
-    /*yf_scene_deinit(vars_.scn);*/
     yf_window_deinit(vars_.win);
-    /* managed... */
-    /*yf_node_deinit(vars_.labl_node);*/
 
     yf_model_deinit(vars_.mdl);
     for (size_t i = 0; i < labl_n; i++)
