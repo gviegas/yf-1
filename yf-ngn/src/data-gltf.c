@@ -28,14 +28,9 @@
 #include "yf/com/yf-error.h"
 
 #include "data-gltf.h"
-#include "mesh.h"
-#include "texture.h"
 #include "data-png.h"
-#include "yf-scene.h"
-#include "yf-node.h"
 #include "yf-model.h"
 #include "yf-light.h"
-#include "yf-animation.h"
 
 /*
  * Token
