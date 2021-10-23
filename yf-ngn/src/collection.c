@@ -99,6 +99,17 @@ YF_collection yf_collection_init(const char *pathname)
     return coll;
 }
 
+YF_collection yf_collection_get(void)
+{
+    /* TODO: MT-safe. */
+    if (coll_ == NULL && (coll_ = yf_collection_init(NULL)) == NULL) {
+        /* XXX */
+        assert(0);
+        abort();
+    }
+    return coll_;
+}
+
 void *yf_collection_loaditem(YF_collection coll, int citem,
                              const char *pathname, size_t index)
 {
