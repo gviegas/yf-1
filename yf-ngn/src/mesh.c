@@ -346,15 +346,9 @@ static void invalidate(YF_mesh mesh)
 YF_mesh yf_mesh_load(const char *pathname, size_t index, YF_collection coll)
 {
     /* TODO: Consider checking the type of the file. */
-    YF_datac datac;
-    if (yf_loadgltf(pathname, index, YF_DATAC_MESH, &datac) != 0)
-        return NULL;
-
-    if (coll != NULL)
-        /* TODO */
-        assert(0);
-
-    return datac.mesh;
+    if (coll == NULL)
+        coll = yf_collection_get();
+    return yf_collection_loaditem(coll, YF_CITEM_MESH, pathname, index);
 }
 
 YF_mesh yf_mesh_init(const YF_meshdt *data)
