@@ -42,6 +42,13 @@ typedef struct YF_collection_o *YF_collection;
 YF_collection yf_collection_init(const char *pathname);
 
 /**
+ * Gets the default collection.
+ *
+ * @return: The default collection.
+ */
+YF_collection yf_collection_get(void);
+
+/**
  * Loads a new item into a collection.
  *
  * @param coll: The collection.
