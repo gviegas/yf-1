@@ -2,7 +2,7 @@
  * YF
  * platform-xcb.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_PLATFORM_XCB_H
@@ -20,11 +20,11 @@ int yf_loadxcb(void);
 void yf_unldxcb(void);
 
 /* Implementations. */
-extern const YF_win_imp yf_g_winxcb;
-extern const YF_evt_imp yf_g_evtxcb;
+extern const yf_win_imp_t yf_g_winxcb;
+extern const yf_evt_imp_t yf_g_evtxcb;
 
 /* Global xcb variables. */
-typedef struct {
+typedef struct yf_varsxcb {
     xcb_connection_t *conn;
     xcb_visualid_t visual;
     xcb_window_t root_win;
@@ -37,10 +37,10 @@ typedef struct {
         xcb_atom_t utf8;
         xcb_atom_t clss;
     } atom;
-} YF_varsxcb;
+} yf_varsxcb_t;
 
 /* Global variables instance.
    This data is initialized by 'yf_loadxcb()'. */
-extern YF_varsxcb yf_g_varsxcb;
+extern yf_varsxcb_t yf_g_varsxcb;
 
 #endif /* YF_PLATFORM_XCB_H */

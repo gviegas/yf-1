@@ -2,7 +2,7 @@
  * YF
  * platform-xcb.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <string.h>
@@ -185,31 +185,31 @@ static void *addrs_[sizeof names_ / sizeof *names_] = {0};
     *(void **)(&fn) = addrs_[YF_SYM_CHANGE_KEYBOARD_CONTROL_CHECKED]; \
     res = fn(connection, value_mask, value_list); } while (0)
 
-/* Data of a window object. */
+/* Data of a window. */
 typedef struct {
-    YF_window wrapper;
+    yf_window_t *wrapper;
     unsigned creat_mask;
     unsigned width;
     unsigned height;
     int open;
     int fullscreen;
     xcb_window_t win_id;
-} T_win;
+} win_t;
 
-/* List containing the 'T_win' data of all created windows. */
-static YF_list wins_ = NULL;
+/* List containing the 'win_t' data of all created windows. */
+static yf_list_t *wins_ = NULL;
 
-/* Gets the 'T_win' data for a given xcb window ID.
+/* Gets the 'win_t' data for a given xcb window ID.
    If not found, 'data' will contain the null value. */
 #define YF_GETWINDATA(data, id) do { \
     assert(wins_ != NULL && yf_list_getlen(wins_) > 0); \
-    YF_iter it = YF_NILIT; \
+    yf_iter_t it = YF_NILIT; \
     for (;;) { \
         data = yf_list_next(wins_, &it); \
         if ((data) == NULL || (data)->win_id == (id)) break; \
     }} while (0)
 
-YF_varsxcb yf_g_varsxcb = {0};
+yf_varsxcb_t yf_g_varsxcb = {0};
 
 /* Sets global variables. */
 static int set_vars(void)
@@ -302,7 +302,7 @@ static void deinit_win(void *win)
     if (handle_ != NULL && yf_g_varsxcb.conn != NULL) {
         YF_UNUSED xcb_void_cookie_t unused;
         YF_XCB_DESTROY_WINDOW(unused, yf_g_varsxcb.conn,
-                              ((T_win *)win)->win_id);
+                              ((win_t *)win)->win_id);
     }
 
     yf_list_remove(wins_, win);
@@ -317,8 +317,8 @@ static void getsize_win(void *win, unsigned *width, unsigned *height)
     assert(win != NULL);
     assert(width != NULL && height != NULL);
 
-    *width = ((T_win *)win)->width;
-    *height = ((T_win *)win)->height;
+    *width = ((win_t *)win)->width;
+    *height = ((win_t *)win)->height;
 }
 
 /* Implementation for 'win_imp.settitle'. */
@@ -328,7 +328,7 @@ static int settitle_win(void *win, const char *title)
     assert(yf_g_varsxcb.conn != NULL);
     assert(win != NULL);
 
-    xcb_window_t win_id = ((T_win *)win)->win_id;
+    xcb_window_t win_id = ((win_t *)win)->win_id;
     xcb_void_cookie_t cookie;
     xcb_generic_error_t *err = NULL;
     size_t len = title == NULL ? 0 : strnlen(title, YF_STR_MAXLEN-1);
@@ -371,7 +371,7 @@ static int resize_win(void *win, unsigned width, unsigned height)
         return -1;
     }
 
-    xcb_window_t win_id = ((T_win *)win)->win_id;
+    xcb_window_t win_id = ((win_t *)win)->win_id;
     xcb_void_cookie_t cookie;
     xcb_generic_error_t *err = NULL;
     uint32_t val_mask = XCB_CONFIG_WINDOW_WIDTH | XCB_CONFIG_WINDOW_HEIGHT;
@@ -386,8 +386,8 @@ static int resize_win(void *win, unsigned width, unsigned height)
         return -1;
     }
 
-    ((T_win *)win)->width = width;
-    ((T_win *)win)->height = height;
+    ((win_t *)win)->width = width;
+    ((win_t *)win)->height = height;
     return 0;
 }
 
@@ -398,10 +398,10 @@ static int close_win(void *win)
     assert(yf_g_varsxcb.conn != NULL);
     assert(win != NULL);
 
-    if (!((T_win *)win)->open)
+    if (!((win_t *)win)->open)
         return 0;
 
-    xcb_window_t win_id = ((T_win *)win)->win_id;
+    xcb_window_t win_id = ((win_t *)win)->win_id;
     xcb_void_cookie_t cookie;
     xcb_generic_error_t *err = NULL;
 
@@ -413,7 +413,7 @@ static int close_win(void *win)
         return -1;
     }
 
-    ((T_win *)win)->open = 0;
+    ((win_t *)win)->open = 0;
     return 0;
 }
 
@@ -424,10 +424,10 @@ static int open_win(void *win)
     assert(yf_g_varsxcb.conn != NULL);
     assert(win != NULL);
 
-    if (((T_win *)win)->open)
+    if (((win_t *)win)->open)
         return 0;
 
-    xcb_window_t win_id = ((T_win *)win)->win_id;
+    xcb_window_t win_id = ((win_t *)win)->win_id;
     xcb_void_cookie_t cookie;
     xcb_generic_error_t *err = NULL;
 
@@ -439,13 +439,13 @@ static int open_win(void *win)
         return -1;
     }
 
-    ((T_win *)win)->open = 1;
+    ((win_t *)win)->open = 1;
     return 0;
 }
 
 /* Implementation for 'win_imp.init'. */
 static void *init_win(unsigned width, unsigned height, const char *title,
-                      unsigned creat_mask, YF_window wrapper)
+                      unsigned creat_mask, yf_window_t *wrapper)
 {
     assert(handle_ != NULL);
     assert(yf_g_varsxcb.conn != NULL);
@@ -455,7 +455,7 @@ static void *init_win(unsigned width, unsigned height, const char *title,
         return NULL;
     }
 
-    T_win *win = calloc(1, sizeof(T_win));
+    win_t *win = calloc(1, sizeof(win_t));
     if (win == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -577,7 +577,7 @@ static void *init_win(unsigned width, unsigned height, const char *title,
     return win;
 }
 
-const YF_win_imp yf_g_winxcb = {
+const yf_win_imp_t yf_g_winxcb = {
     .init = init_win,
     .open = open_win,
     .close = close_win,
@@ -643,7 +643,7 @@ static int poll_evt(unsigned evt_mask)
                 prev_evt_state = key_evt->state;
             }
 
-            YF_evtfn fn;
+            yf_evtfn_t fn;
             void *arg;
             yf_getevtfn(YF_EVT_KEYKB, &fn, &arg);
             fn.key_kb(key, state, mod_mask, arg);
@@ -683,7 +683,7 @@ static int poll_evt(unsigned evt_mask)
             int x = btn_evt->event_x;
             int y = btn_evt->event_y;
 
-            YF_evtfn fn;
+            yf_evtfn_t fn;
             void *arg;
             yf_getevtfn(YF_EVT_BUTTONPT, &fn, &arg);
             fn.button_pt(btn, state, x, y, arg);
@@ -698,7 +698,7 @@ static int poll_evt(unsigned evt_mask)
             int x = mot_evt->event_x;
             int y = mot_evt->event_y;
 
-            YF_evtfn fn;
+            yf_evtfn_t fn;
             void *arg;
             yf_getevtfn(YF_EVT_MOTIONPT, &fn, &arg);
             fn.motion_pt(x, y, arg);
@@ -710,7 +710,7 @@ static int poll_evt(unsigned evt_mask)
             xcb_enter_notify_event_t *entr_evt =
                 (xcb_enter_notify_event_t *)event;
 
-            T_win *win;
+            win_t *win;
             YF_GETWINDATA(win, entr_evt->event);
             if (win == NULL)
                 break;
@@ -718,7 +718,7 @@ static int poll_evt(unsigned evt_mask)
             int x = entr_evt->event_x;
             int y = entr_evt->event_y;
 
-            YF_evtfn fn;
+            yf_evtfn_t fn;
             void *arg;
             yf_getevtfn(YF_EVT_ENTERPT, &fn, &arg);
             fn.enter_pt(win->wrapper, x, y, arg);
@@ -730,12 +730,12 @@ static int poll_evt(unsigned evt_mask)
             xcb_leave_notify_event_t *leav_evt =
                 (xcb_leave_notify_event_t *)event;
 
-            T_win *win;
+            win_t *win;
             YF_GETWINDATA(win, leav_evt->event);
             if (win == NULL)
                 break;
 
-            YF_evtfn fn;
+            yf_evtfn_t fn;
             void *arg;
             yf_getevtfn(YF_EVT_LEAVEPT, &fn, &arg);
             fn.leave_pt(win->wrapper, arg);
@@ -746,12 +746,12 @@ static int poll_evt(unsigned evt_mask)
                 break;
             xcb_focus_in_event_t *foc_evt = (xcb_focus_in_event_t *)event;
 
-            T_win *win;
+            win_t *win;
             YF_GETWINDATA(win, foc_evt->event);
             if (win == NULL)
                 break;
 
-            YF_evtfn fn;
+            yf_evtfn_t fn;
             void *arg;
             yf_getevtfn(YF_EVT_ENTERKB, &fn, &arg);
             fn.enter_kb(win->wrapper, arg);
@@ -762,12 +762,12 @@ static int poll_evt(unsigned evt_mask)
                 break;
             xcb_focus_out_event_t *foc_evt = (xcb_focus_out_event_t *)event;
 
-            T_win *win;
+            win_t *win;
             YF_GETWINDATA(win, foc_evt->event);
             if (win == NULL)
                 break;
 
-            YF_evtfn fn;
+            yf_evtfn_t fn;
             void *arg;
             yf_getevtfn(YF_EVT_LEAVEKB, &fn, &arg);
             fn.leave_kb(win->wrapper, arg);
@@ -783,7 +783,7 @@ static int poll_evt(unsigned evt_mask)
             xcb_configure_notify_event_t *conf_evt =
                 (xcb_configure_notify_event_t *)event;
 
-            T_win *win;
+            win_t *win;
             YF_GETWINDATA(win, conf_evt->window);
             if (win == NULL)
                 break;
@@ -794,7 +794,7 @@ static int poll_evt(unsigned evt_mask)
             win->width = conf_evt->width;
             win->height = conf_evt->height;
 
-            YF_evtfn fn;
+            yf_evtfn_t fn;
             void *arg;
             yf_getevtfn(YF_EVT_RESIZEWD, &fn, &arg);
             fn.resize_wd(win->wrapper, win->width, win->height, arg);
@@ -810,12 +810,12 @@ static int poll_evt(unsigned evt_mask)
                 cli_evt->data.data32[0] != yf_g_varsxcb.atom.del)
                 break;
 
-            T_win *win;
+            win_t *win;
             YF_GETWINDATA(win, cli_evt->window);
             if (win == NULL)
                 break;
 
-            YF_evtfn fn;
+            yf_evtfn_t fn;
             void *arg;
             yf_getevtfn(YF_EVT_CLOSEWD, &fn, &arg);
             fn.close_wd(win->wrapper, arg);
@@ -837,7 +837,7 @@ static void changed_evt(YF_UNUSED int evt)
     /* TODO */
 }
 
-const YF_evt_imp yf_g_evtxcb = {.poll = poll_evt, .changed = changed_evt};
+const yf_evt_imp_t yf_g_evtxcb = {.poll = poll_evt, .changed = changed_evt};
 
 int yf_loadxcb(void)
 {
@@ -878,8 +878,8 @@ int yf_loadxcb(void)
 void yf_unldxcb(void)
 {
     if (wins_ != NULL) {
-        T_win *win;
-        YF_iter it = YF_NILIT;
+        win_t *win;
+        yf_iter_t it = YF_NILIT;
 
         for (;;) {
             win = yf_list_next(wins_, &it);
@@ -914,13 +914,13 @@ xcb_visualid_t yf_getvisualxcb(void)
     return yf_g_varsxcb.visual;
 }
 
-xcb_window_t yf_getwindowxcb(YF_window win)
+xcb_window_t yf_getwindowxcb(yf_window_t *win)
 {
     assert(win != NULL);
 
-    /* XXX: Consider querying the 'YF_window' for the 'T_win' data instead. */
-    YF_iter it = YF_NILIT;
-    T_win *data;
+    /* XXX: Consider querying the 'yf_window_t' for the 'win_t' data instead. */
+    yf_iter_t it = YF_NILIT;
+    win_t *data;
     do
         data = yf_list_next(wins_, &it);
     while (data->wrapper != win);

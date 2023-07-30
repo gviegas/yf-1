@@ -18,7 +18,7 @@ int yf_test_window(void)
     YF_TEST_PRINT("init", "400, 240, \"A\", 0", "wins[0]");
     YF_TEST_PRINT("init", "240, 400, \"B\", 0", "wins[1]");
     YF_TEST_PRINT("init", "480, 480, \"C\", WINCREAT_HIDDEN", "wins[2]");
-    YF_window wins[] = {
+    yf_window_t *wins[] = {
         yf_window_init(400, 240, "A", 0),
         yf_window_init(240, 400, "B", 0),
         yf_window_init(480, 480, "C", YF_WINCREAT_HIDDEN)

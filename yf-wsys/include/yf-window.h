@@ -2,7 +2,7 @@
  * YF
  * yf-window.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_WINDOW_H
@@ -15,7 +15,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a window.
  */
-typedef struct YF_window_o *YF_window;
+typedef struct yf_window yf_window_t;
 
 /**
  * Window creation flags.
@@ -36,8 +36,8 @@ typedef struct YF_window_o *YF_window;
  * @return: On success, returns a new window. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_window yf_window_init(unsigned width, unsigned height, const char *title,
-                         unsigned creat_mask);
+yf_window_t *yf_window_init(unsigned width, unsigned height, const char *title,
+                            unsigned creat_mask);
 
 /**
  * Opens a window.
@@ -46,7 +46,7 @@ YF_window yf_window_init(unsigned width, unsigned height, const char *title,
  * @return: On success, returns zero. Otherwise, 'NULL' is returned and the
  *  global error is set to indicate the cause.
  */
-int yf_window_open(YF_window win);
+int yf_window_open(yf_window_t *win);
 
 /**
  * Closes a window.
@@ -55,7 +55,7 @@ int yf_window_open(YF_window win);
  * @return: On success, returns zero. Otherwise, 'NULL' is returned and the
  *  global error is set to indicate the cause.
  */
-int yf_window_close(YF_window win);
+int yf_window_close(yf_window_t *win);
 
 /**
  * Resizes a window.
@@ -66,7 +66,7 @@ int yf_window_close(YF_window win);
  * @return: On success, returns zero. Otherwise, 'NULL' is returned and the
  *  global error is set to indicate the cause.
  */
-int yf_window_resize(YF_window win, unsigned width, unsigned height);
+int yf_window_resize(yf_window_t *win, unsigned width, unsigned height);
 
 /**
  * Toggles fullscreen mode.
@@ -75,7 +75,7 @@ int yf_window_resize(YF_window win, unsigned width, unsigned height);
  * @return: On success, returns zero. Otherwise, 'NULL' is returned and the
  *  global error is set to indicate the cause.
  */
-int yf_window_toggle(YF_window win);
+int yf_window_toggle(yf_window_t *win);
 
 /**
  * Sets the title of a window.
@@ -85,7 +85,7 @@ int yf_window_toggle(YF_window win);
  * @return: On success, returns zero. Otherwise, 'NULL' is returned and the
  *  global error is set to indicate the cause.
  */
-int yf_window_settitle(YF_window win, const char *title);
+int yf_window_settitle(yf_window_t *win, const char *title);
 
 /**
  * Gets the size of a window.
@@ -94,14 +94,14 @@ int yf_window_settitle(YF_window win, const char *title);
  * @param width: The destination for the window's width.
  * @param height: The destination for the window's height.
  */
-void yf_window_getsize(YF_window win, unsigned *width, unsigned *height);
+void yf_window_getsize(yf_window_t *win, unsigned *width, unsigned *height);
 
 /**
  * Deinitializes a window.
  *
  * @param win: The window to deinitialize. Can be 'NULL'.
  */
-void yf_window_deinit(YF_window win);
+void yf_window_deinit(yf_window_t *win);
 
 YF_DECLS_END
 

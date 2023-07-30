@@ -22,14 +22,14 @@ static unsigned mask_ = YF_EVT_ANY;
 static int quit_ = 0;
 static int close_ = 1;
 
-static void close_wd(YF_window win, void *data)
+static void close_wd(yf_window_t *win, void *data)
 {
     printf(" close_wd: %p, %p\n", (void *)win, data);
     yf_sleep(1.0);
     quit_ = 1;
 }
 
-static void resize_wd(YF_window win, unsigned width, unsigned height,
+static void resize_wd(yf_window_t *win, unsigned width, unsigned height,
                       void *data)
 {
     printf(" resize_wd: %p, %u, %u, %p\n", (void *)win, width, height, data);
@@ -38,12 +38,12 @@ static void resize_wd(YF_window win, unsigned width, unsigned height,
     assert(w == width && h == height);
 }
 
-static void enter_kb(YF_window win, void *data)
+static void enter_kb(yf_window_t *win, void *data)
 {
     printf(" enter_kb: %p, %p\n", (void *)win, data);
 }
 
-static void leave_kb(YF_window win, void *data)
+static void leave_kb(yf_window_t *win, void *data)
 {
     printf(" leave_kb: %p, %p\n", (void *)win, data);
 }
@@ -88,12 +88,12 @@ static void key_kb(int key, int state, unsigned mod_mask, void *data)
     }
 }
 
-static void enter_pt(YF_window win, int x, int y, void *data)
+static void enter_pt(yf_window_t *win, int x, int y, void *data)
 {
     printf(" enter_pt: %p, %d, %d, %p\n", (void *)win, x, y, data);
 }
 
-static void leave_pt(YF_window win, void *data)
+static void leave_pt(yf_window_t *win, void *data)
 {
     printf(" leave_pt: %p, %p\n", (void *)win, data);
 }
@@ -116,8 +116,8 @@ static void button_pt(int btn, int state, int x, int y, void *data)
         mask_ &= ~YF_EVT_KEYKB;
 }
 
-struct T_fn { int evt; YF_evtfn fn; };
-static const struct T_fn fns_[] = {
+struct fn { int evt; yf_evtfn_t fn; };
+static const struct fn fns_[] = {
     { YF_EVT_CLOSEWD,  {.close_wd = close_wd}   },
     { YF_EVT_RESIZEWD, {.resize_wd = resize_wd} },
     { YF_EVT_ENTERKB,  {.enter_kb = enter_kb}   },
@@ -132,9 +132,9 @@ static const struct T_fn fns_[] = {
 /* Tests event. */
 int yf_test_event(void)
 {
-    YF_window win1 = yf_window_init(400, 240, "EVT1", YF_WINCREAT_HIDDEN);
+    yf_window_t *win1 = yf_window_init(400, 240, "EVT1", YF_WINCREAT_HIDDEN);
     assert(win1 != NULL);
-    YF_window win2 = yf_window_init(360, 360, "EVT2", YF_WINCREAT_HIDDEN);
+    yf_window_t *win2 = yf_window_init(360, 360, "EVT2", YF_WINCREAT_HIDDEN);
     assert(win2 != NULL);
 
     char s[64] = {0};

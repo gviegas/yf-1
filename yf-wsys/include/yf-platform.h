@@ -2,7 +2,7 @@
  * YF
  * yf-platform.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_PLATFORM_H
@@ -44,7 +44,7 @@ YF_DECLS_BEGIN
  */
 int yf_getplatform(void);
 
-typedef struct YF_window_o *YF_window;
+typedef struct yf_window yf_window_t;
 
 #if defined(__linux__)
 /**
@@ -62,12 +62,12 @@ xcb_connection_t *yf_getconnxcb(void);
 xcb_visualid_t yf_getvisualxcb(void);
 
 /**
- * Gets the xcb window ID associated with a given 'YF_window' object.
+ * Gets the xcb window ID associated with a given 'yf_window_t'.
  *
- * @param win: The window object.
+ * @param win: The window to query.
  * @return: The window ID.
  */
-xcb_window_t yf_getwindowxcb(YF_window win);
+xcb_window_t yf_getwindowxcb(yf_window_t *win);
 
 #else
 /* TODO */

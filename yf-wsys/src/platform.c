@@ -2,7 +2,7 @@
  * YF
  * platform.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -49,7 +49,7 @@ x11:
     return plat_;
 }
 
-void yf_getwinimp(YF_win_imp *imp)
+void yf_getwinimp(yf_win_imp_t *imp)
 {
     switch (yf_getplatform()) {
     case YF_PLATFORM_WAYLAND:
@@ -63,7 +63,7 @@ void yf_getwinimp(YF_win_imp *imp)
     }
 }
 
-void yf_getevtimp(YF_evt_imp *imp)
+void yf_getevtimp(yf_evt_imp_t *imp)
 {
     switch (yf_getplatform()) {
     case YF_PLATFORM_WAYLAND:

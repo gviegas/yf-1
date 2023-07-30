@@ -2,7 +2,7 @@
  * YF
  * event.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stddef.h>
@@ -12,27 +12,27 @@
 
 /* Event function/generic argument pair. */
 typedef struct {
-    YF_evtfn fn;
+    yf_evtfn_t fn;
     void *arg;
-} T_evtfn;
+} evtfn_t;
 
 /* Initial dummy implementation functions. */
 static int dummy_poll(unsigned evt_mask);
 static void dummy_changed(int evt);
 
 /* Event implementation instance. */
-static YF_evt_imp imp_ = {dummy_poll, dummy_changed};
+static yf_evt_imp_t imp_ = {dummy_poll, dummy_changed};
 
 /* Event handlers. */
-static T_evtfn closewd_  = { {.close_wd  = NULL}, NULL };
-static T_evtfn resizewd_ = { {.resize_wd = NULL}, NULL };
-static T_evtfn enterkb_  = { {.enter_kb  = NULL}, NULL };
-static T_evtfn leavekb_  = { {.leave_kb  = NULL}, NULL };
-static T_evtfn keykb_    = { {.key_kb    = NULL}, NULL };
-static T_evtfn enterpt_  = { {.enter_pt  = NULL}, NULL };
-static T_evtfn leavept_  = { {.leave_pt  = NULL}, NULL };
-static T_evtfn motionpt_ = { {.motion_pt = NULL}, NULL };
-static T_evtfn buttonpt_ = { {.button_pt = NULL}, NULL };
+static evtfn_t closewd_  = { {.close_wd  = NULL}, NULL };
+static evtfn_t resizewd_ = { {.resize_wd = NULL}, NULL };
+static evtfn_t enterkb_  = { {.enter_kb  = NULL}, NULL };
+static evtfn_t leavekb_  = { {.leave_kb  = NULL}, NULL };
+static evtfn_t keykb_    = { {.key_kb    = NULL}, NULL };
+static evtfn_t enterpt_  = { {.enter_pt  = NULL}, NULL };
+static evtfn_t leavept_  = { {.leave_pt  = NULL}, NULL };
+static evtfn_t motionpt_ = { {.motion_pt = NULL}, NULL };
+static evtfn_t buttonpt_ = { {.button_pt = NULL}, NULL };
 
 /* Mask of installed handlers. */
 static int mask_ = YF_EVT_NONE;
@@ -42,7 +42,7 @@ int yf_pollevt(unsigned evt_mask)
     return imp_.poll(evt_mask);
 }
 
-void yf_setevtfn(int evt, YF_evtfn fn, void *arg)
+void yf_setevtfn(int evt, yf_evtfn_t fn, void *arg)
 {
     switch (evt) {
     case YF_EVT_CLOSEWD:
@@ -97,7 +97,7 @@ void yf_setevtfn(int evt, YF_evtfn fn, void *arg)
     imp_.changed(evt);
 }
 
-void yf_getevtfn(int evt, YF_evtfn *fn, void **arg)
+void yf_getevtfn(int evt, yf_evtfn_t *fn, void **arg)
 {
     assert(fn != NULL && arg != NULL);
 
