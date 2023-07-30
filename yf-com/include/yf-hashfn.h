@@ -2,7 +2,7 @@
  * YF
  * yf-hashfn.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_HASHFN_H
@@ -17,7 +17,7 @@ YF_DECLS_BEGIN
 /**
  * Type defining a generic hashing function.
  */
-typedef size_t (*YF_hashfn)(const void *);
+typedef size_t (*yf_hashfn_t)(const void *);
 
 /**
  * Computes the hash value of a pointer.

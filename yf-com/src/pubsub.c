@@ -17,18 +17,18 @@
 /* Publisher variables. */
 typedef struct {
     unsigned pubsub_mask;
-    YF_dict subs;
-} T_pub;
+    yf_dict_t *subs;
+} pub_t;
 
 /* Subscriber variables. */
 typedef struct {
     unsigned pubsub_mask;
     void (*callb)(void *, int, void *);
     void *arg;
-} T_sub;
+} sub_t;
 
 /* Dictionary containing all publishers. */
-static YF_dict pubs_ = NULL;
+static yf_dict_t *pubs_ = NULL;
 
 #if 0
 /* On exit deinitialization. */
@@ -37,11 +37,11 @@ static void deinit(void)
     if (pubs_ == NULL)
         return;
 
-    YF_iter it = YF_NILIT;
-    T_pub *pub;
+    yf_iter_t it = YF_NILIT;
+    pub_t *pub;
     while ((pub = yf_dict_next(pubs_, &it, NULL)) != NULL) {
-        YF_iter it2 = YF_NILIT;
-        T_sub *sub;
+        yf_iter_t it2 = YF_NILIT;
+        sub_t *sub;
         while ((sub = yf_dict_next(pub->subs, &it2, NULL)) != NULL)
             free(sub);
         yf_dict_deinit(pub->subs);
@@ -69,15 +69,15 @@ int yf_setpub(const void *pub, unsigned pubsub_mask)
 #endif
     }
 
-    T_pub *val = yf_dict_search(pubs_, pub);
+    pub_t *val = yf_dict_search(pubs_, pub);
 
     /* removal */
     if (pubsub_mask == YF_PUBSUB_NONE) {
         if (val != NULL) {
             yf_dict_remove(pubs_, pub);
 
-            YF_iter it = YF_NILIT;
-            T_sub *sub;
+            yf_iter_t it = YF_NILIT;
+            sub_t *sub;
             while ((sub = yf_dict_next(val->subs, &it, NULL)) != NULL)
                 free(sub);
 
@@ -120,7 +120,7 @@ unsigned yf_checkpub(const void *pub)
     if (pubs_ == NULL)
         return YF_PUBSUB_NONE;
 
-    T_pub *val = yf_dict_search(pubs_, pub);
+    pub_t *val = yf_dict_search(pubs_, pub);
 
     return val != NULL ? val->pubsub_mask : YF_PUBSUB_NONE;
 }
@@ -130,13 +130,13 @@ void yf_publish(const void *pub, int pubsub)
     assert(pub != NULL);
     assert(pubs_ != NULL);
 
-    T_pub *val = yf_dict_search(pubs_, pub);
+    pub_t *val = yf_dict_search(pubs_, pub);
 
     if (val == NULL)
         return;
 
-    YF_iter it = YF_NILIT;
-    T_sub *sub;
+    yf_iter_t it = YF_NILIT;
+    sub_t *sub;
     while ((sub = yf_dict_next(val->subs, &it, NULL)) != NULL) {
         if (sub->pubsub_mask & pubsub)
             sub->callb((void *)pub, pubsub, sub->arg);
@@ -154,12 +154,12 @@ int yf_subscribe(const void *pub, const void *sub, unsigned pubsub_mask,
         return -1;
     }
 
-    T_pub *pv = yf_dict_search(pubs_, pub);
+    pub_t *pv = yf_dict_search(pubs_, pub);
 
     if (pv == NULL)
         return -1;
 
-    T_sub *sv = yf_dict_search(pv->subs, sub);
+    sub_t *sv = yf_dict_search(pv->subs, sub);
 
     /* removal */
     if (pubsub_mask == YF_PUBSUB_NONE) {

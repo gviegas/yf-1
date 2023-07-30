@@ -18,7 +18,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a dictionary.
  */
-typedef struct YF_dict_o *YF_dict;
+typedef struct yf_dict yf_dict_t;
 
 /**
  * Initializes a new dictionary.
@@ -28,7 +28,7 @@ typedef struct YF_dict_o *YF_dict;
  * @return: On success, returns a new dictionary. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_dict yf_dict_init(YF_hashfn hash, YF_cmpfn cmp);
+yf_dict_t *yf_dict_init(yf_hashfn_t hash, yf_cmpfn_t cmp);
 
 /**
  * Inserts a key/value pair in a dictionary.
@@ -41,7 +41,7 @@ YF_dict yf_dict_init(YF_hashfn hash, YF_cmpfn cmp);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_dict_insert(YF_dict dict, const void *key, const void *val);
+int yf_dict_insert(yf_dict_t *dict, const void *key, const void *val);
 
 /**
  * Removes a key/value pair from a dictionary.
@@ -53,7 +53,7 @@ int yf_dict_insert(YF_dict dict, const void *key, const void *val);
  * @return: If 'dict' does not contain 'key', returns 'NULL' and sets the
  *  global error to 'YF_ERR_NOTFND'. Otherwise, returns the removed value.
  */
-void *yf_dict_remove(YF_dict dict, const void *key);
+void *yf_dict_remove(yf_dict_t *dict, const void *key);
 
 /**
  * Removes a key/value pair from a dictionary.
@@ -65,7 +65,7 @@ void *yf_dict_remove(YF_dict dict, const void *key);
  * @return: If 'dict' does not contain '*key', returns 'NULL' and sets the
  *  global error to 'YF_ERR_NOTFND'. Otherwise, returns the removed value.
  */
-void *yf_dict_delete(YF_dict dict, void **key);
+void *yf_dict_delete(yf_dict_t *dict, void **key);
 
 /**
  * Replaces the value stored under a given key of a dictionary.
@@ -76,7 +76,7 @@ void *yf_dict_delete(YF_dict dict, void **key);
  * @return: If 'dict' does not contain 'key', returns 'NULL' and sets the
  *  global error to 'YF_ERR_NOTFND'. Otherwise, returns the old value.
  */
-void *yf_dict_replace(YF_dict dict, const void *key, const void *val);
+void *yf_dict_replace(yf_dict_t *dict, const void *key, const void *val);
 
 /**
  * Searches for a key in a dictionary.
@@ -86,7 +86,7 @@ void *yf_dict_replace(YF_dict dict, const void *key, const void *val);
  * @return: If 'dict' does not contain 'key', returns 'NULL' and sets the
  *  global error to 'YF_ERR_NOTFND'. Otherwise, returns the stored value.
  */
-void *yf_dict_search(YF_dict dict, const void *key);
+void *yf_dict_search(yf_dict_t *dict, const void *key);
 
 /**
  * Searches for a key in a dictionary.
@@ -96,7 +96,7 @@ void *yf_dict_search(YF_dict dict, const void *key);
  * @return: If 'dict' does not contain '*key', returns 'NULL' and sets the
  *  global error to 'YF_ERR_NOTFND'. Otherwise, returns the stored value.
  */
-void *yf_dict_lookup(YF_dict dict, void **key);
+void *yf_dict_lookup(yf_dict_t *dict, void **key);
 
 /**
  * Checks whether or not a dictionary contains a given key.
@@ -106,7 +106,7 @@ void *yf_dict_lookup(YF_dict dict, void **key);
  * @return: If 'dict' contains 'key', returns a non-zero value. Otherwise,
  *  zero is returned.
  */
-int yf_dict_contains(YF_dict dict, const void *key);
+int yf_dict_contains(yf_dict_t *dict, const void *key);
 
 /**
  * Gets the next key/value pair in a dictionary.
@@ -122,7 +122,7 @@ int yf_dict_contains(YF_dict dict, const void *key);
  * @param key: The destination for the key. Can be 'NULL'.
  * @return: The next value, or 'NULL' if there are no more values to retrieve.
  */
-void *yf_dict_next(YF_dict dict, YF_iter *it, void **key);
+void *yf_dict_next(yf_dict_t *dict, yf_iter_t *it, void **key);
 
 /**
  * Executes a given function for each key/value pair in a dictionary.
@@ -134,8 +134,8 @@ void *yf_dict_next(YF_dict dict, YF_iter *it, void **key);
  * @param callb: The callback to execute for each key/value pair.
  * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
  */
-void yf_dict_each(YF_dict dict, int (*callb)(void *key, void *val, void *arg),
-                  void *arg);
+void yf_dict_each(yf_dict_t *dict,
+                  int (*callb)(void *key, void *val, void *arg), void *arg);
 
 /**
  * Gets the number of key/value pairs stored in a dictionary.
@@ -143,7 +143,7 @@ void yf_dict_each(YF_dict dict, int (*callb)(void *key, void *val, void *arg),
  * @param dict: The dictionary.
  * @return: The length of the dictionary.
  */
-size_t yf_dict_getlen(YF_dict dict);
+size_t yf_dict_getlen(yf_dict_t *dict);
 
 /**
  * Removes all key/value pairs from a dictionary.
@@ -152,14 +152,14 @@ size_t yf_dict_getlen(YF_dict dict);
  *
  * @param dict: The dictionary.
  */
-void yf_dict_clear(YF_dict dict);
+void yf_dict_clear(yf_dict_t *dict);
 
 /**
  * Deinitializes a dictionary.
  *
  * @param dict: The dictionary to deinitialize. Can be 'NULL'.
  */
-void yf_dict_deinit(YF_dict dict);
+void yf_dict_deinit(yf_dict_t *dict);
 
 YF_DECLS_END
 

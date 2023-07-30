@@ -2,7 +2,7 @@
  * YF
  * yf-cmpfn.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_CMPFN_H
@@ -15,7 +15,7 @@ YF_DECLS_BEGIN
 /**
  * Type defining a generic comparison function.
  */
-typedef int (*YF_cmpfn)(const void *, const void *);
+typedef int (*yf_cmpfn_t)(const void *, const void *);
 
 /**
  * Compares the values of two pointers.

@@ -25,14 +25,14 @@ static int dict_cb(void *key, void *val, void *arg)
 int yf_test_dict(void)
 {
     YF_TEST_PRINT("init", "NULL, NULL", "dict");
-    YF_dict dict = yf_dict_init(NULL, NULL);
+    yf_dict_t *dict = yf_dict_init(NULL, NULL);
 
     const void *key1 = (const void *)1UL;
     const void *key2 = (const void *)2UL;
     const void *key3 = (const void *)3UL;
     void *key = NULL;
     const char *val = NULL;
-    YF_iter it = YF_NILIT;
+    yf_iter_t it = YF_NILIT;
 
     if (yf_dict_getlen(dict) != 0)
         return -1;

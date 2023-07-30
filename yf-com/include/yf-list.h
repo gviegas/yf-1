@@ -2,7 +2,7 @@
  * YF
  * yf-list.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_LIST_H
@@ -17,7 +17,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a linked list.
  */
-typedef struct YF_list_o *YF_list;
+typedef struct yf_list yf_list_t;
 
 /**
  * Initializes a new linked list.
@@ -26,7 +26,7 @@ typedef struct YF_list_o *YF_list;
  * @return: On success, returns a new list. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_list yf_list_init(YF_cmpfn cmp);
+yf_list_t *yf_list_init(yf_cmpfn_t cmp);
 
 /**
  * Inserts a given value in a linked list.
@@ -40,7 +40,7 @@ YF_list yf_list_init(YF_cmpfn cmp);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_list_insert(YF_list list, const void *val);
+int yf_list_insert(yf_list_t *list, const void *val);
 
 /**
  * Inserts a given value at a specific position of a linked list.
@@ -59,7 +59,7 @@ int yf_list_insert(YF_list list, const void *val);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_list_insertat(YF_list list, YF_iter *it, const void *val);
+int yf_list_insertat(yf_list_t *list, yf_iter_t *it, const void *val);
 
 /**
  * Removes a given value from a linked list.
@@ -71,7 +71,7 @@ int yf_list_insertat(YF_list list, YF_iter *it, const void *val);
  * @return: If 'list' does not contain 'val', returns a non-zero value and
  *  sets the global error to 'YF_ERR_NOTFND'. Otherwise, zero is returned.
  */
-int yf_list_remove(YF_list list, const void *val);
+int yf_list_remove(yf_list_t *list, const void *val);
 
 /**
  * Removes the value from a specific position of a linked list.
@@ -87,7 +87,7 @@ int yf_list_remove(YF_list list, const void *val);
  * @return: If 'list' is empty, returns 'NULL'. Otherwise, the removed value
  *  is returned.
  */
-void *yf_list_removeat(YF_list list, YF_iter *it);
+void *yf_list_removeat(yf_list_t *list, yf_iter_t *it);
 
 /**
  * Checks whether or not a linked list contains a given value.
@@ -97,7 +97,7 @@ void *yf_list_removeat(YF_list list, YF_iter *it);
  * @return: If 'list' contains 'val', returns a non-zero value. Otherwise,
  *  zero is returned.
  */
-int yf_list_contains(YF_list list, const void *val);
+int yf_list_contains(yf_list_t *list, const void *val);
 
 /**
  * Gets the next value in a linked list.
@@ -114,7 +114,7 @@ int yf_list_contains(YF_list list, const void *val);
  *  'NULL' or the nil iterator, returns the first value from 'list'.
  *  Otherwise, the next value is returned.
  */
-void *yf_list_next(YF_list list, YF_iter *it);
+void *yf_list_next(yf_list_t *list, yf_iter_t *it);
 
 /**
  * Executes a given function for each value in a linked list.
@@ -128,7 +128,8 @@ void *yf_list_next(YF_list list, YF_iter *it);
  * @param callb: The callback to execute for each value.
  * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
  */
-void yf_list_each(YF_list list, int (*callb)(void *val, void *arg), void *arg);
+void yf_list_each(yf_list_t *list,
+                  int (*callb)(void *val, void *arg), void *arg);
 
 /**
  * Gets the number of elements stored in a linked list.
@@ -136,7 +137,7 @@ void yf_list_each(YF_list list, int (*callb)(void *val, void *arg), void *arg);
  * @param list: The list.
  * @return: The length of the list.
  */
-size_t yf_list_getlen(YF_list list);
+size_t yf_list_getlen(yf_list_t *list);
 
 /**
  * Removes all elements from a linked list.
@@ -145,14 +146,14 @@ size_t yf_list_getlen(YF_list list);
  *
  * @param list: The list.
  */
-void yf_list_clear(YF_list list);
+void yf_list_clear(yf_list_t *list);
 
 /**
  * Deinitializes a linked list.
  *
  * @param list: The list to deinitialize. Can be 'NULL'.
  */
-void yf_list_deinit(YF_list list);
+void yf_list_deinit(yf_list_t *list);
 
 YF_DECLS_END
 

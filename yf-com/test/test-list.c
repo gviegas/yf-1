@@ -26,7 +26,7 @@ int yf_test_list(void)
     const int d = 'd';
 
     YF_TEST_PRINT("init", "NULL", "ls");
-    YF_list ls = yf_list_init(NULL);
+    yf_list_t *ls = yf_list_init(NULL);
     if (yf_list_getlen(ls) != 0)
         return -1;
     if (yf_list_contains(ls, NULL))
@@ -109,7 +109,7 @@ int yf_test_list(void)
     if (yf_list_contains(ls, &a))
         return -1;
 
-    YF_iter it;
+    yf_iter_t it;
 
     YF_TEST_PRINT("next", "ls, &it", "");
     it = YF_NILIT;

@@ -2,7 +2,7 @@
  * YF
  * yf-types.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_TYPES_H
@@ -11,52 +11,52 @@
 /**
  * Type defining a range of size 'n', starting at index 'i'.
  */
-typedef struct {
+typedef struct yf_slice {
     unsigned i;
     unsigned n;
-} YF_slice;
+} yf_slice_t;
 
 /**
  * Type defining a 2D offset.
  */
-typedef struct {
+typedef struct yf_off2 {
     int x;
     int y;
-} YF_off2;
+} yf_off2_t;
 
 /**
  * Type defining a 3D offset.
  */
-typedef struct {
+typedef struct yf_off3 {
     int x;
     int y;
     int z;
-} YF_off3;
+} yf_off3_t;
 
 /**
  * Type defining a 2D size.
  */
-typedef struct {
+typedef struct yf_dim2 {
     unsigned width;
     unsigned height;
-} YF_dim2;
+} yf_dim2_t;
 
 /**
  * Type defining a 3D size.
  */
-typedef struct {
+typedef struct yf_dim3 {
     unsigned width;
     unsigned height;
     unsigned depth;
-} YF_dim3;
+} yf_dim3_t;
 
 /**
  * Type defining a rectangle.
  */
-typedef struct {
-    YF_off2 origin;
-    YF_dim2 size;
-} YF_rect;
+typedef struct yf_rect {
+    yf_off2_t origin;
+    yf_dim2_t size;
+} yf_rect_t;
 
 /**
  * Corners of a rectangle.
@@ -74,12 +74,12 @@ typedef struct {
 /**
  * Type defining a normalized RGBA color.
  */
-typedef struct {
+typedef struct yf_color {
     float r;
     float g;
     float b;
     float a;
-} YF_color;
+} yf_color_t;
 
 /**
  * Predefined colors.
@@ -100,14 +100,14 @@ typedef struct {
 /**
  * Type defining a viewport.
  */
-typedef struct {
+typedef struct yf_viewport {
     float x;
     float y;
     float width;
     float height;
     float min_depth;
     float max_depth;
-} YF_viewport;
+} yf_viewport_t;
 
 /**
  * Makes a viewport from a given 2D size.

@@ -2,7 +2,7 @@
  * YF
  * yf-iter.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_ITER_H
@@ -14,14 +14,14 @@
 /**
  * Type defining an iterator.
  */
-typedef struct {
+typedef struct yf_iter {
     size_t data[2];
-} YF_iter;
+} yf_iter_t;
 
 /**
  * The nil iterator.
  */
-#define YF_NILIT (YF_iter){{SIZE_MAX, SIZE_MAX}}
+#define YF_NILIT (yf_iter_t){{SIZE_MAX, SIZE_MAX}}
 
 /**
  * Checks whether or not two iterators are equal.
