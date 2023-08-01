@@ -16,25 +16,25 @@
 /* Tests cstate. */
 int yf_test_cstate(void)
 {
-    YF_context ctx = yf_context_init();
+    yf_context_t *ctx = yf_context_init();
     assert(ctx != NULL);
 
-    YF_shdid shd;
+    yf_shdid_t shd;
     if (yf_loadshd(ctx, YF_COMPSHD, &shd) != 0)
         assert(0);
 
-    const YF_dentry entry = {YF_DTYPE_MUTABLE, 0, 1, NULL};
-    YF_dtable dtb = yf_dtable_init(ctx, &entry, 1);
+    const yf_dentry_t entry = {YF_DTYPE_MUTABLE, 0, 1, NULL};
+    yf_dtable_t *dtb = yf_dtable_init(ctx, &entry, 1);
     assert(dtb != NULL);
 
-    const YF_cconf conf = {
+    const yf_cconf_t conf = {
         .stg = {YF_STAGE_COMP, shd, "main"},
         .dtbs = &dtb,
         .dtb_n = 1
     };
 
     YF_TEST_PRINT("init", "&conf", "cst");
-    YF_cstate cst = yf_cstate_init(ctx, &conf);
+    yf_cstate_t *cst = yf_cstate_init(ctx, &conf);
     if (cst == NULL)
         return -1;
 

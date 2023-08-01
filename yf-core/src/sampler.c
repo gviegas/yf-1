@@ -2,7 +2,7 @@
  * YF
  * sampler.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -17,7 +17,7 @@
 #include "context.h"
 
 /* Default sampler. */
-static const YF_sampler splr_ = {
+static const yf_sampler_t splr_ = {
     .wrapmode = {
         .u = YF_WRAPMODE_REPEAT,
         .v = YF_WRAPMODE_REPEAT,
@@ -31,7 +31,7 @@ static const YF_sampler splr_ = {
 };
 
 /* Creates a sampler handle. */
-static VkSampler create_handle(YF_context ctx, const YF_sampler *splr)
+static VkSampler create_handle(yf_context_t *ctx, const yf_sampler_t *splr)
 {
     assert(ctx != NULL);
     assert(splr != NULL);
@@ -74,17 +74,17 @@ static VkSampler create_handle(YF_context ctx, const YF_sampler *splr)
     return sampler;
 }
 
-/* Destroys the dictionary of 'YF_splrh' stored in a context. */
-static void destroy_splrhs(YF_context ctx)
+/* Destroys the dictionary of 'yf_splrh_t' stored in a context. */
+static void destroy_splrhs(yf_context_t *ctx)
 {
     assert(ctx != NULL);
 
-    YF_dict splrhs = ctx->splr.priv;
+    yf_dict_t *splrhs = ctx->splr.priv;
     if (splrhs == NULL)
         return;
 
-    YF_iter it = YF_NILIT;
-    YF_splrh *splrh;
+    yf_iter_t it = YF_NILIT;
+    yf_splrh_t *splrh;
     while ((splrh = yf_dict_next(splrhs, &it, NULL)) != NULL) {
         vkDestroySampler(ctx->device, splrh->handle, NULL);
         free(splrh);
@@ -94,27 +94,27 @@ static void destroy_splrhs(YF_context ctx)
     ctx->splr.priv = NULL;
 }
 
-/* Hashes a 'YF_sampler'. */
+/* Hashes a 'yf_sampler_t'. */
 static size_t hash_splr(const void *x)
 {
-    const YF_sampler *splr = x;
+    const yf_sampler_t *splr = x;
     return yf_hashv(splr, sizeof *splr, NULL);
 
-    static_assert(sizeof(YF_sampler) == 6*sizeof(int), "!sizeof");
+    static_assert(sizeof(yf_sampler_t) == 6*sizeof(int), "!sizeof");
 }
 
-/* Compares a 'YF_sampler' to another. */
+/* Compares a 'yf_sampler_t' to another. */
 static int cmp_splr(const void *a, const void *b)
 {
-    const YF_sampler *splr1 = a;
-    const YF_sampler *splr2 = b;
+    const yf_sampler_t *splr1 = a;
+    const yf_sampler_t *splr2 = b;
     return memcmp(splr1, splr2, sizeof *splr1);
 
-    static_assert(sizeof(YF_sampler) == 6*sizeof(int), "!sizeof");
+    static_assert(sizeof(yf_sampler_t) == 6*sizeof(int), "!sizeof");
 }
 
-const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
-                               const YF_splrh *subs)
+const yf_splrh_t *yf_sampler_get(yf_context_t *ctx, const yf_sampler_t *splr,
+                                 const yf_splrh_t *subs)
 {
     assert(ctx != NULL);
 
@@ -134,8 +134,8 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
         yf_sampler_unget(ctx, subs);
     }
 
-    YF_dict splrhs = ctx->splr.priv;
-    YF_splrh *splrh = yf_dict_search(splrhs, splr);
+    yf_dict_t *splrhs = ctx->splr.priv;
+    yf_splrh_t *splrh = yf_dict_search(splrhs, splr);
 
     if (splrh == NULL) {
         splrh = malloc(sizeof *splrh);
@@ -161,17 +161,17 @@ const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
     return splrh;
 }
 
-void yf_sampler_unget(YF_context ctx, const YF_splrh *splrh)
+void yf_sampler_unget(yf_context_t *ctx, const yf_splrh_t *splrh)
 {
     assert(ctx != NULL);
 
     if (splrh == NULL)
         return;
 
-    YF_dict splrhs = ctx->splr.priv;
+    yf_dict_t *splrhs = ctx->splr.priv;
     assert(splrhs != NULL);
 
-    YF_splrh *val = yf_dict_search(splrhs, &splrh->splr);
+    yf_splrh_t *val = yf_dict_search(splrhs, &splrh->splr);
     assert(val != NULL);
 
     if (val->count == 1) {

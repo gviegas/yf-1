@@ -2,7 +2,7 @@
  * YF
  * stage.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_STAGE_H
@@ -42,7 +42,7 @@
     if (((st) & YF_STAGE_COMP) != 0) \
         to |= VK_SHADER_STAGE_COMPUTE_BIT; } while (0)
 
-/* Gets the underlying shader module for a given 'YF_shdid'. */
-VkShaderModule yf_getshd(YF_context ctx, YF_shdid shd);
+/* Gets the underlying shader module for a given 'yf_shdid_t'. */
+VkShaderModule yf_getshd(yf_context_t *ctx, yf_shdid_t shd);
 
 #endif /* YF_STAGE_H */

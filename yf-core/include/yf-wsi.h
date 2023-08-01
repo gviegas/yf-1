@@ -2,7 +2,7 @@
  * YF
  * yf-wsi.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_WSI_H
@@ -19,7 +19,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a presentable surface.
  */
-typedef struct YF_wsi_o *YF_wsi;
+typedef struct yf_wsi yf_wsi_t;
 
 /**
  * Initializes a new wsi.
@@ -29,7 +29,7 @@ typedef struct YF_wsi_o *YF_wsi;
  * @return: On success, returns a new wsi. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_wsi yf_wsi_init(YF_context ctx, YF_window win);
+yf_wsi_t *yf_wsi_init(yf_context_t *ctx, yf_window_t *win);
 
 /**
  * Gets the list of all images in the wsi's swapchain.
@@ -39,7 +39,7 @@ YF_wsi yf_wsi_init(YF_context ctx, YF_window win);
  * @return: On success, returns an array containing '*n' images. Otherwise,
  *  'NULL' is returned and the global error is set to indicate the cause.
  */
-const YF_image *yf_wsi_getimages(YF_wsi wsi, unsigned *n);
+yf_image_t *const *yf_wsi_getimages(yf_wsi_t *wsi, unsigned *n);
 
 /**
  * Gets the maximum number of images that can be acquired.
@@ -52,7 +52,7 @@ const YF_image *yf_wsi_getimages(YF_wsi wsi, unsigned *n);
  * @return: The acquisition limit. For a valid wsi object, this value will be
  *  at least one.
  */
-unsigned yf_wsi_getlimit(YF_wsi wsi);
+unsigned yf_wsi_getlimit(yf_wsi_t *wsi);
 
 /**
  * Queries the index of the next writable image.
@@ -66,7 +66,7 @@ unsigned yf_wsi_getlimit(YF_wsi wsi);
  *  Otherwise, a negative value is returned and the global error is set to
  *  indicate the cause.
  */
-int yf_wsi_next(YF_wsi wsi, int nonblocking);
+int yf_wsi_next(yf_wsi_t *wsi, int nonblocking);
 
 /**
  * Presents a previously acquired image.
@@ -76,14 +76,14 @@ int yf_wsi_next(YF_wsi wsi, int nonblocking);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_wsi_present(YF_wsi wsi, unsigned index);
+int yf_wsi_present(yf_wsi_t *wsi, unsigned index);
 
 /**
  * Deinitializes a wsi.
  *
  * @param wsi: The wsi to deinitialize. Can be 'NULL'.
  */
-void yf_wsi_deinit(YF_wsi wsi);
+void yf_wsi_deinit(yf_wsi_t *wsi);
 
 YF_DECLS_END
 

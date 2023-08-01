@@ -2,7 +2,7 @@
  * YF
  * cstate.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -16,7 +16,7 @@
 #include "dtable.h"
 #include "yf-limits.h"
 
-YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
+yf_cstate_t *yf_cstate_init(yf_context_t *ctx, const yf_cconf_t *conf)
 {
     assert(ctx != NULL);
     assert(conf != NULL);
@@ -31,7 +31,7 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
         return NULL;
     }
 
-    YF_cstate cst = calloc(1, sizeof(YF_cstate_o));
+    yf_cstate_t *cst = calloc(1, sizeof(yf_cstate_t));
     if (cst == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -122,13 +122,13 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf)
     return cst;
 }
 
-const YF_stage *yf_cstate_getstg(YF_cstate cst)
+const yf_stage_t *yf_cstate_getstg(yf_cstate_t *cst)
 {
     assert(cst != NULL);
     return &cst->stg;
 }
 
-YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index)
+yf_dtable_t *yf_cstate_getdtb(yf_cstate_t *cst, unsigned index)
 {
     assert(cst != NULL);
 
@@ -140,7 +140,7 @@ YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index)
     return cst->dtbs[index];
 }
 
-void yf_cstate_deinit(YF_cstate cst)
+void yf_cstate_deinit(yf_cstate_t *cst)
 {
     if (cst != NULL) {
         free(cst->dtbs);

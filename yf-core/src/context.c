@@ -2,7 +2,7 @@
  * YF
  * context.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -50,7 +50,7 @@ static atomic_flag flag_ = ATOMIC_FLAG_INIT;
 
 /* Sets layers. */
 #if defined(YF_DEVEL) && !defined(YF_NO_VALIDATION)
-static int set_layers(YF_context ctx)
+static int set_layers(yf_context_t *ctx)
 {
     const char *opt_lays[4];
     size_t opt_n = 0;
@@ -126,7 +126,7 @@ static int set_layers(YF_context ctx)
 #endif /* defined(YF_DEVEL) && !defined(YF_NO_VALIDATION) */
 
 /* Sets instance extensions. */
-static int set_inst_exts(YF_context ctx)
+static int set_inst_exts(yf_context_t *ctx)
 {
     const char *req_exts[] = {
         VK_KHR_SURFACE_EXTENSION_NAME,
@@ -212,7 +212,7 @@ static int set_inst_exts(YF_context ctx)
 }
 
 /* Initializes instance handle and instance-related properties. */
-static int init_instance(YF_context ctx)
+static int init_instance(yf_context_t *ctx)
 {
     assert(ctx->instance == NULL);
 
@@ -265,7 +265,7 @@ static int init_instance(YF_context ctx)
 }
 
 /* Sets device extensions. */
-static int set_dev_exts(YF_context ctx)
+static int set_dev_exts(yf_context_t *ctx)
 {
     const char *req_exts[] = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -341,7 +341,7 @@ static int set_dev_exts(YF_context ctx)
 }
 
 /* Sets features. */
-static int set_features(YF_context ctx)
+static int set_features(yf_context_t *ctx)
 {
     VkPhysicalDeviceFeatures feat;
     vkGetPhysicalDeviceFeatures(ctx->phy_dev, &feat);
@@ -394,7 +394,7 @@ static int set_features(YF_context ctx)
 }
 
 /* Initializes device handle and device-related properties. */
-static int init_device(YF_context ctx)
+static int init_device(yf_context_t *ctx)
 {
     assert(ctx->instance != NULL);
     assert(ctx->phy_dev == NULL);
@@ -528,7 +528,7 @@ static int init_device(YF_context ctx)
 }
 
 /* Initializes pipeline cache. */
-static int init_cache(YF_context ctx)
+static int init_cache(yf_context_t *ctx)
 {
     VkPipelineCacheCreateInfo info = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO,
@@ -547,7 +547,7 @@ static int init_cache(YF_context ctx)
     return 0;
 }
 
-YF_context yf_context_init(void)
+yf_context_t *yf_context_init(void)
 {
     if (atomic_flag_test_and_set(&flag_)) {
         yf_seterr(YF_ERR_EXIST, __func__);
@@ -559,7 +559,7 @@ YF_context yf_context_init(void)
         return NULL;
     }
 
-    YF_context ctx = calloc(1, sizeof(YF_context_o));
+    yf_context_t *ctx = calloc(1, sizeof(yf_context_t));
     if (ctx == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         yf_unldvk();
@@ -592,7 +592,7 @@ YF_context yf_context_init(void)
     return ctx;
 }
 
-void yf_context_deinit(YF_context ctx)
+void yf_context_deinit(yf_context_t *ctx)
 {
     if (ctx == NULL)
         return;
@@ -636,7 +636,7 @@ void yf_context_deinit(YF_context ctx)
 
 #ifdef YF_DEVEL
 
-void yf_print_ctx(YF_context ctx)
+void yf_print_ctx(yf_context_t *ctx)
 {
     assert(ctx != NULL);
 

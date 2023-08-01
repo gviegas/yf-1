@@ -2,7 +2,7 @@
  * YF
  * dtable.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -27,11 +27,11 @@ typedef struct {
     } key;
     /* one value for each element */
     struct {
-        YF_iview iview;
-        YF_image img;
-        const YF_splrh *splrh;
+        yf_iview_t iview;
+        yf_image_t *img;
+        const yf_splrh_t *splrh;
     } *val;
-} T_kv;
+} kv_t;
 
 /* Invalidates all iviews acquired from a given image. */
 static void inval_iview(void *img, int pubsub, void *dtb)
@@ -42,13 +42,13 @@ static void inval_iview(void *img, int pubsub, void *dtb)
 
     /* XXX: This may end up being too slow if images are destroyed often. */
 
-    YF_dict iss = ((YF_dtable)dtb)->iss;
-    YF_iter it = YF_NILIT;
-    T_kv *kv;
+    const yf_dentry_t *entries = ((yf_dtable_t *)dtb)->entries;
+    yf_dict_t *iss = ((yf_dtable_t *)dtb)->iss;
+    yf_iter_t it = YF_NILIT;
+    kv_t *kv;
 
     while ((kv = yf_dict_next(iss, &it, NULL)) != NULL) {
-        const unsigned n = ((YF_dtable)dtb)->entries[kv->key.entry_i].elements;
-
+        const unsigned n = entries[kv->key.entry_i].elements;
         for (unsigned i = 0; i < n; i++) {
             if (kv->val[i].img == img)
                 kv->val[i].img = NULL;
@@ -56,27 +56,27 @@ static void inval_iview(void *img, int pubsub, void *dtb)
     }
 }
 
-/* Hashes a 'T_kv'. */
+/* Hashes a 'kv_t'. */
 static size_t hash_kv(const void *x)
 {
-    const T_kv *kv = x;
+    const kv_t *kv = x;
     return yf_hashv(&kv->key, sizeof kv->key, NULL);
 
     static_assert(sizeof kv->key == 2*sizeof(unsigned), "!sizeof");
 }
 
-/* Compares a 'T_kv' to another. */
+/* Compares a 'kv_t' to another. */
 static int cmp_kv(const void *a, const void *b)
 {
-    const T_kv *kv1 = a;
-    const T_kv *kv2 = b;
+    const kv_t *kv1 = a;
+    const kv_t *kv2 = b;
 
     return kv1->key.alloc_i != kv2->key.alloc_i ||
            kv1->key.entry_i != kv2->key.entry_i;
 }
 
 /* Initializes the descriptor set layout. */
-static int init_layout(YF_dtable dtb)
+static int init_layout(yf_dtable_t *dtb)
 {
     VkDescriptorSetLayoutBinding *bindings = malloc(dtb->entry_n *
                                                     sizeof *bindings);
@@ -124,7 +124,7 @@ static int init_layout(YF_dtable dtb)
         }
     }
 
-    const YF_limits *lim = yf_getlimits(dtb->ctx);
+    const yf_limits_t *lim = yf_getlimits(dtb->ctx);
 
     if (dtb->count.unif > lim->dtable.unif_max ||
         dtb->count.mut > lim->dtable.mut_max ||
@@ -160,14 +160,14 @@ static int init_layout(YF_dtable dtb)
     return 0;
 }
 
-YF_dtable yf_dtable_init(YF_context ctx, const YF_dentry *entries,
-                         unsigned entry_n)
+yf_dtable_t *yf_dtable_init(yf_context_t *ctx, const yf_dentry_t *entries,
+                            unsigned entry_n)
 {
     assert(ctx != NULL);
     assert(entries != NULL);
     assert(entry_n > 0);
 
-    YF_dtable dtb = calloc(1, sizeof(YF_dtable_o));
+    yf_dtable_t *dtb = calloc(1, sizeof(yf_dtable_t));
     if (dtb == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -194,7 +194,7 @@ YF_dtable yf_dtable_init(YF_context ctx, const YF_dentry *entries,
     return dtb;
 }
 
-int yf_dtable_alloc(YF_dtable dtb, unsigned n)
+int yf_dtable_alloc(yf_dtable_t *dtb, unsigned n)
 {
     assert(dtb != NULL);
 
@@ -310,7 +310,7 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
         case YF_DTYPE_SAMPLER:
         case YF_DTYPE_ISAMPLER:
             for (unsigned j = 0; j < n; j++) {
-                T_kv *kv = calloc(1, sizeof(T_kv));
+                kv_t *kv = calloc(1, sizeof(kv_t));
                 if (kv == NULL) {
                     yf_dtable_dealloc(dtb);
                     return -1;
@@ -337,15 +337,15 @@ int yf_dtable_alloc(YF_dtable dtb, unsigned n)
     return 0;
 }
 
-void yf_dtable_dealloc(YF_dtable dtb)
+void yf_dtable_dealloc(yf_dtable_t *dtb)
 {
     assert(dtb != NULL);
 
     if (dtb->sets == NULL)
         return;
 
-    YF_iter it = YF_NILIT;
-    T_kv *kv;
+    yf_iter_t it = YF_NILIT;
+    kv_t *kv;
 
     while ((kv = yf_dict_next(dtb->iss, &it, NULL)) != NULL) {
         for (unsigned i = 0; i < dtb->entries[kv->key.entry_i].elements; i++) {
@@ -370,8 +370,8 @@ void yf_dtable_dealloc(YF_dtable dtb)
     dtb->set_n = 0;
 }
 
-int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
-                      YF_slice elements, const YF_buffer *bufs,
+int yf_dtable_copybuf(yf_dtable_t *dtb, unsigned alloc_i, unsigned binding,
+                      yf_slice_t elements, yf_buffer_t *const *bufs,
                       const size_t *offsets, const size_t *sizes)
 {
     assert(dtb != NULL);
@@ -385,7 +385,7 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         return -1;
     }
 
-    YF_dentry *entry = NULL;
+    yf_dentry_t *entry = NULL;
 
     for (unsigned i = 0; i < dtb->entry_n; i++) {
         if (dtb->entries[i].binding == binding) {
@@ -430,7 +430,7 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         .pTexelBufferView = NULL
     };
 
-    const YF_limits *lim = yf_getlimits(dtb->ctx);
+    const yf_limits_t *lim = yf_getlimits(dtb->ctx);
 
     switch (entry->dtype) {
     case YF_DTYPE_UNIFORM:
@@ -469,9 +469,9 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
     return 0;
 }
 
-int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
-                      YF_slice elements, const YF_image *imgs,
-                      const unsigned *layers, const YF_sampler *splrs)
+int yf_dtable_copyimg(yf_dtable_t *dtb, unsigned alloc_i, unsigned binding,
+                      yf_slice_t elements, yf_image_t *const *imgs,
+                      const unsigned *layers, const yf_sampler_t *splrs)
 {
     assert(dtb != NULL);
     assert(elements.n > 0);
@@ -483,7 +483,7 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         return -1;
     }
 
-    YF_dentry *entry = NULL;
+    yf_dentry_t *entry = NULL;
     unsigned entry_i = 0;
 
     for (; entry_i < dtb->entry_n; entry_i++) {
@@ -509,11 +509,11 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
         return -1;
     }
 
-    const T_kv k = {{alloc_i, entry_i}, NULL};
-    T_kv *kv = yf_dict_search(dtb->iss, &k);
-    const YF_slice lvl = {0, 1};
-    YF_slice lay = {0, 1};
-    YF_iview iview;
+    const kv_t k = {{alloc_i, entry_i}, NULL};
+    kv_t *kv = yf_dict_search(dtb->iss, &k);
+    const yf_slice_t lvl = {0, 1};
+    yf_slice_t lay = {0, 1};
+    yf_iview_t iview;
     unsigned elem_i;
 
     assert(kv != NULL);
@@ -570,8 +570,8 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
     case YF_DTYPE_ISAMPLER:
         for (unsigned i = 0; i < elements.n; i++) {
             elem_i = elements.i + i;
-            const YF_sampler *splr = splrs != NULL ? splrs+i : NULL;
-            const YF_splrh *subs = kv->val[elem_i].splrh;
+            const yf_sampler_t *splr = splrs != NULL ? splrs+i : NULL;
+            const yf_splrh_t *subs = kv->val[elem_i].splrh;
 
             kv->val[elem_i].splrh = yf_sampler_get(dtb->ctx, splr, subs);
             if (kv->val[elem_i].splrh == NULL) {
@@ -596,7 +596,7 @@ int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
     return 0;
 }
 
-void yf_dtable_deinit(YF_dtable dtb)
+void yf_dtable_deinit(yf_dtable_t *dtb)
 {
     if (dtb == NULL)
         return;

@@ -2,7 +2,7 @@
  * YF
  * dtable.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_DTABLE_H
@@ -13,9 +13,9 @@
 #include "yf-dtable.h"
 #include "vk.h"
 
-typedef struct YF_dtable_o {
-    YF_context ctx;
-    YF_dentry *entries;
+struct yf_dtable {
+    yf_context_t *ctx;
+    yf_dentry_t *entries;
     unsigned entry_n;
 
     struct {
@@ -27,12 +27,12 @@ typedef struct YF_dtable_o {
         unsigned ispl;
     } count;
 
-    YF_dict iss;
+    yf_dict_t *iss;
     VkDescriptorSetLayout layout;
     VkDescriptorPool pool;
     VkDescriptorSet *sets;
     unsigned set_n;
-} YF_dtable_o;
+};
 
 /* Converts from a 'YF_DTYPE' value. */
 #define YF_DTYPE_FROM(dtp, to) do { \

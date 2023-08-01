@@ -2,7 +2,7 @@
  * YF
  * print-capab.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -14,7 +14,7 @@
 /* XXX: VK-specific. */
 
 /* Context instance. */
-static YF_context ctx_ = NULL;
+static yf_context_t *ctx_ = NULL;
 
 /* Prints extension-related info. */
 static void print_extensions(void)

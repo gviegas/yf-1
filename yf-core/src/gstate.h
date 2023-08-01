@@ -2,7 +2,7 @@
  * YF
  * gstate.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_GSTATE_H
@@ -11,17 +11,17 @@
 #include "yf-gstate.h"
 #include "vk.h"
 
-typedef struct YF_gstate_o {
-    YF_context ctx;
-    YF_pass pass;
-    YF_stage *stgs;
+struct yf_gstate {
+    yf_context_t *ctx;
+    yf_pass_t *pass;
+    yf_stage_t *stgs;
     unsigned stg_n;
-    YF_dtable *dtbs;
+    yf_dtable_t **dtbs;
     unsigned dtb_n;
 
     VkPipelineLayout layout;
     VkPipeline pipeline;
-} YF_gstate_o;
+};
 
 /* Converts from a 'YF_TOPOLOGY' value. */
 #define YF_TOPOLOGY_FROM(tl, to) do { \

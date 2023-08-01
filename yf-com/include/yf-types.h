@@ -84,18 +84,18 @@ typedef struct yf_color {
 /**
  * Predefined colors.
  */
-#define YF_COLOR_RED         (YF_color){1.0f, 0.0f, 0.0f, 1.0f}
-#define YF_COLOR_GREEN       (YF_color){0.0f, 1.0f, 0.0f, 1.0f}
-#define YF_COLOR_BLUE        (YF_color){0.0f, 0.0f, 1.0f, 1.0f}
-#define YF_COLOR_CYAN        (YF_color){0.0f, 1.0f, 1.0f, 1.0f}
-#define YF_COLOR_MAGENTA     (YF_color){1.0f, 0.0f, 1.0f, 1.0f}
-#define YF_COLOR_YELLOW      (YF_color){1.0f, 1.0f, 0.0f, 1.0f}
-#define YF_COLOR_WHITE       (YF_color){1.0f, 1.0f, 1.0f, 1.0f}
-#define YF_COLOR_BLACK       (YF_color){0.0f, 0.0f, 0.0f, 1.0f}
-#define YF_COLOR_GREY        (YF_color){0.5f, 0.5f, 0.5f, 1.0f}
-#define YF_COLOR_LIGHTGREY   (YF_color){0.9f, 0.9f, 0.9f, 1.0f}
-#define YF_COLOR_DARKGREY    (YF_color){0.1f, 0.1f, 0.1f, 1.0f}
-#define YF_COLOR_TRANSPARENT (YF_color){1.0f, 1.0f, 1.0f, 0.0f}
+#define YF_COLOR_RED         (yf_color_t){1.0f, 0.0f, 0.0f, 1.0f}
+#define YF_COLOR_GREEN       (yf_color_t){0.0f, 1.0f, 0.0f, 1.0f}
+#define YF_COLOR_BLUE        (yf_color_t){0.0f, 0.0f, 1.0f, 1.0f}
+#define YF_COLOR_CYAN        (yf_color_t){0.0f, 1.0f, 1.0f, 1.0f}
+#define YF_COLOR_MAGENTA     (yf_color_t){1.0f, 0.0f, 1.0f, 1.0f}
+#define YF_COLOR_YELLOW      (yf_color_t){1.0f, 1.0f, 0.0f, 1.0f}
+#define YF_COLOR_WHITE       (yf_color_t){1.0f, 1.0f, 1.0f, 1.0f}
+#define YF_COLOR_BLACK       (yf_color_t){0.0f, 0.0f, 0.0f, 1.0f}
+#define YF_COLOR_GREY        (yf_color_t){0.5f, 0.5f, 0.5f, 1.0f}
+#define YF_COLOR_LIGHTGREY   (yf_color_t){0.9f, 0.9f, 0.9f, 1.0f}
+#define YF_COLOR_DARKGREY    (yf_color_t){0.1f, 0.1f, 0.1f, 1.0f}
+#define YF_COLOR_TRANSPARENT (yf_color_t){1.0f, 1.0f, 1.0f, 0.0f}
 
 /**
  * Type defining a viewport.

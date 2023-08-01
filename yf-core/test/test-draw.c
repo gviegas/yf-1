@@ -2,7 +2,7 @@
  * YF
  * test-draw.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -20,23 +20,23 @@
 #define YF_WINT "Draw"
 
 /* Shared variables. */
-struct T_vars {
-    YF_context ctx;
-    YF_wsi wsi;
-    YF_buffer buf;
-    YF_image img;
-    YF_dtable dtb;
-    YF_pass pass;
-    YF_target *tgts;
-    YF_gstate gst;
+struct vars {
+    yf_context_t *ctx;
+    yf_wsi_t *wsi;
+    yf_buffer_t *buf;
+    yf_image_t *img;
+    yf_dtable_t *dtb;
+    yf_pass_t *pass;
+    yf_target_t **tgts;
+    yf_gstate_t *gst;
 
-    YF_window win;
+    yf_window_t *win;
     int key;
 };
-static struct T_vars vars_ = {0};
+static struct vars vars_ = {0};
 
 /* Vertex type. */
-struct T_vertex {
+struct vertex {
     float pos[3];
     float clr[4];
 };
@@ -53,29 +53,29 @@ static void key_kb(int key, int state,
 static void init(void)
 {
     /* Context */
-    YF_context ctx = yf_context_init();
+    yf_context_t *ctx = yf_context_init();
     assert(ctx != NULL);
 
     /* Buffer */
-    YF_buffer buf = yf_buffer_init(ctx, 2048);
+    yf_buffer_t *buf = yf_buffer_init(ctx, 2048);
     assert(buf != NULL);
 
     /* Stages */
-    YF_shdid vshd, fshd;
+    yf_shdid_t vshd, fshd;
 
     if (yf_loadshd(ctx, "tmp/vert", &vshd) != 0)
         assert(0);
     if (yf_loadshd(ctx, "tmp/frag", &fshd) != 0)
         assert(0);
 
-    const YF_stage stgs[] = {
+    const yf_stage_t stgs[] = {
         {YF_STAGE_VERT, vshd, "main"},
         {YF_STAGE_FRAG, fshd, "main"}
     };
 
     /* DTable */
-    const YF_dentry entry = {0, YF_DTYPE_UNIFORM, 1, NULL};
-    YF_dtable dtb = yf_dtable_init(ctx, &entry, 1);
+    const yf_dentry_t entry = {0, YF_DTYPE_UNIFORM, 1, NULL};
+    yf_dtable_t *dtb = yf_dtable_init(ctx, &entry, 1);
     assert(dtb != NULL);
 
     const unsigned alloc_n = 1;
@@ -83,32 +83,32 @@ static void init(void)
         assert(0);
 
     /* VInput */
-    const YF_vattr attrs[] = {
+    const yf_vattr_t attrs[] = {
         {0, YF_VFMT_FLOAT3, 0},
-        {1, YF_VFMT_FLOAT4, offsetof(struct T_vertex, clr)}
+        {1, YF_VFMT_FLOAT4, offsetof(struct vertex, clr)}
     };
 
-    const YF_vinput vin = {
+    const yf_vinput_t vin = {
         attrs,
         sizeof attrs / sizeof attrs[0],
-        sizeof(struct T_vertex),
+        sizeof(struct vertex),
         YF_VRATE_VERT
     };
 
     /* WSI */
-    YF_window win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
+    yf_window_t *win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
     assert(win != NULL);
 
-    YF_wsi wsi = yf_wsi_init(ctx, win);
+    yf_wsi_t *wsi = yf_wsi_init(ctx, win);
     assert(wsi != NULL);
 
     unsigned pres_img_n;
-    const YF_image *pres_imgs = yf_wsi_getimages(wsi, &pres_img_n);
+    yf_image_t *const *pres_imgs = yf_wsi_getimages(wsi, &pres_img_n);
     assert(pres_imgs != NULL && pres_img_n != 0);
 
     /* Image */
-    const YF_dim3 img_dim = {YF_WINW, YF_WINH, 1};
-    YF_image img = yf_image_init(ctx, YF_PIXFMT_D16UNORM, img_dim, 1, 1, 1);
+    const yf_dim3_t img_dim = {YF_WINW, YF_WINH, 1};
+    yf_image_t *img = yf_image_init(ctx, YF_PIXFMT_D16UNORM, img_dim, 1, 1, 1);
     assert(img != NULL);
 
     /* Pass */
@@ -116,14 +116,14 @@ static void init(void)
     unsigned pres_spl;
     yf_image_getval(pres_imgs[0], &pres_fmt, NULL, NULL, NULL, &pres_spl);
 
-    const YF_colordsc clr_dsc = {
+    const yf_colordsc_t clr_dsc = {
         pres_fmt,
         pres_spl,
         YF_LOADOP_UNDEF,
         YF_STOREOP_UNDEF
     };
 
-    const YF_depthdsc dep_dsc = {
+    const yf_depthdsc_t dep_dsc = {
         YF_PIXFMT_D16UNORM,
         1,
         YF_LOADOP_UNDEF,
@@ -132,19 +132,19 @@ static void init(void)
         YF_STOREOP_UNDEF
     };
 
-    YF_pass pass = yf_pass_init(ctx, &clr_dsc, 1, NULL, &dep_dsc);
+    yf_pass_t *pass = yf_pass_init(ctx, &clr_dsc, 1, NULL, &dep_dsc);
     assert(pass != NULL);
 
     /* Targets */
-    const YF_dim2 tgt_dim = {YF_WINW, YF_WINH};
-    const YF_attach dep_att = {img, 0};
+    const yf_dim2_t tgt_dim = {YF_WINW, YF_WINH};
+    const yf_attach_t dep_att = {img, 0};
 
-    YF_attach *clr_atts = malloc(pres_img_n * sizeof(YF_attach));
-    YF_target *tgts = malloc(pres_img_n * sizeof(YF_target));
+    yf_attach_t *clr_atts = malloc(pres_img_n * sizeof(yf_attach_t));
+    yf_target_t **tgts = malloc(pres_img_n * sizeof(yf_target_t *));
     assert(clr_atts != NULL && tgts != NULL);
 
     for (size_t i = 0; i < pres_img_n; i++) {
-        clr_atts[i] = (YF_attach){pres_imgs[i], 0};
+        clr_atts[i] = (yf_attach_t){pres_imgs[i], 0};
         tgts[i] = yf_pass_maketarget(pass, tgt_dim, 1, clr_atts+i, NULL,
                                      &dep_att);
         assert(tgts[i] != NULL);
@@ -152,7 +152,7 @@ static void init(void)
     free(clr_atts);
 
     /* Graphics state */
-    const YF_gconf conf = {
+    const yf_gconf_t conf = {
         pass,
         stgs,
         sizeof stgs / sizeof stgs[0],
@@ -166,7 +166,7 @@ static void init(void)
         YF_WINDING_CCW
     };
 
-    YF_gstate gst = yf_gstate_init(ctx, &conf);
+    yf_gstate_t *gst = yf_gstate_init(ctx, &conf);
     assert(gst != NULL);
 
     /* Data copy */
@@ -177,7 +177,7 @@ static void init(void)
         0.0f, 0.0f, 0.0f, 1.0f
     };
 
-    const struct T_vertex verts[3] = {
+    const struct vertex verts[3] = {
         {{-1.0f,  1.0f, 0.5f}, {0.525f, 0.305f, 0.483f, 1.0f}},
         {{ 1.0f,  1.0f, 0.5f}, {0.773f, 0.893f, 0.200f, 1.0f}},
         {{ 0.0f, -1.0f, 0.5f}, {0.912f, 0.450f, 0.335f, 1.0f}}
@@ -188,7 +188,7 @@ static void init(void)
     if (yf_buffer_copy(buf, sizeof m, verts, sizeof verts) != 0)
         assert(0);
 
-    const YF_slice elems = {0, 1};
+    const yf_slice_t elems = {0, 1};
     const size_t buf_off = 0;
     const size_t buf_sz = sizeof m;
 
@@ -207,7 +207,7 @@ static void init(void)
     vars_.win = win;
     vars_.key = YF_KEY_UNKNOWN;
 
-    YF_evtfn fn = {.key_kb = key_kb};
+    yf_evtfn_t fn = {.key_kb = key_kb};
     yf_setevtfn(YF_EVT_KEYKB, fn, NULL);
 }
 
@@ -218,13 +218,13 @@ static void update(void)
     yf_pollevt(YF_EVT_KEYKB);
 
     /* Command buffer */
-    static const YF_viewport vp = {0.0f, 0.0f, YF_WINW, YF_WINH, 0.0f, 1.0f};
-    static const YF_rect sciss = {{0, 0}, {YF_WINW, YF_WINH}};
+    static const yf_viewport_t vp = {0.0f, 0.0f, YF_WINW, YF_WINH, 0.0f, 1.0f};
+    static const yf_rect_t sciss = {{0, 0}, {YF_WINW, YF_WINH}};
 
     int tgt_i = yf_wsi_next(vars_.wsi, 0);
     assert(tgt_i >= 0);
 
-    YF_cmdbuf cb = yf_cmdbuf_get(vars_.ctx, YF_CMDBUF_GRAPH);
+    yf_cmdbuf_t *cb = yf_cmdbuf_get(vars_.ctx, YF_CMDBUF_GRAPH);
     assert(cb != NULL);
 
     yf_cmdbuf_setgstate(cb, vars_.gst);

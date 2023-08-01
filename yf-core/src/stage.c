@@ -2,7 +2,7 @@
  * YF
  * stage.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -17,21 +17,21 @@
 
 /* Stage variables stored in a context. */
 typedef struct {
-    YF_dict shds;
-    YF_shdid cur;
-} T_priv;
+    yf_dict_t *shds;
+    yf_shdid_t cur;
+} priv_t;
 
-/* Destroys the 'T_priv' data stored in a given context. */
-static void destroy_priv(YF_context ctx)
+/* Destroys the 'priv_t' data stored in a given context. */
+static void destroy_priv(yf_context_t *ctx)
 {
     assert(ctx != NULL);
 
     if (ctx->stg.priv == NULL)
         return;
 
-    T_priv *priv = ctx->stg.priv;
+    priv_t *priv = ctx->stg.priv;
 
-    YF_iter it = YF_NILIT;
+    yf_iter_t it = YF_NILIT;
     do {
         VkShaderModule val = yf_dict_next(priv->shds, &it, NULL);
         if (YF_IT_ISNIL(it))
@@ -44,12 +44,12 @@ static void destroy_priv(YF_context ctx)
     ctx->stg.priv = NULL;
 }
 
-int yf_loadshd(YF_context ctx, const char *pathname, YF_shdid *shd)
+int yf_loadshd(yf_context_t *ctx, const char *pathname, yf_shdid_t *shd)
 {
     assert(ctx != NULL);
     assert(pathname != NULL);
 
-    T_priv *priv = ctx->stg.priv;
+    priv_t *priv = ctx->stg.priv;
 
     if (priv == NULL) {
         if ((ctx->stg.priv = malloc(sizeof *priv)) == NULL) {
@@ -116,7 +116,7 @@ int yf_loadshd(YF_context ctx, const char *pathname, YF_shdid *shd)
         return -1;
     }
 
-    const YF_shdid key = ++priv->cur;
+    const yf_shdid_t key = ++priv->cur;
 
     if (yf_dict_insert(priv->shds, (void *)key, (void *)val) != 0) {
         *shd = 0;
@@ -127,14 +127,14 @@ int yf_loadshd(YF_context ctx, const char *pathname, YF_shdid *shd)
     return 0;
 }
 
-void yf_unldshd(YF_context ctx, YF_shdid shd)
+void yf_unldshd(yf_context_t *ctx, yf_shdid_t shd)
 {
     assert(ctx != NULL);
 
     if (ctx->stg.priv == NULL)
         return;
 
-    T_priv *priv = ctx->stg.priv;
+    priv_t *priv = ctx->stg.priv;
 
     if (yf_dict_contains(priv->shds, (void *)shd)) {
         VkShaderModule val = yf_dict_remove(priv->shds, (void *)shd);
@@ -142,14 +142,14 @@ void yf_unldshd(YF_context ctx, YF_shdid shd)
     }
 }
 
-VkShaderModule yf_getshd(YF_context ctx, YF_shdid shd)
+VkShaderModule yf_getshd(yf_context_t *ctx, yf_shdid_t shd)
 {
     assert(ctx != NULL);
 
     if (ctx->stg.priv == NULL)
         return VK_NULL_HANDLE;
 
-    T_priv *priv = ctx->stg.priv;
+    priv_t *priv = ctx->stg.priv;
     void *val = yf_dict_search(priv->shds, (void *)shd);
 
     if (val != NULL)

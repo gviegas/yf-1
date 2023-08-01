@@ -2,7 +2,7 @@
  * YF
  * yf-pass.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_PASS_H
@@ -18,12 +18,12 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a render pass configuration.
  */
-typedef struct YF_pass_o *YF_pass;
+typedef struct yf_pass yf_pass_t;
 
 /**
  * Opaque type defining a render target for a pass.
  */
-typedef struct YF_target_o *YF_target;
+typedef struct yf_target yf_target_t;
 
 /**
  * Load operations.
@@ -40,32 +40,32 @@ typedef struct YF_target_o *YF_target;
 /**
  * Type describing a color attachment for use in a pass.
  */
-typedef struct {
+typedef struct yf_colordsc {
     int pixfmt;
     int samples;
     int loadop;
     int storeop;
-} YF_colordsc;
+} yf_colordsc_t;
 
 /**
  * Type describing a depth/stencil attachment for use in a pass.
  */
-typedef struct {
+typedef struct yf_depthdsc {
     int pixfmt;
     int samples;
     int depth_loadop;
     int depth_storeop;
     int stencil_loadop;
     int stencil_storeop;
-} YF_depthdsc;
+} yf_depthdsc_t;
 
 /**
  * Type defining the resource of a target's attachment.
  */
-typedef struct {
-    YF_image img;
+typedef struct yf_attach {
+    yf_image_t *img;
     unsigned layer_base;
-} YF_attach;
+} yf_attach_t;
 
 /**
  * Initializes a new pass.
@@ -80,9 +80,9 @@ typedef struct {
  * @return: On success, returns a new pass. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
-                     unsigned color_n, const YF_colordsc *resolves,
-                     const YF_depthdsc *depth_stencil);
+yf_pass_t *yf_pass_init(yf_context_t *ctx, const yf_colordsc_t *colors,
+                        unsigned color_n, const yf_colordsc_t *resolves,
+                        const yf_depthdsc_t *depth_stencil);
 
 /**
  * Makes a new target for use with a given pass.
@@ -96,9 +96,10 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
  * @return: On success, returns a new target. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
-                             const YF_attach *colors, const YF_attach *resolves,
-                             const YF_attach *depth_stencil);
+yf_target_t *yf_pass_maketarget(yf_pass_t *pass, yf_dim2_t dim, unsigned layers,
+                                const yf_attach_t *colors,
+                                const yf_attach_t *resolves,
+                                const yf_attach_t *depth_stencil);
 
 /**
  * Unmakes a pass' target.
@@ -108,14 +109,14 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_pass_unmktarget(YF_pass pass, YF_target tgt);
+int yf_pass_unmktarget(yf_pass_t *pass, yf_target_t *tgt);
 
 /**
  * Deinitializes a pass.
  *
  * @param pass: The pass to deinitialize. Can be 'NULL'.
  */
-void yf_pass_deinit(YF_pass pass);
+void yf_pass_deinit(yf_pass_t *pass);
 
 YF_DECLS_END
 

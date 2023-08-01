@@ -2,7 +2,7 @@
  * YF
  * image.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -21,19 +21,19 @@
 #include "buffer.h"
 #include "yf-limits.h"
 
-/* The private data of a 'YF_iview'. */
+/* The private data of a 'yf_iview_t'. */
 typedef struct {
     struct {
-        YF_slice layers;
-        YF_slice levels;
+        yf_slice_t layers;
+        yf_slice_t levels;
     } key;
     unsigned count;
-} T_priv;
+} priv_t;
 
 /* Deallocates a staging buffer. */
 static void dealloc_stgbuf(int res, void *arg)
 {
-    yf_buffer_deinit((YF_buffer)arg);
+    yf_buffer_deinit((yf_buffer_t *)arg);
 
     if (res != 0) {
         /* TODO */
@@ -43,7 +43,7 @@ static void dealloc_stgbuf(int res, void *arg)
 /* Sets image layout. */
 static void set_layout(int res, void *arg)
 {
-    YF_image img = arg;
+    yf_image_t *img = arg;
     if (res == 0)
         /* succeeded */
         img->layout = img->next_layout;
@@ -52,20 +52,20 @@ static void set_layout(int res, void *arg)
         img->next_layout = img->layout;
 }
 
-/* Hashes a 'T_priv'. */
+/* Hashes a 'priv_t'. */
 static size_t hash_priv(const void *x)
 {
-    const T_priv *pv = x;
+    const priv_t *pv = x;
     return yf_hashv(&pv->key, sizeof pv->key, NULL);
 
     static_assert(sizeof pv->key == 4*sizeof(unsigned), "!sizeof");
 }
 
-/* Compares a 'T_priv' to another. */
+/* Compares a 'priv_t' to another. */
 static int cmp_priv(const void *a, const void *b)
 {
-    const T_priv *pv1 = a;
-    const T_priv *pv2 = b;
+    const priv_t *pv1 = a;
+    const priv_t *pv2 = b;
 
     return pv1->key.layers.i != pv2->key.layers.i ||
            pv1->key.layers.n != pv2->key.layers.n ||
@@ -74,7 +74,7 @@ static int cmp_priv(const void *a, const void *b)
 }
 
 /* Sets usage for a given image tiling. */
-static int set_usage(YF_image img, VkImageTiling tiling)
+static int set_usage(yf_image_t *img, VkImageTiling tiling)
 {
     assert(img != NULL);
     assert(tiling == VK_IMAGE_TILING_LINEAR ||
@@ -122,7 +122,7 @@ static int set_usage(YF_image img, VkImageTiling tiling)
 }
 
 /* Sets image tiling. */
-static int set_tiling(YF_image img, VkImageTiling tiling)
+static int set_tiling(yf_image_t *img, VkImageTiling tiling)
 {
     assert(img != NULL);
     assert(tiling == VK_IMAGE_TILING_LINEAR ||
@@ -161,14 +161,14 @@ static int set_tiling(YF_image img, VkImageTiling tiling)
     return 0;
 }
 
-YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
-                       unsigned layers, unsigned levels, unsigned samples)
+yf_image_t *yf_image_init(yf_context_t *ctx, int pixfmt, yf_dim3_t dim,
+                          unsigned layers, unsigned levels, unsigned samples)
 {
     assert(ctx != NULL);
     assert(dim.width > 0 && dim.height > 0 && dim.depth > 0);
     assert(layers > 0 && levels > 0 && samples > 0);
 
-    YF_image img = calloc(1, sizeof(YF_image_o));
+    yf_image_t *img = calloc(1, sizeof(yf_image_t));
     if (img == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -286,8 +286,8 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
     return img;
 }
 
-int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
-                  unsigned level, const void *data)
+int yf_image_copy(yf_image_t *img, yf_off3_t off, yf_dim3_t dim,
+                  unsigned layer, unsigned level, const void *data)
 {
     assert(img != NULL);
     assert(data != NULL);
@@ -365,14 +365,14 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
         YF_PIXFMT_SIZEOF(img->pixfmt, sz);
         sz *= dim.width * dim.height * dim.depth;
 
-        YF_buffer stg_buf = yf_buffer_init(img->ctx, sz);
+        yf_buffer_t *stg_buf = yf_buffer_init(img->ctx, sz);
         if (stg_buf == NULL)
             return -1;
 
         memcpy(stg_buf->data, data, sz);
 
-        const YF_cmdres *cmdr = yf_cmdpool_getprio(img->ctx, dealloc_stgbuf,
-                                                   stg_buf);
+        const yf_cmdres_t *cmdr = yf_cmdpool_getprio(img->ctx, dealloc_stgbuf,
+                                                     stg_buf);
         if (cmdr == NULL) {
             yf_buffer_deinit(stg_buf);
             return -1;
@@ -398,7 +398,7 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
     return 0;
 }
 
-void yf_image_getval(YF_image img, int *pixfmt, YF_dim3 *dim,
+void yf_image_getval(yf_image_t *img, int *pixfmt, yf_dim3_t *dim,
                      unsigned *layers, unsigned *levels, unsigned *samples)
 {
     assert(img != NULL);
@@ -415,7 +415,7 @@ void yf_image_getval(YF_image img, int *pixfmt, YF_dim3 *dim,
         YF_SAMPLES_TO(img->samples, *samples);
 }
 
-void yf_image_deinit(YF_image img)
+void yf_image_deinit(yf_image_t *img)
 {
     if (img == NULL)
         return;
@@ -427,8 +427,8 @@ void yf_image_deinit(YF_image img)
     if (img->layout != img->next_layout)
         yf_cmdexec_execprio(img->ctx);
 
-    YF_iter it = YF_NILIT;
-    YF_iview *iv;
+    yf_iter_t it = YF_NILIT;
+    yf_iview_t *iv;
 
     while ((iv = yf_dict_next(img->iviews, &it, NULL)) != NULL) {
         vkDestroyImageView(img->ctx->device, iv->view, NULL);
@@ -446,10 +446,10 @@ void yf_image_deinit(YF_image img)
     free(img);
 }
 
-YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
-                       VkImageType type, YF_dim3 dim, unsigned layers,
-                       unsigned levels, VkSampleCountFlagBits samples,
-                       VkImageUsageFlags usage, VkImageLayout layout)
+yf_image_t *yf_image_wrap(yf_context_t *ctx, VkImage image, VkFormat format,
+                          VkImageType type, yf_dim3_t dim, unsigned layers,
+                          unsigned levels, VkSampleCountFlagBits samples,
+                          VkImageUsageFlags usage, VkImageLayout layout)
 {
     assert(ctx != NULL);
     assert(image != NULL);
@@ -457,7 +457,7 @@ YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
     assert(dim.width > 0 && dim.height > 0 && dim.depth > 0);
     assert(layers > 0 && levels > 0);
 
-    YF_image img = calloc(1, sizeof(YF_image_o));
+    yf_image_t *img = calloc(1, sizeof(yf_image_t));
     if (img == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -523,16 +523,16 @@ YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
     return img;
 }
 
-int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
-                      YF_iview *iview)
+int yf_image_getiview(yf_image_t *img, yf_slice_t layers, yf_slice_t levels,
+                      yf_iview_t *iview)
 {
     assert(img != NULL);
     assert(layers.n > 0 && layers.i + layers.n <= img->layers);
     assert(levels.n > 0 && levels.i + levels.n <= img->levels);
     assert(iview != NULL);
 
-    const T_priv priv = {{layers, levels}, 0};
-    YF_iview *iv = yf_dict_search(img->iviews, &priv);
+    const priv_t priv = {{layers, levels}, 0};
+    yf_iview_t *iv = yf_dict_search(img->iviews, &priv);
 
     if (iv == NULL) {
         iv = malloc(sizeof *iv);
@@ -589,23 +589,23 @@ int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
         }
     }
 
-    ((T_priv *)iv->priv)->count++;
+    ((priv_t *)iv->priv)->count++;
     *iview = *iv;
 
     return 0;
 }
 
-void yf_image_ungetiview(YF_image img, YF_iview *iview)
+void yf_image_ungetiview(yf_image_t *img, yf_iview_t *iview)
 {
     assert(img != NULL);
     assert(iview != NULL);
 
-    YF_iview *iv = yf_dict_search(img->iviews, iview->priv);
+    yf_iview_t *iv = yf_dict_search(img->iviews, iview->priv);
 
     if (iv == NULL)
         return;
 
-    T_priv *priv = iv->priv;
+    priv_t *priv = iv->priv;
 
     if (--priv->count == 0) {
         vkDestroyImageView(img->ctx->device, iv->view, NULL);
@@ -615,7 +615,7 @@ void yf_image_ungetiview(YF_image img, YF_iview *iview)
     }
 }
 
-int yf_image_chglayout(YF_image img, VkImageLayout layout)
+int yf_image_chglayout(yf_image_t *img, VkImageLayout layout)
 {
     assert(img != NULL);
     assert(layout != VK_IMAGE_LAYOUT_UNDEFINED &&
@@ -631,7 +631,7 @@ int yf_image_chglayout(YF_image img, VkImageLayout layout)
         return -1;
     }
 
-    const YF_cmdres *cmdr = yf_cmdpool_getprio(img->ctx, set_layout, img);
+    const yf_cmdres_t *cmdr = yf_cmdpool_getprio(img->ctx, set_layout, img);
     if (cmdr == NULL)
         return -1;
 

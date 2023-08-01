@@ -2,7 +2,7 @@
  * YF
  * yf-dtable.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_DTABLE_H
@@ -23,7 +23,7 @@ YF_DECLS_BEGIN
  * The descriptor table defines a set of resource types that can be used by
  * related shader programs.
  */
-typedef struct YF_dtable_o *YF_dtable;
+typedef struct yf_dtable yf_dtable_t;
 
 /**
  * Descriptor types.
@@ -38,12 +38,12 @@ typedef struct YF_dtable_o *YF_dtable;
 /**
  * Type defining an entry in a descriptor table.
  */
-typedef struct {
+typedef struct yf_dentry {
     unsigned binding;
     int dtype;
     unsigned elements;
     void *info;
-} YF_dentry;
+} yf_dentry_t;
 
 /**
  * Initializes a new descriptor table.
@@ -54,8 +54,8 @@ typedef struct {
  * @return: On success, returns a new dtable. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_dtable yf_dtable_init(YF_context ctx, const YF_dentry *entries,
-                         unsigned entry_n);
+yf_dtable_t *yf_dtable_init(yf_context_t *ctx, const yf_dentry_t *entries,
+                            unsigned entry_n);
 
 /**
  * Allocates resources for a given descriptor table.
@@ -77,14 +77,14 @@ YF_dtable yf_dtable_init(YF_context ctx, const YF_dentry *entries,
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_dtable_alloc(YF_dtable dtb, unsigned n);
+int yf_dtable_alloc(yf_dtable_t *dtb, unsigned n);
 
 /**
  * Deallocates resources of a given descriptor table.
  *
  * @param dtb: The dtable.
  */
-void yf_dtable_dealloc(YF_dtable dtb);
+void yf_dtable_dealloc(yf_dtable_t *dtb);
 
 /**
  * Copies buffer data to a descriptor.
@@ -99,8 +99,8 @@ void yf_dtable_dealloc(YF_dtable dtb);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
-                      YF_slice elements, const YF_buffer *bufs,
+int yf_dtable_copybuf(yf_dtable_t *dtb, unsigned alloc_i, unsigned binding,
+                      yf_slice_t elements, yf_buffer_t *const *bufs,
                       const size_t *offsets, const size_t *sizes);
 
 /**
@@ -116,16 +116,16 @@ int yf_dtable_copybuf(YF_dtable dtb, unsigned alloc_i, unsigned binding,
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_dtable_copyimg(YF_dtable dtb, unsigned alloc_i, unsigned binding,
-                      YF_slice elements, const YF_image *imgs,
-                      const unsigned *layers, const YF_sampler *splrs);
+int yf_dtable_copyimg(yf_dtable_t *dtb, unsigned alloc_i, unsigned binding,
+                      yf_slice_t elements, yf_image_t *const *imgs,
+                      const unsigned *layers, const yf_sampler_t *splrs);
 
 /**
  * Deinitializes a descriptor table.
  *
  * @param dtb: The dtable to deinitialize. Can be 'NULL'.
  */
-void yf_dtable_deinit(YF_dtable dtb);
+void yf_dtable_deinit(yf_dtable_t *dtb);
 
 YF_DECLS_END
 

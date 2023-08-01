@@ -2,7 +2,7 @@
  * YF
  * yf-cstate.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_CSTATE_H
@@ -16,18 +16,18 @@
 YF_DECLS_BEGIN
 
 /**
- * Opaque type defining a compute state.
+ * Opaque type defining a compute pipeline state.
  */
-typedef struct YF_cstate_o *YF_cstate;
+typedef struct yf_cstate yf_cstate_t;
 
 /**
  * Type defining a compute state configuration.
  */
-typedef struct {
-    YF_stage stg;
-    YF_dtable *dtbs;
+typedef struct yf_cconf {
+    yf_stage_t stg;
+    yf_dtable_t **dtbs;
     unsigned dtb_n;
-} YF_cconf;
+} yf_cconf_t;
 
 /**
  * Initializes a new compute state.
@@ -37,7 +37,7 @@ typedef struct {
  * @return: On success, returns a new state. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf);
+yf_cstate_t *yf_cstate_init(yf_context_t *ctx, const yf_cconf_t *conf);
 
 /**
  * Gets a compute state's stage.
@@ -45,7 +45,7 @@ YF_cstate yf_cstate_init(YF_context ctx, const YF_cconf *conf);
  * @param cst: The state.
  * @return: The stage.
  */
-const YF_stage *yf_cstate_getstg(YF_cstate cst);
+const yf_stage_t *yf_cstate_getstg(yf_cstate_t *cst);
 
 /**
  * Gets a compute state's dtable.
@@ -54,14 +54,14 @@ const YF_stage *yf_cstate_getstg(YF_cstate cst);
  * @param index: The index of the table to retrieve.
  * @return: The dtable.
  */
-YF_dtable yf_cstate_getdtb(YF_cstate cst, unsigned index);
+yf_dtable_t *yf_cstate_getdtb(yf_cstate_t *cst, unsigned index);
 
 /**
  * Deinitializes a compute state.
  *
  * @param cst: The state to deinitialize. Can be 'NULL'.
  */
-void yf_cstate_deinit(YF_cstate cst);
+void yf_cstate_deinit(yf_cstate_t *cst);
 
 YF_DECLS_END
 

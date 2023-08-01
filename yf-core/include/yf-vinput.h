@@ -2,7 +2,7 @@
  * YF
  * yf-vinput.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_VINPUT_H
@@ -64,11 +64,11 @@
 /**
  * Type defining a single vertex attribute.
  */
-typedef struct {
+typedef struct yf_vattr {
     unsigned location;
     int vfmt;
     size_t offset;
-} YF_vattr;
+} yf_vattr_t;
 
 /**
  * Vertex input rate.
@@ -87,11 +87,11 @@ typedef struct {
  * uses the 'offset' member of each attribute to indicate their locations in
  * the vertex buffer.
  */
-typedef struct {
-    const YF_vattr *attrs;
+typedef struct yf_vinput {
+    const yf_vattr_t *attrs;
     unsigned attr_n;
     size_t stride;
     int vrate;
-} YF_vinput;
+} yf_vinput_t;
 
 #endif /* YF_YF_VINPUT_H */

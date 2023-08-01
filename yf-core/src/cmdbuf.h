@@ -2,7 +2,7 @@
  * YF
  * cmdbuf.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_CMDBUF_H
@@ -11,17 +11,17 @@
 #include "yf-cmdbuf.h"
 #include "cmd.h"
 
-typedef struct YF_cmdbuf_o {
-    YF_context ctx;
+struct yf_cmdbuf {
+    yf_context_t *ctx;
     int cmdbuf;
-    YF_cmd *cmds;
+    yf_cmd_t *cmds;
     unsigned cmd_n;
     unsigned cmd_cap;
     int invalid;
-} YF_cmdbuf_o;
+};
 
 /* Decodes a command buffer and enqueues the resulting object for execution.
    Unlike encoding, decoding is platform-dependent and defined elsewhere. */
-int yf_cmdbuf_decode(YF_cmdbuf cmdb);
+int yf_cmdbuf_decode(yf_cmdbuf_t *cmdb);
 
 #endif /* YF_CMDBUF_H */

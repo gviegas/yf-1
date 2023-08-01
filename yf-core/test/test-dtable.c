@@ -14,26 +14,26 @@
 /* Tests dtable. */
 int yf_test_dtable(void)
 {
-    YF_context ctx = yf_context_init();
+    yf_context_t *ctx = yf_context_init();
     assert(ctx);
 
     const unsigned char data[16384] = {0};
     const size_t sz = 16384;
-    const YF_off3 off = {0};
-    const YF_dim3 dim = {128, 128, 1};
+    const yf_off3_t off = {0};
+    const yf_dim3_t dim = {128, 128, 1};
 
-    YF_buffer buf = yf_buffer_init(ctx, sz);
+    yf_buffer_t *buf = yf_buffer_init(ctx, sz);
     assert(buf);
     if (yf_buffer_copy(buf, off.x, data, sz) != 0)
         assert(0);
 
-    YF_image img = yf_image_init(ctx, YF_PIXFMT_R8UNORM, dim, 2, 1, 1);
+    yf_image_t *img = yf_image_init(ctx, YF_PIXFMT_R8UNORM, dim, 2, 1, 1);
     assert(img != NULL);
     if (yf_image_copy(img, off, dim, 0, 0, data) != 0 ||
         yf_image_copy(img, off, dim, 1, 0, data) != 0)
         assert(0);
 
-    const YF_dentry entries[] = {
+    const yf_dentry_t entries[] = {
         {
             .binding = 0,
             .dtype = YF_DTYPE_UNIFORM,
@@ -62,7 +62,7 @@ int yf_test_dtable(void)
     const size_t entry_n = sizeof entries / sizeof *entries;
 
     YF_TEST_PRINT("init", "entries, entry_n", "dtb");
-    YF_dtable dtb = yf_dtable_init(ctx, entries, entry_n);
+    yf_dtable_t *dtb = yf_dtable_init(ctx, entries, entry_n);
     if (dtb == NULL)
         return -1;
 
@@ -70,9 +70,9 @@ int yf_test_dtable(void)
     if (yf_dtable_alloc(dtb, 2) != 0)
         return -1;
 
-    YF_slice slice = {0, 16};
+    yf_slice_t slice = {0, 16};
 
-    YF_buffer bufs[16];
+    yf_buffer_t *bufs[16];
     size_t offs[16];
     size_t szs[16];
     for (size_t i = 0; i < 16; i++) {
@@ -87,7 +87,7 @@ int yf_test_dtable(void)
 
     slice.n = 10;
 
-    YF_image imgs[10];
+    yf_image_t *imgs[10];
     unsigned lays[10];
     for (size_t i = 0; i < 10; i++) {
         imgs[i] = img;

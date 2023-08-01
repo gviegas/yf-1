@@ -2,7 +2,7 @@
  * YF
  * yf-sampler.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_SAMPLER_H
@@ -24,7 +24,7 @@
 /**
  * Type defining an image sampler.
  */
-typedef struct {
+typedef struct yf_sampler {
     struct {
         int u;
         int v;
@@ -35,6 +35,6 @@ typedef struct {
         int min;
         int mipmap;
     } filter;
-} YF_sampler;
+} yf_sampler_t;
 
 #endif /* YF_YF_SAMPLER_H */

@@ -2,7 +2,7 @@
  * YF
  * yf-limits.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_LIMITS_H
@@ -20,7 +20,7 @@ YF_DECLS_BEGIN
 /**
  * Limits.
  */
-typedef struct YF_limits {
+typedef struct yf_limits {
     struct {
         size_t obj_max;
     } memory;
@@ -62,7 +62,7 @@ typedef struct YF_limits {
 
     struct {
         unsigned color_max;
-        YF_dim2 dim_max;
+        yf_dim2_t dim_max;
         unsigned layer_max;
         unsigned sample_mask_clr;
         unsigned sample_mask_dep;
@@ -71,7 +71,7 @@ typedef struct YF_limits {
 
     struct {
         unsigned max;
-        YF_dim2 dim_max;
+        yf_dim2_t dim_max;
         float bounds_min;
         float bounds_max;
     } viewport;
@@ -94,9 +94,9 @@ typedef struct YF_limits {
 
     struct {
         unsigned draw_idx_max;
-        YF_dim3 disp_dim_max;
+        yf_dim3_t disp_dim_max;
     } cmdbuf;
-} YF_limits;
+} yf_limits_t;
 
 /**
  * Gets the limits of a given context.
@@ -104,7 +104,7 @@ typedef struct YF_limits {
  * @param ctx: The context.
  * @return: The limits for the context.
  */
-const YF_limits *yf_getlimits(YF_context ctx);
+const yf_limits_t *yf_getlimits(yf_context_t *ctx);
 
 YF_DECLS_END
 

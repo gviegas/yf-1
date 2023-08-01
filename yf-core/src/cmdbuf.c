@@ -2,7 +2,7 @@
  * YF
  * cmdbuf.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -19,7 +19,7 @@
 #define YF_CMDCAP 128
 
 /* Grows the command list. */
-static int grow_cmds(YF_cmdbuf cmdb)
+static int grow_cmds(yf_cmdbuf_t *cmdb)
 {
     assert(cmdb != NULL);
 
@@ -45,18 +45,18 @@ static int grow_cmds(YF_cmdbuf cmdb)
     return 0;
 }
 
-YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf)
+yf_cmdbuf_t *yf_cmdbuf_get(yf_context_t *ctx, int cmdbuf)
 {
     assert(ctx != NULL);
 
-    YF_cmdbuf cmdb = calloc(1, sizeof(YF_cmdbuf_o));
+    yf_cmdbuf_t *cmdb = calloc(1, sizeof(yf_cmdbuf_t));
     if (cmdb == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
     }
     cmdb->ctx = ctx;
     cmdb->cmdbuf = cmdbuf;
-    cmdb->cmds = calloc(YF_CMDCAP, sizeof(YF_cmd));
+    cmdb->cmds = calloc(YF_CMDCAP, sizeof(yf_cmd_t));
     if (cmdb->cmds == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         free(cmdb);
@@ -69,7 +69,7 @@ YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf)
     return cmdb;
 }
 
-int yf_cmdbuf_end(YF_cmdbuf cmdb)
+int yf_cmdbuf_end(yf_cmdbuf_t *cmdb)
 {
     assert(cmdb != NULL);
 
@@ -82,19 +82,19 @@ int yf_cmdbuf_end(YF_cmdbuf cmdb)
     return r;
 }
 
-int yf_cmdbuf_exec(YF_context ctx)
+int yf_cmdbuf_exec(yf_context_t *ctx)
 {
     assert(ctx != NULL);
     return yf_cmdexec_exec(ctx);
 }
 
-void yf_cmdbuf_reset(YF_context ctx)
+void yf_cmdbuf_reset(yf_context_t *ctx)
 {
     assert(ctx != NULL);
     yf_cmdexec_reset(ctx);
 }
 
-void yf_cmdbuf_setgstate(YF_cmdbuf cmdb, YF_gstate gst)
+void yf_cmdbuf_setgstate(yf_cmdbuf_t *cmdb, yf_gstate_t *gst)
 {
     assert(cmdb != NULL);
     assert(gst != NULL);
@@ -119,7 +119,7 @@ void yf_cmdbuf_setgstate(YF_cmdbuf cmdb, YF_gstate gst)
     }
 }
 
-void yf_cmdbuf_setcstate(YF_cmdbuf cmdb, YF_cstate cst)
+void yf_cmdbuf_setcstate(yf_cmdbuf_t *cmdb, yf_cstate_t *cst)
 {
     assert(cmdb != NULL);
     assert(cst != NULL);
@@ -144,7 +144,7 @@ void yf_cmdbuf_setcstate(YF_cmdbuf cmdb, YF_cstate cst)
     }
 }
 
-void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt)
+void yf_cmdbuf_settarget(yf_cmdbuf_t *cmdb, yf_target_t *tgt)
 {
     assert(cmdb != NULL);
 
@@ -168,8 +168,8 @@ void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt)
     }
 }
 
-void yf_cmdbuf_setvport(YF_cmdbuf cmdb, unsigned index,
-                        const YF_viewport *vport)
+void yf_cmdbuf_setvport(yf_cmdbuf_t *cmdb, unsigned index,
+                        const yf_viewport_t *vport)
 {
     assert(cmdb != NULL);
     assert(vport != NULL);
@@ -195,7 +195,7 @@ void yf_cmdbuf_setvport(YF_cmdbuf cmdb, unsigned index,
     }
 }
 
-void yf_cmdbuf_setsciss(YF_cmdbuf cmdb, unsigned index, YF_rect rect)
+void yf_cmdbuf_setsciss(yf_cmdbuf_t *cmdb, unsigned index, yf_rect_t rect)
 {
     assert(cmdb != NULL);
 
@@ -220,7 +220,7 @@ void yf_cmdbuf_setsciss(YF_cmdbuf cmdb, unsigned index, YF_rect rect)
     }
 }
 
-void yf_cmdbuf_setdtable(YF_cmdbuf cmdb, unsigned index, unsigned alloc_i)
+void yf_cmdbuf_setdtable(yf_cmdbuf_t *cmdb, unsigned index, unsigned alloc_i)
 {
     assert(cmdb != NULL);
 
@@ -246,7 +246,7 @@ void yf_cmdbuf_setdtable(YF_cmdbuf cmdb, unsigned index, unsigned alloc_i)
     }
 }
 
-void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
+void yf_cmdbuf_setvbuf(yf_cmdbuf_t *cmdb, unsigned index, yf_buffer_t *buf,
                        size_t offset)
 {
     assert(cmdb != NULL);
@@ -274,7 +274,8 @@ void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
     }
 }
 
-void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset, int itype)
+void yf_cmdbuf_setibuf(yf_cmdbuf_t *cmdb, yf_buffer_t *buf, size_t offset,
+                       int itype)
 {
     assert(cmdb != NULL);
     assert(buf != NULL);
@@ -301,7 +302,7 @@ void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset, int itype)
     }
 }
 
-void yf_cmdbuf_clearcolor(YF_cmdbuf cmdb, unsigned index, YF_color value)
+void yf_cmdbuf_clearcolor(yf_cmdbuf_t *cmdb, unsigned index, yf_color_t value)
 {
     assert(cmdb != NULL);
 
@@ -326,7 +327,7 @@ void yf_cmdbuf_clearcolor(YF_cmdbuf cmdb, unsigned index, YF_color value)
     }
 }
 
-void yf_cmdbuf_cleardepth(YF_cmdbuf cmdb, float value)
+void yf_cmdbuf_cleardepth(yf_cmdbuf_t *cmdb, float value)
 {
     assert(cmdb != NULL);
 
@@ -350,7 +351,7 @@ void yf_cmdbuf_cleardepth(YF_cmdbuf cmdb, float value)
     }
 }
 
-void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value)
+void yf_cmdbuf_clearsten(yf_cmdbuf_t *cmdb, unsigned value)
 {
     assert(cmdb != NULL);
 
@@ -374,7 +375,7 @@ void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value)
     }
 }
 
-void yf_cmdbuf_draw(YF_cmdbuf cmdb, unsigned vert_id, unsigned vert_n,
+void yf_cmdbuf_draw(yf_cmdbuf_t *cmdb, unsigned vert_id, unsigned vert_n,
                     unsigned inst_id, unsigned inst_n)
 {
     assert(cmdb != NULL);
@@ -402,7 +403,7 @@ void yf_cmdbuf_draw(YF_cmdbuf cmdb, unsigned vert_id, unsigned vert_n,
     }
 }
 
-void yf_cmdbuf_drawi(YF_cmdbuf cmdb, unsigned index_base, int vert_off,
+void yf_cmdbuf_drawi(yf_cmdbuf_t *cmdb, unsigned index_base, int vert_off,
                      unsigned vert_n, unsigned inst_id, unsigned inst_n)
 {
     assert(cmdb != NULL);
@@ -431,7 +432,7 @@ void yf_cmdbuf_drawi(YF_cmdbuf cmdb, unsigned index_base, int vert_off,
     }
 }
 
-void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim)
+void yf_cmdbuf_dispatch(yf_cmdbuf_t *cmdb, yf_dim3_t dim)
 {
     assert(cmdb != NULL);
 
@@ -455,8 +456,8 @@ void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim)
     }
 }
 
-void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_off,
-                       YF_buffer src, size_t src_off, size_t size)
+void yf_cmdbuf_copybuf(yf_cmdbuf_t *cmdb, yf_buffer_t *dst, size_t dst_off,
+                       yf_buffer_t *src, size_t src_off, size_t size)
 {
     assert(cmdb != NULL);
     assert(dst != NULL);
@@ -486,10 +487,10 @@ void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_off,
     }
 }
 
-void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, YF_off3 dst_off,
+void yf_cmdbuf_copyimg(yf_cmdbuf_t *cmdb, yf_image_t *dst, yf_off3_t dst_off,
                        unsigned dst_layer, unsigned dst_level,
-                       YF_image src, YF_off3 src_off, unsigned src_layer,
-                       unsigned src_level, YF_dim3 dim, unsigned layer_n)
+                       yf_image_t *src, yf_off3_t src_off, unsigned src_layer,
+                       unsigned src_level, yf_dim3_t dim, unsigned layer_n)
 {
     assert(cmdb != NULL);
     assert(dst != NULL);
@@ -524,7 +525,7 @@ void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, YF_off3 dst_off,
     }
 }
 
-void yf_cmdbuf_sync(YF_cmdbuf cmdb)
+void yf_cmdbuf_sync(yf_cmdbuf_t *cmdb)
 {
     assert(cmdb != NULL);
 

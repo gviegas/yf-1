@@ -15,7 +15,7 @@
 int yf_test_context(void)
 {
     YF_TEST_PRINT("init", "", "ctx");
-    YF_context ctx = yf_context_init();
+    yf_context_t *ctx = yf_context_init();
     if (ctx == NULL)
         return -1;
 

@@ -2,7 +2,7 @@
  * YF
  * image.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_IMAGE_H
@@ -15,14 +15,14 @@
 #include "yf-image.h"
 #include "vk.h"
 
-typedef struct YF_image_o {
-    YF_context ctx;
+struct yf_image {
+    yf_context_t *ctx;
     int wrapped;
     int pixfmt;
-    YF_dim3 dim;
+    yf_dim3_t dim;
     unsigned layers;
     unsigned levels;
-    YF_dict iviews;
+    yf_dict_t *iviews;
 
     VkImage image;
     VkDeviceMemory memory;
@@ -37,36 +37,36 @@ typedef struct YF_image_o {
     VkImageLayout layout;
     VkImageLayout next_layout;
     void *data;
-} YF_image_o;
+};
 
 /* Type defining an image view. */
-typedef struct {
+typedef struct yf_iview {
     void *priv;
     VkImageView view;
-} YF_iview;
+} yf_iview_t;
 
 /* Wraps an image handle.
    The caller is responsible for destroying the image handle and for
-   deallocating its backing memory. A 'YF_image' created this way must
+   deallocating its backing memory. A 'yf_image_t' created this way must
    be deinitialized before the image handle is destroyed. */
-YF_image yf_image_wrap(YF_context ctx, VkImage image, VkFormat format,
-                       VkImageType type, YF_dim3 dim, unsigned layers,
-                       unsigned levels, VkSampleCountFlagBits samples,
-                       VkImageUsageFlags usage, VkImageLayout layout);
+yf_image_t *yf_image_wrap(yf_context_t *ctx, VkImage image, VkFormat format,
+                          VkImageType type, yf_dim3_t dim, unsigned layers,
+                          unsigned levels, VkSampleCountFlagBits samples,
+                          VkImageUsageFlags usage, VkImageLayout layout);
 
 /* Gets an image view.
    Every call to this function must be matched by a call to 'ungetiview()'. */
-int yf_image_getiview(YF_image img, YF_slice layers, YF_slice levels,
-                      YF_iview *iview);
+int yf_image_getiview(yf_image_t *img, yf_slice_t layers, yf_slice_t levels,
+                      yf_iview_t *iview);
 
 /* Ungets an image view.
    This function must be called when a 'YF_iview' is not needed anymore. */
-void yf_image_ungetiview(YF_image img, YF_iview *iview);
+void yf_image_ungetiview(yf_image_t *img, yf_iview_t *iview);
 
 /* Changes the layout of an image.
    The layout change is encoded in the priority command buffer provided by
    'cmdpool_getprio()'. */
-int yf_image_chglayout(YF_image img, VkImageLayout layout);
+int yf_image_chglayout(yf_image_t *img, VkImageLayout layout);
 
 /* Converts from a 'YF_PIXFMT' value. */
 #define YF_PIXFMT_FROM(pf, to) do { \

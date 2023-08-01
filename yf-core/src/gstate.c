@@ -2,7 +2,7 @@
  * YF
  * gstate.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -20,7 +20,7 @@
 #include "vinput.h"
 #include "yf-limits.h"
 
-YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
+yf_gstate_t *yf_gstate_init(yf_context_t *ctx, const yf_gconf_t *conf)
 {
     assert(ctx != NULL);
     assert(conf != NULL);
@@ -30,7 +30,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         return NULL;
     }
 
-    const YF_limits *lim = yf_getlimits(ctx);
+    const yf_limits_t *lim = yf_getlimits(ctx);
 
     if (conf->dtb_n > lim->state.dtable_max ||
         conf->vin_n > lim->state.vinput_max) {
@@ -38,7 +38,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
         return NULL;
     }
 
-    YF_gstate gst = calloc(1, sizeof(YF_gstate_o));
+    yf_gstate_t *gst = calloc(1, sizeof(yf_gstate_t));
     if (gst == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -197,7 +197,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
                 return NULL;
             }
 
-            const YF_vattr *vattr = NULL;
+            const yf_vattr_t *vattr = NULL;
             unsigned k = 0;
             for (unsigned i = 0; i < conf->vin_n; i++) {
                 if (conf->vins[i].stride > lim->vinput.strd_max) {
@@ -414,13 +414,13 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf)
     return gst;
 }
 
-YF_pass yf_gstate_getpass(YF_gstate gst)
+yf_pass_t *yf_gstate_getpass(yf_gstate_t *gst)
 {
     assert(gst != NULL);
     return gst->pass;
 }
 
-const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage)
+const yf_stage_t *yf_gstate_getstg(yf_gstate_t *gst, int stage)
 {
     assert(gst != NULL);
 
@@ -432,7 +432,7 @@ const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage)
     return NULL;
 }
 
-YF_dtable yf_gstate_getdtb(YF_gstate gst, unsigned index)
+yf_dtable_t *yf_gstate_getdtb(yf_gstate_t *gst, unsigned index)
 {
     assert(gst != NULL);
 
@@ -444,7 +444,7 @@ YF_dtable yf_gstate_getdtb(YF_gstate gst, unsigned index)
     return gst->dtbs[index];
 }
 
-void yf_gstate_deinit(YF_gstate gst)
+void yf_gstate_deinit(yf_gstate_t *gst)
 {
     if (gst != NULL) {
         free(gst->stgs);

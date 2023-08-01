@@ -2,7 +2,7 @@
  * YF
  * buffer.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -18,7 +18,7 @@
 #include "memory.h"
 #include "yf-limits.h"
 
-YF_buffer yf_buffer_init(YF_context ctx, size_t size)
+yf_buffer_t *yf_buffer_init(yf_context_t *ctx, size_t size)
 {
     assert(ctx != NULL);
     assert(size > 0);
@@ -28,7 +28,7 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size)
         return NULL;
     }
 
-    YF_buffer buf = calloc(1, sizeof(YF_buffer_o));
+    yf_buffer_t *buf = calloc(1, sizeof(yf_buffer_t));
     if (buf == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -75,7 +75,8 @@ YF_buffer yf_buffer_init(YF_context ctx, size_t size)
     return buf;
 }
 
-int yf_buffer_copy(YF_buffer buf, size_t offset, const void *data, size_t size)
+int yf_buffer_copy(yf_buffer_t *buf, size_t offset, const void *data,
+                   size_t size)
 {
     assert(buf != NULL);
     assert(data != NULL);
@@ -91,13 +92,13 @@ int yf_buffer_copy(YF_buffer buf, size_t offset, const void *data, size_t size)
     return 0;
 }
 
-size_t yf_buffer_getsize(YF_buffer buf)
+size_t yf_buffer_getsize(yf_buffer_t *buf)
 {
     assert(buf != NULL);
     return buf->size;
 }
 
-void yf_buffer_deinit(YF_buffer buf)
+void yf_buffer_deinit(yf_buffer_t *buf)
 {
     if (buf == NULL)
         return;

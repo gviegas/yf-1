@@ -2,7 +2,7 @@
  * YF
  * memory.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_MEMORY_H
@@ -12,15 +12,15 @@
 #include "yf-image.h"
 
 /* Allocates memory for a buffer. */
-int yf_buffer_alloc(YF_buffer buf);
+int yf_buffer_alloc(yf_buffer_t *buf);
 
 /* Allocates memory for an image. */
-int yf_image_alloc(YF_image img);
+int yf_image_alloc(yf_image_t *img);
 
 /* Deallocates memory held by a buffer. */
-void yf_buffer_free(YF_buffer buf);
+void yf_buffer_free(yf_buffer_t *buf);
 
 /* Deallocates memory held by an image. */
-void yf_image_free(YF_image img);
+void yf_image_free(yf_image_t *img);
 
 #endif /* YF_MEMORY_H */

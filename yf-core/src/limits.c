@@ -2,7 +2,7 @@
  * YF
  * limits.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -18,8 +18,8 @@
 #include "yf-limits.h"
 #include "context.h"
 
-/* Destroys the 'YF_limits' data stored in a context. */
-static void destroy_lim(YF_context ctx)
+/* Destroys the 'yf_limits_t' data stored in a context. */
+static void destroy_lim(yf_context_t *ctx)
 {
     assert(ctx != NULL);
 
@@ -27,14 +27,14 @@ static void destroy_lim(YF_context ctx)
     ctx->lim.priv = NULL;
 }
 
-const YF_limits *yf_getlimits(YF_context ctx)
+const yf_limits_t *yf_getlimits(yf_context_t *ctx)
 {
     assert(ctx != NULL);
 
     if (ctx->lim.priv != NULL)
-        return (const YF_limits *)ctx->lim.priv;
+        return (const yf_limits_t *)ctx->lim.priv;
 
-    YF_limits *lim = malloc(sizeof(YF_limits));
+    yf_limits_t *lim = malloc(sizeof(yf_limits_t));
     if (lim == NULL)
         /* XXX */
         abort();
@@ -128,7 +128,7 @@ const YF_limits *yf_getlimits(YF_context ctx)
 
 #ifdef YF_DEVEL
 
-void yf_print_lim(const YF_limits *lim)
+void yf_print_lim(const yf_limits_t *lim)
 {
     assert(lim != NULL);
 

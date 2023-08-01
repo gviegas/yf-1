@@ -2,7 +2,7 @@
  * YF
  * yf-image.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_IMAGE_H
@@ -20,7 +20,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining formatted multidimensional data in device memory.
  */
-typedef struct YF_image_o *YF_image;
+typedef struct yf_image yf_image_t;
 
 /**
  * Undefined pixel format.
@@ -119,8 +119,8 @@ typedef struct YF_image_o *YF_image;
  * @return: On success, returns a new image. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
-                       unsigned layers, unsigned levels, unsigned samples);
+yf_image_t *yf_image_init(yf_context_t *ctx, int pixfmt, yf_dim3_t dim,
+                          unsigned layers, unsigned levels, unsigned samples);
 
 /**
  * Copies local data to an image.
@@ -138,8 +138,8 @@ YF_image yf_image_init(YF_context ctx, int pixfmt, YF_dim3 dim,
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
-                  unsigned level, const void *data);
+int yf_image_copy(yf_image_t *img, yf_off3_t off, yf_dim3_t dim,
+                  unsigned layer, unsigned level, const void *data);
 
 /**
  * Gets values of an image.
@@ -151,7 +151,7 @@ int yf_image_copy(YF_image img, YF_off3 off, YF_dim3 dim, unsigned layer,
  * @param levels: The destination for the mip levels value. Can be 'NULL'.
  * @param samples: The destination for the sample count value. Can be 'NULL'.
  */
-void yf_image_getval(YF_image img, int *pixfmt, YF_dim3 *dim,
+void yf_image_getval(yf_image_t *img, int *pixfmt, yf_dim3_t *dim,
                      unsigned *layers, unsigned *levels, unsigned *samples);
 
 /**
@@ -159,7 +159,7 @@ void yf_image_getval(YF_image img, int *pixfmt, YF_dim3 *dim,
  *
  * @param img: The image to deinitialize. Can be 'NULL'.
  */
-void yf_image_deinit(YF_image img);
+void yf_image_deinit(yf_image_t *img);
 
 /**
  * Computes the number of bytes necessary to store a single pixel of a

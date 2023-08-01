@@ -2,7 +2,7 @@
  * YF
  * yf-gstate.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_GSTATE_H
@@ -18,9 +18,9 @@
 YF_DECLS_BEGIN
 
 /**
- * Opaque type defining a graphics state.
+ * Opaque type defining a graphics pipeline state.
  */
-typedef struct YF_gstate_o *YF_gstate;
+typedef struct yf_gstate yf_gstate_t;
 
 /**
  * Primitive topology values.
@@ -56,19 +56,19 @@ typedef struct YF_gstate_o *YF_gstate;
 /**
  * Type defining a graphics state configuration.
  */
-typedef struct {
-    YF_pass pass;
-    const YF_stage *stgs;
+typedef struct yf_gconf {
+    yf_pass_t *pass;
+    const yf_stage_t *stgs;
     unsigned stg_n;
-    const YF_dtable *dtbs;
+    yf_dtable_t *const *dtbs;
     unsigned dtb_n;
-    const YF_vinput *vins;
+    const yf_vinput_t *vins;
     unsigned vin_n;
     int topology;
     int polymode;
     int cullmode;
     int winding;
-} YF_gconf;
+} yf_gconf_t;
 
 /**
  * Initializes a new graphics state.
@@ -78,7 +78,7 @@ typedef struct {
  * @return: On success, returns a new state. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf);
+yf_gstate_t *yf_gstate_init(yf_context_t *ctx, const yf_gconf_t *conf);
 
 /**
  * Gets a graphics state's pass.
@@ -86,7 +86,7 @@ YF_gstate yf_gstate_init(YF_context ctx, const YF_gconf *conf);
  * @param gst: The state.
  * @return: The pass.
  */
-YF_pass yf_gstate_getpass(YF_gstate gst);
+yf_pass_t *yf_gstate_getpass(yf_gstate_t *gst);
 
 /**
  * Gets a graphics state's stage.
@@ -96,7 +96,7 @@ YF_pass yf_gstate_getpass(YF_gstate gst);
  * @return: The stage, or 'NULL' if 'gst' does not have a shader stage of
  *  the given type.
  */
-const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage);
+const yf_stage_t *yf_gstate_getstg(yf_gstate_t *gst, int stage);
 
 /**
  * Gets a graphics state's dtable.
@@ -105,14 +105,14 @@ const YF_stage *yf_gstate_getstg(YF_gstate gst, int stage);
  * @param index: The index of the table to retrieve.
  * @return: The dtable.
  */
-YF_dtable yf_gstate_getdtb(YF_gstate gst, unsigned index);
+yf_dtable_t *yf_gstate_getdtb(yf_gstate_t *gst, unsigned index);
 
 /**
  * Deinitializes a graphics state.
  *
  * @param gst: The state to deinitialize. Can be 'NULL'.
  */
-void yf_gstate_deinit(YF_gstate gst);
+void yf_gstate_deinit(yf_gstate_t *gst);
 
 YF_DECLS_END
 

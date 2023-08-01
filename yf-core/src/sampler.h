@@ -2,7 +2,7 @@
  * YF
  * sampler.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_SAMPLER_H
@@ -13,22 +13,22 @@
 #include "vk.h"
 
 /* Managed sampler. */
-typedef struct {
+typedef struct yf_splrh {
     VkSampler handle;
-    YF_sampler splr;
+    yf_sampler_t splr;
     unsigned count;
-} YF_splrh;
+} yf_splrh_t;
 
 /* Gets a managed sampler.
    If 'splr' is 'NULL', the default sampler is used. A non-null 'subs'
    argument indicates that the caller is exchanging samplers. */
-const YF_splrh *yf_sampler_get(YF_context ctx, const YF_sampler *splr,
-                               const YF_splrh *subs);
+const yf_splrh_t *yf_sampler_get(yf_context_t *ctx, const yf_sampler_t *splr,
+                                 const yf_splrh_t *subs);
 
 /* Ungets a managed sampler.
    When exchanging samplers, one should use 'sampler_get()' instead to avoid
    unnecessary recreation of sampler handles. */
-void yf_sampler_unget(YF_context ctx, const YF_splrh *splrh);
+void yf_sampler_unget(yf_context_t *ctx, const yf_splrh_t *splrh);
 
 /* Converts from a 'YF_WRAPMODE' value. */
 #define YF_WRAPMODE_FROM(wm, to) do { \

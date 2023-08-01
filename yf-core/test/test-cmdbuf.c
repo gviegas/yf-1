@@ -14,21 +14,21 @@
 /* Tests cmdbuf. */
 int yf_test_cmdbuf(void)
 {
-    YF_context ctx = yf_context_init();
+    yf_context_t *ctx = yf_context_init();
     assert(ctx != NULL);
 
     YF_TEST_PRINT("get", "CMDBUF_GRAPH", "graph_cb");
-    YF_cmdbuf graph_cb = yf_cmdbuf_get(ctx, YF_CMDBUF_GRAPH);
+    yf_cmdbuf_t *graph_cb = yf_cmdbuf_get(ctx, YF_CMDBUF_GRAPH);
     if (graph_cb == NULL)
         return -1;
 
     YF_TEST_PRINT("get", "CMDBUF_COMP", "comp_cb");
-    YF_cmdbuf comp_cb = yf_cmdbuf_get(ctx, YF_CMDBUF_COMP);
+    yf_cmdbuf_t *comp_cb = yf_cmdbuf_get(ctx, YF_CMDBUF_COMP);
     if (comp_cb == NULL)
         return -1;
 
     YF_TEST_PRINT("get", "CMDBUF_XFER", "xfer_cb");
-    YF_cmdbuf xfer_cb = yf_cmdbuf_get(ctx, YF_CMDBUF_XFER);
+    yf_cmdbuf_t *xfer_cb = yf_cmdbuf_get(ctx, YF_CMDBUF_XFER);
     if (xfer_cb == NULL)
         return -1;
 

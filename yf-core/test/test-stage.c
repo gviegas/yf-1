@@ -17,10 +17,10 @@
 /* Tests stage. */
 int yf_test_stage(void)
 {
-    YF_context ctx = yf_context_init();
+    yf_context_t *ctx = yf_context_init();
     assert(ctx != NULL);
 
-    YF_shdid vert, frag;
+    yf_shdid_t vert, frag;
 
     YF_TEST_PRINT("loadshd", YF_VERTSHD", &vert", "");
     if (yf_loadshd(ctx, YF_VERTSHD, &vert) != 0)

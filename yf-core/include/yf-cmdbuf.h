@@ -2,7 +2,7 @@
  * YF
  * yf-cmdbuf.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_CMDBUF_H
@@ -23,7 +23,7 @@ YF_DECLS_BEGIN
  * Command buffers are context-managed objects that encode a set of
  * operations for future execution.
  */
-typedef struct YF_cmdbuf_o *YF_cmdbuf;
+typedef struct yf_cmdbuf yf_cmdbuf_t;
 
 /**
  * Command buffer types.
@@ -39,11 +39,11 @@ typedef struct YF_cmdbuf_o *YF_cmdbuf;
  * type, otherwise 'yf_cmdbuf_end()' will fail.
  *
  * @param ctx: The context.
- * @param cmdb: The 'YF_CMDBUF' value indicating the command buffer type.
+ * @param cmdbuf: The 'YF_CMDBUF' value indicating the command buffer type.
  * @return: On success, returns a command buffer ready for encoding. Otherwise,
  *  'NULL' is returned and the global error is set to indicate the cause.
  */
-YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf);
+yf_cmdbuf_t *yf_cmdbuf_get(yf_context_t *ctx, int cmdbuf);
 
 /**
  * Ends a command buffer and enqueues it for execution.
@@ -55,7 +55,7 @@ YF_cmdbuf yf_cmdbuf_get(YF_context ctx, int cmdbuf);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_cmdbuf_end(YF_cmdbuf cmdb);
+int yf_cmdbuf_end(yf_cmdbuf_t *cmdb);
 
 /**
  * Executes pending command buffers.
@@ -66,7 +66,7 @@ int yf_cmdbuf_end(YF_cmdbuf cmdb);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_cmdbuf_exec(YF_context ctx);
+int yf_cmdbuf_exec(yf_context_t *ctx);
 
 /**
  * Resets pending command buffers.
@@ -75,7 +75,7 @@ int yf_cmdbuf_exec(YF_context ctx);
  *
  * @param ctx: The context that owns the command buffers to reset.
  */
-void yf_cmdbuf_reset(YF_context ctx);
+void yf_cmdbuf_reset(yf_context_t *ctx);
 
 /*
  * State
@@ -89,7 +89,7 @@ void yf_cmdbuf_reset(YF_context ctx);
  * @param cmdb: The command buffer.
  * @param gst: The state to set.
  */
-void yf_cmdbuf_setgstate(YF_cmdbuf cmdb, YF_gstate gst);
+void yf_cmdbuf_setgstate(yf_cmdbuf_t *cmdb, yf_gstate_t *gst);
 
 /**
  * Sets the compute state.
@@ -99,7 +99,7 @@ void yf_cmdbuf_setgstate(YF_cmdbuf cmdb, YF_gstate gst);
  * @param cmdb: The command buffer.
  * @param cst: The state to set.
  */
-void yf_cmdbuf_setcstate(YF_cmdbuf cmdb, YF_cstate cst);
+void yf_cmdbuf_setcstate(yf_cmdbuf_t *cmdb, yf_cstate_t *cst);
 
 /**
  * Sets the render target.
@@ -109,7 +109,7 @@ void yf_cmdbuf_setcstate(YF_cmdbuf cmdb, YF_cstate cst);
  * @param cmdb: The command buffer.
  * @param tgt: The target to set.
  */
-void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt);
+void yf_cmdbuf_settarget(yf_cmdbuf_t *cmdb, yf_target_t *tgt);
 
 /**
  * Sets a viewport.
@@ -120,8 +120,8 @@ void yf_cmdbuf_settarget(YF_cmdbuf cmdb, YF_target tgt);
  * @param index: The viewport index.
  * @param vport: The viewport.
  */
-void yf_cmdbuf_setvport(YF_cmdbuf cmdb, unsigned index,
-                        const YF_viewport *vport);
+void yf_cmdbuf_setvport(yf_cmdbuf_t *cmdb, unsigned index,
+                        const yf_viewport_t *vport);
 
 /**
  * Sets the scissor of a viewport.
@@ -132,7 +132,7 @@ void yf_cmdbuf_setvport(YF_cmdbuf cmdb, unsigned index,
  * @param index: The viewport index.
  * @param rect: The scissor rect.
  */
-void yf_cmdbuf_setsciss(YF_cmdbuf cmdb, unsigned index, YF_rect rect);
+void yf_cmdbuf_setsciss(yf_cmdbuf_t *cmdb, unsigned index, yf_rect_t rect);
 
 /**
  * Sets a dtable resource allocation.
@@ -144,7 +144,7 @@ void yf_cmdbuf_setsciss(YF_cmdbuf cmdb, unsigned index, YF_rect rect);
  * @param index: The index of the table to set within the current state.
  * @param alloc_i: The index of the allocation within the table.
  */
-void yf_cmdbuf_setdtable(YF_cmdbuf cmdb, unsigned index, unsigned alloc_i);
+void yf_cmdbuf_setdtable(yf_cmdbuf_t *cmdb, unsigned index, unsigned alloc_i);
 
 /**
  * Sets a vertex buffer binding.
@@ -156,7 +156,7 @@ void yf_cmdbuf_setdtable(YF_cmdbuf cmdb, unsigned index, unsigned alloc_i);
  * @param buf: The vertex buffer.
  * @param offset: The offset from the beginning of the buffer.
  */
-void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
+void yf_cmdbuf_setvbuf(yf_cmdbuf_t *cmdb, unsigned index, yf_buffer_t *buf,
                        size_t offset);
 
 /**
@@ -175,7 +175,8 @@ void yf_cmdbuf_setvbuf(YF_cmdbuf cmdb, unsigned index, YF_buffer buf,
  * @param offset: The offset from the beginning of the buffer.
  * @param itype: The 'YF_ITYPE' value indicating the index type.
  */
-void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset, int itype);
+void yf_cmdbuf_setibuf(yf_cmdbuf_t *cmdb, yf_buffer_t *buf, size_t offset,
+                       int itype);
 
 /*
  * Clear
@@ -190,7 +191,7 @@ void yf_cmdbuf_setibuf(YF_cmdbuf cmdb, YF_buffer buf, size_t offset, int itype);
  * @param index: The index of the attachment to clear.
  * @param value: The clear value.
  */
-void yf_cmdbuf_clearcolor(YF_cmdbuf cmdb, unsigned index, YF_color value);
+void yf_cmdbuf_clearcolor(yf_cmdbuf_t *cmdb, unsigned index, yf_color_t value);
 
 /**
  * Clears the depth aspect of the target's depth/stencil image.
@@ -200,7 +201,7 @@ void yf_cmdbuf_clearcolor(YF_cmdbuf cmdb, unsigned index, YF_color value);
  * @param cmdb: The command buffer.
  * @param value: The clear value.
  */
-void yf_cmdbuf_cleardepth(YF_cmdbuf cmdb, float value);
+void yf_cmdbuf_cleardepth(yf_cmdbuf_t *cmdb, float value);
 
 /**
  * Clears the stencil aspect of the target's depth/stencil image.
@@ -210,7 +211,7 @@ void yf_cmdbuf_cleardepth(YF_cmdbuf cmdb, float value);
  * @param cmdb: The command buffer.
  * @param value: The clear value.
  */
-void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value);
+void yf_cmdbuf_clearsten(yf_cmdbuf_t *cmdb, unsigned value);
 
 /*
  * Drawing
@@ -227,7 +228,7 @@ void yf_cmdbuf_clearsten(YF_cmdbuf cmdb, unsigned value);
  * @param inst_id: The initial instance ID for use in the shader.
  * @param inst_n: The number of instances to draw.
  */
-void yf_cmdbuf_draw(YF_cmdbuf cmdb, unsigned vert_id, unsigned vert_n,
+void yf_cmdbuf_draw(yf_cmdbuf_t *cmdb, unsigned vert_id, unsigned vert_n,
                     unsigned inst_id, unsigned inst_n);
 
 /**
@@ -242,7 +243,7 @@ void yf_cmdbuf_draw(YF_cmdbuf cmdb, unsigned vert_id, unsigned vert_n,
  * @param inst_id: The initial instance ID for use in the shader.
  * @param inst_n: The number of instances to draw.
  */
-void yf_cmdbuf_drawi(YF_cmdbuf cmdb, unsigned index_base, int vert_off,
+void yf_cmdbuf_drawi(yf_cmdbuf_t *cmdb, unsigned index_base, int vert_off,
                      unsigned vert_n, unsigned inst_id, unsigned inst_n);
 
 /*
@@ -257,7 +258,7 @@ void yf_cmdbuf_drawi(YF_cmdbuf cmdb, unsigned index_base, int vert_off,
  * @param cmdb: The command buffer.
  * @param dim: The dimensions of the work group.
  */
-void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim);
+void yf_cmdbuf_dispatch(yf_cmdbuf_t *cmdb, yf_dim3_t dim);
 
 /*
  * Copy
@@ -275,8 +276,8 @@ void yf_cmdbuf_dispatch(YF_cmdbuf cmdb, YF_dim3 dim);
  * @param src_off: The offset from the beginning of the source buffer.
  * @param size: The number of bytes to copy.
  */
-void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_off,
-                       YF_buffer src, size_t src_off, size_t size);
+void yf_cmdbuf_copybuf(yf_cmdbuf_t *cmdb, yf_buffer_t *dst, size_t dst_off,
+                       yf_buffer_t *src, size_t src_off, size_t size);
 
 /**
  * Copies data between images.
@@ -295,10 +296,10 @@ void yf_cmdbuf_copybuf(YF_cmdbuf cmdb, YF_buffer dst, size_t dst_off,
  * @param dim: The extent to copy.
  * @param layer_n: The number of layers to copy.
  */
-void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, YF_off3 dst_off,
+void yf_cmdbuf_copyimg(yf_cmdbuf_t *cmdb, yf_image_t *dst, yf_off3_t dst_off,
                        unsigned dst_layer, unsigned dst_level,
-                       YF_image src, YF_off3 src_off, unsigned src_layer,
-                       unsigned src_level, YF_dim3 dim, unsigned layer_n);
+                       yf_image_t *src, yf_off3_t src_off, unsigned src_layer,
+                       unsigned src_level, yf_dim3_t dim, unsigned layer_n);
 
 /*
  * Synchronization
@@ -313,7 +314,7 @@ void yf_cmdbuf_copyimg(YF_cmdbuf cmdb, YF_image dst, YF_off3 dst_off,
  *
  * @param cmdb: The command buffer.
  */
-void yf_cmdbuf_sync(YF_cmdbuf cmdb);
+void yf_cmdbuf_sync(yf_cmdbuf_t *cmdb);
 
 YF_DECLS_END
 

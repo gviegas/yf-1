@@ -14,35 +14,37 @@
 /* Tests pass. */
 int yf_test_pass(void)
 {
-    YF_context ctx = yf_context_init();
+    yf_context_t *ctx = yf_context_init();
     assert(ctx != NULL);
 
-    const YF_dim3 dim = {1024, 768, 1};
+    const yf_dim3_t dim = {1024, 768, 1};
 
-    YF_image color = yf_image_init(ctx, YF_PIXFMT_RGBA8UNORM, dim, 1, 1, 8);
+    yf_image_t *color, *resolve, *depth;
+
+    color = yf_image_init(ctx, YF_PIXFMT_RGBA8UNORM, dim, 1, 1, 8);
     assert(color != NULL);
 
-    YF_image resolve = yf_image_init(ctx, YF_PIXFMT_RGBA8UNORM, dim, 1, 1, 1);
+    resolve = yf_image_init(ctx, YF_PIXFMT_RGBA8UNORM, dim, 1, 1, 1);
     assert(resolve != NULL);
 
-    YF_image depth = yf_image_init(ctx, YF_PIXFMT_D16UNORM, dim, 1, 1, 1);
+    depth = yf_image_init(ctx, YF_PIXFMT_D16UNORM, dim, 1, 1, 1);
     assert(depth != NULL);
 
-    YF_colordsc clr_dsc = {
+    yf_colordsc_t clr_dsc = {
         .pixfmt = YF_PIXFMT_RGBA8UNORM,
         .samples = 8,
         .loadop = YF_LOADOP_UNDEF,
         .storeop = YF_STOREOP_UNDEF
     };
 
-    YF_colordsc rsv_dsc = {
+    yf_colordsc_t rsv_dsc = {
         .pixfmt = YF_PIXFMT_RGBA8UNORM,
         .samples = 1,
         .loadop = YF_LOADOP_UNDEF,
         .storeop = YF_STOREOP_STORE
     };
 
-    YF_depthdsc dep_dsc = {
+    yf_depthdsc_t dep_dsc = {
         .pixfmt = YF_PIXFMT_D16UNORM,
         .samples = 1,
         .depth_loadop = YF_LOADOP_UNDEF,
@@ -52,31 +54,31 @@ int yf_test_pass(void)
     };
 
     YF_TEST_PRINT("init", "&clr_dsc, 1, &rsv_dsc, &dep_dsc", "pass");
-    YF_pass pass = yf_pass_init(ctx, &clr_dsc, 1, &rsv_dsc, &dep_dsc);
+    yf_pass_t *pass = yf_pass_init(ctx, &clr_dsc, 1, &rsv_dsc, &dep_dsc);
     if (pass == NULL)
         return -1;
 
-    YF_attach clr_att = {
+    yf_attach_t clr_att = {
         .img = color,
         .layer_base = 0
     };
 
-    YF_attach rsv_att = {
+    yf_attach_t rsv_att = {
         .img = resolve,
         .layer_base = 0
     };
 
-    YF_attach dep_att = {
+    yf_attach_t dep_att = {
         .img = depth,
         .layer_base = 0
     };
 
-    const YF_dim2 dim2 = {dim.width, dim.height};
+    const yf_dim2_t dim2 = {dim.width, dim.height};
 
     YF_TEST_PRINT("maketarget",
                   "pass, {1024,768}, 1, &clr_att, &rsv_att, &dep_att", "tgt");
-    YF_target tgt = yf_pass_maketarget(pass, dim2, 1, &clr_att, &rsv_att,
-                                       &dep_att);
+    yf_target_t *tgt = yf_pass_maketarget(pass, dim2, 1, &clr_att, &rsv_att,
+                                          &dep_att);
     if (tgt == NULL)
         return -1;
 

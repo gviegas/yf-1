@@ -2,7 +2,7 @@
  * YF
  * wsi.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -20,7 +20,7 @@
 #include "cmdbuf.h"
 
 /* Initializes surface. */
-static int init_surface(YF_wsi wsi)
+static int init_surface(yf_wsi_t *wsi)
 {
     assert(wsi != NULL);
     assert(wsi->surface == VK_NULL_HANDLE);
@@ -103,7 +103,7 @@ static int init_surface(YF_wsi wsi)
 }
 
 /* Queries surface. */
-static int query_surface(YF_wsi wsi)
+static int query_surface(yf_wsi_t *wsi)
 {
     assert(wsi != NULL);
     assert(wsi->surface != VK_NULL_HANDLE);
@@ -232,7 +232,7 @@ static int query_surface(YF_wsi wsi)
 }
 
 /* Creates swapchain. */
-static int create_swapchain(YF_wsi wsi)
+static int create_swapchain(yf_wsi_t *wsi)
 {
     assert(wsi != NULL);
     assert(wsi->surface != VK_NULL_HANDLE);
@@ -303,7 +303,7 @@ static int create_swapchain(YF_wsi wsi)
     wsi->imgs_sem = tmp_sem;
     wsi->img_n = img_n;
 
-    YF_dim3 dim = {
+    yf_dim3_t dim = {
         wsi->sc_info.imageExtent.width,
         wsi->sc_info.imageExtent.height,
         1
@@ -346,7 +346,7 @@ static int create_swapchain(YF_wsi wsi)
     return 0;
 }
 
-YF_wsi yf_wsi_init(YF_context ctx, YF_window win)
+yf_wsi_t *yf_wsi_init(yf_context_t *ctx, yf_window_t *win)
 {
     assert(ctx != NULL);
     assert(win != NULL);
@@ -356,7 +356,7 @@ YF_wsi yf_wsi_init(YF_context ctx, YF_window win)
         return NULL;
     }
 
-    YF_wsi wsi = calloc(1, sizeof(YF_wsi_o));
+    yf_wsi_t *wsi = calloc(1, sizeof(yf_wsi_t));
     if (wsi == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -374,7 +374,7 @@ YF_wsi yf_wsi_init(YF_context ctx, YF_window win)
     return wsi;
 }
 
-const YF_image *yf_wsi_getimages(YF_wsi wsi, unsigned *n)
+yf_image_t *const *yf_wsi_getimages(yf_wsi_t *wsi, unsigned *n)
 {
     assert(wsi != NULL);
     assert(n != NULL);
@@ -383,13 +383,13 @@ const YF_image *yf_wsi_getimages(YF_wsi wsi, unsigned *n)
     return wsi->imgs;
 }
 
-unsigned yf_wsi_getlimit(YF_wsi wsi)
+unsigned yf_wsi_getlimit(yf_wsi_t *wsi)
 {
     assert(wsi != NULL);
     return wsi->acq_limit;
 }
 
-int yf_wsi_next(YF_wsi wsi, int nonblocking)
+int yf_wsi_next(yf_wsi_t *wsi, int nonblocking)
 {
     assert(wsi != NULL);
 
@@ -443,7 +443,7 @@ int yf_wsi_next(YF_wsi wsi, int nonblocking)
     return img_i;
 }
 
-int yf_wsi_present(YF_wsi wsi, unsigned index)
+int yf_wsi_present(yf_wsi_t *wsi, unsigned index)
 {
     assert(wsi != NULL);
 
@@ -499,7 +499,7 @@ int yf_wsi_present(YF_wsi wsi, unsigned index)
     return 0;
 }
 
-void yf_wsi_deinit(YF_wsi wsi)
+void yf_wsi_deinit(yf_wsi_t *wsi)
 {
     if (wsi != NULL) {
         /* TODO: If any image was acquired, need to submit, present and

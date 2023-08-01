@@ -2,7 +2,7 @@
  * YF
  * pass.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_PASS_H
@@ -12,28 +12,28 @@
 #include "image.h"
 #include "vk.h"
 
-typedef struct YF_pass_o {
-    YF_context ctx;
+struct yf_pass {
+    yf_context_t *ctx;
     unsigned color_n;
     unsigned resolve_n;
     unsigned depth_n;
-    YF_target *tgts;
+    yf_target_t **tgts;
     unsigned tgt_cap;
     unsigned tgt_n;
     unsigned tgt_i;
     VkRenderPass ren_pass;
-} YF_pass_o;
+};
 
-typedef struct YF_target_o {
-    YF_pass pass;
-    YF_dim2 dim;
+struct yf_target {
+    yf_pass_t *pass;
+    yf_dim2_t dim;
     unsigned layers;
-    YF_iview *iviews;
+    yf_iview_t *iviews;
     unsigned iview_n;
-    YF_image *imgs;
+    yf_image_t **imgs;
     unsigned *lays_base;
     VkFramebuffer framebuf;
-} YF_target_o;
+};
 
 /* Converts from a load op value. */
 #define YF_LOADOP_FROM(op, to) do { \

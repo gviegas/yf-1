@@ -2,7 +2,7 @@
  * YF
  * vinput.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_VINPUT_H

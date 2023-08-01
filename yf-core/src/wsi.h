@@ -2,7 +2,7 @@
  * YF
  * wsi.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_WSI_H
@@ -11,9 +11,9 @@
 #include "yf-wsi.h"
 #include "vk.h"
 
-typedef struct YF_wsi_o {
-    YF_context ctx;
-    YF_window win;
+struct yf_wsi {
+    yf_context_t *ctx;
+    yf_window_t *win;
 
     VkSurfaceKHR surface;
     VkSwapchainKHR swapchain;
@@ -21,11 +21,11 @@ typedef struct YF_wsi_o {
     unsigned min_img_n;
     unsigned acq_limit;
 
-    YF_image *imgs;
+    yf_image_t **imgs;
     int *imgs_acq;
     VkSemaphore *imgs_sem;
     unsigned img_n;
-} YF_wsi_o;
+};
 
 /* Checks whether a given physical device supports presentation. */
 int yf_canpresent(VkPhysicalDevice phy_dev, int queue_i);

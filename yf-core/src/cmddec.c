@@ -2,7 +2,7 @@
  * YF
  * cmddec.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -31,8 +31,8 @@
 
 /* Graphics decoding state. */
 typedef struct {
-    YF_context ctx;
-    const YF_cmdres *cmdr;
+    yf_context_t *ctx;
+    const yf_cmdres_t *cmdr;
 #define YF_GDEC_GST   0x01
 #define YF_GDEC_TGT   0x02
 #define YF_GDEC_VPORT 0x04
@@ -43,9 +43,9 @@ typedef struct {
 #define YF_GDEC_DRAW  0x1f /* requires everything but index buffer */
 #define YF_GDEC_DRAWI 0x3f /* requires everything */
     int gdec;
-    YF_pass pass;
-    YF_target tgt;
-    YF_gstate gst;
+    yf_pass_t *pass;
+    yf_target_t *tgt;
+    yf_gstate_t *gst;
     struct {
         int pending;
         unsigned *allocs;
@@ -55,7 +55,7 @@ typedef struct {
     int clr_pending;
     struct {
         int pending;
-        YF_color *vals;
+        yf_color_t *vals;
         int *used;
         unsigned n;
     } clrcol;
@@ -67,37 +67,37 @@ typedef struct {
         int pending;
         unsigned val;
     } clrsten;
-} T_gdec;
+} gdec_t;
 
 /* Compute decoding state. */
 typedef struct {
-    YF_context ctx;
-    const YF_cmdres *cmdr;
+    yf_context_t *ctx;
+    const yf_cmdres_t *cmdr;
 #define YF_CDEC_CST  0x01
 #define YF_CDEC_DISP 0x01 /* dispatch only requires cstate */
     int cdec;
-    YF_cstate cst;
+    yf_cstate_t *cst;
     struct {
         int pending;
         unsigned *allocs;
         int *used;
         unsigned n;
     } dtb;
-} T_cdec;
+} cdec_t;
 
 /* Transfer decoding state. */
 typedef struct {
-    YF_context ctx;
-    const YF_cmdres *cmdr;
-} T_xdec;
+    yf_context_t *ctx;
+    const yf_cmdres_t *cmdr;
+} xdec_t;
 
 /* The current decoding states for graph/comp/xfer. */
-static _Thread_local T_gdec *gdec_ = NULL;
-static _Thread_local T_cdec *cdec_ = NULL;
-static _Thread_local T_xdec *xdec_ = NULL;
+static _Thread_local gdec_t *gdec_ = NULL;
+static _Thread_local cdec_t *cdec_ = NULL;
+static _Thread_local xdec_t *xdec_ = NULL;
 
 /* Decodes a 'set gstate' command. */
-static int decode_gst(const YF_cmd *cmd)
+static int decode_gst(const yf_cmd_t *cmd)
 {
     if (cmd->gst.gst != gdec_->gst) {
         gdec_->gdec |= YF_GDEC_GST;
@@ -117,7 +117,7 @@ static int decode_gst(const YF_cmd *cmd)
 }
 
 /* Decodes a 'set cstate' command. */
-static int decode_cst(const YF_cmd *cmd)
+static int decode_cst(const yf_cmd_t *cmd)
 {
     if (cmd->cst.cst != cdec_->cst) {
         cdec_->cdec |= YF_CDEC_CST;
@@ -131,7 +131,7 @@ static int decode_cst(const YF_cmd *cmd)
 }
 
 /* Decodes a 'set target' command. */
-static int decode_tgt(const YF_cmd *cmd)
+static int decode_tgt(const yf_cmd_t *cmd)
 {
     if (cmd->tgt.tgt != gdec_->tgt) {
         gdec_->gdec |= YF_GDEC_TGT;
@@ -146,9 +146,9 @@ static int decode_tgt(const YF_cmd *cmd)
 }
 
 /* Decodes a 'set viewport' command. */
-static int decode_vport(const YF_cmd *cmd)
+static int decode_vport(const yf_cmd_t *cmd)
 {
-    const YF_limits *lim = yf_getlimits(gdec_->ctx);
+    const yf_limits_t *lim = yf_getlimits(gdec_->ctx);
 
     if (cmd->vport.index >= lim->viewport.max ||
         cmd->vport.vport.width <= 0.0f ||
@@ -184,7 +184,7 @@ static int decode_vport(const YF_cmd *cmd)
 }
 
 /* Decodes a 'set scissor' command. */
-static int decode_sciss(const YF_cmd *cmd)
+static int decode_sciss(const yf_cmd_t *cmd)
 {
     gdec_->gdec |= YF_GDEC_SCISS;
 
@@ -198,7 +198,7 @@ static int decode_sciss(const YF_cmd *cmd)
 }
 
 /* Decodes a 'set dtable' command. */
-static int decode_dtb(int cmdbuf, const YF_cmd *cmd)
+static int decode_dtb(int cmdbuf, const yf_cmd_t *cmd)
 {
     switch (cmdbuf) {
     case YF_CMDBUF_GRAPH:
@@ -235,7 +235,7 @@ static int decode_dtb(int cmdbuf, const YF_cmd *cmd)
 }
 
 /* Decodes a 'set vertex buffer' command. */
-static int decode_vbuf(const YF_cmd *cmd)
+static int decode_vbuf(const yf_cmd_t *cmd)
 {
     if (cmd->vbuf.index >= yf_getlimits(gdec_->ctx)->state.vinput_max) {
         yf_seterr(YF_ERR_INVARG, __func__);
@@ -250,7 +250,7 @@ static int decode_vbuf(const YF_cmd *cmd)
 }
 
 /* Decodes a 'set index buffer' command. */
-static int decode_ibuf(const YF_cmd *cmd)
+static int decode_ibuf(const yf_cmd_t *cmd)
 {
     VkIndexType indx_type;
     switch (cmd->ibuf.itype) {
@@ -273,7 +273,7 @@ static int decode_ibuf(const YF_cmd *cmd)
 }
 
 /* Decodes a 'clear color' command. */
-static int decode_clrcol(const YF_cmd *cmd)
+static int decode_clrcol(const yf_cmd_t *cmd)
 {
     if (cmd->clrcol.index >= yf_getlimits(gdec_->ctx)->pass.color_max) {
         yf_seterr(YF_ERR_INVARG, __func__);
@@ -290,7 +290,7 @@ static int decode_clrcol(const YF_cmd *cmd)
 }
 
 /* Decodes a 'clear depth' command. */
-static int decode_clrdep(const YF_cmd *cmd)
+static int decode_clrdep(const yf_cmd_t *cmd)
 {
     gdec_->clr_pending = gdec_->clrdep.pending = 1;
     gdec_->clrdep.val = cmd->clrdep.value;
@@ -298,7 +298,7 @@ static int decode_clrdep(const YF_cmd *cmd)
 }
 
 /* Decodes a 'clear stencil' command. */
-static int decode_clrsten(const YF_cmd *cmd)
+static int decode_clrsten(const yf_cmd_t *cmd)
 {
     gdec_->clr_pending = gdec_->clrsten.pending = 1;
     gdec_->clrsten.val = cmd->clrsten.value;
@@ -306,7 +306,7 @@ static int decode_clrsten(const YF_cmd *cmd)
 }
 
 /* Decodes a 'draw' or 'drawi' command. */
-static int decode_draw(const YF_cmd *cmd)
+static int decode_draw(const yf_cmd_t *cmd)
 {
     if ((gdec_->gdec & YF_GDEC_PASS) != YF_GDEC_PASS) {
         yf_seterr(YF_ERR_INVCMD, __func__);
@@ -386,7 +386,7 @@ static int decode_draw(const YF_cmd *cmd)
                 if (gdec_->clrcol.used[i]) {
                     clr_atts[clr_i].aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
                     clr_atts[clr_i].colorAttachment = i;
-                    YF_color *vals = gdec_->clrcol.vals;
+                    yf_color_t *vals = gdec_->clrcol.vals;
                     clr_atts[clr_i].clearValue.color.float32[0] = vals[i].r;
                     clr_atts[clr_i].clearValue.color.float32[1] = vals[i].g;
                     clr_atts[clr_i].clearValue.color.float32[2] = vals[i].b;
@@ -458,13 +458,13 @@ static int decode_draw(const YF_cmd *cmd)
 }
 
 /* Decodes a 'dispatch' command. */
-static int decode_disp(const YF_cmd *cmd)
+static int decode_disp(const yf_cmd_t *cmd)
 {
     assert(cmd->disp.dim.width > 0);
     assert(cmd->disp.dim.height > 0);
     assert(cmd->disp.dim.depth > 0);
 
-    const YF_limits *lim = yf_getlimits(cdec_->ctx);
+    const yf_limits_t *lim = yf_getlimits(cdec_->ctx);
     if (cmd->disp.dim.width > lim->cmdbuf.disp_dim_max.width ||
         cmd->disp.dim.height > lim->cmdbuf.disp_dim_max.height ||
         cmd->disp.dim.depth > lim->cmdbuf.disp_dim_max.depth) {
@@ -516,7 +516,7 @@ static int decode_disp(const YF_cmd *cmd)
 }
 
 /* Decodes a 'copy buffer' command. */
-static int decode_cpybuf(const YF_cmd *cmd)
+static int decode_cpybuf(const yf_cmd_t *cmd)
 {
     assert(cmd->cpybuf.dst->size >= cmd->cpybuf.dst_off + cmd->cpybuf.size);
     assert(cmd->cpybuf.src->size >= cmd->cpybuf.src_off + cmd->cpybuf.size);
@@ -535,7 +535,7 @@ static int decode_cpybuf(const YF_cmd *cmd)
 }
 
 /* Decodes a 'copy image' command. */
-static int decode_cpyimg(const YF_cmd *cmd)
+static int decode_cpyimg(const yf_cmd_t *cmd)
 {
     assert(cmd->cpyimg.dst->dim.width >=
            cmd->cpyimg.dst_off.x + cmd->cpyimg.dim.width);
@@ -613,7 +613,7 @@ static int decode_sync(int cmdbuf)
 {
     /* TODO: Provide sync. parameters to avoid such dramatic solution. */
 
-    const YF_cmdres *cmdr;
+    const yf_cmdres_t *cmdr;
     switch (cmdbuf) {
     case YF_CMDBUF_GRAPH:
         if (gdec_->pass != NULL) {
@@ -649,7 +649,7 @@ static int decode_sync(int cmdbuf)
 }
 
 /* Decodes a graphics command buffer. */
-static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
+static int decode_graph(yf_cmdbuf_t *cmdb, const yf_cmdres_t *cmdr)
 {
     gdec_ = calloc(1, sizeof *gdec_);
     if (gdec_ == NULL) {
@@ -681,7 +681,7 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
 
     int r = 0;
     for (unsigned i = 0; i < cmdb->cmd_n; i++) {
-        YF_cmd *cmd = &cmdb->cmds[i];
+        yf_cmd_t *cmd = &cmdb->cmds[i];
 
         switch (cmd->cmd) {
         case YF_CMD_GST:
@@ -809,7 +809,7 @@ static int decode_graph(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
 }
 
 /* Decodes a compute command buffer. */
-static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
+static int decode_comp(yf_cmdbuf_t *cmdb, const yf_cmdres_t *cmdr)
 {
     cdec_ = calloc(1, sizeof *cdec_);
     if (cdec_ == NULL) {
@@ -834,7 +834,7 @@ static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
 
     int r = 0;
     for (unsigned i = 0; i < cmdb->cmd_n; i++) {
-        YF_cmd *cmd = &cmdb->cmds[i];
+        yf_cmd_t *cmd = &cmdb->cmds[i];
 
         switch (cmd->cmd) {
         case YF_CMD_CST:
@@ -866,7 +866,7 @@ static int decode_comp(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
 }
 
 /* Decodes a transfer command buffer. */
-static int decode_xfer(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
+static int decode_xfer(yf_cmdbuf_t *cmdb, const yf_cmdres_t *cmdr)
 {
     xdec_ = calloc(1, sizeof *xdec_);
     if (xdec_ == NULL) {
@@ -878,7 +878,7 @@ static int decode_xfer(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
 
     int r = 0;
     for (unsigned i = 0; i < cmdb->cmd_n; i++) {
-        YF_cmd *cmd = &cmdb->cmds[i];
+        yf_cmd_t *cmd = &cmdb->cmds[i];
 
         switch (cmd->cmd) {
         case YF_CMD_CPYBUF:
@@ -904,7 +904,7 @@ static int decode_xfer(YF_cmdbuf cmdb, const YF_cmdres *cmdr)
     return r;
 }
 
-int yf_cmdbuf_decode(YF_cmdbuf cmdb)
+int yf_cmdbuf_decode(yf_cmdbuf_t *cmdb)
 {
     assert(cmdb != NULL);
 
@@ -912,7 +912,7 @@ int yf_cmdbuf_decode(YF_cmdbuf cmdb)
         /* nothing to decode */
         return 0;
 
-    YF_cmdres cmdr;
+    yf_cmdres_t cmdr;
     if (yf_cmdpool_obtain(cmdb->ctx, &cmdr) != 0)
         return -1;
 

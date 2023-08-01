@@ -2,7 +2,7 @@
  * YF
  * cmdpool.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -25,36 +25,36 @@ typedef struct {
     VkCommandPool pool;
     VkCommandBuffer buffer;
     int in_use;
-} T_entry;
+} entry_t;
 
 /* Command pool. */
 typedef struct {
-    T_entry *entries;
+    entry_t *entries;
     unsigned last_i;
     unsigned cur_n;
     unsigned cap;
-} T_cmdp;
+} cmdp_t;
 
 /* Command pool variables stored in a context. */
 typedef struct {
-    T_cmdp cmdp;
-    YF_cmdres prio;
-    YF_list callbs;
-} T_priv;
+    cmdp_t cmdp;
+    yf_cmdres_t prio;
+    yf_list_t *callbs;
+} priv_t;
 
 /* Callback from priority resource acquisition. */
 typedef struct {
     void (*callb)(int, void *);
     void *arg;
-} T_callb;
+} callb_t;
 
 /* Initializes the pool entries. */
-static int init_entries(YF_context ctx, T_cmdp *cmdp)
+static int init_entries(yf_context_t *ctx, cmdp_t *cmdp)
 {
     assert(ctx != NULL);
     assert(cmdp != NULL);
 
-    cmdp->entries = calloc(cmdp->cap, sizeof(T_entry));
+    cmdp->entries = calloc(cmdp->cap, sizeof(entry_t));
     if (cmdp->entries == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -96,16 +96,16 @@ static int init_entries(YF_context ctx, T_cmdp *cmdp)
     return 0;
 }
 
-/* Destroys the 'T_priv' data stored in a given context. */
-static void destroy_priv(YF_context ctx)
+/* Destroys the 'priv_t' data stored in a given context. */
+static void destroy_priv(yf_context_t *ctx)
 {
     assert(ctx != NULL);
 
     if (ctx->cmdp.priv == NULL)
         return;
 
-    T_priv *priv = ctx->cmdp.priv;
-    YF_iter it = YF_NILIT;
+    priv_t *priv = ctx->cmdp.priv;
+    yf_iter_t it = YF_NILIT;
     do
         free(yf_list_next(priv->callbs, &it));
     while (!YF_IT_ISNIL(it));
@@ -121,14 +121,14 @@ static void destroy_priv(YF_context ctx)
     ctx->cmdp.priv = NULL;
 }
 
-int yf_cmdpool_create(YF_context ctx, unsigned capacity)
+int yf_cmdpool_create(yf_context_t *ctx, unsigned capacity)
 {
     assert(ctx != NULL);
 
     if (ctx->cmdp.priv != NULL)
         destroy_priv(ctx);
 
-    T_priv *priv = calloc(1, sizeof(T_priv));
+    priv_t *priv = calloc(1, sizeof(priv_t));
     if (priv == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -155,19 +155,19 @@ int yf_cmdpool_create(YF_context ctx, unsigned capacity)
     return 0;
 }
 
-int yf_cmdpool_obtain(YF_context ctx, YF_cmdres *cmdr)
+int yf_cmdpool_obtain(yf_context_t *ctx, yf_cmdres_t *cmdr)
 {
     assert(ctx != NULL);
     assert(cmdr != NULL);
     assert(ctx->cmdp.priv != NULL);
 
-    T_cmdp *cmdp = &((T_priv *)ctx->cmdp.priv)->cmdp;
+    cmdp_t *cmdp = &((priv_t *)ctx->cmdp.priv)->cmdp;
     if (cmdp->cur_n == cmdp->cap) {
         yf_seterr(YF_ERR_INUSE, __func__);
         return -1;
     }
 
-    T_entry *e = NULL;
+    entry_t *e = NULL;
     for (unsigned i = 0; i < cmdp->cap; i++) {
         e = &cmdp->entries[cmdp->last_i];
         if (!e->in_use) {
@@ -188,7 +188,7 @@ int yf_cmdpool_obtain(YF_context ctx, YF_cmdres *cmdr)
     return 0;
 }
 
-void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr)
+void yf_cmdpool_yield(yf_context_t *ctx, yf_cmdres_t *cmdr)
 {
     assert(ctx != NULL);
     assert(cmdr != NULL);
@@ -197,7 +197,7 @@ void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr)
     if (cmdr->res_id < 0)
         return;
 
-    T_priv *priv = ctx->cmdp.priv;
+    priv_t *priv = ctx->cmdp.priv;
 
     assert(priv->cmdp.entries[cmdr->res_id].in_use);
 
@@ -211,7 +211,7 @@ void yf_cmdpool_yield(YF_context ctx, YF_cmdres *cmdr)
     }
 }
 
-void yf_cmdpool_reset(YF_context ctx, YF_cmdres *cmdr)
+void yf_cmdpool_reset(yf_context_t *ctx, yf_cmdres_t *cmdr)
 {
     assert(ctx != NULL);
     assert(cmdr != NULL);
@@ -220,7 +220,7 @@ void yf_cmdpool_reset(YF_context ctx, YF_cmdres *cmdr)
     if (cmdr->res_id < 0)
         return;
 
-    T_priv *priv = ctx->cmdp.priv;
+    priv_t *priv = ctx->cmdp.priv;
     /* XXX: This assumes that every resource has an exclusive pool. */
     vkResetCommandPool(ctx->device, priv->cmdp.entries[cmdr->res_id].pool,
                        VK_COMMAND_POOL_RESET_RELEASE_RESOURCES_BIT);
@@ -228,14 +228,14 @@ void yf_cmdpool_reset(YF_context ctx, YF_cmdres *cmdr)
     yf_cmdpool_yield(ctx, cmdr);
 }
 
-const YF_cmdres *yf_cmdpool_getprio(YF_context ctx,
-                                    void (*callb)(int res, void *arg),
-                                    void *arg)
+const yf_cmdres_t *yf_cmdpool_getprio(yf_context_t *ctx,
+                                      void (*callb)(int res, void *arg),
+                                      void *arg)
 {
     assert(ctx != NULL);
     assert(ctx->cmdp.priv != NULL);
 
-    T_priv *priv = ctx->cmdp.priv;
+    priv_t *priv = ctx->cmdp.priv;
 
     if (priv->prio.res_id == -1) {
         if (yf_cmdpool_obtain(ctx, &priv->prio) != 0)
@@ -254,7 +254,7 @@ const YF_cmdres *yf_cmdpool_getprio(YF_context ctx,
     }
 
     if (callb != NULL) {
-        T_callb *e = malloc(sizeof(T_callb));
+        callb_t *e = malloc(sizeof(callb_t));
         if (e == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             return NULL;
@@ -270,7 +270,7 @@ const YF_cmdres *yf_cmdpool_getprio(YF_context ctx,
     return &priv->prio;
 }
 
-void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdres **cmdr_list,
+void yf_cmdpool_checkprio(yf_context_t *ctx, const yf_cmdres_t **cmdr_list,
                           unsigned *cmdr_n)
 {
     assert(ctx != NULL);
@@ -278,7 +278,7 @@ void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdres **cmdr_list,
     assert(cmdr_n != NULL);
     assert(ctx->cmdp.priv != NULL);
 
-    T_priv *priv = ctx->cmdp.priv;
+    priv_t *priv = ctx->cmdp.priv;
     if (priv->prio.res_id == -1) {
         *cmdr_list = NULL;
         *cmdr_n = 0;
@@ -288,19 +288,19 @@ void yf_cmdpool_checkprio(YF_context ctx, const YF_cmdres **cmdr_list,
     }
 }
 
-void yf_cmdpool_notifyprio(YF_context ctx, int result)
+void yf_cmdpool_notifyprio(yf_context_t *ctx, int result)
 {
     assert(ctx != NULL);
     assert(ctx->cmdp.priv != NULL);
 
-    T_priv *priv = ctx->cmdp.priv;
+    priv_t *priv = ctx->cmdp.priv;
     yf_cmdpool_yield(ctx, &priv->prio);
 
     if (yf_list_getlen(priv->callbs) < 1)
         return;
 
-    YF_iter it = YF_NILIT;
-    T_callb *callb = NULL;
+    yf_iter_t it = YF_NILIT;
+    callb_t *callb = NULL;
     while (1) {
         callb = yf_list_next(priv->callbs, &it);
         if (YF_IT_ISNIL(it))

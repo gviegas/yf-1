@@ -14,20 +14,20 @@
 /* Tests image. */
 int yf_test_image(void)
 {
-    YF_context ctx = yf_context_init();
+    yf_context_t *ctx = yf_context_init();
     assert(ctx != NULL);
 
-    YF_dim3 dim = {1024, 1024, 1};
+    yf_dim3_t dim = {1024, 1024, 1};
 
     YF_TEST_PRINT("init", "PIXFMT_RGBA8UNORM, {1024,1024,1}, 1, 1, 1", "img");
-    YF_image img = yf_image_init(ctx, YF_PIXFMT_RGBA8UNORM, dim, 1, 1, 1);
+    yf_image_t *img = yf_image_init(ctx, YF_PIXFMT_RGBA8UNORM, dim, 1, 1, 1);
     if (img == NULL)
         return -1;
 
     dim.height = 768;
 
     YF_TEST_PRINT("init", "PIXFMT_D16UNORM, {1024,768,1}, 1, 1, 1", "img2");
-    YF_image img2 = yf_image_init(ctx, YF_PIXFMT_D16UNORM, dim, 1, 1, 1);
+    yf_image_t *img2 = yf_image_init(ctx, YF_PIXFMT_D16UNORM, dim, 1, 1, 1);
     if (img2 == NULL)
         return -1;
 
@@ -51,7 +51,7 @@ int yf_test_image(void)
         return -1;
 
     unsigned char data[64*64*4] = {0};
-    YF_off3 off = {0};
+    yf_off3_t off = {0};
     dim.width = dim.height = 64;
 
     YF_TEST_PRINT("copy", "img, {0,0,0}, {64,64,1}, 0, 0, data", "");

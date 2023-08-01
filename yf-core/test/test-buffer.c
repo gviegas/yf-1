@@ -14,11 +14,11 @@
 /* Tests buffer. */
 int yf_test_buffer(void)
 {
-    YF_context ctx = yf_context_init();
+    yf_context_t *ctx = yf_context_init();
     assert(ctx != NULL);
 
     YF_TEST_PRINT("init", "2048", "buf");
-    YF_buffer buf = yf_buffer_init(ctx, 2048);
+    yf_buffer_t *buf = yf_buffer_init(ctx, 2048);
     if (buf == NULL)
         return -1;
 
@@ -27,7 +27,7 @@ int yf_test_buffer(void)
         return -1;
 
     YF_TEST_PRINT("init", "1048576", "buf2");
-    YF_buffer buf2 = yf_buffer_init(ctx, 1048576);
+    yf_buffer_t *buf2 = yf_buffer_init(ctx, 1048576);
     if (buf2 == NULL)
         return -1;
 

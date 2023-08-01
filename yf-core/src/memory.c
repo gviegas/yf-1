@@ -2,7 +2,7 @@
  * YF
  * memory.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <assert.h>
@@ -16,7 +16,7 @@
 #include "vk.h"
 
 /* Selects a suitable memory heap. */
-static int select_memory(YF_context ctx, unsigned requirement,
+static int select_memory(yf_context_t *ctx, unsigned requirement,
                          VkFlags properties)
 {
     int mem_type = -1;
@@ -33,7 +33,7 @@ static int select_memory(YF_context ctx, unsigned requirement,
 }
 
 /* Allocates device memory. */
-static VkDeviceMemory alloc_memory(YF_context ctx,
+static VkDeviceMemory alloc_memory(yf_context_t *ctx,
                                    const VkMemoryRequirements *requirements,
                                    int host_visible)
 {
@@ -71,12 +71,12 @@ static VkDeviceMemory alloc_memory(YF_context ctx,
 }
 
 /* Deallocates device memory. */
-static void free_memory(YF_context ctx, VkDeviceMemory memory)
+static void free_memory(yf_context_t *ctx, VkDeviceMemory memory)
 {
     vkFreeMemory(ctx->device, memory, NULL);
 }
 
-int yf_buffer_alloc(YF_buffer buf)
+int yf_buffer_alloc(yf_buffer_t *buf)
 {
     assert(buf != NULL);
     assert(buf->memory == NULL);
@@ -102,7 +102,7 @@ int yf_buffer_alloc(YF_buffer buf)
     return 0;
 }
 
-int yf_image_alloc(YF_image img)
+int yf_image_alloc(yf_image_t *img)
 {
     assert(img != NULL);
     assert(img->memory == NULL);
@@ -133,7 +133,7 @@ int yf_image_alloc(YF_image img)
     return 0;
 }
 
-void yf_buffer_free(YF_buffer buf)
+void yf_buffer_free(yf_buffer_t *buf)
 {
     if (buf != NULL) {
         free_memory(buf->ctx, buf->memory);
@@ -142,7 +142,7 @@ void yf_buffer_free(YF_buffer buf)
     }
 }
 
-void yf_image_free(YF_image img)
+void yf_image_free(yf_image_t *img)
 {
     if (img != NULL) {
         free_memory(img->ctx, img->memory);

@@ -16,30 +16,30 @@
 /* Tests gstate. */
 int yf_test_gstate(void)
 {
-    YF_context ctx = yf_context_init();
+    yf_context_t *ctx = yf_context_init();
     assert(ctx != NULL);
 
     const int pixfmt = YF_PIXFMT_BGRA8SRGB;
-    const YF_dim3 dim = {800, 600, 1};
-    YF_image img = yf_image_init(ctx, pixfmt, dim, 1, 1, 1);
+    const yf_dim3_t dim = {800, 600, 1};
+    yf_image_t *img = yf_image_init(ctx, pixfmt, dim, 1, 1, 1);
     assert(img != NULL);
 
-    const YF_colordsc dsc = {pixfmt, 1, YF_LOADOP_LOAD, YF_STOREOP_STORE};
-    YF_pass pass = yf_pass_init(ctx, &dsc, 1, NULL, NULL);
+    const yf_colordsc_t dsc = {pixfmt, 1, YF_LOADOP_LOAD, YF_STOREOP_STORE};
+    yf_pass_t *pass = yf_pass_init(ctx, &dsc, 1, NULL, NULL);
     assert(pass != NULL);
 
-    YF_stage stg = {YF_STAGE_VERT, 0, "main"};
+    yf_stage_t stg = {YF_STAGE_VERT, 0, "main"};
     if (yf_loadshd(ctx, YF_VERTSHD, &stg.shd) != 0)
         assert(0);
 
-    const YF_dentry entry = {YF_DTYPE_UNIFORM, 0, 1, NULL};
-    YF_dtable dtb = yf_dtable_init(ctx, &entry, 1);
+    const yf_dentry_t entry = {YF_DTYPE_UNIFORM, 0, 1, NULL};
+    yf_dtable_t *dtb = yf_dtable_init(ctx, &entry, 1);
     assert(dtb != NULL);
 
-    const YF_vattr attr = {0, YF_VFMT_FLOAT4, 0};
-    const YF_vinput input = {&attr, 1, 0, YF_VRATE_VERT};
+    const yf_vattr_t attr = {0, YF_VFMT_FLOAT4, 0};
+    const yf_vinput_t input = {&attr, 1, 0, YF_VRATE_VERT};
 
-    const YF_gconf conf = {
+    const yf_gconf_t conf = {
         .pass = pass,
         .stgs = &stg,
         .stg_n = 1,
@@ -54,7 +54,7 @@ int yf_test_gstate(void)
     };
 
     YF_TEST_PRINT("init", "&conf", "gst");
-    YF_gstate gst = yf_gstate_init(ctx, &conf);
+    yf_gstate_t *gst = yf_gstate_init(ctx, &conf);
     if (gst == NULL)
         return -1;
 

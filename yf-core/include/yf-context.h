@@ -2,7 +2,7 @@
  * YF
  * yf-context.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_CONTEXT_H
@@ -17,24 +17,24 @@ YF_DECLS_BEGIN
  *
  * This is the main object of yf-core, from which others are created.
  */
-typedef struct YF_context_o *YF_context;
+typedef struct yf_context yf_context_t;
 
 /**
  * Initializes a new context.
  *
- * Multiple contexts may not be supported by the implementation.
+ * Multiple contexts are not supported.
  *
  * @return: On success, returns a new context. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_context yf_context_init(void);
+yf_context_t *yf_context_init(void);
 
 /**
  * Deinitializes a context.
  *
  * @param ctx: The context to deinitialize. Can be 'NULL'.
  */
-void yf_context_deinit(YF_context ctx);
+void yf_context_deinit(yf_context_t *ctx);
 
 YF_DECLS_END
 

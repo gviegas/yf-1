@@ -2,7 +2,7 @@
  * YF
  * pass.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -16,9 +16,9 @@
 
 #define YF_TGTN 4
 
-YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
-                     unsigned color_n, const YF_colordsc *resolves,
-                     const YF_depthdsc *depth_stencil)
+yf_pass_t *yf_pass_init(yf_context_t *ctx, const yf_colordsc_t *colors,
+                        unsigned color_n, const yf_colordsc_t *resolves,
+                        const yf_depthdsc_t *depth_stencil)
 {
     assert(ctx != NULL);
 
@@ -32,7 +32,7 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
         return NULL;
     }
 
-    YF_pass pass = calloc(1, sizeof(YF_pass_o));
+    yf_pass_t *pass = calloc(1, sizeof(yf_pass_t));
     if (pass == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -196,13 +196,14 @@ YF_pass yf_pass_init(YF_context ctx, const YF_colordsc *colors,
     return pass;
 }
 
-YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
-                             const YF_attach *colors, const YF_attach *resolves,
-                             const YF_attach *depth_stencil)
+yf_target_t *yf_pass_maketarget(yf_pass_t *pass, yf_dim2_t dim, unsigned layers,
+                                const yf_attach_t *colors,
+                                const yf_attach_t *resolves,
+                                const yf_attach_t *depth_stencil)
 {
     assert(pass != NULL);
 
-    const YF_limits *lim = yf_getlimits(pass->ctx);
+    const yf_limits_t *lim = yf_getlimits(pass->ctx);
     if (layers > lim->pass.layer_max ||
         dim.width > lim->pass.dim_max.width ||
         dim.height > lim->pass.dim_max.height) {
@@ -219,7 +220,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
 
     if (pass->tgt_n == pass->tgt_cap) {
         unsigned cap = pass->tgt_cap << 1;
-        YF_target *tmp = realloc(pass->tgts, cap * sizeof *pass->tgts);
+        yf_target_t **tmp = realloc(pass->tgts, cap * sizeof *pass->tgts);
         if (tmp == NULL) {
             cap = pass->tgt_cap + 1;
             tmp = realloc(pass->tgts, cap * sizeof *pass->tgts);
@@ -242,7 +243,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
         }
     }
 
-    YF_target tgt = calloc(1, sizeof(YF_target_o));
+    yf_target_t *tgt = calloc(1, sizeof(yf_target_t));
     if (tgt == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -264,8 +265,8 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
         return NULL;
     }
 
-    const YF_slice lvl = {0, 1};
-    YF_slice lay = {0, layers};
+    const yf_slice_t lvl = {0, 1};
+    yf_slice_t lay = {0, layers};
     unsigned iview_i = 0;
     int r = -1;
     VkImageView *info_views = malloc(tgt->iview_n * sizeof(VkImageView));
@@ -365,7 +366,7 @@ YF_target yf_pass_maketarget(YF_pass pass, YF_dim2 dim, unsigned layers,
     return tgt;
 }
 
-int yf_pass_unmktarget(YF_pass pass, YF_target tgt)
+int yf_pass_unmktarget(yf_pass_t *pass, yf_target_t *tgt)
 {
     assert(pass != NULL);
 
@@ -401,7 +402,7 @@ int yf_pass_unmktarget(YF_pass pass, YF_target tgt)
     return 0;
 }
 
-void yf_pass_deinit(YF_pass pass)
+void yf_pass_deinit(yf_pass_t *pass)
 {
     if (pass != NULL) {
         vkDestroyRenderPass(pass->ctx->device, pass->ren_pass, NULL);

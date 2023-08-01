@@ -14,18 +14,18 @@
 /* Tests wsi. */
 int yf_test_wsi(void)
 {
-    YF_window win = yf_window_init(480, 300, "test-wsi", YF_WINCREAT_HIDDEN);
+    yf_window_t *win = yf_window_init(480, 300, "test-wsi", YF_WINCREAT_HIDDEN);
     assert(win != NULL);
 
-    YF_context ctx = yf_context_init();
+    yf_context_t *ctx = yf_context_init();
     assert(ctx != NULL);
 
     YF_TEST_PRINT("init", "win", "wsi");
-    YF_wsi wsi = yf_wsi_init(ctx, win);
+    yf_wsi_t *wsi = yf_wsi_init(ctx, win);
     if (wsi == NULL)
         return -1;
 
-    const YF_image *imgs;
+    yf_image_t *const *imgs;
     unsigned n;
 
     YF_TEST_PRINT("getimages", "wsi, &n", "");

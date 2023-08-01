@@ -2,7 +2,7 @@
  * YF
  * context.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_CONTEXT_H
@@ -12,12 +12,12 @@
 #include "vk.h"
 
 /* Data that is kept in a context but managed externally. */
-typedef struct {
+typedef struct yf_ctxmgd {
     void *priv;
-    void (*deinit_callb)(YF_context);
-} YF_ctxmgd;
+    void (*deinit_callb)(yf_context_t *);
+} yf_ctxmgd_t;
 
-typedef struct YF_context_o {
+struct yf_context {
     VkInstance instance;
     VkPhysicalDevice phy_dev;
     VkDevice device;
@@ -45,11 +45,11 @@ typedef struct YF_context_o {
     char **dev_exts;
     unsigned dev_ext_n;
 
-    YF_ctxmgd cmdp;
-    YF_ctxmgd cmde;
-    YF_ctxmgd lim;
-    YF_ctxmgd stg;
-    YF_ctxmgd splr;
-} YF_context_o;
+    yf_ctxmgd_t cmdp;
+    yf_ctxmgd_t cmde;
+    yf_ctxmgd_t lim;
+    yf_ctxmgd_t stg;
+    yf_ctxmgd_t splr;
+};
 
 #endif /* YF_CONTEXT_H */

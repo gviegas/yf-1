@@ -2,119 +2,119 @@
  * YF
  * cmd.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_CMD_H
 #define YF_CMD_H
 
 /* The parameters of a 'set gstate' command. */
-typedef struct {
-    YF_gstate gst;
-} YF_cmd_gst;
+typedef struct yf_cmd_gst {
+    yf_gstate_t *gst;
+} yf_cmd_gst_t;
 
 /* The parameters of a 'set cstate' command. */
-typedef struct {
-    YF_cstate cst;
-} YF_cmd_cst;
+typedef struct yf_cmd_cst {
+    yf_cstate_t *cst;
+} yf_cmd_cst_t;
 
 /* The parameters of a 'set target' command. */
-typedef struct {
-    YF_target tgt;
-} YF_cmd_tgt;
+typedef struct yf_cmd_tgt {
+    yf_target_t *tgt;
+} yf_cmd_tgt_t;
 
 /* The parameters of a 'set viewport' command. */
-typedef struct {
+typedef struct yf_cmd_vport {
     unsigned index;
-    YF_viewport vport;
-} YF_cmd_vport;
+    yf_viewport_t vport;
+} yf_cmd_vport_t;
 
 /* The parameters of a 'set scissor' command. */
-typedef struct {
+typedef struct yf_cmd_sciss {
     unsigned index;
-    YF_rect rect;
-} YF_cmd_sciss;
+    yf_rect_t rect;
+} yf_cmd_sciss_t;
 
 /* The parameters of a 'set dtable' command. */
-typedef struct {
+typedef struct yf_cmd_dtb {
     unsigned index;
     unsigned alloc_i;
-} YF_cmd_dtb;
+} yf_cmd_dtb_t;
 
 /* The parameters of a 'set vertex buffer' command. */
-typedef struct {
+typedef struct yf_cmd_vbuf {
     unsigned index;
-    YF_buffer buf;
+    yf_buffer_t *buf;
     size_t offset;
-} YF_cmd_vbuf;
+} yf_cmd_vbuf_t;
 
 /* The parameters of a 'set index buffer' command. */
-typedef struct {
-    YF_buffer buf;
+typedef struct yf_cmd_ibuf {
+    yf_buffer_t *buf;
     size_t offset;
     int itype;
-} YF_cmd_ibuf;
+} yf_cmd_ibuf_t;
 
 /* The parameters of a 'clear color' command. */
-typedef struct {
+typedef struct yf_cmd_clrcol {
     unsigned index;
-    YF_color value;
-} YF_cmd_clrcol;
+    yf_color_t value;
+} yf_cmd_clrcol_t;
 
 /* The parameters of a 'clear depth' command. */
-typedef struct {
+typedef struct yf_cmd_clrdep {
     float value;
-} YF_cmd_clrdep;
+} yf_cmd_clrdep_t;
 
 /* The parameters of a 'clear stencil' command. */
-typedef struct {
+typedef struct yf_cmd_clrsten {
     unsigned value;
-} YF_cmd_clrsten;
+} yf_cmd_clrsten_t;
 
 /* The parameters of a 'draw' command. */
-typedef struct {
+typedef struct yf_cmd_draw {
     unsigned vert_id;
     unsigned vert_n;
     unsigned inst_id;
     unsigned inst_n;
-} YF_cmd_draw;
+} yf_cmd_draw_t;
 
 /* The parameters of a 'draw indexed' command. */
-typedef struct {
+typedef struct yf_cmd_drawi {
     unsigned index_base;
     int vert_off;
     unsigned vert_n;
     unsigned inst_id;
     unsigned inst_n;
-} YF_cmd_drawi;
+} yf_cmd_drawi_t;
 
 /* The parameters of a 'dispatch' command. */
-typedef struct {
-    YF_dim3 dim;
-} YF_cmd_disp;
+typedef struct yf_cmd_disp {
+    yf_dim3_t dim;
+} yf_cmd_disp_t;
 
 /* The parameters of a 'copy buffer' command. */
-typedef struct {
-    YF_buffer dst;
+typedef struct yf_cmd_cpybuf {
+    yf_buffer_t *dst;
     size_t dst_off;
-    YF_buffer src;
+    yf_buffer_t *src;
     size_t src_off;
     size_t size;
-} YF_cmd_cpybuf;
+} yf_cmd_cpybuf_t;
 
 /* The parameters of a 'copy image' command. */
-typedef struct {
-    YF_image dst;
-    YF_off3 dst_off;
+typedef struct yf_cmd_cpyimg {
+    yf_image_t *dst;
+    yf_off3_t dst_off;
     unsigned dst_layer;
     unsigned dst_level;
-    YF_image src;
-    YF_off3 src_off;
+    yf_image_t *src;
+    yf_off3_t src_off;
     unsigned src_layer;
     unsigned src_level;
-    YF_dim3 dim;
+    yf_dim3_t dim;
     unsigned layer_n;
-} YF_cmd_cpyimg;
+} yf_cmd_cpyimg_t;
 
 /* Command types. */
 #define YF_CMD_GST     0
@@ -136,26 +136,26 @@ typedef struct {
 #define YF_CMD_SYNC    16
 
 /* Command of a given type. */
-typedef struct {
+typedef struct yf_cmd {
     int cmd;
     union {
-        YF_cmd_gst gst;
-        YF_cmd_cst cst;
-        YF_cmd_tgt tgt;
-        YF_cmd_vport vport;
-        YF_cmd_sciss sciss;
-        YF_cmd_dtb dtb;
-        YF_cmd_vbuf vbuf;
-        YF_cmd_ibuf ibuf;
-        YF_cmd_clrcol clrcol;
-        YF_cmd_clrdep clrdep;
-        YF_cmd_clrsten clrsten;
-        YF_cmd_draw draw;
-        YF_cmd_drawi drawi;
-        YF_cmd_disp disp;
-        YF_cmd_cpybuf cpybuf;
-        YF_cmd_cpyimg cpyimg;
+        yf_cmd_gst_t gst;
+        yf_cmd_cst_t cst;
+        yf_cmd_tgt_t tgt;
+        yf_cmd_vport_t vport;
+        yf_cmd_sciss_t sciss;
+        yf_cmd_dtb_t dtb;
+        yf_cmd_vbuf_t vbuf;
+        yf_cmd_ibuf_t ibuf;
+        yf_cmd_clrcol_t clrcol;
+        yf_cmd_clrdep_t clrdep;
+        yf_cmd_clrsten_t clrsten;
+        yf_cmd_draw_t draw;
+        yf_cmd_drawi_t drawi;
+        yf_cmd_disp_t disp;
+        yf_cmd_cpybuf_t cpybuf;
+        yf_cmd_cpyimg_t cpyimg;
     };
-} YF_cmd;
+} yf_cmd_t;
 
 #endif /* YF_CMD_H */

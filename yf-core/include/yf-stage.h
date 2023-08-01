@@ -2,7 +2,7 @@
  * YF
  * yf-stage.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_STAGE_H
@@ -30,16 +30,16 @@ YF_DECLS_BEGIN
  * Shaders are context-managed objects representing executable code for a
  * programmable pipeline stage.
  */
-typedef unsigned long YF_shdid;
+typedef unsigned long yf_shdid_t;
 
 /**
  * Type defining a single shader stage.
  */
-typedef struct {
+typedef struct yf_stage {
     int stage;
-    YF_shdid shd;
+    yf_shdid_t shd;
     char entry_point[64];
-} YF_stage;
+} yf_stage_t;
 
 /**
  * Loads a shader.
@@ -50,7 +50,7 @@ typedef struct {
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_loadshd(YF_context ctx, const char *pathname, YF_shdid *shd);
+int yf_loadshd(yf_context_t *ctx, const char *pathname, yf_shdid_t *shd);
 
 /**
  * Unloads a shader.
@@ -58,7 +58,7 @@ int yf_loadshd(YF_context ctx, const char *pathname, YF_shdid *shd);
  * @param ctx: The context that owns the shader to unload.
  * @param shd: The identifier of the shader to unload.
  */
-void yf_unldshd(YF_context ctx, YF_shdid shd);
+void yf_unldshd(yf_context_t *ctx, yf_shdid_t shd);
 
 YF_DECLS_END
 
