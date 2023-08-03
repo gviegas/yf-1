@@ -80,7 +80,7 @@ static int (*fns_[])(void) = {
 _Static_assert(sizeof ids_ / sizeof *ids_ == sizeof fns_ / sizeof *fns_,
                "!sizeof");
 
-const YF_test yf_g_test = {
+const yf_test_t yf_g_test = {
     .name = "ngn",
     .ids = ids_,
     .fns = fns_,
