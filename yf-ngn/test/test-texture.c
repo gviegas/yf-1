@@ -17,7 +17,7 @@ int yf_test_texture(void)
 {
     unsigned char bytes[64*64*4];
 
-    YF_texdt data = {
+    yf_texdt_t data = {
         .data = bytes,
         .pixfmt = YF_PIXFMT_RGBA8UNORM,
         .dim = {16, 16},
@@ -26,7 +26,7 @@ int yf_test_texture(void)
     };
 
     YF_TEST_PRINT("init", "&data", "tex");
-    YF_texture tex = yf_texture_init(&data);
+    yf_texture_t *tex = yf_texture_init(&data);
     if (tex == NULL)
         return -1;
 
@@ -34,12 +34,12 @@ int yf_test_texture(void)
     yf_print_tex(NULL);
 
     YF_TEST_PRINT("getdim", "tex", "");
-    YF_dim2 dim = yf_texture_getdim(tex);
+    yf_dim2_t dim = yf_texture_getdim(tex);
     if (dim.width != data.dim.width || dim.height != data.dim.height)
         return -1;
 
     YF_TEST_PRINT("init", "&data", "tex2");
-    YF_texture tex2 = yf_texture_init(&data);
+    yf_texture_t *tex2 = yf_texture_init(&data);
     if (tex2 == NULL)
         return -1;
 
@@ -47,7 +47,7 @@ int yf_test_texture(void)
     yf_print_tex(NULL);
 
     YF_TEST_PRINT("getsplr", "tex2", "");
-    YF_sampler splr = *yf_texture_getsplr(tex2);
+    yf_sampler_t splr = *yf_texture_getsplr(tex2);
     if (splr.wrapmode.u != data.splr.wrapmode.u ||
         splr.wrapmode.v != data.splr.wrapmode.v ||
         splr.wrapmode.w != data.splr.wrapmode.w ||
@@ -57,7 +57,7 @@ int yf_test_texture(void)
         return -1;
 
     YF_TEST_PRINT("init", "&data", "tex3");
-    YF_texture tex3 = yf_texture_init(&data);
+    yf_texture_t *tex3 = yf_texture_init(&data);
     if (tex3 == NULL)
         return -1;
 
@@ -79,7 +79,7 @@ int yf_test_texture(void)
     printf("- dim. changed -\n");
 
     YF_TEST_PRINT("init", "&data", "tex4");
-    YF_texture tex4 = yf_texture_init(&data);
+    yf_texture_t *tex4 = yf_texture_init(&data);
     if (tex4 == NULL)
         return -1;
 
@@ -94,7 +94,7 @@ int yf_test_texture(void)
         return -1;
 
     YF_TEST_PRINT("init", "&data", "tex5");
-    YF_texture tex5 = yf_texture_init(&data);
+    yf_texture_t *tex5 = yf_texture_init(&data);
     if (tex5 == NULL)
         return -1;
 
@@ -105,7 +105,7 @@ int yf_test_texture(void)
     printf("- pixfmt changed -\n");
 
     YF_TEST_PRINT("init", "&data", "tex6");
-    YF_texture tex6 = yf_texture_init(&data);
+    yf_texture_t *tex6 = yf_texture_init(&data);
     if (tex6 == NULL)
         return -1;
 

@@ -2,7 +2,7 @@
  * YF
  * particle.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -34,22 +34,23 @@ typedef struct {
     float spawn;
     float death;
     float alpha;
-    YF_vec3 vel;
-} T_pstate;
+    yf_vec3_t vel;
+} pstate_t;
 
-struct YF_particle_o {
-    YF_node node;
+struct yf_particle {
+    yf_node_t *node;
     unsigned count;
-    YF_psys sys;
+    yf_psys_t sys;
     void *pts;
-    T_pstate *sts;
-    YF_mesh mesh;
-    YF_texture tex;
+    pstate_t *sts;
+    yf_mesh_t *mesh;
+    yf_texture_t *tex;
     /* TODO: Other particle system properties. */
 };
 
 /* Initializes vertex data, states and mesh object. */
-static int init_points(YF_particle part)
+/* TODO: Use quads instead of points. */
+static int init_points(yf_particle_t *part)
 {
     assert(part != NULL);
 
@@ -57,7 +58,7 @@ static int init_points(YF_particle part)
     const size_t clr_sz = sizeof(float[4]) * part->count;
 
     part->pts = malloc(pos_sz + clr_sz);
-    part->sts = malloc(sizeof(T_pstate) * part->count);
+    part->sts = malloc(sizeof(pstate_t) * part->count);
     if (part->pts == NULL || part->sts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -65,7 +66,7 @@ static int init_points(YF_particle part)
 
     const float pos[3] = {0.0f, 0.0f, 0.5f};
     const float clr[4] = {1.0f, 1.0f, 1.0f, 1.0f};
-    const T_pstate st = {YF_PSTATE_UNSET, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, {0}};
+    const pstate_t st = {YF_PSTATE_UNSET, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, {0}};
 
     unsigned char *pos_dt = part->pts;
     unsigned char *clr_dt = pos_dt + pos_sz;
@@ -77,14 +78,14 @@ static int init_points(YF_particle part)
         memcpy(part->sts+i, &st, sizeof st);
     }
 
-    const YF_meshdt data = {
-        .prims = &(YF_primdt){
+    const yf_meshdt_t data = {
+        .prims = &(yf_primdt_t){
             .topology = YF_TOPOLOGY_POINT,
             .vert_n = part->count,
             .indx_n = 0,
             .data_off = 0,
             .vsemt_mask = YF_VSEMT_POS | YF_VSEMT_CLR,
-            .attrs = (YF_attrdt[]){
+            .attrs = (yf_attrdt_t[]){
                 [0] = {YF_VSEMT_POS, YF_VFMT_FLOAT3, 0},
                 [1] = {YF_VSEMT_CLR, YF_VFMT_FLOAT4, pos_sz}
             },
@@ -105,7 +106,7 @@ static int init_points(YF_particle part)
 /* Particle system deinitialization callback. */
 static void deinit_part(void *obj)
 {
-    YF_particle part = obj;
+    yf_particle_t *part = obj;
 
     yf_mesh_deinit(part->mesh);
     free(part->pts);
@@ -113,14 +114,14 @@ static void deinit_part(void *obj)
     free(part);
 }
 
-YF_particle yf_particle_init(unsigned count)
+yf_particle_t *yf_particle_init(unsigned count)
 {
     if (count == 0) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return NULL;
     }
 
-    YF_particle part = calloc(1, sizeof(struct YF_particle_o));
+    yf_particle_t *part = calloc(1, sizeof(yf_particle_t));
     if (part == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -166,44 +167,45 @@ YF_particle yf_particle_init(unsigned count)
     return part;
 }
 
-YF_node yf_particle_getnode(YF_particle part)
+yf_node_t *yf_particle_getnode(yf_particle_t *part)
 {
     assert(part != NULL);
     return part->node;
 }
 
-YF_psys *yf_particle_getsys(YF_particle part)
+yf_psys_t *yf_particle_getsys(yf_particle_t *part)
 {
     assert(part != NULL);
     return &part->sys;
 }
 
-YF_mesh yf_particle_getmesh(YF_particle part)
+yf_mesh_t *yf_particle_getmesh(yf_particle_t *part)
 {
     assert(part != NULL);
     return part->mesh;
 }
 
-YF_texture yf_particle_gettex(YF_particle part)
+yf_texture_t *yf_particle_gettex(yf_particle_t *part)
 {
     assert(part != NULL);
     return part->tex;
 }
 
-void yf_particle_settex(YF_particle part, YF_texture tex)
+void yf_particle_settex(yf_particle_t *part, yf_texture_t *tex)
 {
     assert(part != NULL);
     part->tex = tex;
 }
 
-void yf_particle_simulate(YF_particle part, float tm)
+/* TODO: Simulate on GPU. */
+void yf_particle_simulate(yf_particle_t *part, float tm)
 {
     assert(tm >= 0.0f);
 
-    const YF_psys *sys = &part->sys;
+    const yf_psys_t *sys = &part->sys;
     float *pos = part->pts;
     float *clr = pos + 3 * part->count;
-    T_pstate *st = part->sts;
+    pstate_t *st = part->sts;
 
     for (unsigned i = 0; i < part->count; i++) {
         switch (st->pstate) {
@@ -299,7 +301,7 @@ void yf_particle_simulate(YF_particle part, float tm)
 #endif
 }
 
-void yf_particle_deinit(YF_particle part)
+void yf_particle_deinit(yf_particle_t *part)
 {
     if (part != NULL)
         yf_node_deinit(part->node);

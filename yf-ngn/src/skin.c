@@ -18,19 +18,19 @@
 
 #include "yf-skin.h"
 
-struct YF_skin_o {
-    YF_joint *jnts;
+struct yf_skin {
+    yf_joint_t *jnts;
     unsigned jnt_n;
-    YF_list skels;
+    yf_list_t *skels;
 };
 
-struct YF_skeleton_o {
-    YF_node *nodes;
+struct yf_skeleton {
+    yf_node_t **nodes;
     unsigned node_n;
     int managed;
 };
 
-YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n)
+yf_skin_t *yf_skin_init(const yf_joint_t *jnts, unsigned jnt_n)
 {
     if (jnts == NULL || jnt_n == 0) {
         yf_seterr(YF_ERR_INVARG, __func__);
@@ -45,7 +45,7 @@ YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n)
         }
     }
 
-    YF_skin skin = malloc(sizeof(struct YF_skin_o));
+    yf_skin_t *skin = malloc(sizeof(yf_skin_t));
     if (skin == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -70,7 +70,7 @@ YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n)
     return skin;
 }
 
-const YF_joint *yf_skin_getjnts(YF_skin skin, unsigned *jnt_n)
+const yf_joint_t *yf_skin_getjnts(yf_skin_t *skin, unsigned *jnt_n)
 {
     assert(skin != NULL);
     assert(jnt_n != NULL);
@@ -79,30 +79,30 @@ const YF_joint *yf_skin_getjnts(YF_skin skin, unsigned *jnt_n)
     return skin->jnts;
 }
 
-void yf_skin_each(YF_skin skin, int (*callb)(YF_skeleton skel, void *arg),
+void yf_skin_each(yf_skin_t *skin, int (*callb)(yf_skeleton_t *skel, void *arg),
                   void *arg)
 {
     assert(skin != NULL);
     assert(callb != NULL);
 
-    YF_iter it = YF_NILIT;
-    YF_skeleton skel;
+    yf_iter_t it = YF_NILIT;
+    yf_skeleton_t *skel;
     while ((skel = yf_list_next(skin->skels, &it)) != NULL &&
            callb(skel, arg) == 0)
         ;
 }
 
-YF_skeleton yf_skin_newest(YF_skin skin)
+yf_skeleton_t *yf_skin_newest(yf_skin_t *skin)
 {
     assert(skin != NULL);
     return yf_list_next(skin->skels, NULL);
 }
 
-YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes)
+yf_skeleton_t *yf_skin_makeskel(yf_skin_t *skin, yf_node_t *const *nodes)
 {
     assert(skin != NULL);
 
-    YF_skeleton skel = malloc(sizeof(struct YF_skeleton_o));
+    yf_skeleton_t *skel = malloc(sizeof(yf_skeleton_t));
     if (skel == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -131,8 +131,8 @@ YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes)
         }
 
         for (unsigned i = 0; i < skin->jnt_n; i++) {
-            YF_node node = skel->nodes[i];
-            YF_joint *jnt = skin->jnts+i;
+            yf_node_t *node = skel->nodes[i];
+            yf_joint_t *jnt = skin->jnts+i;
 
             yf_mat4_copy(*yf_node_getxform(node), jnt->xform);
 
@@ -163,7 +163,7 @@ YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes)
     return skel;
 }
 
-YF_node yf_skin_getnode(YF_skin skin, YF_skeleton skel)
+yf_node_t *yf_skin_getnode(yf_skin_t *skin, yf_skeleton_t *skel)
 {
     assert(skin != NULL);
     assert(skel != NULL);
@@ -171,7 +171,8 @@ YF_node yf_skin_getnode(YF_skin skin, YF_skeleton skel)
     return skel->nodes[skin->jnt_n];
 }
 
-YF_node yf_skin_getjntnode(YF_skin skin, YF_skeleton skel, unsigned index)
+yf_node_t *yf_skin_getjntnode(yf_skin_t *skin, yf_skeleton_t *skel,
+                              unsigned index)
 {
     assert(skin != NULL);
     assert(skel != NULL);
@@ -180,7 +181,7 @@ YF_node yf_skin_getjntnode(YF_skin skin, YF_skeleton skel, unsigned index)
     return skel->nodes[index];
 }
 
-void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel)
+void yf_skin_unmkskel(yf_skin_t *skin, yf_skeleton_t *skel)
 {
     assert(skin != NULL);
 
@@ -198,12 +199,12 @@ void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel)
     free(skel);
 }
 
-void yf_skin_deinit(YF_skin skin)
+void yf_skin_deinit(yf_skin_t *skin)
 {
     if (skin == NULL)
         return;
 
-    YF_skeleton skel;
+    yf_skeleton_t *skel;
     while ((skel = yf_list_removeat(skin->skels, NULL)) != NULL)
         yf_skin_unmkskel(skin, skel);
 
@@ -218,7 +219,7 @@ void yf_skin_deinit(YF_skin skin)
 
 #ifdef YF_DEVEL
 
-void yf_print_skin(YF_skin skin)
+void yf_print_skin(yf_skin_t *skin)
 {
     assert(skin != NULL);
 
@@ -228,7 +229,7 @@ void yf_print_skin(YF_skin skin)
            __func__, skin->jnt_n);
 
     for (unsigned i = 0; i < skin->jnt_n; i++) {
-        const YF_joint *jnt = skin->jnts+i;
+        const yf_joint_t *jnt = skin->jnts+i;
         printf("  joint [%u]:\n"
                "   transform:\n"
                "    %.4f  %.4f  %.4f  %.4f\n"
@@ -258,8 +259,8 @@ void yf_print_skin(YF_skin skin)
     if (skel_n != 0) {
         printf("  skeletons (%zu):\n", skel_n);
 
-        YF_iter it = YF_NILIT;
-        YF_skeleton skel;
+        yf_iter_t it = YF_NILIT;
+        yf_skeleton_t *skel;
         while ((skel = yf_list_next(skin->skels, &it)) != NULL) {
             printf("   skeleton <%p>:\n"
                    "    managed: %s\n"

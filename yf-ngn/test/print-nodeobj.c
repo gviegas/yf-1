@@ -15,7 +15,7 @@
 #include "yf-label.h"
 #include "yf-light.h"
 
-void yf_print_nodeobj(YF_node node)
+void yf_print_nodeobj(yf_node_t *node)
 {
     printf("\n[YF] OUTPUT (%s):\n", __func__);
 
@@ -26,8 +26,8 @@ void yf_print_nodeobj(YF_node node)
         break;
 
     case YF_NODEOBJ_MODEL: {
-        YF_skeleton skel = NULL;
-        YF_skin skin = yf_model_getskin(obj, &skel);
+        yf_skeleton_t *skel = NULL;
+        yf_skin_t *skin = yf_model_getskin(obj, &skel);
         printf(" NODEOBJ_MODEL <%p>:\n"
                "  mesh: <%p>\n"
                "  skin: <%p>\n"
@@ -45,7 +45,7 @@ void yf_print_nodeobj(YF_node node)
     } break;
 
     case YF_NODEOBJ_PARTICLE: {
-        YF_psys *sys = yf_particle_getsys(obj);
+        yf_psys_t *sys = yf_particle_getsys(obj);
         printf(" NODEOBJ_PARTICLE <%p>:\n"
                "  mesh: <%p>\n"
                "  tex: <%p>\n",
@@ -93,7 +93,7 @@ void yf_print_nodeobj(YF_node node)
         yf_label_getstr(obj, NULL, &n);
         wchar_t str[n];
         yf_label_getstr(obj, str, &n);
-        YF_dim2 dim = yf_label_getdim(obj);
+        yf_dim2_t dim = yf_label_getdim(obj);
         printf(" NODEOBJ_LABEL <%p>:\n"
                "  mesh: <%p>\n"
                "  tex: <%p>\n"
@@ -108,7 +108,7 @@ void yf_print_nodeobj(YF_node node)
 
     case YF_NODEOBJ_LIGHT: {
         int lightt;
-        YF_vec3 color;
+        yf_vec3_t color;
         float intensity, range, inner_angle, outer_angle;
         yf_light_getval(obj, &lightt, color, &intensity, &range,
                         &inner_angle, &outer_angle);

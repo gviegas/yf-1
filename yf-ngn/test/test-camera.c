@@ -14,8 +14,8 @@
 /* Tests camera. */
 int yf_test_camera(void)
 {
-    YF_vec3 orig = {2.0f, 10.0f, -5.0f};
-    YF_vec3 tgt = {0};
+    yf_vec3_t orig = {2.0f, 10.0f, -5.0f};
+    yf_vec3_t tgt = {0};
     float asp = 1024.0f / 768.0f;
 
     char s[256] = {0};
@@ -23,7 +23,7 @@ int yf_test_camera(void)
     snprintf(s, sizeof s, "[%.1f, %.1f, %.1f], [%.1f, %.1f, %.1f], %.3f",
              orig[0], orig[1], orig[2], tgt[0], tgt[1], tgt[2], asp);
     YF_TEST_PRINT("init", s, "cam");
-    YF_camera cam = yf_camera_init(orig, tgt, asp);
+    yf_camera_t *cam = yf_camera_init(orig, tgt, asp);
     if (cam == NULL)
         return -1;
 

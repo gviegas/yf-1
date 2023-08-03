@@ -18,17 +18,17 @@
 #define YF_WINH 480
 #define YF_WINT "Terrain"
 #define YF_FPS  60
-#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
-#define YF_POINT (YF_vec3){0}
+#define YF_PLACE (yf_vec3_t){20.0f, 20.0f, 20.0f}
+#define YF_POINT (yf_vec3_t){0}
 
 /* Shared variables. */
-struct T_vars {
-    YF_window win;
-    YF_view view;
-    YF_scene scn;
-    YF_terrain terr;
-    YF_texture hmap;
-    YF_texture tex;
+struct vars {
+    yf_window_t *win;
+    yf_view_t *view;
+    yf_scene_t *scn;
+    yf_terrain_t *terr;
+    yf_texture_t *hmap;
+    yf_texture_t *tex;
 
     struct {
         int quit;
@@ -38,7 +38,7 @@ struct T_vars {
         int turn[4];
     } input;
 };
-static struct T_vars vars_ = {0};
+static struct vars vars_ = {0};
 
 /* Handles key events. */
 static void on_key(int key, int state,
@@ -92,7 +92,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
     if (vars_.input.quit)
         return -1;
 
-    YF_camera cam = yf_scene_getcam(vars_.scn);
+    yf_camera_t *cam = yf_scene_getcam(vars_.scn);
     const float md = 16.0 * elapsed_time;
     const float td = 2.0 * elapsed_time;
 
@@ -127,7 +127,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
 /* Tests terrain. */
 int yf_test_terrain(void)
 {
-    YF_evtfn evtfn = {.key_kb = on_key};
+    yf_evtfn_t evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
     vars_.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
@@ -151,7 +151,7 @@ int yf_test_terrain(void)
         return -1;
 
     YF_TEST_PRINT("getnode", "terr", "");
-    YF_node node = yf_terrain_getnode(vars_.terr);
+    yf_node_t *node = yf_terrain_getnode(vars_.terr);
     if (node == NULL)
         return -1;
 
@@ -185,9 +185,9 @@ int yf_test_terrain(void)
 
     yf_node_insert(yf_scene_getnode(vars_.scn), node);
 
-    YF_camera cam = yf_scene_getcam(vars_.scn);
-    const YF_vec3 pos = {-2.0f, 20.0f, 10.0f};
-    const YF_vec3 tgt = {0};
+    yf_camera_t *cam = yf_scene_getcam(vars_.scn);
+    const yf_vec3_t pos = {-2.0f, 20.0f, 10.0f};
+    const yf_vec3_t tgt = {0};
     yf_camera_place(cam, pos);
     yf_camera_point(cam, tgt);
 

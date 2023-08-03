@@ -15,7 +15,7 @@
 
 #define YF_LIGHTVAL(light, type) do { \
     int tp; \
-    YF_vec3 clr; \
+    yf_vec3_t clr; \
     float intens, rng, inner, outer; \
     YF_TEST_PRINT("getval", #light", <non-nil>", ""); \
     yf_light_getval(light, &tp, clr, &intens, &rng, &inner, &outer); \
@@ -35,11 +35,11 @@
 /* Tests light. */
 int yf_test_light(void)
 {
-    YF_node node = NULL;
+    yf_node_t *node = NULL;
     void *obj = NULL;
     char s[256] = {0};
 
-    YF_vec3 color = {1.0f, 1.0f, 1.0f};
+    yf_vec3_t color = {1.0f, 1.0f, 1.0f};
     float intensity = 1.0f;
     float range = 1.0f;
     float inner_angle = 0.0f;
@@ -51,8 +51,8 @@ int yf_test_light(void)
              range, inner_angle, outer_angle);
 
     YF_TEST_PRINT("init", s, "light");
-    YF_light light = yf_light_init(YF_LIGHTT_POINT, color, intensity,
-                                   range, inner_angle, outer_angle);
+    yf_light_t *light = yf_light_init(YF_LIGHTT_POINT, color, intensity,
+                                      range, inner_angle, outer_angle);
     if (light == NULL)
         return -1;
 
@@ -76,8 +76,7 @@ int yf_test_light(void)
     YF_TEST_PRINT("init", s, "(nil)");
     yf_seterr(YF_ERR_UNKNOWN, NULL);
     if (yf_light_init(YF_LIGHTT_POINT, color, intensity, range, inner_angle,
-                      outer_angle) != NULL ||
-        yf_geterr() != YF_ERR_INVARG)
+                      outer_angle) != NULL || yf_geterr() != YF_ERR_INVARG)
         return -1;
     yf_printerr();
 
@@ -92,8 +91,7 @@ int yf_test_light(void)
     YF_TEST_PRINT("init", s, "(nil)");
     yf_seterr(YF_ERR_UNKNOWN, NULL);
     if (yf_light_init(YF_LIGHTT_SPOT, color, intensity, range, inner_angle,
-                      outer_angle) != NULL ||
-        yf_geterr() != YF_ERR_INVARG)
+                      outer_angle) != NULL || yf_geterr() != YF_ERR_INVARG)
         return -1;
     yf_printerr();
 
@@ -105,8 +103,8 @@ int yf_test_light(void)
              range, inner_angle, outer_angle);
 
     YF_TEST_PRINT("init", s, "light2");
-    YF_light light2 = yf_light_init(YF_LIGHTT_SPOT, color, intensity,
-                                    range, inner_angle, outer_angle);
+    yf_light_t *light2 = yf_light_init(YF_LIGHTT_SPOT, color, intensity,
+                                       range, inner_angle, outer_angle);
     if (light2 == NULL)
         return -1;
 
@@ -130,8 +128,8 @@ int yf_test_light(void)
              range, inner_angle, outer_angle);
 
     YF_TEST_PRINT("init", s, "light3");
-    YF_light light3 = yf_light_init(YF_LIGHTT_DIRECT, color, intensity,
-                                    range, inner_angle, outer_angle);
+    yf_light_t *light3 = yf_light_init(YF_LIGHTT_DIRECT, color, intensity,
+                                       range, inner_angle, outer_angle);
     if (light3 == NULL)
         return -1;
 

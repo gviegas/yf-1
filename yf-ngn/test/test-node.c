@@ -2,7 +2,7 @@
  * YF
  * test-node.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -11,7 +11,7 @@
 #include "yf-node.h"
 
 /* Iteration callback for 'node_traverse()'. */
-static int do_each_node(YF_node node, void *arg)
+static int do_each_node(yf_node_t *node, void *arg)
 {
     char name[16];
     size_t n = sizeof name;
@@ -24,9 +24,9 @@ static int do_each_node(YF_node node, void *arg)
 /* Tests node. */
 int yf_test_node(void)
 {
-    YF_node n1, n2, n3, n4, n5;
+    yf_node_t *n1, *n2, *n3, *n4, *n5;
     int chk[7];
-    YF_node pnt[5];
+    yf_node_t *pnt[5];
     size_t len[5];
     char s[256];
 

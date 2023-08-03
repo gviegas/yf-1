@@ -13,9 +13,9 @@
 #include "test.h"
 #include "yf-view.h"
 
-static YF_view view_ = NULL;
-static YF_window wins_[2] = {0};
-static YF_scene scns_[2] = {0};
+static yf_view_t *view_ = NULL;
+static yf_window_t *wins_[2] = {0};
+static yf_scene_t *scns_[2] = {0};
 
 static int update(double elapsed_time, void *arg)
 {

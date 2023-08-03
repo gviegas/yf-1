@@ -22,7 +22,7 @@ int yf_test_vector(void)
 {
     char s[256];
 
-    YF_vec4 a = {2.0f, 4.0f, 2.0f, 5.0f};
+    yf_vec4_t a = {2.0f, 4.0f, 2.0f, 5.0f};
     YF_PRINTVEC(a, 4);
 
     float dot = yf_vec4_dot(a, a);
@@ -36,7 +36,7 @@ int yf_test_vector(void)
     if (dot != 49.0f || len != 7.0f)
         return -1;
 
-    YF_vec4 b;
+    yf_vec4_t b;
     yf_vec4_norm(b, a);
     YF_TEST_PRINT("norm", "b, a", "");
     YF_PRINTVEC(b, 4);
@@ -45,9 +45,9 @@ int yf_test_vector(void)
         b[3] != a[3]/len)
         return -1;
 
-    YF_vec3 c = {1.0f, 0.0f, 0.0f};
-    YF_vec3 d = {0.0f, 1.0f, 0.0f};
-    YF_vec3 e;
+    yf_vec3_t c = {1.0f, 0.0f, 0.0f};
+    yf_vec3_t d = {0.0f, 1.0f, 0.0f};
+    yf_vec3_t e;
     yf_vec3_cross(e, d, c);
     YF_PRINTVEC(c, 3);
     YF_PRINTVEC(d, 3);
@@ -59,8 +59,8 @@ int yf_test_vector(void)
         e[0] != 0 || e[1] != 0 || e[2] != -1)
         return -1;
 
-    YF_vec2 f = {-1.0f, -100.2f};
-    YF_vec3 g = {-1.0f, -100.2f, 5.9987f};
+    yf_vec2_t f = {-1.0f, -100.2f};
+    yf_vec3_t g = {-1.0f, -100.2f, 5.9987f};
     int iseq = yf_vec2_iseq(f, g);
     YF_PRINTVEC(f, 2);
     YF_PRINTVEC(g, 3);

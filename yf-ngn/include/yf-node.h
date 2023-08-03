@@ -2,7 +2,7 @@
  * YF
  * yf-node.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_NODE_H
@@ -20,7 +20,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a scene node.
  */
-typedef struct YF_node_o *YF_node;
+typedef struct yf_node yf_node_t;
 
 /**
  * Types of objects that a node can represent.
@@ -40,7 +40,7 @@ typedef struct YF_node_o *YF_node;
  * @return: On success, returns a new node. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_node yf_node_init(void);
+yf_node_t *yf_node_init(void);
 
 /**
  * Inserts a node as child of another.
@@ -48,21 +48,21 @@ YF_node yf_node_init(void);
  * @param node: The node.
  * @param child: The node to insert.
  */
-void yf_node_insert(YF_node node, YF_node child);
+void yf_node_insert(yf_node_t *node, yf_node_t *child);
 
 /**
  * Removes a node from its parent.
  *
  * @param node: The node.
  */
-void yf_node_drop(YF_node node);
+void yf_node_drop(yf_node_t *node);
 
 /**
  * Removes all child nodes from a given node.
  *
  * @param node: The node.
  */
-void yf_node_prune(YF_node node);
+void yf_node_prune(yf_node_t *node);
 
 /**
  * Executes a given function for every descendant of a node.
@@ -84,7 +84,8 @@ void yf_node_prune(YF_node node);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_node_traverse(YF_node node, int (*callb)(YF_node descendant, void *arg),
+int yf_node_traverse(yf_node_t *node,
+                     int (*callb)(yf_node_t *descendant, void *arg),
                      void *arg);
 
 /**
@@ -95,7 +96,7 @@ int yf_node_traverse(YF_node node, int (*callb)(YF_node descendant, void *arg),
  * @return: If 'node' descends from 'ancestor', returns a non-zero value.
  *  Otherwise, zero is returned.
  */
-int yf_node_descends(YF_node node, YF_node ancestor);
+int yf_node_descends(yf_node_t *node, yf_node_t *ancestor);
 
 /**
  * Checks whether or not a given node has no descendants.
@@ -104,7 +105,7 @@ int yf_node_descends(YF_node node, YF_node ancestor);
  * @return: If 'node' is a leaf node, returns a non-zero value. Otherwise,
  *  zero is returned.
  */
-int yf_node_isleaf(YF_node node);
+int yf_node_isleaf(yf_node_t *node);
 
 /**
  * Checks whether or not a given node has no ancestors.
@@ -113,7 +114,7 @@ int yf_node_isleaf(YF_node node);
  * @return: If 'node' is a root node, returns a non-zero value. Otherwise,
  *  zero is returned.
  */
-int yf_node_isroot(YF_node node);
+int yf_node_isroot(yf_node_t *node);
 
 /**
  * Gets the immediate ancestor of a node.
@@ -121,7 +122,7 @@ int yf_node_isroot(YF_node node);
  * @param node: The node.
  * @return: The parent of 'node', or 'NULL' if 'node' is a root node.
  */
-YF_node yf_node_getparent(YF_node node);
+yf_node_t *yf_node_getparent(yf_node_t *node);
 
 /**
  * Gets the length of a node's subgraph.
@@ -129,7 +130,7 @@ YF_node yf_node_getparent(YF_node node);
  * @param node: The node.
  * @return: The length of the subgraph. This value will be at least one.
  */
-size_t yf_node_getlen(YF_node node);
+size_t yf_node_getlen(yf_node_t *node);
 
 /**
  * Gets the transformation matrix of a node.
@@ -137,7 +138,7 @@ size_t yf_node_getlen(YF_node node);
  * @param node: The node.
  * @return: The node's transformation matrix.
  */
-YF_mat4 *yf_node_getxform(YF_node node);
+yf_mat4_t *yf_node_getxform(yf_node_t *node);
 
 /**
  * Gets the translation vector of a node.
@@ -145,7 +146,7 @@ YF_mat4 *yf_node_getxform(YF_node node);
  * @param node: The node.
  * @return: The node's translation vector.
  */
-YF_vec3 *yf_node_gett(YF_node node);
+yf_vec3_t *yf_node_gett(yf_node_t *node);
 
 /**
  * Gets the quaternion rotation of a node.
@@ -153,7 +154,7 @@ YF_vec3 *yf_node_gett(YF_node node);
  * @param node: The node.
  * @return: The node's quaternion rotation.
  */
-YF_vec4 *yf_node_getr(YF_node node);
+yf_vec4_t *yf_node_getr(yf_node_t *node);
 
 /**
  * Gets the scale vector of a node.
@@ -161,7 +162,7 @@ YF_vec4 *yf_node_getr(YF_node node);
  * @param node: The node.
  * @return: The node's scale vector.
  */
-YF_vec3 *yf_node_gets(YF_node node);
+yf_vec3_t *yf_node_gets(yf_node_t *node);
 
 /**
  * Gets the name of a node.
@@ -175,7 +176,7 @@ YF_vec3 *yf_node_gets(YF_node node);
  *  terminating null byte) is less than or equal '*n', returns 'dst'.
  *  Otherwise, 'NULL' is returned and no copy is performed.
  */
-char *yf_node_getname(YF_node node, char *dst, size_t *n);
+char *yf_node_getname(yf_node_t *node, char *dst, size_t *n);
 
 /**
  * Sets the name for a node.
@@ -185,7 +186,7 @@ char *yf_node_getname(YF_node node, char *dst, size_t *n);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_node_setname(YF_node node, const char *name);
+int yf_node_setname(yf_node_t *node, const char *name);
 
 /**
  * Compares the name of a node with a given string.
@@ -195,7 +196,7 @@ int yf_node_setname(YF_node node, const char *name);
  * @return: A value greater than, equal to, or less than zero if the node's
  *  name is, respectively, greater than, equal to, or less than 'str'.
  */
-int yf_node_cmpname(YF_node node, const char *str);
+int yf_node_cmpname(yf_node_t *node, const char *str);
 
 /**
  * Gets the object that a given node represents.
@@ -204,14 +205,14 @@ int yf_node_cmpname(YF_node node, const char *str);
  * @param obj: The destination for the object. Can be 'NULL'.
  * @return: The 'YF_NODEOBJ' value indicating the object type.
  */
-int yf_node_getobj(YF_node node, void **obj);
+int yf_node_getobj(yf_node_t *node, void **obj);
 
 /**
  * Deinitializes a node.
  *
  * @param node: The node to deinitialize. Can be 'NULL'.
  */
-void yf_node_deinit(YF_node node);
+void yf_node_deinit(yf_node_t *node);
 
 YF_DECLS_END
 

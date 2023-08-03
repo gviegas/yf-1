@@ -1,8 +1,8 @@
 /*
  * YF
- * animation.c
+ * kfanim.c
  *
- * Copyright © 2021 Gustavo C. Viegas.
+ * Copyright © 2023 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -18,25 +18,25 @@
 #include "yf/com/yf-util.h"
 #include "yf/com/yf-error.h"
 
-#include "yf-animation.h"
+#include "yf-kfanim.h"
 
-struct YF_animation_o {
-    YF_kfinput *inputs;
+struct yf_kfanim {
+    yf_kfin_t *inputs;
     unsigned input_n;
-    YF_kfoutput *outputs;
+    yf_kfout_t *outputs;
     unsigned output_n;
-    YF_kfaction *actions;
-    unsigned action_n;
+    yf_kfact_t *acts;
+    unsigned act_n;
 
     /* targets can be set (or unset) at any time */
-    YF_node *targets;
+    yf_node_t **targets;
 
     /* considering every timeline of every input */
     float duration;
 };
 
 /* Gets a pair of timeline indices defining keyframes for interpolation. */
-static void get_keyframes(const YF_kfinput *input, float frame_tm,
+static void get_keyframes(const yf_kfin_t *input, float frame_tm,
                           unsigned *i1, unsigned *i2)
 {
     const float *timeline = input->timeline;
@@ -78,7 +78,7 @@ static void get_keyframes(const YF_kfinput *input, float frame_tm,
 }
 
 /* Linear interpolation on 3-component vectors. */
-static void lerp3(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b, float t)
+static void lerp3(yf_vec3_t dst, const yf_vec3_t a, const yf_vec3_t b, float t)
 {
     dst[0] = (1.0f - t) * a[0] + t * b[0];
     dst[1] = (1.0f - t) * a[1] + t * b[1];
@@ -86,7 +86,7 @@ static void lerp3(YF_vec3 dst, const YF_vec3 a, const YF_vec3 b, float t)
 }
 
 /* Spherical linear interpolation on quaternions. */
-static void slerpq(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b, float t)
+static void slerpq(yf_vec4_t dst, const yf_vec4_t a, const yf_vec4_t b, float t)
 {
     float d = yf_vec3_dot(a, b);
     if (d > 1.0f - FLT_EPSILON) {
@@ -112,22 +112,22 @@ static void slerpq(YF_vec4 dst, const YF_vec4 a, const YF_vec4 b, float t)
     dst[3] = (a[3] * s1 + b[3] * s2 * k) / s;
 }
 
-YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
-                               const YF_kfoutput *outputs, unsigned output_n,
-                               const YF_kfaction *actions, unsigned action_n)
+yf_kfanim_t *yf_kfanim_init(const yf_kfin_t *inputs, unsigned input_n,
+                            const yf_kfout_t *outputs, unsigned output_n,
+                            const yf_kfact_t *acts, unsigned act_n)
 {
     assert(inputs != NULL && input_n > 0);
     assert(outputs != NULL && output_n > 0);
-    assert(actions != NULL && action_n > 0);
+    assert(acts != NULL && act_n > 0);
 
-    /* TODO: Ensure that all 'inputs'/'outputs' are referenced by 'actions'. */
+    /* TODO: Ensure that all 'inputs'/'outputs' are referenced by 'acts'. */
 
-    YF_animation anim = calloc(1, sizeof(struct YF_animation_o));
+    yf_kfanim_t *anim = calloc(1, sizeof(yf_kfanim_t));
     if (anim == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
     }
-    anim->targets = calloc(action_n, sizeof(YF_node));
+    anim->targets = calloc(act_n, sizeof(yf_node_t *));
     if (anim->targets == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         free(anim);
@@ -138,7 +138,7 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
     anim->inputs = calloc(input_n, sizeof *inputs);
     if (anim->inputs == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        yf_animation_deinit(anim);
+        yf_kfanim_deinit(anim);
         return NULL;
     }
     anim->input_n = input_n;
@@ -153,7 +153,7 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
         anim->inputs[i].timeline = malloc(sz);
         if (anim->inputs[i].timeline == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
-            yf_animation_deinit(anim);
+            yf_kfanim_deinit(anim);
             return NULL;
         }
         memcpy(anim->inputs[i].timeline, inputs[i].timeline, sz);
@@ -165,7 +165,7 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
 
     if (tm_min < 0.0f || tm_min > tm_max) {
         yf_seterr(YF_ERR_INVARG, __func__);
-        yf_animation_deinit(anim);
+        yf_kfanim_deinit(anim);
         return NULL;
     }
     anim->duration = tm_max - tm_min;
@@ -174,7 +174,7 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
     anim->outputs = calloc(output_n, sizeof *outputs);
     if (anim->outputs == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        yf_animation_deinit(anim);
+        yf_kfanim_deinit(anim);
         return NULL;
     }
     anim->output_n = output_n;
@@ -189,7 +189,7 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
             anim->outputs[i].t = malloc(sz);
             if (anim->outputs[i].t == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
-                yf_animation_deinit(anim);
+                yf_kfanim_deinit(anim);
                 return NULL;
             }
             memcpy(anim->outputs[i].t, outputs[i].t, sz);
@@ -200,7 +200,7 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
             anim->outputs[i].r = malloc(sz);
             if (anim->outputs[i].r == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
-                yf_animation_deinit(anim);
+                yf_kfanim_deinit(anim);
                 return NULL;
             }
             memcpy(anim->outputs[i].r, outputs[i].r, sz);
@@ -211,7 +211,7 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
             anim->outputs[i].s = malloc(sz);
             if (anim->outputs[i].s == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
-                yf_animation_deinit(anim);
+                yf_kfanim_deinit(anim);
                 return NULL;
             }
             memcpy(anim->outputs[i].s, outputs[i].s, sz);
@@ -220,7 +220,7 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
         default:
             assert(0);
             yf_seterr(YF_ERR_INVARG, __func__);
-            yf_animation_deinit(anim);
+            yf_kfanim_deinit(anim);
             return NULL;
         }
 
@@ -228,42 +228,42 @@ YF_animation yf_animation_init(const YF_kfinput *inputs, unsigned input_n,
         anim->outputs[i].n = outputs[i].n;
     }
 
-    /* actions */
-    anim->actions = malloc(action_n * sizeof *actions);
-    if (anim->actions == NULL) {
+    /* acts */
+    anim->acts = malloc(act_n * sizeof *acts);
+    if (anim->acts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
-        yf_animation_deinit(anim);
+        yf_kfanim_deinit(anim);
         return NULL;
     }
-    memcpy(anim->actions, actions, action_n * sizeof *actions);
-    anim->action_n = action_n;
+    memcpy(anim->acts, acts, act_n * sizeof *acts);
+    anim->act_n = act_n;
 
     return anim;
 }
 
-YF_node yf_animation_gettarget(YF_animation anim, unsigned action)
+yf_node_t *yf_kfanim_gettarget(yf_kfanim_t *anim, unsigned act)
 {
     assert(anim != NULL);
 
-    if (action < anim->action_n)
-        return anim->targets[action];
+    if (act < anim->act_n)
+        return anim->targets[act];
     yf_seterr(YF_ERR_INVARG, __func__);
     return NULL;
 }
 
-int yf_animation_settarget(YF_animation anim, unsigned action, YF_node target)
+int yf_kfanim_settarget(yf_kfanim_t *anim, unsigned act, yf_node_t *target)
 {
     assert(anim != NULL);
 
-    if (action < anim->action_n) {
-        anim->targets[action] = target;
+    if (act < anim->act_n) {
+        anim->targets[act] = target;
         return 0;
     }
     yf_seterr(YF_ERR_INVARG, __func__);
     return -1;
 }
 
-const YF_kfinput *yf_animation_getins(YF_animation anim, unsigned *n)
+const yf_kfin_t *yf_kfanim_getins(yf_kfanim_t *anim, unsigned *n)
 {
     assert(anim != NULL);
     assert(n != NULL);
@@ -272,7 +272,7 @@ const YF_kfinput *yf_animation_getins(YF_animation anim, unsigned *n)
     return anim->inputs;
 }
 
-const YF_kfoutput *yf_animation_getouts(YF_animation anim, unsigned *n)
+const yf_kfout_t *yf_kfanim_getouts(yf_kfanim_t *anim, unsigned *n)
 {
     assert(anim != NULL);
     assert(n != NULL);
@@ -281,27 +281,27 @@ const YF_kfoutput *yf_animation_getouts(YF_animation anim, unsigned *n)
     return anim->outputs;
 }
 
-const YF_kfaction *yf_animation_getacts(YF_animation anim, unsigned *n)
+const yf_kfact_t *yf_kfanim_getacts(yf_kfanim_t *anim, unsigned *n)
 {
     assert(anim != NULL);
     assert(n != NULL);
 
-    *n = anim->action_n;
-    return anim->actions;
+    *n = anim->act_n;
+    return anim->acts;
 }
 
-float yf_animation_apply(YF_animation anim, float frame_tm)
+float yf_kfanim_apply(yf_kfanim_t *anim, float frame_tm)
 {
     assert(anim != NULL);
 
-    for (unsigned i = 0; i < anim->action_n; i++) {
-        YF_node node = anim->targets[i];
+    for (unsigned i = 0; i < anim->act_n; i++) {
+        yf_node_t *node = anim->targets[i];
         if (node == NULL)
             continue;
 
-        const YF_kfaction *act = &anim->actions[i];
-        const YF_kfinput *in = &anim->inputs[act->in_i];
-        const YF_kfoutput *out = &anim->outputs[act->out_i];
+        const yf_kfact_t *act = &anim->acts[i];
+        const yf_kfin_t *in = &anim->inputs[act->in_i];
+        const yf_kfout_t *out = &anim->outputs[act->out_i];
 
         unsigned i1, i2;
         get_keyframes(in, frame_tm, &i1, &i2);
@@ -382,7 +382,7 @@ float yf_animation_apply(YF_animation anim, float frame_tm)
     return anim->duration - frame_tm;
 }
 
-void yf_animation_deinit(YF_animation anim)
+void yf_kfanim_deinit(yf_kfanim_t *anim)
 {
     if (anim == NULL)
         return;
@@ -412,7 +412,7 @@ void yf_animation_deinit(YF_animation anim)
         free(anim->outputs);
     }
 
-    free(anim->actions);
+    free(anim->acts);
     free(anim->targets);
     free(anim);
 }
@@ -423,15 +423,15 @@ void yf_animation_deinit(YF_animation anim)
 
 #ifdef YF_DEVEL
 
-void yf_print_anim(YF_animation anim)
+void yf_print_anim(yf_kfanim_t *anim)
 {
     assert(anim != NULL);
 
     printf("\n[YF] OUTPUT (%s):\n", __func__);
 
-    const YF_kfinput *ins = anim->inputs;
-    const YF_kfoutput *outs = anim->outputs;
-    const YF_kfaction *acts = anim->actions;
+    const yf_kfin_t *ins = anim->inputs;
+    const yf_kfout_t *outs = anim->outputs;
+    const yf_kfact_t *acts = anim->acts;
 
     printf(" Keyframe animation:\n"
            "  duration: %.6f\n"
@@ -479,8 +479,8 @@ void yf_print_anim(YF_animation anim)
         }
     }
 
-    printf("  actions (%u):\n", anim->action_n);
-    for (unsigned i = 0; i < anim->action_n; i++) {
+    printf("  acts (%u):\n", anim->act_n);
+    for (unsigned i = 0; i < anim->act_n; i++) {
         char *erp = "";
         switch (acts[i].kferp) {
         case YF_KFERP_STEP:
@@ -493,13 +493,13 @@ void yf_print_anim(YF_animation anim)
             assert(0);
         }
 
-        printf("   action [%u]:\n"
+        printf("   act [%u]:\n"
                "    interpolation method: %s\n"
                "    input index: %u\n"
                "    output index: %u\n",
                i, erp, acts[i].in_i, acts[i].out_i);
 
-        YF_node node = anim->targets[i];
+        yf_node_t *node = anim->targets[i];
         if (node != NULL) {
             size_t len;
             yf_node_getname(node, NULL, &len);
@@ -507,7 +507,7 @@ void yf_print_anim(YF_animation anim)
             yf_node_getname(node, name, &len);
             printf("    target node: '%s' <%p>\n", name, (void *)node);
         } else {
-            printf("    (no target set for this action)\n");
+            printf("    (no target set for this act)\n");
         }
     }
 

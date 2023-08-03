@@ -61,13 +61,13 @@
 int yf_test_material(void)
 {
     YF_TEST_PRINT("init", "NULL", "matl");
-    YF_material matl = yf_material_init(NULL);
+    yf_material_t *matl = yf_material_init(NULL);
     if (matl == NULL)
         return -1;
 
     yf_print_matl(matl);
 
-    YF_matlprop prop_sg = {
+    yf_matlprop_t prop_sg = {
         .pbr = YF_PBR_SPECGLOSS,
         .pbrsg = {
             .diffuse_tex = {0},
@@ -92,13 +92,13 @@ int yf_test_material(void)
     };
 
     YF_TEST_PRINT("init", "&prop_sg", "matl2");
-    YF_material matl2 = yf_material_init(&prop_sg);
+    yf_material_t *matl2 = yf_material_init(&prop_sg);
     if (matl2 == NULL)
         return -1;
 
     yf_print_matl(matl2);
 
-    YF_matlprop prop_mr = {
+    yf_matlprop_t prop_mr = {
         .pbr = YF_PBR_METALROUGH,
         .pbrmr = {
             .color_tex = {0},
@@ -123,13 +123,13 @@ int yf_test_material(void)
     };
 
     YF_TEST_PRINT("init", "&prop_mr", "matl3");
-    YF_material matl3 = yf_material_init(&prop_mr);
+    yf_material_t *matl3 = yf_material_init(&prop_mr);
     if (matl3 == NULL)
         return -1;
 
     yf_print_matl(matl3);
 
-    YF_matlprop prop_ul = {
+    yf_matlprop_t prop_ul = {
         .pbr = YF_PBR_NONE,
         .nopbr = {
             .color_tex = {0},
@@ -142,13 +142,13 @@ int yf_test_material(void)
     };
 
     YF_TEST_PRINT("init", "&prop_ul", "matl4");
-    YF_material matl4 = yf_material_init(&prop_ul);
+    yf_material_t *matl4 = yf_material_init(&prop_ul);
     if (matl4 == NULL)
         return -1;
 
     yf_print_matl(matl4);
 
-    const YF_matlprop *prop;
+    const yf_matlprop_t *prop;
 
     YF_TEST_PRINT("getprop", "matl", "");
     prop = yf_material_getprop(matl);

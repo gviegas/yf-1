@@ -2,7 +2,7 @@
  * YF
  * coreobj.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -18,10 +18,11 @@
 #include "error.h"
 
 /* Context instance. */
-static YF_context ctx_ = NULL;
+static yf_context_t *ctx_ = NULL;
 
 /* Pass instance (managed elsewhere). */
-extern YF_pass yf_g_pass;
+/* TODO: Remove. */
+extern yf_pass_t *yf_g_pass;
 
 /* Unsets shared variables (defined elsewhere). */
 void yf_unsetscn(void);
@@ -54,7 +55,7 @@ static _Noreturn void exit_fatal(const char *info)
     exit(EXIT_FAILURE);
 }
 
-YF_context yf_getctx(void)
+yf_context_t *yf_getctx(void)
 {
     static atomic_flag flag = ATOMIC_FLAG_INIT;
 
@@ -69,7 +70,7 @@ YF_context yf_getctx(void)
     return ctx_;
 }
 
-YF_pass yf_getpass(void)
+yf_pass_t *yf_getpass(void)
 {
     static atomic_flag flag = ATOMIC_FLAG_INIT;
 

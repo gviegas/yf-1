@@ -17,14 +17,14 @@
 #define YF_WDTMAX 1000
 #define YF_HGTMAX 1000
 
-struct T_font { uint16_t bpp; };
+struct font { uint16_t bpp; };
 
 static int create_glyph(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
-                        YF_glyph *glyph)
+                        yf_glyph_t *glyph)
 {
     assert(font != NULL);
 
-    struct T_font *fnt = font;
+    struct font *fnt = font;
     float scale = (float)(pt*dpi) / (1000.0f*72.0f);
     if (scale > 1.0f)
         scale = 1.0f;
@@ -115,19 +115,19 @@ static void deinit_font(void *font)
 /* Tests font. */
 int yf_test_font(void)
 {
-    YF_fontdt data = {
-        .font = &(struct T_font){8},
+    yf_fontdt_t data = {
+        .font = &(struct font){8},
         .glyph = create_glyph,
         .metrics = get_metrics,
         .deinit = deinit_font
     };
 
     YF_TEST_PRINT("init", "&data", "font");
-    YF_font font = yf_font_init(&data);
+    yf_font_t *font = yf_font_init(&data);
     if (font == NULL)
         return -1;
 
-    YF_fontrz rz = {0};
+    yf_fontrz_t rz = {0};
 
     YF_TEST_PRINT("rasterize", "font, L\"xy12\", 13, 72, &rz", "");
     if (yf_font_rasterize(font, L"xy12", 13, 72, &rz) != 0)
@@ -140,7 +140,7 @@ int yf_test_font(void)
     if (yf_font_rasterize(font, L"XY345", 16, 72, &rz) != 0)
         return -1;
 
-    ((struct T_font *)data.font)->bpp = 16;
+    ((struct font *)data.font)->bpp = 16;
 
     YF_TEST_PRINT("rasterize", "font, L\"cD6\", 12, 72, &rz", "");
     if (yf_font_rasterize(font, L"cD6", 12, 72, &rz) != 0)

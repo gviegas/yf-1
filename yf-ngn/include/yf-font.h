@@ -2,7 +2,7 @@
  * YF
  * yf-font.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_FONT_H
@@ -13,14 +13,14 @@
 
 #include "yf/com/yf-defs.h"
 
-#include "yf-collection.h"
+#include "yf-collec.h"
 
 YF_DECLS_BEGIN
 
 /**
  * Opaque type defining a font resource.
  */
-typedef struct YF_font_o *YF_font;
+typedef struct yf_font yf_font_t;
 
 /**
  * Loads a new font from file.
@@ -31,12 +31,12 @@ typedef struct YF_font_o *YF_font;
  * @return: On success, returns a new font. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_font yf_font_load(const char *pathname, size_t index, YF_collection coll);
+yf_font_t *yf_font_load(const char *pathname, size_t index, yf_collec_t *coll);
 
 /**
  * Type defining a font glyph.
  */
-typedef struct {
+typedef struct yf_glyph {
     uint16_t width;
     uint16_t height;
 
@@ -52,18 +52,18 @@ typedef struct {
     int16_t base_h;
     uint16_t adv_wdt;
     int16_t lsb;
-} YF_glyph;
+} yf_glyph_t;
 
 /**
  * Type defining font data.
  */
-typedef struct {
+typedef struct yf_fontdt {
     /* Font implementation. */
     void *font;
 
     /* Glyph generation. */
     int (*glyph)(void *font, wchar_t code, uint16_t pt, uint16_t dpi,
-                 YF_glyph *glyph);
+                 yf_glyph_t *glyph);
 
     /* General metrics, scaled to given 'pt' and 'dpi' values. */
     /* TODO: Other metrics besides bbox. */
@@ -73,7 +73,7 @@ typedef struct {
 
     /* Deinitialization. */
     void (*deinit)(void *font);
-} YF_fontdt;
+} yf_fontdt_t;
 
 /**
  * Initializes a new font.
@@ -82,14 +82,14 @@ typedef struct {
  * @return: On success, returns a new font. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_font yf_font_init(const YF_fontdt *data);
+yf_font_t *yf_font_init(const yf_fontdt_t *data);
 
 /**
  * Deinitializes a font.
  *
  * @param font: The font to deinitialize. Can be 'NULL'.
  */
-void yf_font_deinit(YF_font font);
+void yf_font_deinit(yf_font_t *font);
 
 YF_DECLS_END
 

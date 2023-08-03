@@ -1,12 +1,12 @@
 /*
  * YF
- * yf-collection.h
+ * yf-collec.h
  *
- * Copyright © 2021 Gustavo C. Viegas.
+ * Copyright © 2023 Gustavo C. Viegas.
  */
 
-#ifndef YF_YF_COLLECTION_H
-#define YF_YF_COLLECTION_H
+#ifndef YF_YF_COLLEC_H
+#define YF_YF_COLLEC_H
 
 #include "yf/com/yf-defs.h"
 
@@ -15,19 +15,19 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a collection of objects.
  */
-typedef struct YF_collection_o *YF_collection;
+typedef struct yf_collec yf_collec_t;
 
 /**
  * Item types indicating what can be stored in a collection.
  */
-#define YF_CITEM_SCENE     0
-#define YF_CITEM_NODE      1
-#define YF_CITEM_MESH      2
-#define YF_CITEM_SKIN      3
-#define YF_CITEM_MATERIAL  4
-#define YF_CITEM_TEXTURE   5
-#define YF_CITEM_ANIMATION 6
-#define YF_CITEM_FONT      7
+#define YF_CITEM_SCENE    0
+#define YF_CITEM_NODE     1
+#define YF_CITEM_MESH     2
+#define YF_CITEM_SKIN     3
+#define YF_CITEM_MATERIAL 4
+#define YF_CITEM_TEXTURE  5
+#define YF_CITEM_KFANIM   6
+#define YF_CITEM_FONT     7
 
 #define YF_CITEM_N 8
 
@@ -39,14 +39,14 @@ typedef struct YF_collection_o *YF_collection;
  * @return: On success, returns a new collection. Otherwise, 'NULL' is
  *  returned and the global error is set to indicate the cause.
  */
-YF_collection yf_collection_init(const char *pathname);
+yf_collec_t *yf_collec_init(const char *pathname);
 
 /**
  * Gets the default collection.
  *
  * @return: The default collection.
  */
-YF_collection yf_collection_get(void);
+yf_collec_t *yf_collec_get(void);
 
 /**
  * Loads a new item into a collection.
@@ -58,8 +58,8 @@ YF_collection yf_collection_get(void);
  * @return: On success, returns the new item. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-void *yf_collection_loaditem(YF_collection coll, int citem,
-                             const char *pathname, size_t index);
+void *yf_collec_loaditem(yf_collec_t *coll, int citem, const char *pathname,
+                         size_t index);
 
 /**
  * Gets an item stored in a collection.
@@ -70,7 +70,7 @@ void *yf_collection_loaditem(YF_collection coll, int citem,
  * @return: On success, returns the item. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-void *yf_collection_getitem(YF_collection coll, int citem, const char *name);
+void *yf_collec_getitem(yf_collec_t *coll, int citem, const char *name);
 
 /**
  * Manages an item using a collection.
@@ -82,8 +82,8 @@ void *yf_collection_getitem(YF_collection coll, int citem, const char *name);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_collection_manage(YF_collection coll, int citem, const char *name,
-                         void *item);
+int yf_collec_manage(yf_collec_t *coll, int citem, const char *name,
+                     void *item);
 
 /**
  * Releases an item from a collection.
@@ -94,7 +94,7 @@ int yf_collection_manage(YF_collection coll, int citem, const char *name,
  * @return: On success, returns the item. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-void *yf_collection_release(YF_collection coll, int citem, const char *name);
+void *yf_collec_release(yf_collec_t *coll, int citem, const char *name);
 
 /**
  * Checks whether or not a collection contains a given item.
@@ -105,7 +105,7 @@ void *yf_collection_release(YF_collection coll, int citem, const char *name);
  * @return: If 'coll' contains an item of type 'citem' named 'name', returns
  *  a non-zero value. Otherwise, zero is returned.
  */
-int yf_collection_contains(YF_collection coll, int citem, const char *name);
+int yf_collec_contains(yf_collec_t *coll, int citem, const char *name);
 
 /**
  * Executes a given function for each entry of a given item type.
@@ -121,9 +121,9 @@ int yf_collection_contains(YF_collection coll, int citem, const char *name);
  * @param callb: The callback to execute for each entry.
  * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
  */
-void yf_collection_each(YF_collection coll, int citem,
-                        int (*callb)(const char *name, void *item, void *arg),
-                        void *arg);
+void yf_collec_each(yf_collec_t *coll, int citem,
+                    int (*callb)(const char *name, void *item, void *arg),
+                    void *arg);
 
 /**
  * Deinitializes a collection.
@@ -134,8 +134,8 @@ void yf_collection_each(YF_collection coll, int citem,
  *
  * @param coll: The collection to deinitialize. Can be 'NULL'.
  */
-void yf_collection_deinit(YF_collection coll);
+void yf_collec_deinit(yf_collec_t *coll);
 
 YF_DECLS_END
 
-#endif /* YF_YF_COLLECTION_H */
+#endif /* YF_YF_COLLEC_H */

@@ -13,10 +13,10 @@
 #include "yf-light.h"
 #include "node.h"
 
-struct YF_light_o {
-    YF_node node;
+struct yf_light {
+    yf_node_t *node;
     int lightt;
-    YF_vec3 color;
+    yf_vec3_t color;
     float intensity;
     float range;
     float inner_angle;
@@ -29,8 +29,8 @@ static void deinit_light(void *light)
     free(light);
 }
 
-YF_light yf_light_init(int lightt, const YF_vec3 color, float intensity,
-                       float range, float inner_angle, float outer_angle)
+yf_light_t *yf_light_init(int lightt, const yf_vec3_t color, float intensity,
+                          float range, float inner_angle, float outer_angle)
 {
     switch (lightt) {
     case YF_LIGHTT_POINT:
@@ -54,7 +54,7 @@ YF_light yf_light_init(int lightt, const YF_vec3 color, float intensity,
         return NULL;
     }
 
-    YF_light light = malloc(sizeof(struct YF_light_o));
+    yf_light_t *light = malloc(sizeof(yf_light_t));
     if (light == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -77,13 +77,13 @@ YF_light yf_light_init(int lightt, const YF_vec3 color, float intensity,
     return light;
 }
 
-YF_node yf_light_getnode(YF_light light)
+yf_node_t *yf_light_getnode(yf_light_t *light)
 {
     assert(light != NULL);
     return light->node;
 }
 
-void yf_light_getval(YF_light light, int *lightt, YF_vec3 color,
+void yf_light_getval(yf_light_t *light, int *lightt, yf_vec3_t color,
                      float *intensity, float *range, float *inner_angle,
                      float *outer_angle)
 {
@@ -103,7 +103,7 @@ void yf_light_getval(YF_light light, int *lightt, YF_vec3 color,
         *outer_angle = light->outer_angle;
 }
 
-int yf_light_setpoint(YF_light light, const YF_vec3 color, float intensity,
+int yf_light_setpoint(yf_light_t *light, const yf_vec3_t color, float intensity,
                       float range)
 {
     assert(light != NULL);
@@ -121,7 +121,7 @@ int yf_light_setpoint(YF_light light, const YF_vec3 color, float intensity,
     return 0;
 }
 
-int yf_light_setspot(YF_light light, const YF_vec3 color, float intensity,
+int yf_light_setspot(yf_light_t *light, const yf_vec3_t color, float intensity,
                      float range, float inner_angle, float outer_angle)
 {
     assert(light != NULL);
@@ -144,7 +144,8 @@ int yf_light_setspot(YF_light light, const YF_vec3 color, float intensity,
     return 0;
 }
 
-int yf_light_setdirect(YF_light light, const YF_vec3 color, float intensity)
+int yf_light_setdirect(yf_light_t *light, const yf_vec3_t color,
+                       float intensity)
 {
     assert(light != NULL);
 
@@ -160,7 +161,7 @@ int yf_light_setdirect(YF_light light, const YF_vec3 color, float intensity)
     return 0;
 }
 
-void yf_light_deinit(YF_light light)
+void yf_light_deinit(yf_light_t *light)
 {
     if (light != NULL)
         yf_node_deinit(light->node);

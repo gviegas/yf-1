@@ -21,16 +21,16 @@
 #define YF_WINH 480
 #define YF_WINT "Particle"
 #define YF_FPS  60
-#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
-#define YF_POINT (YF_vec3){0}
+#define YF_PLACE (yf_vec3_t){20.0f, 20.0f, 20.0f}
+#define YF_POINT (yf_vec3_t){0}
 
 /* Shared variables. */
-struct T_vars {
-    YF_window win;
-    YF_view view;
-    YF_scene scn;
-    YF_particle part;
-    YF_texture tex;
+struct vars {
+    yf_window_t *win;
+    yf_view_t *view;
+    yf_scene_t *scn;
+    yf_particle_t *part;
+    yf_texture_t *tex;
 
     struct {
         int quit;
@@ -42,7 +42,7 @@ struct T_vars {
         int rgb[3];
     } input;
 };
-static struct T_vars vars_ = {0};
+static struct vars vars_ = {0};
 
 /* Handles key events. */
 static void on_key(int key, int state,
@@ -111,7 +111,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
     if (vars_.input.quit)
         return -1;
 
-    YF_camera cam = yf_scene_getcam(vars_.scn);
+    yf_camera_t *cam = yf_scene_getcam(vars_.scn);
     const float md = 16.0 * elapsed_time;;
     const float td = 2.0 * elapsed_time;
 
@@ -140,7 +140,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
     if (vars_.input.turn[3])
         yf_camera_turnr(cam, td);
 
-    YF_psys *sys = yf_particle_getsys(vars_.part);
+    yf_psys_t *sys = yf_particle_getsys(vars_.part);
     sys->lifetime.once = vars_.input.once;
     sys->color.max[0] = vars_.input.rgb[0] ? 0.0f : 1.0f;
     sys->color.max[1] = vars_.input.rgb[1] ? 0.0f : 1.0f;
@@ -159,7 +159,7 @@ int yf_test_particle(void)
 {
     srand(time(NULL));
 
-    YF_evtfn evtfn = {.key_kb = on_key};
+    yf_evtfn_t evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
     vars_.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
@@ -180,7 +180,7 @@ int yf_test_particle(void)
         return -1;
 
     YF_TEST_PRINT("getnode", "part", "");
-    YF_node node = yf_particle_getnode(vars_.part);
+    yf_node_t *node = yf_particle_getnode(vars_.part);
     if (node == NULL)
         return -1;
 
@@ -189,7 +189,7 @@ int yf_test_particle(void)
     yf_print_nodeobj(node);
 
     YF_TEST_PRINT("getsys", "part", "");
-    YF_psys *sys = yf_particle_getsys(vars_.part);
+    yf_psys_t *sys = yf_particle_getsys(vars_.part);
     if (sys == NULL)
         return -1;
     /* TODO: Setting 'emitter.norm' has no effect currently. */

@@ -2,7 +2,7 @@
  * YF
  * view.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -24,24 +24,24 @@
 #include "coreobj.h"
 #include "scene.h"
 
-struct YF_view_o {
-    YF_context ctx;
-    YF_wsi wsi;
-    YF_window win;
-    YF_image depth_img;
-    YF_pass pass;
-    YF_target *tgts;
+struct yf_view {
+    yf_context_t *ctx;
+    yf_wsi_t *wsi;
+    yf_window_t *win;
+    yf_image_t *depth_img;
+    yf_pass_t *pass;
+    yf_target_t **tgts;
     unsigned tgt_n;
-    YF_scene scn;
+    yf_scene_t *scn;
 };
 
 /* Global pass instance. */
-YF_pass yf_g_pass = NULL;
+yf_pass_t *yf_g_pass = NULL;
 
 /* Flag to disallow the creation of multiple views. */
 static atomic_flag flag_ = ATOMIC_FLAG_INIT;
 
-YF_view yf_view_init(YF_window win)
+yf_view_t *yf_view_init(yf_window_t *win)
 {
     assert(win != NULL);
 
@@ -50,7 +50,7 @@ YF_view yf_view_init(YF_window win)
         return NULL;
     }
 
-    YF_view view = calloc(1, sizeof(struct YF_view_o));
+    yf_view_t *view = calloc(1, sizeof(yf_view_t));
     if (view == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -68,7 +68,7 @@ YF_view yf_view_init(YF_window win)
     unsigned width, height;
     yf_window_getsize(view->win, &width, &height);
 
-    const YF_dim3 dim3 = {width, height, 1};
+    const yf_dim3_t dim3 = {width, height, 1};
     view->depth_img = yf_image_init(view->ctx, YF_PIXFMT_D16UNORM, dim3, 1,
                                     1, 1);
     if (view->depth_img == NULL) {
@@ -77,7 +77,7 @@ YF_view yf_view_init(YF_window win)
     }
 
     unsigned pres_img_n;
-    const YF_image *pres_imgs = yf_wsi_getimages(view->wsi, &pres_img_n);
+    yf_image_t *const *pres_imgs = yf_wsi_getimages(view->wsi, &pres_img_n);
     if (pres_imgs == NULL || pres_img_n == 0) {
         yf_view_deinit(view);
         return NULL;
@@ -88,14 +88,14 @@ YF_view yf_view_init(YF_window win)
         unsigned pres_spl;
         yf_image_getval(pres_imgs[0], &pres_fmt, NULL, NULL, NULL, &pres_spl);
 
-        const YF_colordsc clr_dsc = {
+        const yf_colordsc_t clr_dsc = {
             .pixfmt = pres_fmt,
             .samples = pres_spl,
             /* TODO */
             .loadop = YF_LOADOP_LOAD,
             .storeop = YF_STOREOP_STORE
         };
-        const YF_depthdsc dep_dsc = {
+        const yf_depthdsc_t dep_dsc = {
             .pixfmt = YF_PIXFMT_D16UNORM,
             .samples = 1,
             .depth_loadop = YF_LOADOP_UNDEF,
@@ -116,11 +116,11 @@ YF_view yf_view_init(YF_window win)
         view->pass = yf_g_pass;
     }
 
-    const YF_dim2 dim2 = {width, height};
-    const YF_attach dep_att = {view->depth_img, 0};
+    const yf_dim2_t dim2 = {width, height};
+    const yf_attach_t dep_att = {view->depth_img, 0};
 
-    YF_attach *clr_atts = malloc(pres_img_n * sizeof(YF_attach));
-    view->tgts = calloc(pres_img_n, sizeof(YF_target));
+    yf_attach_t *clr_atts = malloc(pres_img_n * sizeof(yf_attach_t));
+    view->tgts = calloc(pres_img_n, sizeof(yf_target_t *));
     if (clr_atts == NULL || view->tgts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         yf_view_deinit(view);
@@ -129,7 +129,7 @@ YF_view yf_view_init(YF_window win)
     }
 
     for (size_t i = 0; i < pres_img_n; i++) {
-        clr_atts[i] = (YF_attach){pres_imgs[i], 0};
+        clr_atts[i] = (yf_attach_t){pres_imgs[i], 0};
         view->tgts[i] = yf_pass_maketarget(view->pass, dim2, 1, clr_atts+i,
                                            NULL, &dep_att);
         if (view->tgts[i] == NULL) {
@@ -144,7 +144,8 @@ YF_view yf_view_init(YF_window win)
     return view;
 }
 
-int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
+/* TODO: Replace 'fps' arg with 'vsync' and fix the pacing. */
+int yf_view_loop(yf_view_t *view, yf_scene_t *scn, unsigned fps,
                  int (*update)(double elapsed_time, void *arg), void *arg)
 {
     assert(view != NULL);
@@ -178,18 +179,18 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
     return r;
 }
 
-YF_scene yf_view_swap(YF_view view, YF_scene scn)
+yf_scene_t *yf_view_swap(yf_view_t *view, yf_scene_t *scn)
 {
     assert(view != NULL);
     assert(scn != NULL);
     assert(view->scn != NULL);
 
-    YF_scene cur = view->scn;
+    yf_scene_t *cur = view->scn;
     view->scn = scn;
     return cur;
 }
 
-int yf_view_render(YF_view view, YF_scene scn)
+int yf_view_render(yf_view_t *view, yf_scene_t *scn)
 {
     assert(view != NULL);
     assert(scn != NULL);
@@ -206,7 +207,7 @@ int yf_view_render(YF_view view, YF_scene scn)
         }
     }
 
-    YF_dim2 dim;
+    yf_dim2_t dim;
     yf_window_getsize(view->win, &dim.width, &dim.height);
     if (yf_scene_render(scn, view->pass, view->tgts[next], dim) != 0)
         return -1;
@@ -224,7 +225,7 @@ int yf_view_render(YF_view view, YF_scene scn)
     return 0;
 }
 
-void yf_view_deinit(YF_view view)
+void yf_view_deinit(yf_view_t *view)
 {
     if (view == NULL)
         return;

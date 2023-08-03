@@ -2,7 +2,7 @@
  * YF
  * yf-view.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_VIEW_H
@@ -21,7 +21,7 @@ YF_DECLS_BEGIN
  * A view is responsible for issuing scene rendering requests and for
  * presenting the results on its associated window.
  */
-typedef struct YF_view_o *YF_view;
+typedef struct yf_view yf_view_t;
 
 /**
  * Initializes a new view.
@@ -33,7 +33,7 @@ typedef struct YF_view_o *YF_view;
  * @return: On success, returns a new view. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_view yf_view_init(YF_window win);
+yf_view_t *yf_view_init(yf_window_t *win);
 
 /**
  * Starts a view's rendering loop.
@@ -50,7 +50,8 @@ YF_view yf_view_init(YF_window win);
  * @return: On success, returns zero. Otherwise, 'NULL' is returned and the
  *  global error is set to indicate the cause.
  */
-int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
+/* TODO: Replace 'fps' arg with 'vsync' and fix the pacing. */
+int yf_view_loop(yf_view_t *view, yf_scene_t *scn, unsigned fps,
                  int (*update)(double elapsed_time, void *arg), void *arg);
 
 /**
@@ -62,7 +63,7 @@ int yf_view_loop(YF_view view, YF_scene scn, unsigned fps,
  * @param scn: The new scene to render.
  * @return: The old scene.
  */
-YF_scene yf_view_swap(YF_view view, YF_scene scn);
+yf_scene_t *yf_view_swap(yf_view_t *view, yf_scene_t *scn);
 
 /**
  * Renders a given scene in a view.
@@ -74,14 +75,14 @@ YF_scene yf_view_swap(YF_view view, YF_scene scn);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_view_render(YF_view view, YF_scene scn);
+int yf_view_render(yf_view_t *view, yf_scene_t *scn);
 
 /**
  * Deinitializes a view.
  *
  * @param view: The view to deinitialize. Can be 'NULL'.
  */
-void yf_view_deinit(YF_view view);
+void yf_view_deinit(yf_view_t *view);
 
 YF_DECLS_END
 

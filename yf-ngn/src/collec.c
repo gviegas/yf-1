@@ -1,8 +1,8 @@
 /*
  * YF
- * collection.c
+ * collec.c
  *
- * Copyright © 2021 Gustavo C. Viegas.
+ * Copyright © 2023 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -13,27 +13,28 @@
 #include "yf/com/yf-dict.h"
 #include "yf/com/yf-error.h"
 
-#include "yf-collection.h"
+#include "yf-collec.h"
 #include "yf-scene.h"
 #include "yf-node.h"
 #include "yf-mesh.h"
 #include "yf-skin.h"
 #include "yf-material.h"
 #include "yf-texture.h"
-#include "yf-animation.h"
+#include "yf-kfanim.h"
 #include "yf-font.h"
 #include "data-gltf.h"
 #include "data-png.h"
 #include "data-sfnt.h"
 
-struct YF_collection_o {
-    YF_dict items[YF_CITEM_N];
+struct yf_collec {
+    yf_dict_t *items[YF_CITEM_N];
     size_t n;
     unsigned ids[YF_CITEM_N];
 };
 
 /* Default collection. */
-static YF_collection coll_ = NULL;
+/* TODO: Maybe remove the default collection altogether. */
+static yf_collec_t *coll_ = NULL;
 
 /* Deinitializes a collection's item. */
 static int deinit_item(void *key, void *val, void *arg)
@@ -57,8 +58,8 @@ static int deinit_item(void *key, void *val, void *arg)
     case YF_CITEM_TEXTURE:
         yf_texture_deinit(val);
         break;
-    case YF_CITEM_ANIMATION:
-        yf_animation_deinit(val);
+    case YF_CITEM_KFANIM:
+        yf_kfanim_deinit(val);
         break;
     case YF_CITEM_FONT:
         yf_font_deinit(val);
@@ -72,9 +73,9 @@ static int deinit_item(void *key, void *val, void *arg)
     return 0;
 }
 
-YF_collection yf_collection_init(const char *pathname)
+yf_collec_t *yf_collec_init(const char *pathname)
 {
-    YF_collection coll = calloc(1, sizeof(struct YF_collection_o));
+    yf_collec_t *coll = calloc(1, sizeof(yf_collec_t));
     if (coll == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -83,15 +84,15 @@ YF_collection yf_collection_init(const char *pathname)
     for (size_t i = 0; i < YF_CITEM_N; i++) {
         coll->items[i] = yf_dict_init(yf_hashstr, yf_cmpstr);
         if (coll->items[i] == NULL) {
-            yf_collection_deinit(coll);
+            yf_collec_deinit(coll);
             return NULL;
         }
     }
 
     if (pathname != NULL) {
-        YF_datac datac = {.datac = YF_DATAC_COLL, .coll = coll};
+        yf_datac_t datac = {.datac = YF_DATAC_COLL, .coll = coll};
         if (yf_loadgltf(pathname, 0, &datac) != 0) {
-            yf_collection_deinit(coll);
+            yf_collec_deinit(coll);
             return NULL;
         }
     }
@@ -99,10 +100,10 @@ YF_collection yf_collection_init(const char *pathname)
     return coll;
 }
 
-YF_collection yf_collection_get(void)
+yf_collec_t *yf_collec_get(void)
 {
     /* TODO: MT-safe. */
-    if (coll_ == NULL && (coll_ = yf_collection_init(NULL)) == NULL) {
+    if (coll_ == NULL && (coll_ = yf_collec_init(NULL)) == NULL) {
         /* XXX */
         assert(0);
         abort();
@@ -110,20 +111,20 @@ YF_collection yf_collection_get(void)
     return coll_;
 }
 
-void *yf_collection_loaditem(YF_collection coll, int citem,
-                             const char *pathname, size_t index)
+void *yf_collec_loaditem(yf_collec_t *coll, int citem, const char *pathname,
+                         size_t index)
 {
     assert(coll != NULL);
     assert(citem >= 0 && citem < YF_CITEM_N);
 
     if (citem == YF_CITEM_TEXTURE) {
-        YF_texdt data = {0};
+        yf_texdt_t data = {0};
         if (yf_loadpng(pathname, &data) == 0) {
-            YF_texture tex = yf_texture_init(&data);
+            yf_texture_t *tex = yf_texture_init(&data);
             free(data.data);
             if (tex == NULL)
                 return NULL;
-            if (yf_collection_manage(coll, YF_CITEM_TEXTURE, NULL, tex) != 0) {
+            if (yf_collec_manage(coll, YF_CITEM_TEXTURE, NULL, tex) != 0) {
                 yf_texture_deinit(tex);
                 return NULL;
             }
@@ -132,15 +133,15 @@ void *yf_collection_loaditem(YF_collection coll, int citem,
         /* try 'loadgltf()' otherwise */
 
     } else if (citem == YF_CITEM_FONT) {
-        YF_fontdt data = {0};
+        yf_fontdt_t data = {0};
         if (yf_loadsfnt(pathname, &data) == 0) {
-            YF_font font = yf_font_init(&data);
+            yf_font_t *font = yf_font_init(&data);
             if (font == NULL) {
                 if (data.deinit != NULL)
                     data.deinit(data.font);
                 return NULL;
             }
-            if (yf_collection_manage(coll, YF_CITEM_FONT, NULL, font) != 0) {
+            if (yf_collec_manage(coll, YF_CITEM_FONT, NULL, font) != 0) {
                 if (data.deinit != NULL)
                     data.deinit(data.font);
                 yf_font_deinit(font);
@@ -152,7 +153,7 @@ void *yf_collection_loaditem(YF_collection coll, int citem,
         return NULL;
     }
 
-    YF_datac datac;
+    yf_datac_t datac;
     datac.coll = coll;
 
     switch (citem) {
@@ -186,7 +187,7 @@ void *yf_collection_loaditem(YF_collection coll, int citem,
         if (yf_loadgltf(pathname, index, &datac) == 0)
             return datac.tex;
         break;
-    case YF_CITEM_ANIMATION:
+    case YF_CITEM_KFANIM:
         datac.datac = YF_DATAC_ANIM;
         if (yf_loadgltf(pathname, index, &datac) == 0)
             return datac.anim;
@@ -203,7 +204,7 @@ void *yf_collection_loaditem(YF_collection coll, int citem,
     return NULL;
 }
 
-void *yf_collection_getitem(YF_collection coll, int citem, const char *name)
+void *yf_collec_getitem(yf_collec_t *coll, int citem, const char *name)
 {
     assert(coll != NULL);
     assert(citem >= 0 && citem < YF_CITEM_N);
@@ -212,8 +213,8 @@ void *yf_collection_getitem(YF_collection coll, int citem, const char *name)
     return yf_dict_search(coll->items[citem], name);
 }
 
-int yf_collection_manage(YF_collection coll, int citem, const char *name,
-                         void *item)
+int yf_collec_manage(yf_collec_t *coll, int citem, const char *name,
+                     void *item)
 {
     assert(coll != NULL);
     assert(citem >= 0 && citem < YF_CITEM_N);
@@ -248,7 +249,7 @@ int yf_collection_manage(YF_collection coll, int citem, const char *name,
     return 0;
 }
 
-void *yf_collection_release(YF_collection coll, int citem, const char *name)
+void *yf_collec_release(yf_collec_t *coll, int citem, const char *name)
 {
     assert(coll != NULL);
     assert(citem >= 0 && citem < YF_CITEM_N);
@@ -267,7 +268,7 @@ void *yf_collection_release(YF_collection coll, int citem, const char *name)
     return val;
 }
 
-int yf_collection_contains(YF_collection coll, int citem, const char *name)
+int yf_collec_contains(yf_collec_t *coll, int citem, const char *name)
 {
     assert(coll != NULL);
     assert(citem >= 0 && citem < YF_CITEM_N);
@@ -276,15 +277,15 @@ int yf_collection_contains(YF_collection coll, int citem, const char *name)
     return yf_dict_contains(coll->items[citem], name);
 }
 
-void yf_collection_each(YF_collection coll, int citem,
-                        int (*callb)(const char *name, void *item, void *arg),
-                        void *arg)
+void yf_collec_each(yf_collec_t *coll, int citem,
+                    int (*callb)(const char *name, void *item, void *arg),
+                    void *arg)
 {
     assert(coll != NULL);
     assert(citem >= 0 && citem < YF_CITEM_N);
     assert(callb != NULL);
 
-    YF_iter it = YF_NILIT;
+    yf_iter_t it = YF_NILIT;
     void *name, *item;
     /* XXX: Insertion of 'NULL' item is guarded by an assertion. */
     while ((item = yf_dict_next(coll->items[citem], &it, &name)) != NULL &&
@@ -292,7 +293,7 @@ void yf_collection_each(YF_collection coll, int citem,
         ;
 }
 
-void yf_collection_deinit(YF_collection coll)
+void yf_collec_deinit(yf_collec_t *coll)
 {
     if (coll == NULL)
         return;
@@ -314,7 +315,7 @@ void yf_collection_deinit(YF_collection coll)
 
 #ifdef YF_DEVEL
 
-void yf_print_coll(YF_collection coll)
+void yf_print_coll(yf_collec_t *coll)
 {
     assert(coll != NULL);
 
@@ -325,20 +326,20 @@ void yf_print_coll(YF_collection coll)
            __func__, coll->n);
 
     const char *cnames[YF_CITEM_N] = {
-        [YF_CITEM_SCENE]     = "CITEM_SCENE",
-        [YF_CITEM_NODE]      = "CITEM_NODE",
-        [YF_CITEM_MESH]      = "CITEM_MESH",
-        [YF_CITEM_SKIN]      = "CITEM_SKIN",
-        [YF_CITEM_MATERIAL]  = "CITEM_MATERIAL",
-        [YF_CITEM_TEXTURE]   = "CITEM_TEXTURE",
-        [YF_CITEM_ANIMATION] = "CITEM_ANIMATION",
-        [YF_CITEM_FONT]      = "CITEM_FONT"
+        [YF_CITEM_SCENE]    = "CITEM_SCENE",
+        [YF_CITEM_NODE]     = "CITEM_NODE",
+        [YF_CITEM_MESH]     = "CITEM_MESH",
+        [YF_CITEM_SKIN]     = "CITEM_SKIN",
+        [YF_CITEM_MATERIAL] = "CITEM_MATERIAL",
+        [YF_CITEM_TEXTURE]  = "CITEM_TEXTURE",
+        [YF_CITEM_KFANIM]   = "CITEM_KFANIM",
+        [YF_CITEM_FONT]     = "CITEM_FONT"
     };
 
     for (size_t i = 0; i < YF_CITEM_N; i++) {
         printf("   %s (%zu):\n", cnames[i], yf_dict_getlen(coll->items[i]));
 
-        YF_iter it = YF_NILIT;
+        yf_iter_t it = YF_NILIT;
         void *val, *key;
         for (;;) {
             val = yf_dict_next(coll->items[i], &it, &key);

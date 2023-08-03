@@ -16,13 +16,13 @@
 
 #include "yf-material.h"
 
-struct YF_material_o {
-    YF_matlprop prop;
+struct yf_material {
+    yf_matlprop_t prop;
 };
 
-YF_material yf_material_init(const YF_matlprop *prop)
+yf_material_t *yf_material_init(const yf_matlprop_t *prop)
 {
-    YF_material matl = calloc(1, sizeof(struct YF_material_o));
+    yf_material_t *matl = calloc(1, sizeof(yf_material_t));
     if (matl == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -43,13 +43,13 @@ YF_material yf_material_init(const YF_matlprop *prop)
     return matl;
 }
 
-YF_matlprop *yf_material_getprop(YF_material matl)
+yf_matlprop_t *yf_material_getprop(yf_material_t *matl)
 {
     assert(matl != NULL);
     return &matl->prop;
 }
 
-void yf_material_deinit(YF_material matl)
+void yf_material_deinit(yf_material_t *matl)
 {
     if (matl != NULL)
         /* XXX: Textures not deinitialized. */
@@ -62,7 +62,7 @@ void yf_material_deinit(YF_material matl)
 
 #ifdef YF_DEVEL
 
-void yf_print_matl(YF_material matl)
+void yf_print_matl(yf_material_t *matl)
 {
     assert(matl != NULL);
 

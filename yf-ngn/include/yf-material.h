@@ -18,7 +18,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a material.
  */
-typedef struct YF_material_o *YF_material;
+typedef struct yf_material yf_material_t;
 
 /**
  * PBR methodologies.
@@ -37,47 +37,47 @@ typedef struct YF_material_o *YF_material;
 /**
  * Type defining the material properties of an object.
  */
-typedef struct {
+typedef struct yf_matlprop {
     int pbr;
     union {
         /* PBR specular-glossiness ('PBR_SPECGLOSS'). */
         struct {
-            YF_texref diffuse_tex;
-            YF_vec4 diffuse_fac;
-            YF_texref spec_gloss_tex;
-            YF_vec3 specular_fac;
+            yf_texref_t diffuse_tex;
+            yf_vec4_t diffuse_fac;
+            yf_texref_t spec_gloss_tex;
+            yf_vec3_t specular_fac;
             float glossiness_fac;
         } pbrsg;
 
         /* PBR metallic-roughness ('PBR_METALROUGH'). */
         struct {
-            YF_texref color_tex;
-            YF_vec4 color_fac;
-            YF_texref metal_rough_tex;
+            yf_texref_t color_tex;
+            yf_vec4_t color_fac;
+            yf_texref_t metal_rough_tex;
             float metallic_fac;
             float roughness_fac;
         } pbrmr;
 
         /* Unlit ('PBR_NONE'). */
         struct {
-            YF_texref color_tex;
-            YF_vec4 color_fac;
+            yf_texref_t color_tex;
+            yf_vec4_t color_fac;
         } nopbr;
     };
 
     /* Additional maps.
        These are ignored when 'pbr' is 'PBR_NONE'. */
     struct {
-        YF_texref tex;
+        yf_texref_t tex;
         float scale;
     } normal;
     struct {
-        YF_texref tex;
+        yf_texref_t tex;
         float strength;
     } occlusion;
     struct {
-        YF_texref tex;
-        YF_vec3 factor;
+        yf_texref_t tex;
+        yf_vec3_t factor;
     } emissive;
 
     /* For alpha modes other than 'MASK', cutoff value is ignored. */
@@ -86,16 +86,16 @@ typedef struct {
 
     /* Disables back-face culling. */
     int double_sided;
-} YF_matlprop;
+} yf_matlprop_t;
 
 /**
  * Initializes a new material.
  *
- * @param prop: The 'YF_matlprop' to set on creation. Can be 'NULL'.
+ * @param prop: The 'yf_matlprop_t' to set on creation. Can be 'NULL'.
  * @return: On success, returns a new material. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_material yf_material_init(const YF_matlprop *prop);
+yf_material_t *yf_material_init(const yf_matlprop_t *prop);
 
 /**
  * Gets the properties of a material.
@@ -103,14 +103,14 @@ YF_material yf_material_init(const YF_matlprop *prop);
  * @param matl: The material.
  * @return: The material's properties.
  */
-YF_matlprop *yf_material_getprop(YF_material matl);
+yf_matlprop_t *yf_material_getprop(yf_material_t *matl);
 
 /**
  * Deinitializes a material.
  *
  * @param matl: The material to deinitialize. Can be 'NULL'.
  */
-void yf_material_deinit(YF_material matl);
+void yf_material_deinit(yf_material_t *matl);
 
 YF_DECLS_END
 

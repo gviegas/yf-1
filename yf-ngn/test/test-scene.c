@@ -19,15 +19,15 @@
 #define YF_WINH 480
 #define YF_WINT "Scene"
 #define YF_FPS  60
-#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
-#define YF_POINT (YF_vec3){0}
+#define YF_PLACE (yf_vec3_t){20.0f, 20.0f, 20.0f}
+#define YF_POINT (yf_vec3_t){0}
 
 /* Shared variables. */
-struct T_vars {
-    YF_window win;
-    YF_view view;
-    YF_collection coll;
-    YF_scene scn;
+struct vars {
+    yf_window_t *win;
+    yf_view_t *view;
+    yf_collec_t *coll;
+    yf_scene_t *scn;
 
     struct {
         int quit;
@@ -37,7 +37,7 @@ struct T_vars {
         int turn[4];
     } input;
 };
-static struct T_vars vars_ = {0};
+static struct vars vars_ = {0};
 
 /* Handles key events. */
 static void on_key(int key, int state,
@@ -94,7 +94,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
     if (vars_.input.quit)
         return -1;
 
-    YF_camera cam = yf_scene_getcam(vars_.scn);
+    yf_camera_t *cam = yf_scene_getcam(vars_.scn);
     const float md = 16.0 * elapsed_time;
     const float td = 2.0 * elapsed_time;
 
@@ -126,7 +126,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
     return 0;
 }
 
-static int traverse(YF_node node, YF_UNUSED void *arg)
+static int traverse(yf_node_t *node, YF_UNUSED void *arg)
 {
     char name[2][256];
     size_t n[2] = {256, 256};
@@ -140,7 +140,7 @@ static int traverse(YF_node node, YF_UNUSED void *arg)
 /* Tests scene. */
 int yf_test_scene(void)
 {
-    YF_evtfn evtfn = {.key_kb = on_key};
+    yf_evtfn_t evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
     vars_.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
@@ -150,7 +150,7 @@ int yf_test_scene(void)
     assert(vars_.view != NULL);
 
     YF_TEST_PRINT("init", "", "scn");
-    YF_scene scn = yf_scene_init();
+    yf_scene_t *scn = yf_scene_init();
     if (scn == NULL)
         return -1;
 
@@ -163,7 +163,7 @@ int yf_test_scene(void)
         return -1;
 
     YF_TEST_PRINT("getcolor", "scn", "");
-    YF_color color = yf_scene_getcolor(scn);
+    yf_color_t color = yf_scene_getcolor(scn);
     if (memcmp(&color, &YF_COLOR_DARKGREY, sizeof color) != 0)
         return -1;
 
@@ -180,22 +180,22 @@ int yf_test_scene(void)
 
     puts("\n- collection scene loading -\n");
 
-    vars_.coll = yf_collection_init("tmp/scene.glb");
+    vars_.coll = yf_collec_init("tmp/scene.glb");
     assert(vars_.coll != NULL);
 
-    vars_.scn = yf_collection_getitem(vars_.coll, YF_CITEM_SCENE, "Scene");
+    vars_.scn = yf_collec_getitem(vars_.coll, YF_CITEM_SCENE, "Scene");
     assert(vars_.scn != NULL);
 
     YF_TEST_PRINT("getnode", "scn", "node");
-    YF_node node = yf_scene_getnode(vars_.scn);
+    yf_node_t *node = yf_scene_getnode(vars_.scn);
     if (node == NULL)
         return -1;
 
-    const YF_vec3 light_clr = {1.0f, 1.0f, 1.0f};
-    YF_light light = yf_light_init(YF_LIGHTT_POINT, light_clr, 1000.0f, 100.0f,
-                                   0.0f, 0.0f);
+    const yf_vec3_t light_clr = {1.0f, 1.0f, 1.0f};
+    yf_light_t *light = yf_light_init(YF_LIGHTT_POINT, light_clr, 1000.0f,
+                                      100.0f, 0.0f, 0.0f);
     assert(light != NULL);
-    YF_node light_node = yf_light_getnode(light);
+    yf_node_t *light_node = yf_light_getnode(light);
     yf_mat4_xlate(*yf_node_getxform(light_node), 10.0f, 10.0f, 10.0f);
     yf_node_insert(node, light_node);
 
@@ -207,7 +207,7 @@ int yf_test_scene(void)
 
     puts("\n- no explicit 'deinit()' call for managed scene -\n");
 
-    yf_collection_deinit(vars_.coll);
+    yf_collec_deinit(vars_.coll);
     yf_light_deinit(light);
     yf_view_deinit(vars_.view);
     yf_window_deinit(vars_.win);

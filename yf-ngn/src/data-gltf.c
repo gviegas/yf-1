@@ -44,18 +44,19 @@
 #define YF_TOKEN_END  5
 #define YF_TOKEN_ERR  6
 
+/* TODO: Make token length dynamic to support base64. */
 #define YF_TOKENMAX 1024
 
 /* Token type/data. */
 typedef struct {
     int token;
     char data[YF_TOKENMAX];
-} T_token;
+} token_t;
 
 /* Gets the next token from a file stream.
    This function returns 'token->token'. Upon failure, the value returned
    is equal to 'YF_TOKEN_ERR' - the global error variable is not set. */
-static int next_token(FILE *file, T_token *token)
+static int next_token(FILE *file, token_t *token)
 {
     static_assert(YF_TOKENMAX > 1);
     assert(file != NULL);
@@ -199,25 +200,25 @@ static int next_token(FILE *file, T_token *token)
  */
 
 /* String. */
-typedef char *T_str;
+typedef char *str_t;
 
 /* Floating-point number. */
-typedef float T_num;
+typedef float num_t;
 
 /* Integer number. */
-typedef long long T_int;
+typedef long long int_t;
 #define YF_INT_MIN LLONG_MIN
 #define YF_INT_MAX LLONG_MAX
 
 /* Boolean value. */
-typedef int T_bool;
+typedef int bool_t;
 #define YF_TRUE  1
 #define YF_FALSE 0
 
 /* Parses an array of unknown size. */
-static int parse_array(FILE *file, T_token *token,
+static int parse_array(FILE *file, token_t *token,
                        void **array, size_t *n, size_t elem_sz,
-                       int (*fn)(FILE *, T_token *, size_t index, void *arg),
+                       int (*fn)(FILE *, token_t *, size_t index, void *arg),
                        void *arg)
 {
     assert(file != NULL && !feof(file));
@@ -265,7 +266,7 @@ static int parse_array(FILE *file, T_token *token,
 }
 
 /* Parses a string. */
-static int parse_str(FILE *file, T_token *token, T_str *str)
+static int parse_str(FILE *file, token_t *token, str_t *str)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -292,21 +293,21 @@ static int parse_str(FILE *file, T_token *token, T_str *str)
 }
 
 /* Parses an element of an array of strings. */
-static int parse_str_array(FILE *file, T_token *token, size_t index,
+static int parse_str_array(FILE *file, token_t *token, size_t index,
                            void *str_pp)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(str_pp != NULL);
 
-    T_str *str_p = *(T_str **)str_pp;
+    str_t *str_p = *(str_t **)str_pp;
     assert(str_p != NULL);
 
     return parse_str(file, token, str_p+index);
 }
 
 /* Parses a floating-point number. */
-static int parse_num(FILE *file, T_token *token, T_num *num)
+static int parse_num(FILE *file, token_t *token, num_t *num)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -334,21 +335,21 @@ static int parse_num(FILE *file, T_token *token, T_num *num)
 }
 
 /* Parses an element of an array of floating-point numbers. */
-static int parse_num_array(FILE *file, T_token *token, size_t index,
+static int parse_num_array(FILE *file, token_t *token, size_t index,
                            void *num_pp)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(num_pp != NULL);
 
-    T_num *num_p = *(T_num **)num_pp;
+    num_t *num_p = *(num_t **)num_pp;
     assert(num_p != NULL);
 
     return parse_num(file, token, num_p+index);
 }
 
 /* Parses an integer number. */
-static int parse_int(FILE *file, T_token *token, T_int *intr)
+static int parse_int(FILE *file, token_t *token, int_t *intr)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -376,21 +377,21 @@ static int parse_int(FILE *file, T_token *token, T_int *intr)
 }
 
 /* Parses an element of an array of integer numbers. */
-static int parse_int_array(FILE *file, T_token *token, size_t index,
+static int parse_int_array(FILE *file, token_t *token, size_t index,
                            void *int_pp)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
     assert(int_pp != NULL);
 
-    T_int *int_p = *(T_int **)int_pp;
+    int_t *int_p = *(int_t **)int_pp;
     assert(int_p != NULL);
 
     return parse_int(file, token, int_p+index);
 }
 
 /* Parses a boolean value. */
-static int parse_bool(FILE *file, T_token *token, T_bool *booln)
+static int parse_bool(FILE *file, token_t *token, bool_t *booln)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -420,7 +421,7 @@ static int parse_bool(FILE *file, T_token *token, T_bool *booln)
 
 /* Consumes the current property.
    This allows unknown/unimplemented properties to be ignored. */
-static int consume_prop(FILE *file, T_token *token)
+static int consume_prop(FILE *file, token_t *token)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -481,29 +482,29 @@ static int consume_prop(FILE *file, T_token *token)
 
 /* The 'glTF.asset' property. */
 typedef struct {
-    T_str copyright;
-    T_str generator;
-    T_str version;
-    T_str min_version;
-} T_asset;
+    str_t copyright;
+    str_t generator;
+    str_t version;
+    str_t min_version;
+} asset_t;
 
 /* The 'glTF.scenes' property. */
 typedef struct {
     struct {
-        T_int *nodes;
+        int_t *nodes;
         size_t node_n;
-        T_str name;
+        str_t name;
     } *v;
     size_t n;
-} T_scenes;
+} scenes_t;
 
 /* The 'glTF.nodes' property. */
 typedef struct {
     struct {
-        T_int *children;
+        int_t *children;
         size_t child_n;
-        T_int camera;
-        T_int mesh;
+        int_t camera;
+        int_t mesh;
 #define YF_GLTF_XFORM_NONE 0
 #define YF_GLTF_XFORM_M    0x01
 #define YF_GLTF_XFORM_T    0x02
@@ -511,35 +512,35 @@ typedef struct {
 #define YF_GLTF_XFORM_S    0x08
         unsigned xform_mask;
         union {
-            T_num matrix[16];
-            struct { T_num t[3], r[4], s[3]; } trs;
+            num_t matrix[16];
+            struct { num_t t[3], r[4], s[3]; } trs;
         };
-        T_int skin;
-        T_num *weights;
+        int_t skin;
+        num_t *weights;
         size_t weight_n;
-        T_str name;
+        str_t name;
         struct {
-            T_int light;
+            int_t light;
         } ext;
     } *v;
     size_t n;
-} T_nodes;
+} nodes_t;
 
 /* The 'glTF.cameras.perspective' property. */
 typedef struct {
-    T_num yfov;
-    T_num aspect_ratio;
-    T_num znear;
-    T_num zfar;
-} T_perspective;
+    num_t yfov;
+    num_t aspect_ratio;
+    num_t znear;
+    num_t zfar;
+} perspective_t;
 
 /* The 'glTF.cameras.orthographic' property. */
 typedef struct {
-    T_num xmag;
-    T_num ymag;
-    T_num znear;
-    T_num zfar;
-} T_orthographic;
+    num_t xmag;
+    num_t ymag;
+    num_t znear;
+    num_t zfar;
+} orthographic_t;
 
 /* The 'glTF.cameras' property. */
 typedef struct {
@@ -548,23 +549,23 @@ typedef struct {
 #define YF_GLTF_CAMERA_ORTHO 1
         int type;
         union {
-            T_perspective persp;
-            T_orthographic ortho;
+            perspective_t persp;
+            orthographic_t ortho;
         };
-        T_str name;
+        str_t name;
     } *v;
     size_t n;
-} T_cameras;
+} cameras_t;
 
 /* The 'glTF.meshes.primitives.targets' property. */
 typedef struct {
     struct {
-        T_int position;
-        T_int normal;
-        T_int tangent;
+        int_t position;
+        int_t normal;
+        int_t tangent;
     } *v;
     size_t n;
-} T_targets;
+} targets_t;
 
 /* The 'glTF.meshes.primitives' property. */
 typedef struct {
@@ -579,9 +580,9 @@ typedef struct {
 #define YF_GLTF_ATTR_WGT0 7
 #define YF_GLTF_ATTR_N    8
         /* XXX: Expected to match 'VSEMT' order. */
-        T_int attributes[YF_GLTF_ATTR_N];
-        T_int indices;
-        T_int material;
+        int_t attributes[YF_GLTF_ATTR_N];
+        int_t indices;
+        int_t material;
 #define YF_GLTF_MODE_PTS      0
 #define YF_GLTF_MODE_LNS      1
 #define YF_GLTF_MODE_LNLOOP   2
@@ -589,165 +590,166 @@ typedef struct {
 #define YF_GLTF_MODE_TRIS     4
 #define YF_GLTF_MODE_TRISTRIP 5
 #define YF_GLTF_MODE_TRIFAN   6
-        T_int mode;
-        T_targets targets;
+        int_t mode;
+        targets_t targets;
     } *v;
     size_t n;
-} T_primitives;
+} primitives_t;
 
 /* The 'glTF.meshes' property. */
 typedef struct {
     struct {
-        T_primitives primitives;
-        T_num *weights;
+        primitives_t primitives;
+        num_t *weights;
         size_t weight_n;
-        T_str name;
+        str_t name;
     } *v;
     size_t n;
-} T_meshes;
+} meshes_t;
 
 /* The 'glTF.skins' property. */
 typedef struct {
     struct {
-        T_int inv_bind_matrices;
-        T_int skeleton;
-        T_int *joints;
+        int_t inv_bind_matrices;
+        int_t skeleton;
+        int_t *joints;
         size_t joint_n;
-        T_str name;
+        str_t name;
     } *v;
     size_t n;
-} T_skins;
+} skins_t;
 
 /* The 'glTF.*.textureInfo' property. */
 typedef struct {
-    T_int index;
-    T_int tex_coord;
+    int_t index;
+    int_t tex_coord;
     union {
-        T_num scale;
-        T_num strength;
+        num_t scale;
+        num_t strength;
     };
-} T_textureinfo;
+} textureinfo_t;
 
 /* The 'glTF.materials.extensions.KHR_materials_pbrSpecularGlossiness'
    property. */
+/* TODO: This extension is deprecated. */
 typedef struct {
-    T_num diffuse_fac[4];
-    T_textureinfo diffuse_tex;
-    T_num specular_fac[3];
-    T_num glossiness_fac;
-    T_textureinfo spec_gloss_tex;
-} T_pbrspecgloss;
+    num_t diffuse_fac[4];
+    textureinfo_t diffuse_tex;
+    num_t specular_fac[3];
+    num_t glossiness_fac;
+    textureinfo_t spec_gloss_tex;
+} pbrspecgloss_t;
 
 /* The 'glTF.materials.pbrMetallicRoughness' property. */
 typedef struct {
-    T_num base_clr_fac[4];
-    T_textureinfo base_clr_tex;
-    T_num metallic_fac;
-    T_num roughness_fac;
-    T_textureinfo metal_rough_tex;
-} T_pbrmetalrough;
+    num_t base_clr_fac[4];
+    textureinfo_t base_clr_tex;
+    num_t metallic_fac;
+    num_t roughness_fac;
+    textureinfo_t metal_rough_tex;
+} pbrmetalrough_t;
 
 /* The 'glTF.materials' property. */
 typedef struct {
     struct {
-        T_pbrmetalrough pbrmr;
-        T_textureinfo normal_tex;
-        T_textureinfo occlusion_tex;
-        T_num emissive_fac[3];
-        T_textureinfo emissive_tex;
+        pbrmetalrough_t pbrmr;
+        textureinfo_t normal_tex;
+        textureinfo_t occlusion_tex;
+        num_t emissive_fac[3];
+        textureinfo_t emissive_tex;
 #define YF_GLTF_ALPHA_OPAQUE 0
 #define YF_GLTF_ALPHA_MASK   1
 #define YF_GLTF_ALPHA_BLEND  2
         int alpha_mode;
-        T_num alpha_cutoff;
-        T_bool double_sided;
-        T_str name;
+        num_t alpha_cutoff;
+        bool_t double_sided;
+        str_t name;
         struct {
-            T_pbrspecgloss *pbrsg;
+            pbrspecgloss_t *pbrsg;
             int unlit;
         } ext;
     } *v;
     size_t n;
-} T_materials;
+} materials_t;
 
 /* The 'glTF.animations.channels.target' property. */
 typedef struct {
-    T_int node;
+    int_t node;
 #define YF_GLTF_PATH_XLATE  0
 #define YF_GLTF_PATH_ROTATE 1
 #define YF_GLTF_PATH_SCALE  2
 #define YF_GLTF_PATH_WEIGHT 3
     int path;
-} T_ctarget;
+} ctarget_t;
 
 /* The 'glTF.animations.channels' property. */
 typedef struct {
     struct {
-        T_int sampler;
-        T_ctarget target;
+        int_t sampler;
+        ctarget_t target;
     } *v;
     size_t n;
-} T_channels;
+} channels_t;
 
 /* The 'glTF.animations.samplers' property. */
 typedef struct {
     struct {
-        T_int input;
-        T_int output;
+        int_t input;
+        int_t output;
 #define YF_GLTF_ERP_LINEAR 0
 #define YF_GLTF_ERP_STEP   1
 #define YF_GLTF_ERP_CUBIC  2
         int interpolation;
     } *v;
     size_t n;
-} T_asamplers;
+} asamplers_t;
 
 /* The 'glTF.animations' property. */
 typedef struct {
     struct {
-        T_channels channels;
-        T_asamplers samplers;
-        T_str name;
+        channels_t channels;
+        asamplers_t samplers;
+        str_t name;
     } *v;
     size_t n;
-} T_animations;
+} animations_t;
 
 /* The 'glTF.accessors.sparse.indices' property. */
 typedef struct {
-    T_int buffer_view;
-    T_int byte_off;
+    int_t buffer_view;
+    int_t byte_off;
 #define YF_GLTF_COMP_UBYTE  5121
 #define YF_GLTF_COMP_USHORT 5123
 #define YF_GLTF_COMP_UINT   5125
-    T_int comp_type;
-} T_sindices;
+    int_t comp_type;
+} sindices_t;
 
 /* The 'glTF.accessors.sparse.values' property. */
 typedef struct {
-    T_int buffer_view;
-    T_int byte_off;
-} T_svalues;
+    int_t buffer_view;
+    int_t byte_off;
+} svalues_t;
 
 /* The 'glTF.accessors.sparse' property. */
 typedef struct {
-    T_int count;
-    T_sindices indices;
-    T_svalues values;
-} T_sparse;
+    int_t count;
+    sindices_t indices;
+    svalues_t values;
+} sparse_t;
 
 /* The 'glTF.accessors' property. */
 typedef struct {
     struct {
-        T_int buffer_view;
-        T_int byte_off;
-        T_int count;
+        int_t buffer_view;
+        int_t byte_off;
+        int_t count;
 #define YF_GLTF_COMP_BYTE   5120
 #define YF_GLTF_COMP_UBYTE  5121
 #define YF_GLTF_COMP_SHORT  5122
 #define YF_GLTF_COMP_USHORT 5123
 #define YF_GLTF_COMP_UINT   5125
 #define YF_GLTF_COMP_FLOAT  5126
-        T_int comp_type;
+        int_t comp_type;
 #define YF_GLTF_TYPE_SCALAR 1
 #define YF_GLTF_TYPE_VEC2   2
 #define YF_GLTF_TYPE_VEC3   3
@@ -758,66 +760,66 @@ typedef struct {
         int type;
         union {
             /* XXX: May not suffice. */
-            T_num s;
-            T_num v2[2];
-            T_num v3[3];
-            T_num v4[4];
-            T_num m2[4];
-            T_num m3[9];
-            T_num m4[16];
+            num_t s;
+            num_t v2[2];
+            num_t v3[3];
+            num_t v4[4];
+            num_t m2[4];
+            num_t m3[9];
+            num_t m4[16];
         } min, max;
-        T_bool normalized;
-        T_sparse sparse;
-        T_str name;
+        bool_t normalized;
+        sparse_t sparse;
+        str_t name;
     } *v;
     size_t n;
-} T_accessors;
+} accessors_t;
 
 /* The 'glTF.bufferViews' property. */
 typedef struct {
     struct {
-        T_int buffer;
-        T_int byte_off;
-        T_int byte_len;
-        T_int byte_strd;
+        int_t buffer;
+        int_t byte_off;
+        int_t byte_len;
+        int_t byte_strd;
 #define YF_GLTF_TARGET_BUF     34962
 #define YF_GLTF_TARGET_ELEMBUF 34963
-        T_int target;
-        T_str name;
+        int_t target;
+        str_t name;
     } *v;
     size_t n;
-} T_bufferviews;
+} bufferviews_t;
 
 /* The 'glTF.buffers' property. */
 typedef struct {
     struct {
-        T_int byte_len;
-        T_str uri;
-        T_str name;
+        int_t byte_len;
+        str_t uri;
+        str_t name;
     } *v;
     size_t n;
-} T_buffers;
+} buffers_t;
 
 /* The 'glTF.textures' property. */
 typedef struct {
     struct {
-        T_int sampler;
-        T_int source;
-        T_str name;
+        int_t sampler;
+        int_t source;
+        str_t name;
     } *v;
     size_t n;
-} T_textures;
+} textures_t;
 
 /* The 'glTF.images' property. */
 typedef struct {
     struct {
-        T_str uri;
-        T_str mime_type;
-        T_int buffer_view;
-        T_str name;
+        str_t uri;
+        str_t mime_type;
+        int_t buffer_view;
+        str_t name;
     } *v;
     size_t n;
-} T_images;
+} images_t;
 
 /* The 'glTF.samplers' property. */
 typedef struct {
@@ -825,26 +827,26 @@ typedef struct {
 #define YF_GLTF_WRAP_CLAMP  33071
 #define YF_GLTF_WRAP_MIRROR 33648
 #define YF_GLTF_WRAP_REPEAT 10497
-        T_int wrap_s;
-        T_int wrap_t;
+        int_t wrap_s;
+        int_t wrap_t;
 #define YF_GLTF_FILTER_NEAREST 9728
 #define YF_GLTF_FILTER_LINEAR  9729
 #define YF_GLTF_FILTER_NRMIPNR 9984
 #define YF_GLTF_FILTER_LNMIPNR 9985
 #define YF_GLTF_FILTER_NRMIPLN 9986
 #define YF_GLTF_FILTER_LNMIPLN 9987
-        T_int mag_filter;
-        T_int min_filter;
-        T_str name;
+        int_t mag_filter;
+        int_t min_filter;
+        str_t name;
     } *v;
     size_t n;
-} T_samplers;
+} samplers_t;
 
 /* The 'glTF.extensions.KHR_lights_punctual.lights.spot' property. */
 typedef struct {
-    T_num inner_cone_angle;
-    T_num outer_cone_angle;
-} T_spot;
+    num_t inner_cone_angle;
+    num_t outer_cone_angle;
+} spot_t;
 
 /* The 'glTF.extensions.KHR_lights_punctual.lights' property. */
 typedef struct {
@@ -853,43 +855,43 @@ typedef struct {
 #define YF_GLTF_LIGHT_SPOT   1
 #define YF_GLTF_LIGHT_DIRECT 2
         int type;
-        T_num color[3];
-        T_num intensity;
-        T_num range;
-        T_spot spot;
-        T_str name;
+        num_t color[3];
+        num_t intensity;
+        num_t range;
+        spot_t spot;
+        str_t name;
     } *v;
     size_t n;
-} T_lights;
+} lights_t;
 
 /* The root glTF object. */
 typedef struct {
-    T_str *ext_used;
+    str_t *ext_used;
     size_t ext_used_n;
-    T_str *ext_req;
+    str_t *ext_req;
     size_t ext_req_n;
-    T_asset asset;
-    T_int scene;
-    T_scenes scenes;
-    T_nodes nodes;
-    T_cameras cameras;
-    T_meshes meshes;
-    T_skins skins;
-    T_materials materials;
-    T_animations animations;
-    T_accessors accessors;
-    T_bufferviews bufferviews;
-    T_buffers buffers;
-    T_textures textures;
-    T_images images;
-    T_samplers samplers;
+    asset_t asset;
+    int_t scene;
+    scenes_t scenes;
+    nodes_t nodes;
+    cameras_t cameras;
+    meshes_t meshes;
+    skins_t skins;
+    materials_t materials;
+    animations_t animations;
+    accessors_t accessors;
+    bufferviews_t bufferviews;
+    buffers_t buffers;
+    textures_t textures;
+    images_t images;
+    samplers_t samplers;
     struct {
-        T_lights lights;
+        lights_t lights;
     } ext;
-} T_gltf;
+} gltf_t;
 
 /* Parses the 'glTF.asset' property. */
-static int parse_asset(FILE *file, T_token *token, T_asset *asset)
+static int parse_asset(FILE *file, token_t *token, asset_t *asset)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -945,7 +947,7 @@ static int parse_asset(FILE *file, T_token *token, T_asset *asset)
 }
 
 /* Parses the 'glTF.scene' property. */
-static int parse_scene(FILE *file, T_token *token, T_int *scene)
+static int parse_scene(FILE *file, token_t *token, int_t *scene)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -957,10 +959,10 @@ static int parse_scene(FILE *file, T_token *token, T_int *scene)
 }
 
 /* Parses the 'glTF.scenes' property. */
-static int parse_scenes(FILE *file, T_token *token, size_t index,
+static int parse_scenes(FILE *file, token_t *token, size_t index,
                         void *scenes_p)
 {
-    T_scenes *scenes = scenes_p;
+    scenes_t *scenes = scenes_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1004,8 +1006,8 @@ static int parse_scenes(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.nodes.extensions.KHR_lights_punctual' property. */
-static int parse_node_punctual(FILE *file, T_token *token, size_t index,
-                               T_nodes *nodes)
+static int parse_node_punctual(FILE *file, token_t *token, size_t index,
+                               nodes_t *nodes)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1045,8 +1047,8 @@ static int parse_node_punctual(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.nodes.extensions' property. */
-static int parse_node_ext(FILE *file, T_token *token, size_t index,
-                          T_nodes *nodes)
+static int parse_node_ext(FILE *file, token_t *token, size_t index,
+                          nodes_t *nodes)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1086,9 +1088,9 @@ static int parse_node_ext(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.nodes' property. */
-static int parse_nodes(FILE *file, T_token *token, size_t index, void *nodes_p)
+static int parse_nodes(FILE *file, token_t *token, size_t index, void *nodes_p)
 {
-    T_nodes *nodes = nodes_p;
+    nodes_t *nodes = nodes_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1212,8 +1214,8 @@ static int parse_nodes(FILE *file, T_token *token, size_t index, void *nodes_p)
 }
 
 /* Parses the 'glTF.cameras.perspective' property. */
-static int parse_perspective(FILE *file, T_token *token,
-                             T_perspective *perspective)
+static int parse_perspective(FILE *file, token_t *token,
+                             perspective_t *perspective)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1264,8 +1266,8 @@ static int parse_perspective(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.cameras.orthographic' property. */
-static int parse_orthographic(FILE *file, T_token *token,
-                              T_orthographic *orthographic)
+static int parse_orthographic(FILE *file, token_t *token,
+                              orthographic_t *orthographic)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1316,10 +1318,10 @@ static int parse_orthographic(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.cameras' property. */
-static int parse_cameras(FILE *file, T_token *token, size_t index,
+static int parse_cameras(FILE *file, token_t *token, size_t index,
                          void *cameras_p)
 {
-    T_cameras *cameras = cameras_p;
+    cameras_t *cameras = cameras_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1378,7 +1380,7 @@ static int parse_cameras(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.meshes.primitives.attributes' property. */
-static int parse_attributes(FILE *file, T_token *token, T_int *attributes)
+static int parse_attributes(FILE *file, token_t *token, int_t *attributes)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1445,10 +1447,10 @@ static int parse_attributes(FILE *file, T_token *token, T_int *attributes)
 }
 
 /* Parses the 'glTF.meshes.primitives.targets' property. */
-static int parse_targets(FILE *file, T_token *token, size_t index,
+static int parse_targets(FILE *file, token_t *token, size_t index,
                          void *targets_p)
 {
-    T_targets *targets = targets_p;
+    targets_t *targets = targets_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1497,10 +1499,10 @@ static int parse_targets(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.meshes.primitives' property. */
-static int parse_primitives(FILE *file, T_token *token, size_t index,
+static int parse_primitives(FILE *file, token_t *token, size_t index,
                             void *primitives_p)
 {
-    T_primitives *primitives = primitives_p;
+    primitives_t *primitives = primitives_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1568,10 +1570,10 @@ static int parse_primitives(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.meshes' property. */
-static int parse_meshes(FILE *file, T_token *token, size_t index,
+static int parse_meshes(FILE *file, token_t *token, size_t index,
                         void *meshes_p)
 {
-    T_meshes *meshes = meshes_p;
+    meshes_t *meshes = meshes_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1625,9 +1627,9 @@ static int parse_meshes(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.skins' property. */
-static int parse_skins(FILE *file, T_token *token, size_t index, void *skins_p)
+static int parse_skins(FILE *file, token_t *token, size_t index, void *skins_p)
 {
-    T_skins *skins = skins_p;
+    skins_t *skins = skins_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1683,8 +1685,8 @@ static int parse_skins(FILE *file, T_token *token, size_t index, void *skins_p)
 }
 
 /* Parses the 'glTF.*.textureInfo property. */
-static int parse_textureinfo(FILE *file, T_token *token,
-                             T_textureinfo *textureinfo)
+static int parse_textureinfo(FILE *file, token_t *token,
+                             textureinfo_t *textureinfo)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1732,8 +1734,8 @@ static int parse_textureinfo(FILE *file, T_token *token,
 
 /* Parses the 'glTF.materials.extensions.KHR_materials_pbrSpecularGlossiness'
    property. */
-static int parse_pbrspecgloss(FILE *file, T_token *token,
-                              T_pbrspecgloss *pbrspecgloss)
+static int parse_pbrspecgloss(FILE *file, token_t *token,
+                              pbrspecgloss_t *pbrspecgloss)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1802,8 +1804,8 @@ static int parse_pbrspecgloss(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.materials.extensions' property. */
-static int parse_material_ext(FILE *file, T_token *token, size_t index,
-                              T_materials *materials)
+static int parse_material_ext(FILE *file, token_t *token, size_t index,
+                              materials_t *materials)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1827,7 +1829,7 @@ static int parse_material_ext(FILE *file, T_token *token, size_t index,
                     return -1;
                 }
 
-                T_pbrspecgloss *pbrsg = malloc(sizeof *pbrsg);
+                pbrspecgloss_t *pbrsg = malloc(sizeof *pbrsg);
                 if (pbrsg == NULL) {
                     yf_seterr(YF_ERR_NOMEM, __func__);
                     return -1;
@@ -1881,8 +1883,8 @@ static int parse_material_ext(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.materials.pbrMetallicRoughness' property. */
-static int parse_pbrmetalrough(FILE *file, T_token *token,
-                               T_pbrmetalrough *pbrmetalrough)
+static int parse_pbrmetalrough(FILE *file, token_t *token,
+                               pbrmetalrough_t *pbrmetalrough)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -1947,10 +1949,10 @@ static int parse_pbrmetalrough(FILE *file, T_token *token,
 }
 
 /* Parses the 'glTF.materials' property. */
-static int parse_materials(FILE *file, T_token *token, size_t index,
+static int parse_materials(FILE *file, token_t *token, size_t index,
                            void *materials_p)
 {
-    T_materials *materials = materials_p;
+    materials_t *materials = materials_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2060,7 +2062,7 @@ static int parse_materials(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.animations.channels.target' property. */
-static int parse_ctarget(FILE *file, T_token *token, T_ctarget *ctarget)
+static int parse_ctarget(FILE *file, token_t *token, ctarget_t *ctarget)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2115,10 +2117,10 @@ static int parse_ctarget(FILE *file, T_token *token, T_ctarget *ctarget)
 }
 
 /* Parses the 'glTF.animations.channels' property. */
-static int parse_channels(FILE *file, T_token *token, size_t index,
+static int parse_channels(FILE *file, token_t *token, size_t index,
                           void *channels_p)
 {
-    T_channels *channels = channels_p;
+    channels_t *channels = channels_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2159,10 +2161,10 @@ static int parse_channels(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.animations.samplers' property. */
-static int parse_asamplers(FILE *file, T_token *token, size_t index,
+static int parse_asamplers(FILE *file, token_t *token, size_t index,
                            void *asamplers_p)
 {
-    T_asamplers *asamplers = asamplers_p;
+    asamplers_t *asamplers = asamplers_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2217,10 +2219,10 @@ static int parse_asamplers(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.animations' property. */
-static int parse_animations(FILE *file, T_token *token, size_t index,
+static int parse_animations(FILE *file, token_t *token, size_t index,
                             void *animations_p)
 {
-    T_animations *animations = animations_p;
+    animations_t *animations = animations_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2275,7 +2277,7 @@ static int parse_animations(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.accessors.sparse.indices' property. */
-static int parse_sindices(FILE *file, T_token *token, T_sindices *sindices)
+static int parse_sindices(FILE *file, token_t *token, sindices_t *sindices)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2322,7 +2324,7 @@ static int parse_sindices(FILE *file, T_token *token, T_sindices *sindices)
 }
 
 /* Parses the 'glTF.accessors.sparse.values' property. */
-static int parse_svalues(FILE *file, T_token *token, T_svalues *svalues)
+static int parse_svalues(FILE *file, token_t *token, svalues_t *svalues)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2365,7 +2367,7 @@ static int parse_svalues(FILE *file, T_token *token, T_svalues *svalues)
 }
 
 /* Parses the 'glTF.accessors.sparse' property. */
-static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
+static int parse_sparse(FILE *file, token_t *token, sparse_t *sparse)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2407,10 +2409,10 @@ static int parse_sparse(FILE *file, T_token *token, T_sparse *sparse)
 }
 
 /* Parses the 'glTF.accessors' property. */
-static int parse_accessors(FILE *file, T_token *token, size_t index,
+static int parse_accessors(FILE *file, token_t *token, size_t index,
                            void *accessors_p)
 {
-    T_accessors *accessors = accessors_p;
+    accessors_t *accessors = accessors_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2529,10 +2531,10 @@ static int parse_accessors(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.bufferViews' property. */
-static int parse_bufferviews(FILE *file, T_token *token, size_t index,
+static int parse_bufferviews(FILE *file, token_t *token, size_t index,
                              void *bufferviews_p)
 {
-    T_bufferviews *bufferviews = bufferviews_p;
+    bufferviews_t *bufferviews = bufferviews_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2592,10 +2594,10 @@ static int parse_bufferviews(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.buffers' property. */
-static int parse_buffers(FILE *file, T_token *token, size_t index,
+static int parse_buffers(FILE *file, token_t *token, size_t index,
                          void *buffers_p)
 {
-    T_buffers *buffers = buffers_p;
+    buffers_t *buffers = buffers_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2640,10 +2642,10 @@ static int parse_buffers(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.textures' property. */
-static int parse_textures(FILE *file, T_token *token, size_t index,
+static int parse_textures(FILE *file, token_t *token, size_t index,
                           void *textures_p)
 {
-    T_textures *textures = textures_p;
+    textures_t *textures = textures_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2690,10 +2692,10 @@ static int parse_textures(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.images' property. */
-static int parse_images(FILE *file, T_token *token, size_t index,
+static int parse_images(FILE *file, token_t *token, size_t index,
                         void *images_p)
 {
-    T_images *images = images_p;
+    images_t *images = images_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2744,10 +2746,10 @@ static int parse_images(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.samplers' property. */
-static int parse_samplers(FILE *file, T_token *token, size_t index,
+static int parse_samplers(FILE *file, token_t *token, size_t index,
                           void *samplers_p)
 {
-    T_samplers *samplers = samplers_p;
+    samplers_t *samplers = samplers_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2803,7 +2805,7 @@ static int parse_samplers(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.extensions.KHR_lights_punctual.lights.spot' property. */
-static int parse_spot(FILE *file, T_token *token, T_spot *spot)
+static int parse_spot(FILE *file, token_t *token, spot_t *spot)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2849,10 +2851,10 @@ static int parse_spot(FILE *file, T_token *token, T_spot *spot)
 }
 
 /* Parses the 'glTF.extensions.KHR_lights_punctual.lights' property. */
-static int parse_lights(FILE *file, T_token *token, size_t index,
+static int parse_lights(FILE *file, token_t *token, size_t index,
                         void *lights_p)
 {
-    T_lights *lights = lights_p;
+    lights_t *lights = lights_p;
 
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2930,7 +2932,7 @@ static int parse_lights(FILE *file, T_token *token, size_t index,
 }
 
 /* Parses the 'glTF.extensions.KHR_lights_punctual' property. */
-static int parse_punctual(FILE *file, T_token *token, T_gltf *gltf)
+static int parse_punctual(FILE *file, token_t *token, gltf_t *gltf)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -2971,7 +2973,7 @@ static int parse_punctual(FILE *file, T_token *token, T_gltf *gltf)
 }
 
 /* Parses the 'glTF.extensions' property. */
-static int parse_extensions(FILE *file, T_token *token, T_gltf *gltf)
+static int parse_extensions(FILE *file, token_t *token, gltf_t *gltf)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -3010,7 +3012,7 @@ static int parse_extensions(FILE *file, T_token *token, T_gltf *gltf)
 }
 
 /* Parses the root glTF object. */
-static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
+static int parse_gltf(FILE *file, token_t *token, gltf_t *gltf)
 {
     assert(file != NULL && !feof(file));
     assert(token != NULL);
@@ -3154,36 +3156,36 @@ static int parse_gltf(FILE *file, T_token *token, T_gltf *gltf)
 typedef struct {
     char *path;
     /* offset into the embedded binary buffer (0), when applicable */
-    T_int off_e;
+    int_t off_e;
     /* open file(s), mapping to 'gltf.buffers' */
     union {
         FILE *file;
         FILE **files;
     };
-} T_fdata;
+} fdata_t;
 
 /* Lists of contents mapping to a gltf object. */
 typedef struct {
-    YF_scene *scns;
-    YF_node *nodes;
-    YF_mesh *meshes;
-    YF_skin *skins;
-    YF_material *matls;
-    YF_animation *anims;
+    yf_scene_t **scns;
+    yf_node_t **nodes;
+    yf_mesh_t **meshes;
+    yf_skin_t **skins;
+    yf_material_t **matls;
+    yf_kfanim_t **anims;
 
     /* the texture list contain source image indices */
-    T_int *texs;
-    YF_texture *imgs;
+    int_t *texs;
+    yf_texture_t **imgs;
 
     /* default sampler is used when not specified */
-    YF_sampler dft_splr;
-    YF_sampler *splrs;
+    yf_sampler_t dfl_splr;
+    yf_sampler_t *splrs;
 #define YF_NILSPLR(splr) ((splr).wrapmode.u < 0)
 
     /* flag indicating that the contents must be destroyed
        when not set, only the allocated lists are freed */
     int deinit;
-} T_cont;
+} cont_t;
 
 #define YF_PATHOF(pathname, path) do { \
     const char *last = strrchr(pathname, '/'); \
@@ -3209,11 +3211,11 @@ typedef struct {
     } } while (0)
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
-static void print_gltf(const T_gltf *gltf);
+static void print_gltf(const gltf_t *gltf);
 #endif
 
 /* Deinitializes glTF contents. */
-static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
+static void deinit_gltf(gltf_t *gltf, fdata_t *fdata, cont_t *cont)
 {
     if (gltf == NULL) {
         assert(fdata == NULL);
@@ -3280,7 +3282,7 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         if (cont->anims != NULL) {
             if (cont->deinit) {
                 for (size_t i = 0; i < gltf->animations.n; i++)
-                    yf_animation_deinit(cont->anims[i]);
+                    yf_kfanim_deinit(cont->anims[i]);
             }
             free(cont->anims);
         }
@@ -3388,7 +3390,7 @@ static void deinit_gltf(T_gltf *gltf, T_fdata *fdata, T_cont *cont)
 }
 
 /* Initializes glTF contents. */
-static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
+static int init_gltf(FILE *file, gltf_t *gltf, fdata_t *fdata, cont_t *cont)
 {
     assert(file != NULL);
     assert(gltf != NULL);
@@ -3430,7 +3432,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
         }
     }
 
-    T_token token = {0};
+    token_t token = {0};
     next_token(file, &token);
     if (token.token != YF_TOKEN_OP && token.data[0] != '{') {
         yf_seterr(YF_ERR_INVFILE, __func__);
@@ -3460,7 +3462,7 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
             fdata->files[0] = file;
     }
 
-    *cont = (T_cont){0};
+    *cont = (cont_t){0};
     if (gltf->scenes.n > 0) {
         cont->scns = calloc(gltf->scenes.n, sizeof *cont->scns);
         if (cont->scns == NULL) {
@@ -3544,16 +3546,16 @@ static int init_gltf(FILE *file, T_gltf *gltf, T_fdata *fdata, T_cont *cont)
 }
 
 /* Seeks into data buffer as specified by an accessor or buffer view. */
-static FILE *seek_data(const T_gltf *gltf, T_fdata *fdata, T_int accessor,
-                       T_int buffer_view)
+static FILE *seek_data(const gltf_t *gltf, fdata_t *fdata, int_t accessor,
+                       int_t buffer_view)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
     assert(accessor != YF_INT_MIN || buffer_view != YF_INT_MIN);
 
-    T_int buf, off;
+    int_t buf, off;
     if (accessor != YF_INT_MIN) {
-        T_int view = gltf->accessors.v[accessor].buffer_view;
+        int_t view = gltf->accessors.v[accessor].buffer_view;
         buf = gltf->bufferviews.v[view].buffer;
         off = gltf->accessors.v[accessor].byte_off +
             gltf->bufferviews.v[view].byte_off;
@@ -3618,8 +3620,8 @@ static FILE *seek_data(const T_gltf *gltf, T_fdata *fdata, T_int accessor,
 }
 
 /* Loads a single mesh from glTF contents. */
-static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
-                     T_int mesh)
+static int load_mesh(const gltf_t *gltf, fdata_t *fdata, cont_t *cont,
+                     int_t mesh)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
@@ -3635,13 +3637,13 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     if (cont->meshes[mesh] != NULL)
         return 0;
 
-    const T_primitives *primitives = &gltf->meshes.v[mesh].primitives;
+    const primitives_t *primitives = &gltf->meshes.v[mesh].primitives;
     if (primitives->n == 0) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         return -1;
     }
 
-    YF_meshdt data;
+    yf_meshdt_t data;
     data.prims = malloc(primitives->n * sizeof *data.prims);
     if (data.prims == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
@@ -3694,7 +3696,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
         /* vertex attributes */
         /* TODO: Endianness. */
-        const T_int pos_acc = primitives->v[i].attributes[YF_GLTF_ATTR_POS];
+        const int_t pos_acc = primitives->v[i].attributes[YF_GLTF_ATTR_POS];
         if (pos_acc == YF_INT_MIN) {
             yf_seterr(YF_ERR_UNSUP, __func__);
             YF_DEALLOCDT(i);
@@ -3718,7 +3720,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         data.prims[i].attr_n = attr_n;
 
         for (size_t j = 0, k = 0; j < attr_n; k++) {
-            const T_int attr_acc = primitives->v[i].attributes[k];
+            const int_t attr_acc = primitives->v[i].attributes[k];
             if (attr_acc == YF_INT_MIN)
                 continue;
 
@@ -3726,7 +3728,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             data.prims[i].attrs[j].vsemt = 1 << k;
             data.prims[i].vsemt_mask |= 1 << k;
 
-            const T_int comp_type = gltf->accessors.v[attr_acc].comp_type;
+            const int_t comp_type = gltf->accessors.v[attr_acc].comp_type;
             const int type = gltf->accessors.v[attr_acc].type;
             size_t comp_sz;
             size_t comp_n;
@@ -3961,8 +3963,8 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 return -1;
             }
 
-            const T_int attr_view = gltf->accessors.v[attr_acc].buffer_view;
-            const T_int byte_strd = gltf->bufferviews.v[attr_view].byte_strd;
+            const int_t attr_view = gltf->accessors.v[attr_acc].buffer_view;
+            const int_t byte_strd = gltf->bufferviews.v[attr_view].byte_strd;
 
             dt += data.prims[i].data_off + data.prims[i].attrs[j].data_off;
             if (byte_strd == 0) {
@@ -3997,7 +3999,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
         /* vertex indices */
         /* TODO: Endianness. */
-        const T_int indx_acc = primitives->v[i].indices;
+        const int_t indx_acc = primitives->v[i].indices;
         if (indx_acc == YF_INT_MIN) {
             data.prims[i].indx_n = 0;
             data.prims[i].itype = 0;
@@ -4070,7 +4072,7 @@ static int load_mesh(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 }
 
 /* Loads a single sampler from glTF contents. */
-static int load_sampler(const T_gltf *gltf, T_cont *cont, T_int sampler)
+static int load_sampler(const gltf_t *gltf, cont_t *cont, int_t sampler)
 {
     assert(gltf != NULL);
     assert(cont != NULL);
@@ -4087,7 +4089,7 @@ static int load_sampler(const T_gltf *gltf, T_cont *cont, T_int sampler)
 
     /* wrap modes */
     struct {
-        const T_int from;
+        const int_t from;
         int *const to;
     } wrap[2] = {
         {gltf->samplers.v[sampler].wrap_s, &cont->splrs[sampler].wrapmode.u},
@@ -4146,8 +4148,8 @@ static int load_sampler(const T_gltf *gltf, T_cont *cont, T_int sampler)
 }
 
 /* Loads a single texture from glTF contents. */
-static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
-                        T_int texture)
+static int load_texture(const gltf_t *gltf, fdata_t *fdata, cont_t *cont,
+                        int_t texture)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
@@ -4164,7 +4166,7 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         return 0;
 
     assert(cont->imgs != NULL);
-    const T_int image = gltf->textures.v[texture].source;
+    const int_t image = gltf->textures.v[texture].source;
     if (cont->imgs[image] != NULL) {
         /* XXX: Texture samplers might differ. */
         cont->texs[texture] = image;
@@ -4177,8 +4179,8 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         return -1;
     }
 
-    const T_int view = gltf->images.v[image].buffer_view;
-    YF_texdt data;
+    const int_t view = gltf->images.v[image].buffer_view;
+    yf_texdt_t data;
     if (view != YF_INT_MIN) {
         /* image provided through binary buffer */
         FILE *file = seek_data(gltf, fdata, YF_INT_MIN, view);
@@ -4198,9 +4200,9 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             return -1;
     }
 
-    const T_int sampler = gltf->textures.v[texture].sampler;
+    const int_t sampler = gltf->textures.v[texture].sampler;
     if (sampler == YF_INT_MIN) {
-        data.splr = cont->dft_splr;
+        data.splr = cont->dfl_splr;
     } else {
         if (load_sampler(gltf, cont, sampler) != 0)
             return -1;
@@ -4220,8 +4222,8 @@ static int load_texture(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 }
 
 /* Loads a single skin from glTF contents. */
-static int load_skin(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
-                     T_int skin)
+static int load_skin(const gltf_t *gltf, fdata_t *fdata, cont_t *cont,
+                     int_t skin)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
@@ -4240,8 +4242,8 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     const size_t jnt_n = gltf->skins.v[skin].joint_n;
     assert(jnt_n > 0);
 
-    T_int *jnt_hier = calloc(gltf->nodes.n, sizeof *jnt_hier);
-    YF_joint *jnts = malloc(jnt_n * sizeof *jnts);
+    int_t *jnt_hier = calloc(gltf->nodes.n, sizeof *jnt_hier);
+    yf_joint_t *jnts = malloc(jnt_n * sizeof *jnts);
     if (jnt_hier == NULL || jnts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         free(jnt_hier);
@@ -4250,7 +4252,7 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     for (size_t i = 0; i < jnt_n; i++) {
-        const T_int node = gltf->skins.v[skin].joints[i];
+        const int_t node = gltf->skins.v[skin].joints[i];
 
         /* joint transform */
         const unsigned mask = gltf->nodes.v[node].xform_mask;
@@ -4259,21 +4261,21 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
                 yf_mat4_copy(jnts[i].xform, gltf->nodes.v[node].matrix);
             } else {
                 if (mask & YF_GLTF_XFORM_T) {
-                    const T_num *t = gltf->nodes.v[node].trs.t;
+                    const num_t *t = gltf->nodes.v[node].trs.t;
                     yf_mat4_xlate(jnts[i].xform, t[0], t[1], t[2]);
                 } else {
                     yf_mat4_iden(jnts[i].xform);
                 }
                 if (mask & YF_GLTF_XFORM_R) {
-                    const T_num *r = gltf->nodes.v[node].trs.r;
-                    YF_mat4 mr, rot;
+                    const num_t *r = gltf->nodes.v[node].trs.r;
+                    yf_mat4_t mr, rot;
                     yf_mat4_rotq(mr, r);
                     yf_mat4_mul(rot, jnts[i].xform, mr);
                     yf_mat4_copy(jnts[i].xform, rot);
                 }
                 if (mask & YF_GLTF_XFORM_S) {
-                    const T_num *s = gltf->nodes.v[node].trs.s;
-                    YF_mat4 ms, scl;
+                    const num_t *s = gltf->nodes.v[node].trs.s;
+                    yf_mat4_t ms, scl;
                     yf_mat4_scale(ms, s[0], s[1], s[2]);
                     yf_mat4_mul(scl, jnts[i].xform, ms);
                     yf_mat4_copy(jnts[i].xform, scl);
@@ -4298,24 +4300,24 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     for (size_t i = 0; i < jnt_n; i++) {
-        const T_int node = gltf->skins.v[skin].joints[i];
+        const int_t node = gltf->skins.v[skin].joints[i];
         /* negative 'pnt_i' means no parent */
         jnts[i].pnt_i = jnt_hier[node] - 1;
     }
 
     /* ibm data */
     /* TODO: Endianness. */
-    const T_int acc = gltf->skins.v[skin].inv_bind_matrices;
+    const int_t acc = gltf->skins.v[skin].inv_bind_matrices;
     if (acc != YF_INT_MIN) {
-        const T_int view = gltf->accessors.v[acc].buffer_view;
-        const T_int buf = gltf->bufferviews.v[view].buffer;
+        const int_t view = gltf->accessors.v[acc].buffer_view;
+        const int_t buf = gltf->bufferviews.v[view].buffer;
         const size_t off = gltf->accessors.v[acc].byte_off +
             gltf->bufferviews.v[view].byte_off;
 
-        assert(gltf->accessors.v[acc].count == (T_int)jnt_n);
+        assert(gltf->accessors.v[acc].count == (int_t)jnt_n);
         assert(gltf->accessors.v[acc].comp_type == YF_GLTF_COMP_FLOAT);
         assert(gltf->accessors.v[acc].type == YF_GLTF_TYPE_MAT4);
-        assert(gltf->buffers.v[buf].byte_len - off >= sizeof(YF_mat4));
+        assert(gltf->buffers.v[buf].byte_len - off >= sizeof(yf_mat4_t));
 
         FILE *file = seek_data(gltf, fdata, acc, YF_INT_MIN);
         if (file == NULL) {
@@ -4346,8 +4348,8 @@ static int load_skin(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 }
 
 /* Loads a single material from glTF contents. */
-static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
-                         T_int material)
+static int load_material(const gltf_t *gltf, fdata_t *fdata, cont_t *cont,
+                         int_t material)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
@@ -4363,14 +4365,14 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     if (cont->matls[material] != NULL)
         return 0;
 
-    YF_matlprop prop = {0};
-    const T_textureinfo *infos[5];
-    YF_texref *refs[5];
+    yf_matlprop_t prop = {0};
+    const textureinfo_t *infos[5];
+    yf_texref_t *refs[5];
 
     if (!gltf->materials.v[material].ext.unlit) {
         if (gltf->materials.v[material].ext.pbrsg != NULL) {
             /* spec-gloss (extension) */
-            const T_pbrspecgloss *pbrsg = gltf->materials.v[material].ext.pbrsg;
+            const pbrspecgloss_t *pbrsg = gltf->materials.v[material].ext.pbrsg;
 
             prop.pbr = YF_PBR_SPECGLOSS;
             memcpy(prop.pbrsg.diffuse_fac, pbrsg->diffuse_fac,
@@ -4386,7 +4388,7 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
         } else {
             /* metal-rough */
-            const T_pbrmetalrough *pbrmr = &gltf->materials.v[material].pbrmr;
+            const pbrmetalrough_t *pbrmr = &gltf->materials.v[material].pbrmr;
 
             prop.pbr = YF_PBR_METALROUGH;
             memcpy(prop.pbrmr.color_fac, pbrmr->base_clr_fac,
@@ -4460,14 +4462,14 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         if (infos[i] == NULL || infos[i]->index == YF_INT_MIN)
             continue;
 
-        const T_int texture = infos[i]->index;
+        const int_t texture = infos[i]->index;
         if (load_texture(gltf, fdata, cont, texture) != 0)
             return -1;
         refs[i]->tex = cont->imgs[cont->texs[texture]];
 
-        const T_int sampler = gltf->textures.v[texture].sampler;
+        const int_t sampler = gltf->textures.v[texture].sampler;
         if (sampler == YF_INT_MIN) {
-            refs[i]->splr = cont->dft_splr;
+            refs[i]->splr = cont->dfl_splr;
         } else {
             if (load_sampler(gltf, cont, sampler) != 0)
                 return -1;
@@ -4491,11 +4493,11 @@ static int load_material(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     return cont->matls[material] == NULL ? -1 : 0;
 }
 
-static int load_skeleton(const T_gltf *, T_fdata *, T_cont *, T_int);
+static int load_skeleton(const gltf_t *, fdata_t *, cont_t *, int_t);
 
 /* Loads a single node from glTF contents. */
-static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
-                     T_int node)
+static int load_node(const gltf_t *gltf, fdata_t *fdata, cont_t *cont,
+                     int_t node)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
@@ -4512,11 +4514,11 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         return 0;
 
     /* node object */
-    const T_int mesh = gltf->nodes.v[node].mesh;
-    const T_int punctual = gltf->nodes.v[node].ext.light;
+    const int_t mesh = gltf->nodes.v[node].mesh;
+    const int_t punctual = gltf->nodes.v[node].ext.light;
     if (mesh != YF_INT_MIN) {
         /* model */
-        YF_model mdl = yf_model_init();
+        yf_model_t *mdl = yf_model_init();
         if (mdl == NULL)
             return -1;
 
@@ -4529,9 +4531,9 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
         yf_model_setmesh(mdl, cont->meshes[mesh]);
 
-        const T_primitives *primitives = &gltf->meshes.v[mesh].primitives;
+        const primitives_t *primitives = &gltf->meshes.v[mesh].primitives;
         for (size_t i = 0; i < primitives->n; i++) {
-            const T_int material = primitives->v[i].material;
+            const int_t material = primitives->v[i].material;
             if (material != YF_INT_MIN) {
                 if (load_material(gltf, fdata, cont, material) != 0) {
                     yf_model_deinit(mdl);
@@ -4542,9 +4544,9 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             }
         }
 
-        const T_int skin = gltf->nodes.v[node].skin;
+        const int_t skin = gltf->nodes.v[node].skin;
         if (skin != YF_INT_MIN) {
-            YF_skeleton skel = NULL;
+            yf_skeleton_t *skel = NULL;
             if (load_skeleton(gltf, fdata, cont, skin) != 0) {
                 yf_model_deinit(mdl);
                 cont->nodes[node] = NULL;
@@ -4577,8 +4579,8 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         float inner_angle = gltf->ext.lights.v[punctual].spot.inner_cone_angle;
         float outer_angle = gltf->ext.lights.v[punctual].spot.outer_cone_angle;
 
-        YF_light light = yf_light_init(lightt, color, intensity,
-                                       range, inner_angle, outer_angle);
+        yf_light_t *light = yf_light_init(lightt, color, intensity, range,
+                                          inner_angle, outer_angle);
         if (light == NULL)
             return -1;
 
@@ -4598,21 +4600,21 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             yf_mat4_copy(*yf_node_getxform(cont->nodes[node]),
                          gltf->nodes.v[node].matrix);
         } else {
-            YF_mat4 *m = yf_node_getxform(cont->nodes[node]);
+            yf_mat4_t *m = yf_node_getxform(cont->nodes[node]);
             if (mask & YF_GLTF_XFORM_T) {
-                const T_num *t = gltf->nodes.v[node].trs.t;
+                const num_t *t = gltf->nodes.v[node].trs.t;
                 yf_mat4_xlate(*m, t[0], t[1], t[2]);
             }
             if (mask & YF_GLTF_XFORM_R) {
-                const T_num *r = gltf->nodes.v[node].trs.r;
-                YF_mat4 mr, rot;
+                const num_t *r = gltf->nodes.v[node].trs.r;
+                yf_mat4_t mr, rot;
                 yf_mat4_rotq(rot, r);
                 yf_mat4_mul(mr, *m, rot);
                 yf_mat4_copy(*m, mr);
             }
             if (mask & YF_GLTF_XFORM_S) {
-                const T_num *s = gltf->nodes.v[node].trs.s;
-                YF_mat4 ms, scl;
+                const num_t *s = gltf->nodes.v[node].trs.s;
+                yf_mat4_t ms, scl;
                 yf_mat4_scale(scl, s[0], s[1], s[2]);
                 yf_mat4_mul(ms, *m, scl);
                 yf_mat4_copy(*m, ms);
@@ -4627,8 +4629,8 @@ static int load_node(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 }
 
 /* Loads a single skeleton from glTF contents. */
-static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
-                         T_int skin)
+static int load_skeleton(const gltf_t *gltf, fdata_t *fdata, cont_t *cont,
+                         int_t skin)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
@@ -4651,23 +4653,23 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     unsigned jnt_n;
-    const YF_joint *jnts = yf_skin_getjnts(cont->skins[skin], &jnt_n);
+    const yf_joint_t *jnts = yf_skin_getjnts(cont->skins[skin], &jnt_n);
 
-    union { T_int i, *is; } unparented;
+    union { int_t i, *is; } unparented;
     unsigned unparented_n = 0;
 
     for (size_t i = 0; i < jnt_n; i++) {
         if (jnts[i].pnt_i >= 0)
             continue;
 
-        /* XXX: 'YF_joint' array matches 'gltf.skins.v[].joints'. */
+        /* XXX: 'yf_joint_t' array matches 'gltf.skins.v[].joints'. */
         switch (unparented_n) {
         case 0:
             unparented.i = gltf->skins.v[skin].joints[i];
             break;
 
         case 1: {
-            T_int *tmp = malloc(jnt_n * sizeof *tmp);
+            int_t *tmp = malloc(jnt_n * sizeof *tmp);
             if (tmp == NULL) {
                 yf_seterr(YF_ERR_NOMEM, __func__);
                 return -1;
@@ -4686,10 +4688,10 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
     assert(unparented_n != 0);
 
-    T_int root = YF_INT_MIN;
+    int_t root = YF_INT_MIN;
     if (unparented_n > 1) {
         /* need to find common root of unparented joints */
-        T_int *hier = calloc(gltf->nodes.n, sizeof *hier);
+        int_t *hier = calloc(gltf->nodes.n, sizeof *hier);
         if (hier == NULL) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             free(unparented.is);
@@ -4704,10 +4706,10 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
 
         /* go up the hierarchy chain to find the common root */
-        for (T_int i = hier[unparented.is[0]] - 1; i >= 0; i = hier[i] - 1) {
+        for (int_t i = hier[unparented.is[0]] - 1; i >= 0; i = hier[i] - 1) {
             unsigned count = 1;
             for (size_t j = 1; j < unparented_n; j++) {
-                for (T_int k = hier[unparented.is[j]] - 1; k >= 0;
+                for (int_t k = hier[unparented.is[j]] - 1; k >= 0;
                      k = hier[k] - 1) {
                     if (k == i) {
                         count++;
@@ -4742,14 +4744,14 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 
     /* XXX: The skeleton instantiated here is unmanaged. Its nodes must be
        added to a collection since 'skin_unmkskel()' will not touch them. */
-    YF_node *nodes = malloc((jnt_n + 1) * sizeof *nodes);
+    yf_node_t **nodes = malloc((jnt_n + 1) * sizeof *nodes);
     if (nodes == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
 
     for (size_t i = 0; i < jnt_n; i++) {
-        const T_int joint = gltf->skins.v[skin].joints[i];
+        const int_t joint = gltf->skins.v[skin].joints[i];
         if (load_node(gltf, fdata, cont, joint) != 0) {
             free(nodes);
             return -1;
@@ -4769,14 +4771,14 @@ static int load_skeleton(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             yf_node_insert(nodes[jnts[i].pnt_i], nodes[i]);
     }
 
-    YF_skeleton skel = yf_skin_makeskel(cont->skins[skin], nodes);
+    yf_skeleton_t *skel = yf_skin_makeskel(cont->skins[skin], nodes);
     free(nodes);
     return skel == NULL ? -1 : 0;
 }
 
 /* Loads a single animation from glTF contents. */
-static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
-                          T_int animation)
+static int load_animation(const gltf_t *gltf, fdata_t *fdata, cont_t *cont,
+                          int_t animation)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
@@ -4792,14 +4794,14 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     if (cont->anims[animation] != NULL)
         return 0;
 
-    const T_channels *channels = &gltf->animations.v[animation].channels;
+    const channels_t *channels = &gltf->animations.v[animation].channels;
     const size_t channel_n = gltf->animations.v[animation].channels.n;
-    const T_asamplers *samplers = &gltf->animations.v[animation].samplers;
+    const asamplers_t *samplers = &gltf->animations.v[animation].samplers;
     const size_t sampler_n = gltf->animations.v[animation].samplers.n;
 
-    YF_kfinput *ins = malloc(sampler_n * sizeof *ins);
-    YF_kfoutput *outs = malloc(sampler_n * sizeof *outs);
-    YF_kfaction *acts = malloc(channel_n * sizeof *acts);
+    yf_kfin_t *ins = malloc(sampler_n * sizeof *ins);
+    yf_kfout_t *outs = malloc(sampler_n * sizeof *outs);
+    yf_kfact_t *acts = malloc(channel_n * sizeof *acts);
     if (ins == NULL || outs == NULL || acts == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         free(ins);
@@ -4845,8 +4847,8 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     }
 
     for (size_t i = 0; i < sampler_n; i++) {
-        T_int input = samplers->v[i].input;
-        T_int output = samplers->v[i].output;
+        int_t input = samplers->v[i].input;
+        int_t output = samplers->v[i].output;
 
         for (size_t j = 0; j < i; j++) {
             if (input == samplers->v[j].input) {
@@ -4902,7 +4904,7 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         /* TODO: Endianness. */
         if (output != YF_INT_MIN) {
             for (size_t j = 0; j < channel_n; j++) {
-                if (channels->v[j].sampler != (T_int)i)
+                if (channels->v[j].sampler != (int_t)i)
                     continue;
                 switch (channels->v[j].target.path) {
                 case YF_GLTF_PATH_XLATE:
@@ -4988,9 +4990,9 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         }
     }
 
-    /* each channel corresponds to a keyframe action */
+    /* each channel corresponds to a keyframe act */
     for (size_t i = 0; i < channel_n; i++) {
-        const T_int sampler = channels->v[i].sampler;
+        const int_t sampler = channels->v[i].sampler;
         switch (samplers->v[sampler].interpolation) {
         case YF_GLTF_ERP_LINEAR:
             acts[i].kferp = YF_KFERP_LINEAR;
@@ -5008,8 +5010,8 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
         acts[i].out_i = s_map[sampler].out;
     }
 
-    cont->anims[animation] = yf_animation_init(ins, in_n, outs, out_n,
-                                               acts, channel_n);
+    cont->anims[animation] = yf_kfanim_init(ins, in_n, outs, out_n,
+                                            acts, channel_n);
     YF_DEALLOCKF();
     free(s_map);
     if (cont->anims[animation] == NULL)
@@ -5018,7 +5020,7 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 #undef YF_DEALLOCKF
 
     for (size_t i = 0; i < channel_n; i++) {
-        const T_int node = channels->v[i].target.node;
+        const int_t node = channels->v[i].target.node;
         if (node == YF_INT_MIN)
             continue;
 
@@ -5026,15 +5028,15 @@ static int load_animation(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
             return -1;
 
         /* XXX: Caller is responsible for creating the node hierarchy. */
-        yf_animation_settarget(cont->anims[animation], i, cont->nodes[node]);
+        yf_kfanim_settarget(cont->anims[animation], i, cont->nodes[node]);
     }
 
     return 0;
 }
 
 /* Loads a node graph from glTF contents. */
-static int load_graph(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
-                      T_int node)
+static int load_graph(const gltf_t *gltf, fdata_t *fdata, cont_t *cont,
+                      int_t node)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
@@ -5066,8 +5068,8 @@ static int load_graph(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 }
 
 /* Loads an entire scene from glTF contents. */
-static int load_scene(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
-                      T_int scene)
+static int load_scene(const gltf_t *gltf, fdata_t *fdata, cont_t *cont,
+                      int_t scene)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
@@ -5087,7 +5089,7 @@ static int load_scene(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
     if (cont->scns[scene] == NULL)
         return -1;
 
-    YF_node node = yf_scene_getnode(cont->scns[scene]);
+    yf_node_t *node = yf_scene_getnode(cont->scns[scene]);
     yf_node_setname(node, gltf->scenes.v[scene].name);
     for (size_t i = 0; i < gltf->scenes.v[scene].node_n; i++) {
         if (load_graph(gltf, fdata, cont,
@@ -5103,7 +5105,7 @@ static int load_scene(const T_gltf *gltf, T_fdata *fdata, T_cont *cont,
 }
 
 /* Loads glTF contents. */
-static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
+static int load_contents(const gltf_t *gltf, fdata_t *fdata, cont_t *cont)
 {
     assert(gltf != NULL);
     assert(fdata != NULL);
@@ -5169,8 +5171,7 @@ static int load_contents(const T_gltf *gltf, T_fdata *fdata, T_cont *cont)
 }
 
 /* Manages created contents. */
-static int manage_contents(const T_gltf *gltf, T_cont *cont,
-                           YF_collection coll)
+static int manage_contents(const gltf_t *gltf, cont_t *cont, yf_collec_t *coll)
 {
     assert(gltf != NULL);
     assert(cont != NULL);
@@ -5179,14 +5180,14 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
     /* created scenes */
     if (cont->scns != NULL) {
         for (size_t i = 0; i < gltf->scenes.n; i++) {
-            YF_scene scn = cont->scns[i];
+            yf_scene_t *scn = cont->scns[i];
             if (scn == NULL)
                 continue;
 
             const char *name = gltf->scenes.v[i].name;
-            if (yf_collection_manage(coll, YF_CITEM_SCENE, name, scn) != 0) {
+            if (yf_collec_manage(coll, YF_CITEM_SCENE, name, scn) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_CITEM_SCENE, NULL, scn) != 0)
+                    yf_collec_manage(coll, YF_CITEM_SCENE, NULL, scn) != 0)
                     return -1;
             }
         }
@@ -5195,14 +5196,14 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
     /* created nodes */
     if (cont->nodes != NULL) {
         for (size_t i = 0; i < gltf->nodes.n; i++) {
-            YF_node node = cont->nodes[i];
+            yf_node_t *node = cont->nodes[i];
             if (node == NULL)
                 continue;
 
             const char *name = gltf->nodes.v[i].name;
-            if (yf_collection_manage(coll, YF_CITEM_NODE, name, node) != 0) {
+            if (yf_collec_manage(coll, YF_CITEM_NODE, name, node) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_CITEM_NODE, NULL, node) != 0)
+                    yf_collec_manage(coll, YF_CITEM_NODE, NULL, node) != 0)
                     return -1;
             }
         }
@@ -5211,14 +5212,14 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
     /* created meshes */
     if (cont->meshes != NULL) {
         for (size_t i = 0; i < gltf->meshes.n; i++) {
-            YF_mesh mesh = cont->meshes[i];
+            yf_mesh_t *mesh = cont->meshes[i];
             if (mesh == NULL)
                 continue;
 
             const char *name = gltf->meshes.v[i].name;
-            if (yf_collection_manage(coll, YF_CITEM_MESH, name, mesh) != 0) {
+            if (yf_collec_manage(coll, YF_CITEM_MESH, name, mesh) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_CITEM_MESH, NULL, mesh) != 0)
+                    yf_collec_manage(coll, YF_CITEM_MESH, NULL, mesh) != 0)
                     return -1;
             }
         }
@@ -5227,7 +5228,7 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
     /* created textures */
     if (cont->imgs != NULL) {
         for (size_t i = 0; i < gltf->images.n; i++) {
-            YF_texture tex = cont->imgs[i];
+            yf_texture_t *tex = cont->imgs[i];
             if (tex == NULL)
                 continue;
 
@@ -5235,10 +5236,9 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
             if (name == NULL)
                 name = gltf->images.v[i].uri;
 
-            if (yf_collection_manage(coll, YF_CITEM_TEXTURE, name, tex) != 0) {
+            if (yf_collec_manage(coll, YF_CITEM_TEXTURE, name, tex) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_CITEM_TEXTURE, NULL,
-                                         tex) != 0)
+                    yf_collec_manage(coll, YF_CITEM_TEXTURE, NULL, tex) != 0)
                     return -1;
             }
         }
@@ -5247,14 +5247,14 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
     /* created skins */
     if (cont->skins != NULL) {
         for (size_t i = 0; i < gltf->skins.n; i++) {
-            YF_skin skin = cont->skins[i];
+            yf_skin_t *skin = cont->skins[i];
             if (skin == NULL)
                 continue;
 
             const char *name = gltf->skins.v[i].name;
-            if (yf_collection_manage(coll, YF_CITEM_SKIN, name, skin) != 0) {
+            if (yf_collec_manage(coll, YF_CITEM_SKIN, name, skin) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_CITEM_SKIN, NULL, skin) != 0)
+                    yf_collec_manage(coll, YF_CITEM_SKIN, NULL, skin) != 0)
                     return -1;
             }
         }
@@ -5263,16 +5263,14 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
     /* created materials */
     if (cont->matls != NULL) {
         for (size_t i = 0; i < gltf->materials.n; i++) {
-            YF_material matl = cont->matls[i];
+            yf_material_t *matl = cont->matls[i];
             if (matl == NULL)
                 continue;
 
             const char *name = gltf->materials.v[i].name;
-            if (yf_collection_manage(coll, YF_CITEM_MATERIAL, name,
-                                     matl) != 0) {
+            if (yf_collec_manage(coll, YF_CITEM_MATERIAL, name, matl) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_CITEM_MATERIAL, NULL,
-                                         matl) != 0)
+                    yf_collec_manage(coll, YF_CITEM_MATERIAL, NULL, matl) != 0)
                     return -1;
             }
         }
@@ -5281,16 +5279,14 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
     /* created animations */
     if (cont->anims != NULL) {
         for (size_t i = 0; i < gltf->animations.n; i++) {
-            YF_animation anim = cont->anims[i];
+            yf_kfanim_t *anim = cont->anims[i];
             if (anim == NULL)
                 continue;
 
             const char *name = gltf->animations.v[i].name;
-            if (yf_collection_manage(coll, YF_CITEM_ANIMATION, name,
-                                     anim) != 0) {
+            if (yf_collec_manage(coll, YF_CITEM_KFANIM, name, anim) != 0) {
                 if (yf_geterr() != YF_ERR_EXIST ||
-                    yf_collection_manage(coll, YF_CITEM_ANIMATION, NULL,
-                                         anim) != 0)
+                    yf_collec_manage(coll, YF_CITEM_KFANIM, NULL, anim) != 0)
                     return -1;
             }
         }
@@ -5299,7 +5295,7 @@ static int manage_contents(const T_gltf *gltf, T_cont *cont,
     return 0;
 }
 
-int yf_loadgltf(const char *pathname, size_t index, YF_datac *datac)
+int yf_loadgltf(const char *pathname, size_t index, yf_datac_t *datac)
 {
     assert(datac != NULL);
     assert(datac->coll != NULL);
@@ -5315,9 +5311,9 @@ int yf_loadgltf(const char *pathname, size_t index, YF_datac *datac)
         return -1;
     }
 
-    T_gltf gltf = {0};
-    T_fdata fdata = {0};
-    T_cont cont = {0};
+    gltf_t gltf = {0};
+    fdata_t fdata = {0};
+    cont_t cont = {0};
     if (init_gltf(file, &gltf, &fdata, &cont) != 0) {
         fclose(file);
         return -1;
@@ -5380,15 +5376,15 @@ int yf_loadgltf(const char *pathname, size_t index, YF_datac *datac)
     return r;
 }
 
-int yf_loadgltf2(FILE *file, size_t index, YF_datac *datac)
+int yf_loadgltf2(FILE *file, size_t index, yf_datac_t *datac)
 {
     assert(file != NULL && !feof(file));
     assert(datac != NULL);
     assert(datac->coll != NULL);
 
-    T_gltf gltf = {0};
-    T_fdata fdata = {0};
-    T_cont cont = {0};
+    gltf_t gltf = {0};
+    fdata_t fdata = {0};
+    cont_t cont = {0};
     if (init_gltf(file, &gltf, &fdata, &cont) != 0)
         return -1;
 
@@ -5448,7 +5444,7 @@ int yf_loadgltf2(FILE *file, size_t index, YF_datac *datac)
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
 
-static void print_gltf(const T_gltf *gltf)
+static void print_gltf(const gltf_t *gltf)
 {
     printf("\n[YF] OUTPUT (%s):\n glTF:\n", __func__);
 
@@ -5565,7 +5561,7 @@ static void print_gltf(const T_gltf *gltf)
                "    primitives (%zu):\n",
                gltf->meshes.v[i].name, gltf->meshes.v[i].primitives.n);
 
-        const T_primitives *prims = &gltf->meshes.v[i].primitives;
+        const primitives_t *prims = &gltf->meshes.v[i].primitives;
         for (size_t j = 0; j < gltf->meshes.v[i].primitives.n; j++) {
             printf("     primitive [%zu]:\n"
                    "      attributes:\n"

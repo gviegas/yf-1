@@ -2,7 +2,7 @@
  * YF
  * resmgr.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_RESMGR_H
@@ -26,13 +26,13 @@
 #define YF_RESRQ_N 11
 
 /* Obtains a resource that satisfies the given requirements. */
-YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc);
+yf_gstate_t *yf_resmgr_obtain(int resrq, unsigned *inst_alloc);
 
 /* Yields a previously obtained resource. */
 void yf_resmgr_yield(int resrq, unsigned inst_alloc);
 
 /* Gets the global descriptor table. */
-YF_dtable yf_resmgr_getglobl(void);
+yf_dtable_t *yf_resmgr_getglobl(void);
 
 /* Gets the number of instance allocations for a given 'resrq' value. */
 unsigned yf_resmgr_getallocn(int resrq);

@@ -2,7 +2,7 @@
  * YF
  * node.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -13,17 +13,19 @@
 
 #include "node.h"
 
-struct YF_node_o {
-    YF_node parent;
-    YF_node prev_sibl;
-    YF_node next_sibl;
-    YF_node child;
+/* TODO: Redesign this.
+   It's too big and things like TRS just don't belong here. */
+struct yf_node {
+    yf_node_t *parent;
+    yf_node_t *prev_sibl;
+    yf_node_t *next_sibl;
+    yf_node_t *child;
     size_t n;
 
-    YF_mat4 xform;
-    YF_vec3 t;
-    YF_vec4 r;
-    YF_vec3 s;
+    yf_mat4_t xform;
+    yf_vec3_t t;
+    yf_vec4_t r;
+    yf_vec3_t s;
     int pending;
     char *name;
 
@@ -31,14 +33,14 @@ struct YF_node_o {
     void *obj;
     void (*deinit)(void *);
 
-    YF_mat4 wld_xform;
-    YF_mat4 wld_inv;
-    YF_mat4 wld_norm;
+    yf_mat4_t wld_xform;
+    yf_mat4_t wld_inv;
+    yf_mat4_t wld_norm;
 };
 
-YF_node yf_node_init(void)
+yf_node_t *yf_node_init(void)
 {
-    YF_node node = malloc(sizeof(struct YF_node_o));
+    yf_node_t *node = malloc(sizeof(yf_node_t));
     if (node == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -69,7 +71,7 @@ YF_node yf_node_init(void)
     return node;
 }
 
-void yf_node_insert(YF_node node, YF_node child)
+void yf_node_insert(yf_node_t *node, yf_node_t *child)
 {
     assert(node != NULL);
     assert(child != NULL);
@@ -85,13 +87,13 @@ void yf_node_insert(YF_node node, YF_node child)
         child->next_sibl->prev_sibl = child;
     node->child = child;
 
-    YF_node aux = node;
+    yf_node_t *aux = node;
     do
         aux->n += child->n;
     while ((aux = aux->parent) != NULL);
 }
 
-void yf_node_drop(YF_node node)
+void yf_node_drop(yf_node_t *node)
 {
     assert(node != NULL);
 
@@ -105,7 +107,7 @@ void yf_node_drop(YF_node node)
     else
         node->parent->child = node->next_sibl;
 
-    YF_node aux = node->parent;
+    yf_node_t *aux = node->parent;
     do
         aux->n -= node->n;
     while ((aux = aux->parent) != NULL);
@@ -115,15 +117,15 @@ void yf_node_drop(YF_node node)
     node->next_sibl = NULL;
 }
 
-void yf_node_prune(YF_node node)
+void yf_node_prune(yf_node_t *node)
 {
     assert(node != NULL);
 
     if (node->child == NULL)
         return;
 
-    YF_node cur = node->child;
-    YF_node next;
+    yf_node_t *cur = node->child;
+    yf_node_t *next;
     size_t n = 0;
     do {
         next = cur->next_sibl;
@@ -135,13 +137,14 @@ void yf_node_prune(YF_node node)
     } while (next != NULL);
     node->child = NULL;
 
-    YF_node aux = node;
+    yf_node_t *aux = node;
     do
         aux->n -= n;
     while ((aux = aux->parent) != NULL);
 }
 
-int yf_node_traverse(YF_node node, int (*fn)(YF_node descendant, void *arg),
+int yf_node_traverse(yf_node_t *node,
+                     int (*fn)(yf_node_t *descendant, void *arg),
                      void *arg)
 {
     assert(node != NULL);
@@ -150,14 +153,14 @@ int yf_node_traverse(YF_node node, int (*fn)(YF_node descendant, void *arg),
     if (node->child == NULL)
         return 0;
 
-    YF_node *queue = malloc(node->n * sizeof(YF_node));
+    yf_node_t **queue = malloc(node->n * sizeof(yf_node_t *));
     if (queue == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
     }
 
     queue[0] = node;
-    YF_node next = NULL;
+    yf_node_t *next = NULL;
     size_t last_i = 0;
     size_t cur_i = 0;
     do {
@@ -177,13 +180,13 @@ int yf_node_traverse(YF_node node, int (*fn)(YF_node descendant, void *arg),
     return 0;
 }
 
-int yf_node_descends(YF_node node, YF_node ancestor)
+int yf_node_descends(yf_node_t *node, yf_node_t *ancestor)
 {
     assert(node != NULL);
     assert(ancestor != NULL);
     assert(node != ancestor);
 
-    YF_node anc = node->parent;
+    yf_node_t *anc = node->parent;
     while (anc != NULL) {
         if (anc != ancestor)
             anc = anc->parent;
@@ -193,37 +196,37 @@ int yf_node_descends(YF_node node, YF_node ancestor)
     return 0;
 }
 
-int yf_node_isleaf(YF_node node)
+int yf_node_isleaf(yf_node_t *node)
 {
     assert(node != NULL);
     return node->child == NULL;
 }
 
-int yf_node_isroot(YF_node node)
+int yf_node_isroot(yf_node_t *node)
 {
     assert(node != NULL);
     return node->parent == NULL;
 }
 
-YF_node yf_node_getparent(YF_node node)
+yf_node_t *yf_node_getparent(yf_node_t *node)
 {
     assert(node != NULL);
     return node->parent;
 }
 
-size_t yf_node_getlen(YF_node node)
+size_t yf_node_getlen(yf_node_t *node)
 {
     assert(node != NULL);
     return node->n;
 }
 
-YF_mat4 *yf_node_getxform(YF_node node)
+yf_mat4_t *yf_node_getxform(yf_node_t *node)
 {
     assert(node != NULL);
 
     if (node->pending) {
         node->pending = 0;
-        YF_mat4 tr, t, r, s;
+        yf_mat4_t tr, t, r, s;
         yf_mat4_xlate(t, node->t[0], node->t[1], node->t[2]);
         yf_mat4_rotq(r, node->r);
         yf_mat4_scale(s, node->s[0], node->s[1], node->s[2]);
@@ -234,7 +237,7 @@ YF_mat4 *yf_node_getxform(YF_node node)
     return &node->xform;
 }
 
-YF_vec3 *yf_node_gett(YF_node node)
+yf_vec3_t *yf_node_gett(yf_node_t *node)
 {
     assert(node != NULL);
 
@@ -242,7 +245,7 @@ YF_vec3 *yf_node_gett(YF_node node)
     return &node->t;
 }
 
-YF_vec4 *yf_node_getr(YF_node node)
+yf_vec4_t *yf_node_getr(yf_node_t *node)
 {
     assert(node != NULL);
 
@@ -250,7 +253,7 @@ YF_vec4 *yf_node_getr(YF_node node)
     return &node->r;
 }
 
-YF_vec3 *yf_node_gets(YF_node node)
+yf_vec3_t *yf_node_gets(yf_node_t *node)
 {
     assert(node != NULL);
 
@@ -258,7 +261,7 @@ YF_vec3 *yf_node_gets(YF_node node)
     return &node->s;
 }
 
-char *yf_node_getname(YF_node node, char *dst, size_t *n)
+char *yf_node_getname(yf_node_t *node, char *dst, size_t *n)
 {
     assert(node != NULL);
     assert(n != NULL);
@@ -284,7 +287,7 @@ char *yf_node_getname(YF_node node, char *dst, size_t *n)
     return NULL;
 }
 
-int yf_node_setname(YF_node node, const char *name)
+int yf_node_setname(yf_node_t *node, const char *name)
 {
     assert(node != NULL);
 
@@ -317,7 +320,7 @@ int yf_node_setname(YF_node node, const char *name)
     return 0;
 }
 
-int yf_node_cmpname(YF_node node, const char *str)
+int yf_node_cmpname(yf_node_t *node, const char *str)
 {
     assert(node != NULL);
 
@@ -326,7 +329,7 @@ int yf_node_cmpname(YF_node node, const char *str)
     return strcmp(s1, s2);
 }
 
-int yf_node_getobj(YF_node node, void **obj)
+int yf_node_getobj(yf_node_t *node, void **obj)
 {
     assert(node != NULL);
 
@@ -335,7 +338,7 @@ int yf_node_getobj(YF_node node, void **obj)
     return node->nodeobj;
 }
 
-void yf_node_deinit(YF_node node)
+void yf_node_deinit(yf_node_t *node)
 {
     if (node == NULL)
         return;
@@ -349,7 +352,7 @@ void yf_node_deinit(YF_node node)
     free(node);
 }
 
-void yf_node_setobj(YF_node node, int nodeobj, void *obj,
+void yf_node_setobj(yf_node_t *node, int nodeobj, void *obj,
                     void (*deinit)(void *obj))
 {
     assert(node != NULL);
@@ -360,19 +363,19 @@ void yf_node_setobj(YF_node node, int nodeobj, void *obj,
     node->deinit = deinit;
 }
 
-YF_mat4 *yf_node_getwldxform(YF_node node)
+yf_mat4_t *yf_node_getwldxform(yf_node_t *node)
 {
     assert(node != NULL);
     return &node->wld_xform;
 }
 
-YF_mat4 *yf_node_getwldinv(YF_node node)
+yf_mat4_t *yf_node_getwldinv(yf_node_t *node)
 {
     assert(node != NULL);
     return &node->wld_inv;
 }
 
-YF_mat4 *yf_node_getwldnorm(YF_node node)
+yf_mat4_t *yf_node_getwldnorm(yf_node_t *node)
 {
     assert(node != NULL);
     return &node->wld_norm;

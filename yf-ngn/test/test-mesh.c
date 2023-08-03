@@ -18,16 +18,16 @@ int yf_test_mesh(void)
 {
     unsigned char buf[2048];
 
-    YF_material matl = yf_material_init(NULL);
+    yf_material_t *matl = yf_material_init(NULL);
     assert(matl != NULL);
 
-    YF_primdt prim = {
+    yf_primdt_t prim = {
         .topology = YF_TOPOLOGY_TRIANGLE,
         .vert_n = 6,
         .indx_n = 9,
         .data_off = 0,
         .vsemt_mask = YF_VSEMT_POS | YF_VSEMT_CLR,
-        .attrs = (YF_attrdt[]){
+        .attrs = (yf_attrdt_t[]){
             [0] = {YF_VSEMT_POS, YF_VFMT_FLOAT3, 0},
             [1] = {YF_VSEMT_CLR, YF_VFMT_FLOAT4, 6 * sizeof(float[3])}
         },
@@ -37,7 +37,7 @@ int yf_test_mesh(void)
         .matl = NULL
     };
 
-    YF_meshdt data = {
+    yf_meshdt_t data = {
         .prims = &prim,
         .prim_n = 1,
         .data = buf,
@@ -45,7 +45,7 @@ int yf_test_mesh(void)
     };
 
     YF_TEST_PRINT("init", "&data", "mesh");
-    YF_mesh mesh = yf_mesh_init(&data);
+    yf_mesh_t *mesh = yf_mesh_init(&data);
     if (mesh == NULL)
         return -1;
 
@@ -66,7 +66,7 @@ int yf_test_mesh(void)
         return -1;
 
     YF_TEST_PRINT("init", "&data", "mesh2");
-    YF_mesh mesh2 = yf_mesh_init(&data);
+    yf_mesh_t *mesh2 = yf_mesh_init(&data);
     if (mesh2 == NULL)
         return -1;
 
@@ -82,7 +82,7 @@ int yf_test_mesh(void)
         return -1;
 
     YF_TEST_PRINT("init", "&data", "mesh3");
-    YF_mesh mesh3 = yf_mesh_init(&data);
+    yf_mesh_t *mesh3 = yf_mesh_init(&data);
     if (mesh3 == NULL)
         return -1;
 
@@ -100,7 +100,7 @@ int yf_test_mesh(void)
     prim.matl = matl;
 
     YF_TEST_PRINT("init", "&data", "mesh4");
-    YF_mesh mesh4 = yf_mesh_init(&data);
+    yf_mesh_t *mesh4 = yf_mesh_init(&data);
     if (mesh4 == NULL)
         return -1;
 

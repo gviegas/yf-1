@@ -2,7 +2,7 @@
  * YF
  * yf-quad.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_QUAD_H
@@ -19,7 +19,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a drawable 2D quad.
  */
-typedef struct YF_quad_o *YF_quad;
+typedef struct yf_quad yf_quad_t;
 
 /**
  * Initializes a new quad.
@@ -27,7 +27,7 @@ typedef struct YF_quad_o *YF_quad;
  * @return: On success, returns a new quad. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_quad yf_quad_init(void);
+yf_quad_t *yf_quad_init(void);
 
 /**
  * Gets the node of a quad.
@@ -35,7 +35,7 @@ YF_quad yf_quad_init(void);
  * @param quad: The quad.
  * @return: The quad's node.
  */
-YF_node yf_quad_getnode(YF_quad quad);
+yf_node_t *yf_quad_getnode(yf_quad_t *quad);
 
 /**
  * Gets the mesh of a quad.
@@ -43,7 +43,7 @@ YF_node yf_quad_getnode(YF_quad quad);
  * @param quad: The quad.
  * @return: The mesh used by the quad.
  */
-YF_mesh yf_quad_getmesh(YF_quad quad);
+yf_mesh_t *yf_quad_getmesh(yf_quad_t *quad);
 
 /**
  * Gets the texture of a quad.
@@ -51,7 +51,7 @@ YF_mesh yf_quad_getmesh(YF_quad quad);
  * @param quad: The quad.
  * @return: The texture used by the quad, or 'NULL' if none is set.
  */
-YF_texture yf_quad_gettex(YF_quad quad);
+yf_texture_t *yf_quad_gettex(yf_quad_t *quad);
 
 /**
  * Sets the texture for a quad.
@@ -59,7 +59,7 @@ YF_texture yf_quad_gettex(YF_quad quad);
  * @param quad: The quad.
  * @param tex: The texture to set. Can be 'NULL'.
  */
-void yf_quad_settex(YF_quad quad, YF_texture tex);
+void yf_quad_settex(yf_quad_t *quad, yf_texture_t *tex);
 
 /**
  * Gets the rectangle of a quad.
@@ -70,7 +70,7 @@ void yf_quad_settex(YF_quad quad, YF_texture tex);
  * @param quad: The quad.
  * @return: The quad's rectangle.
  */
-const YF_rect *yf_quad_getrect(YF_quad quad);
+const yf_rect_t *yf_quad_getrect(yf_quad_t *quad);
 
 /**
  * Sets the rectangle for a quad.
@@ -83,7 +83,7 @@ const YF_rect *yf_quad_getrect(YF_quad quad);
  * @param quad: The quad.
  * @param rect: The rectangle to set.
  */
-void yf_quad_setrect(YF_quad quad, const YF_rect *rect);
+void yf_quad_setrect(yf_quad_t *quad, const yf_rect_t *rect);
 
 /**
  * Gets the color of quad.
@@ -93,7 +93,7 @@ void yf_quad_setrect(YF_quad quad, const YF_rect *rect);
  *  retrieve the color.
  * @return: The color currently set for 'corner'.
  */
-YF_color yf_quad_getcolor(YF_quad quad, int corner);
+yf_color_t yf_quad_getcolor(yf_quad_t *quad, int corner);
 
 /**
  * Sets the color for a quad.
@@ -103,14 +103,14 @@ YF_color yf_quad_getcolor(YF_quad quad, int corner);
  *  to be updated with 'color'.
  * @param color: The color to set.
  */
-void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color);
+void yf_quad_setcolor(yf_quad_t *quad, unsigned corner_mask, yf_color_t color);
 
 /**
  * Deinitializes a quad.
  *
  * @param quad: The quad to deinitialize. Can be 'NULL'.
  */
-void yf_quad_deinit(YF_quad quad);
+void yf_quad_deinit(yf_quad_t *quad);
 
 YF_DECLS_END
 

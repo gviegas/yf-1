@@ -26,7 +26,8 @@ layout(std140, column_major) uniform;
 /**
  * Material.
  */
-layout(set=1, binding=1) uniform U_matl {
+/* TODO: Fix alignment. */
+layout(set=1, binding=1) uniform umatl {
     int method;
     int blend;
     float norm_fac;

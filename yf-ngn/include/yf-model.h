@@ -2,7 +2,7 @@
  * YF
  * yf-model.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_MODEL_H
@@ -19,7 +19,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a drawable model.
  */
-typedef struct YF_model_o *YF_model;
+typedef struct yf_model yf_model_t;
 
 /**
  * Initializes a new model.
@@ -27,7 +27,7 @@ typedef struct YF_model_o *YF_model;
  * @return: On success, returns a new model. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_model yf_model_init(void);
+yf_model_t *yf_model_init(void);
 
 /**
  * Gets the node of a model.
@@ -35,7 +35,7 @@ YF_model yf_model_init(void);
  * @param mdl: The model.
  * @return: The model's node.
  */
-YF_node yf_model_getnode(YF_model mdl);
+yf_node_t *yf_model_getnode(yf_model_t *mdl);
 
 /**
  * Gets the mesh of a model.
@@ -43,7 +43,7 @@ YF_node yf_model_getnode(YF_model mdl);
  * @param mdl: The model.
  * @return: The mesh used by the model, or 'NULL' if none is set.
  */
-YF_mesh yf_model_getmesh(YF_model mdl);
+yf_mesh_t *yf_model_getmesh(yf_model_t *mdl);
 
 /**
  * Sets the mesh for a model.
@@ -51,7 +51,7 @@ YF_mesh yf_model_getmesh(YF_model mdl);
  * @param mdl: The model.
  * @param mesh: The mesh to set. Can be 'NULL'.
  */
-void yf_model_setmesh(YF_model mdl, YF_mesh mesh);
+void yf_model_setmesh(yf_model_t *mdl, yf_mesh_t *mesh);
 
 /**
  * Gets the skin of a model.
@@ -60,7 +60,7 @@ void yf_model_setmesh(YF_model mdl, YF_mesh mesh);
  * @param skel: The destination for the skin's skeleton.
  * @return: The skin used by the model, or 'NULL' if none is set.
  */
-YF_skin yf_model_getskin(YF_model mdl, YF_skeleton *skel);
+yf_skin_t *yf_model_getskin(yf_model_t *mdl, yf_skeleton_t **skel);
 
 /**
  * Sets the skin for a model.
@@ -69,14 +69,14 @@ YF_skin yf_model_getskin(YF_model mdl, YF_skeleton *skel);
  * @param skin: The skin to set. Can be 'NULL'.
  * @param skel: The skeleton instance to set. Can be 'NULL'.
  */
-void yf_model_setskin(YF_model mdl, YF_skin skin, YF_skeleton skel);
+void yf_model_setskin(yf_model_t *mdl, yf_skin_t *skin, yf_skeleton_t *skel);
 
 /**
  * Deinitializes a model.
  *
  * @param mdl: The model to deinitialize. Can be 'NULL'.
  */
-void yf_model_deinit(YF_model mdl);
+void yf_model_deinit(yf_model_t *mdl);
 
 YF_DECLS_END
 

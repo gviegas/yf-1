@@ -2,7 +2,7 @@
  * YF
  * yf-particle.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_PARTICLE_H
@@ -19,14 +19,15 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a particle system.
  */
-typedef struct YF_particle_o *YF_particle;
+typedef struct yf_particle yf_particle_t;
 
 /**
  * Type defining particle system parameters.
  */
-typedef struct {
+typedef struct yf_psys {
+    /* TODO: Improve this. */
     struct {
-        YF_vec3 norm;
+        yf_vec3_t norm;
         float size;
     } emitter;
     struct {
@@ -39,14 +40,14 @@ typedef struct {
         int once;
     } lifetime;
     struct {
-        YF_vec4 min;
-        YF_vec4 max;
+        yf_vec4_t min;
+        yf_vec4_t max;
     } color;
     struct {
-        YF_vec3 min;
-        YF_vec3 max;
+        yf_vec3_t min;
+        yf_vec3_t max;
     } velocity;
-} YF_psys;
+} yf_psys_t;
 
 /**
  * Initializes a new particle system.
@@ -55,7 +56,7 @@ typedef struct {
  * @return: On success, returns a new particle system. Otherwise, 'NULL' is
  *  returned and the global error is set to indicate the cause.
  */
-YF_particle yf_particle_init(unsigned count);
+yf_particle_t *yf_particle_init(unsigned count);
 
 /**
  * Gets the node of a particle system.
@@ -63,7 +64,7 @@ YF_particle yf_particle_init(unsigned count);
  * @param part: The particle system.
  * @return: The particle system's node.
  */
-YF_node yf_particle_getnode(YF_particle part);
+yf_node_t *yf_particle_getnode(yf_particle_t *part);
 
 /**
  * Gets the parameters of a particle system.
@@ -71,7 +72,7 @@ YF_node yf_particle_getnode(YF_particle part);
  * @param part: The particle system.
  * @return: The particle system's parameters.
  */
-YF_psys *yf_particle_getsys(YF_particle part);
+yf_psys_t *yf_particle_getsys(yf_particle_t *part);
 
 /**
  * Gets the mesh of a particle system.
@@ -79,7 +80,7 @@ YF_psys *yf_particle_getsys(YF_particle part);
  * @param part: The particle system.
  * @return: The mesh used by the particle system.
  */
-YF_mesh yf_particle_getmesh(YF_particle part);
+yf_mesh_t *yf_particle_getmesh(yf_particle_t *part);
 
 /**
  * Gets the texture of a particle system.
@@ -87,7 +88,7 @@ YF_mesh yf_particle_getmesh(YF_particle part);
  * @param part: The particle system.
  * @return: The texture used by the particle system, or 'NULL' if none is set.
  */
-YF_texture yf_particle_gettex(YF_particle part);
+yf_texture_t *yf_particle_gettex(yf_particle_t *part);
 
 /**
  * Sets the texture for a particle system.
@@ -95,7 +96,7 @@ YF_texture yf_particle_gettex(YF_particle part);
  * @param part: The particle system.
  * @param tex: The texture to set. Can be 'NULL'.
  */
-void yf_particle_settex(YF_particle part, YF_texture tex);
+void yf_particle_settex(yf_particle_t *part, yf_texture_t *tex);
 
 /**
  * Simulates a particle system.
@@ -103,14 +104,15 @@ void yf_particle_settex(YF_particle part, YF_texture tex);
  * @param part: The particle system.
  * @param tm: The time to advance the simulation.
  */
-void yf_particle_simulate(YF_particle part, float tm);
+/* TODO: This should be done on GPU. */
+void yf_particle_simulate(yf_particle_t *part, float tm);
 
 /**
  * Deinitializes a particle system.
  *
  * @param part: The particle system to deinitialize. Can be 'NULL'.
  */
-void yf_particle_deinit(YF_particle part);
+void yf_particle_deinit(yf_particle_t *part);
 
 YF_DECLS_END
 

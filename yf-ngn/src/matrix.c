@@ -2,7 +2,7 @@
  * YF
  * matrix.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <string.h>
@@ -53,18 +53,18 @@
             (dst)[i] += (m)[j*(n)+i] * (v)[j]; \
     } } while (0)
 
-void yf_mat2_iden(YF_mat2 m)
+void yf_mat2_iden(yf_mat2_t m)
 {
-    static const YF_mat2 iden = {
+    static const yf_mat2_t iden = {
         1.0f, 0.0f,
         0.0f, 1.0f
     };
     memcpy(m, iden, sizeof iden);
 }
 
-void yf_mat3_iden(YF_mat3 m)
+void yf_mat3_iden(yf_mat3_t m)
 {
-    static const YF_mat3 iden = {
+    static const yf_mat3_t iden = {
         1.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f,
         0.0f, 0.0f, 1.0f
@@ -72,9 +72,9 @@ void yf_mat3_iden(YF_mat3 m)
     memcpy(m, iden, sizeof iden);
 }
 
-void yf_mat4_iden(YF_mat4 m)
+void yf_mat4_iden(yf_mat4_t m)
 {
-    static const YF_mat4 iden = {
+    static const yf_mat4_t iden = {
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f,
@@ -83,112 +83,112 @@ void yf_mat4_iden(YF_mat4 m)
     memcpy(m, iden, sizeof iden);
 }
 
-void yf_mat2_set(YF_mat2 m, float s)
+void yf_mat2_set(yf_mat2_t m, float s)
 {
     YF_MAT_SET(m, s, 2, 2);
 }
 
-void yf_mat3_set(YF_mat3 m, float s)
+void yf_mat3_set(yf_mat3_t m, float s)
 {
     YF_MAT_SET(m, s, 3, 3);
 }
 
-void yf_mat4_set(YF_mat4 m, float s)
+void yf_mat4_set(yf_mat4_t m, float s)
 {
     YF_MAT_SET(m, s, 4, 4);
 }
 
-void yf_mat2_copy(YF_mat2 dst, const YF_mat2 m)
+void yf_mat2_copy(yf_mat2_t dst, const yf_mat2_t m)
 {
-    memcpy(dst, m, sizeof(YF_mat2));
+    memcpy(dst, m, sizeof(yf_mat2_t));
 }
 
-void yf_mat3_copy(YF_mat3 dst, const YF_mat3 m)
+void yf_mat3_copy(yf_mat3_t dst, const yf_mat3_t m)
 {
-    memcpy(dst, m, sizeof(YF_mat3));
+    memcpy(dst, m, sizeof(yf_mat3_t));
 }
 
-void yf_mat4_copy(YF_mat4 dst, const YF_mat4 m)
+void yf_mat4_copy(yf_mat4_t dst, const yf_mat4_t m)
 {
-    memcpy(dst, m, sizeof(YF_mat4));
+    memcpy(dst, m, sizeof(yf_mat4_t));
 }
 
-void yf_mat2_xpose(YF_mat2 dst, const YF_mat2 m)
+void yf_mat2_xpose(yf_mat2_t dst, const yf_mat2_t m)
 {
     YF_MAT_XPOSE(dst, m, 2);
 }
 
-void yf_mat3_xpose(YF_mat3 dst, const YF_mat3 m)
+void yf_mat3_xpose(yf_mat3_t dst, const yf_mat3_t m)
 {
     YF_MAT_XPOSE(dst, m, 3);
 }
 
-void yf_mat4_xpose(YF_mat4 dst, const YF_mat4 m)
+void yf_mat4_xpose(yf_mat4_t dst, const yf_mat4_t m)
 {
     YF_MAT_XPOSE(dst, m, 4);
 }
 
-void yf_mat2_sub(YF_mat2 dst, const YF_mat2 a, const YF_mat2 b)
+void yf_mat2_sub(yf_mat2_t dst, const yf_mat2_t a, const yf_mat2_t b)
 {
     YF_MAT_SUB(dst, a, b, 2, 2);
 }
 
-void yf_mat3_sub(YF_mat3 dst, const YF_mat3 a, const YF_mat3 b)
+void yf_mat3_sub(yf_mat3_t dst, const yf_mat3_t a, const yf_mat3_t b)
 {
     YF_MAT_SUB(dst, a, b, 3, 3);
 }
 
-void yf_mat4_sub(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b)
+void yf_mat4_sub(yf_mat4_t dst, const yf_mat4_t a, const yf_mat4_t b)
 {
     YF_MAT_SUB(dst, a, b, 4, 4);
 }
 
-void yf_mat2_add(YF_mat2 dst, const YF_mat2 a, const YF_mat2 b)
+void yf_mat2_add(yf_mat2_t dst, const yf_mat2_t a, const yf_mat2_t b)
 {
     YF_MAT_ADD(dst, a, b, 2, 2);
 }
 
-void yf_mat3_add(YF_mat3 dst, const YF_mat3 a, const YF_mat3 b)
+void yf_mat3_add(yf_mat3_t dst, const yf_mat3_t a, const yf_mat3_t b)
 {
     YF_MAT_ADD(dst, a, b, 3, 3);
 }
 
-void yf_mat4_add(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b)
+void yf_mat4_add(yf_mat4_t dst, const yf_mat4_t a, const yf_mat4_t b)
 {
     YF_MAT_ADD(dst, a, b, 4, 4);
 }
 
-void yf_mat2_mul(YF_mat2 dst, const YF_mat2 a, const YF_mat2 b)
+void yf_mat2_mul(yf_mat2_t dst, const yf_mat2_t a, const yf_mat2_t b)
 {
     YF_MAT_MUL(dst, a, b, 2, 2, 2);
 }
 
-void yf_mat3_mul(YF_mat3 dst, const YF_mat3 a, const YF_mat3 b)
+void yf_mat3_mul(yf_mat3_t dst, const yf_mat3_t a, const yf_mat3_t b)
 {
     YF_MAT_MUL(dst, a, b, 3, 3, 3);
 }
 
-void yf_mat4_mul(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b)
+void yf_mat4_mul(yf_mat4_t dst, const yf_mat4_t a, const yf_mat4_t b)
 {
     YF_MAT_MUL(dst, a, b, 4, 4, 4);
 }
 
-void yf_mat2_mulv(YF_vec2 dst, const YF_mat2 m, const YF_vec2 v)
+void yf_mat2_mulv(yf_vec2_t dst, const yf_mat2_t m, const yf_vec2_t v)
 {
     YF_MAT_MULV(dst, m, v, 2);
 }
 
-void yf_mat3_mulv(YF_vec3 dst, const YF_mat3 m, const YF_vec3 v)
+void yf_mat3_mulv(yf_vec3_t dst, const yf_mat3_t m, const yf_vec3_t v)
 {
     YF_MAT_MULV(dst, m, v, 3);
 }
 
-void yf_mat4_mulv(YF_vec4 dst, const YF_mat4 m, const YF_vec4 v)
+void yf_mat4_mulv(yf_vec4_t dst, const yf_mat4_t m, const yf_vec4_t v)
 {
     YF_MAT_MULV(dst, m, v, 4);
 }
 
-void yf_mat2_inv(YF_mat2 dst, const YF_mat2 m)
+void yf_mat2_inv(yf_mat2_t dst, const yf_mat2_t m)
 {
     const float idet = 1.0f / (m[0] * m[3] - m[1] * m[2]);
     dst[0] = +m[3] * idet;
@@ -197,7 +197,7 @@ void yf_mat2_inv(YF_mat2 dst, const YF_mat2 m)
     dst[3] = +m[0] * idet;
 }
 
-void yf_mat3_inv(YF_mat3 dst, const YF_mat3 m)
+void yf_mat3_inv(yf_mat3_t dst, const yf_mat3_t m)
 {
     const float s0 = m[4] * m[8] - m[5] * m[7];
     const float s1 = m[3] * m[8] - m[5] * m[6];
@@ -214,7 +214,7 @@ void yf_mat3_inv(YF_mat3 dst, const YF_mat3 m)
     dst[8] = +(m[0] * m[4] - m[1] * m[3]) * idet;
 }
 
-void yf_mat4_inv(YF_mat4 dst, const YF_mat4 m)
+void yf_mat4_inv(yf_mat4_t dst, const yf_mat4_t m)
 {
     const float s0 = m[0]  * m[5]  - m[1]  * m[4];
     const float s1 = m[0]  * m[6]  - m[2]  * m[4];
@@ -247,7 +247,7 @@ void yf_mat4_inv(YF_mat4 dst, const YF_mat4 m)
     dst[15] = (+s3 * m[8]  - s1 * m[9]  + s0 * m[10]) * idet;
 }
 
-void yf_mat3_rotx(YF_mat3 m, float angle)
+void yf_mat3_rotx(yf_mat3_t m, float angle)
 {
     const float c = cosf(angle);
     const float s = sinf(angle);
@@ -258,7 +258,7 @@ void yf_mat3_rotx(YF_mat3 m, float angle)
     m[8] = c;
 }
 
-void yf_mat3_roty(YF_mat3 m, float angle)
+void yf_mat3_roty(yf_mat3_t m, float angle)
 {
     const float c = cosf(angle);
     const float s = sinf(angle);
@@ -269,7 +269,7 @@ void yf_mat3_roty(YF_mat3 m, float angle)
     m[8] = c;
 }
 
-void yf_mat3_rotz(YF_mat3 m, float angle)
+void yf_mat3_rotz(yf_mat3_t m, float angle)
 {
     const float c = cosf(angle);
     const float s = sinf(angle);
@@ -280,7 +280,7 @@ void yf_mat3_rotz(YF_mat3 m, float angle)
     m[4] = c;
 }
 
-void yf_mat4_rotx(YF_mat4 m, float angle)
+void yf_mat4_rotx(yf_mat4_t m, float angle)
 {
     const float c = cosf(angle);
     const float s = sinf(angle);
@@ -291,7 +291,7 @@ void yf_mat4_rotx(YF_mat4 m, float angle)
     m[10] = c;
 }
 
-void yf_mat4_roty(YF_mat4 m, float angle)
+void yf_mat4_roty(yf_mat4_t m, float angle)
 {
     const float c = cosf(angle);
     const float s = sinf(angle);
@@ -302,7 +302,7 @@ void yf_mat4_roty(YF_mat4 m, float angle)
     m[10] = c;
 }
 
-void yf_mat4_rotz(YF_mat4 m, float angle)
+void yf_mat4_rotz(yf_mat4_t m, float angle)
 {
     const float c = cosf(angle);
     const float s = sinf(angle);
@@ -313,12 +313,12 @@ void yf_mat4_rotz(YF_mat4 m, float angle)
     m[5] = c;
 }
 
-void yf_mat3_rot(YF_mat3 m, float angle, const YF_vec3 axis)
+void yf_mat3_rot(yf_mat3_t m, float angle, const yf_vec3_t axis)
 {
     const float c = cosf(angle);
     const float s = sinf(angle);
     const float one_minus_c = 1.0f - c;
-    YF_vec3 v;
+    yf_vec3_t v;
     yf_vec3_norm(v, axis);
     const float xx = v[0] * v[0];
     const float xy = v[0] * v[1];
@@ -340,12 +340,12 @@ void yf_mat3_rot(YF_mat3 m, float angle, const YF_vec3 axis)
     m[8] = c + one_minus_c * zz;
 }
 
-void yf_mat4_rot(YF_mat4 m, float angle, const YF_vec3 axis)
+void yf_mat4_rot(yf_mat4_t m, float angle, const yf_vec3_t axis)
 {
     const float c = cosf(angle);
     const float s = sinf(angle);
     const float one_minus_c = 1.0f - c;
-    YF_vec3 v;
+    yf_vec3_t v;
     yf_vec3_norm(v, axis);
     const float xx = v[0] * v[0];
     const float xy = v[0] * v[1];
@@ -368,9 +368,9 @@ void yf_mat4_rot(YF_mat4 m, float angle, const YF_vec3 axis)
     m[10] = c + one_minus_c * zz;
 }
 
-void yf_mat3_rotq(YF_mat3 m, const YF_vec4 q)
+void yf_mat3_rotq(yf_mat3_t m, const yf_vec4_t q)
 {
-    YF_vec4 u;
+    yf_vec4_t u;
     yf_vec4_norm(u, q);
     const float two_xw = 2.0f * u[0] * u[3];
     const float two_xx = 2.0f * u[0] * u[0];
@@ -392,9 +392,9 @@ void yf_mat3_rotq(YF_mat3 m, const YF_vec4 q)
     m[8] = 1.0f - two_xx - two_yy;
 }
 
-void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q)
+void yf_mat4_rotq(yf_mat4_t m, const yf_vec4_t q)
 {
-    YF_vec4 u;
+    yf_vec4_t u;
     yf_vec4_norm(u, q);
     const float two_xw = 2.0f * u[0] * u[3];
     const float two_xx = 2.0f * u[0] * u[0];
@@ -417,24 +417,24 @@ void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q)
     m[10] = 1.0f - two_xx - two_yy;
 }
 
-void yf_mat3_scale(YF_mat3 m, float sx, float sy, float sz)
+void yf_mat3_scale(yf_mat3_t m, float sx, float sy, float sz)
 {
-    memset(m, 0, sizeof(YF_mat3));
+    memset(m, 0, sizeof(yf_mat3_t));
     m[0] = sx;
     m[4] = sy;
     m[8] = sz;
 }
 
-void yf_mat4_scale(YF_mat4 m, float sx, float sy, float sz)
+void yf_mat4_scale(yf_mat4_t m, float sx, float sy, float sz)
 {
-    memset(m, 0, sizeof(YF_mat4));
+    memset(m, 0, sizeof(yf_mat4_t));
     m[0] = sx;
     m[5] = sy;
     m[10] = sz;
     m[15] = 1.0f;
 }
 
-void yf_mat4_xlate(YF_mat4 m, float tx, float ty, float tz)
+void yf_mat4_xlate(yf_mat4_t m, float tx, float ty, float tz)
 {
     yf_mat4_iden(m);
     m[12] = tx;
@@ -442,10 +442,10 @@ void yf_mat4_xlate(YF_mat4 m, float tx, float ty, float tz)
     m[14] = tz;
 }
 
-void yf_mat4_lookat(YF_mat4 m, const YF_vec3 eye, const YF_vec3 center,
-                    const YF_vec3 up)
+void yf_mat4_lookat(yf_mat4_t m, const yf_vec3_t eye, const yf_vec3_t center,
+                    const yf_vec3_t up)
 {
-    YF_vec3 f, s, u;
+    yf_vec3_t f, s, u;
     yf_vec3_sub(f, center, eye);
     yf_vec3_normi(f);
     yf_vec3_cross(s, f, up);
@@ -469,11 +469,11 @@ void yf_mat4_lookat(YF_mat4 m, const YF_vec3 eye, const YF_vec3 center,
     m[15] = 1.0f;
 }
 
-void yf_mat4_persp(YF_mat4 m, float yfov, float aspect, float znear,
+void yf_mat4_persp(yf_mat4_t m, float yfov, float aspect, float znear,
                    float zfar)
 {
     const float ct = 1.0f / tanf(yfov * 0.5f);
-    memset(m, 0, sizeof(YF_mat4));
+    memset(m, 0, sizeof(yf_mat4_t));
     m[0] = ct / aspect;
     m[5] = ct;
     m[10] = (zfar + znear) / (znear - zfar);
@@ -481,19 +481,20 @@ void yf_mat4_persp(YF_mat4 m, float yfov, float aspect, float znear,
     m[14] = (2.0f * zfar * znear) / (znear - zfar);
 }
 
-void yf_mat4_infpersp(YF_mat4 m, float yfov, float aspect, float znear)
+void yf_mat4_infpersp(yf_mat4_t m, float yfov, float aspect, float znear)
 {
     const float ct = 1.0f / tanf(yfov * 0.5f);
-    memset(m, 0, sizeof(YF_mat4));
+    memset(m, 0, sizeof(yf_mat4_t));
     m[0] = ct / aspect;
     m[5] = ct;
     m[10] = m[11] = -1.0f;
     m[14] = -2.0f * znear;
 }
 
-void yf_mat4_ortho(YF_mat4 m, float xmag, float ymag, float znear, float zfar)
+void yf_mat4_ortho(yf_mat4_t m, float xmag, float ymag, float znear,
+                   float zfar)
 {
-    memset(m, 0, sizeof(YF_mat4));
+    memset(m, 0, sizeof(yf_mat4_t));
     m[0] = 1.0f / xmag;
     m[5] = 1.0f / ymag;
     m[10] = 2.0f / (znear - zfar);

@@ -14,16 +14,16 @@
 #include "yf-skin.h"
 #include "yf-material.h"
 #include "yf-camera.h"
-#include "yf-animation.h"
-#include "yf-collection.h"
+#include "yf-kfanim.h"
+#include "yf-collec.h"
 
-void yf_print_nodeobj(YF_node);
-void yf_print_mesh(YF_mesh);
-void yf_print_tex(YF_texture);
-void yf_print_skin(YF_skin);
-void yf_print_matl(YF_material);
-void yf_print_cam(YF_camera);
-void yf_print_anim(YF_animation);
-void yf_print_coll(YF_collection);
+void yf_print_nodeobj(yf_node_t *);
+void yf_print_mesh(yf_mesh_t *);
+void yf_print_tex(yf_texture_t *);
+void yf_print_skin(yf_skin_t *);
+void yf_print_matl(yf_material_t *);
+void yf_print_cam(yf_camera_t *);
+void yf_print_anim(yf_kfanim_t *);
+void yf_print_coll(yf_collec_t *);
 
 #endif /* YF_PRINT_H */

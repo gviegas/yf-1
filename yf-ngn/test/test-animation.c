@@ -19,16 +19,16 @@
 #define YF_WINH 480
 #define YF_WINT "Animation"
 #define YF_FPS  60
-#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
-#define YF_POINT (YF_vec3){0}
+#define YF_PLACE (yf_vec3_t){20.0f, 20.0f, 20.0f}
+#define YF_POINT (yf_vec3_t){0}
 
 /* Shared variables. */
-struct T_vars {
-    YF_window win;
-    YF_view view;
-    YF_collection coll;
-    YF_animation anim;
-    YF_scene scn;
+struct vars {
+    yf_window_t *win;
+    yf_view_t *view;
+    yf_collec_t *coll;
+    yf_kfanim_t *anim;
+    yf_scene_t *scn;
 
     struct {
         int quit;
@@ -39,7 +39,7 @@ struct T_vars {
         int play;
     } input;
 };
-static struct T_vars vars_ = {0};
+static struct vars vars_ = {0};
 
 /* Handles key events. */
 static void on_key(int key, int state,
@@ -100,7 +100,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
     if (vars_.input.quit)
         return -1;
 
-    YF_camera cam = yf_scene_getcam(vars_.scn);
+    yf_camera_t *cam = yf_scene_getcam(vars_.scn);
     const float md = 16.0 * elapsed_time;
     const float td = 2.0 * elapsed_time;
 
@@ -132,7 +132,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
     if (vars_.input.play) {
         static float dt = 0.0f;
         char s[128];
-        float rem = yf_animation_apply(vars_.anim, dt);
+        float rem = yf_kfanim_apply(vars_.anim, dt);
 
         snprintf(s, sizeof s >> 1, "anim, %.6f", dt);
         snprintf(s+(sizeof s >> 1), sizeof s >> 1, "%.6f", rem);
@@ -147,7 +147,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
     return 0;
 }
 
-static int traverse(YF_node node, YF_UNUSED void *arg)
+static int traverse(yf_node_t *node, YF_UNUSED void *arg)
 {
     char name[2][256];
     size_t n[2] = {256, 256};
@@ -165,11 +165,11 @@ static int each_anim(YF_UNUSED const char *name,
     yf_print_anim(anim);
 
     unsigned out_n, act_n;
-    const YF_kfoutput *outs = yf_animation_getouts(anim, &out_n);
-    const YF_kfaction *acts = yf_animation_getacts(anim, &act_n);
+    const yf_kfout_t *outs = yf_kfanim_getouts(anim, &out_n);
+    const yf_kfact_t *acts = yf_kfanim_getacts(anim, &act_n);
 
     for (unsigned i = 0; i < act_n; i++) {
-        YF_node node = yf_animation_gettarget(anim, i);
+        yf_node_t *node = yf_kfanim_gettarget(anim, i);
         if (node == NULL)
             continue;
 
@@ -197,7 +197,7 @@ static int each_anim(YF_UNUSED const char *name,
 /* Tests animation. */
 int yf_test_animation(void)
 {
-    YF_evtfn evtfn = {.key_kb = on_key};
+    yf_evtfn_t evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
     vars_.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
@@ -206,30 +206,30 @@ int yf_test_animation(void)
     vars_.view = yf_view_init(vars_.win);
     assert(vars_.view != NULL);
 
-    YF_node tgt = yf_node_init();
+    yf_node_t *tgt = yf_node_init();
     assert(tgt != NULL);
 
     float tmln[] = {0.0f, 0.0333f, 0.0667f};
 
-    YF_vec3 tvals[] = {
+    yf_vec3_t tvals[] = {
         {-1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, -1.0f}
     };
 
-    YF_vec4 rvals[3] = {0};
+    yf_vec4_t rvals[3] = {0};
     yf_vec4_rotqx(rvals[0], 3.141593f * 0.5f);
     yf_vec4_rotqy(rvals[1], 3.141593f * 0.5f);
     yf_vec4_rotqz(rvals[2], 3.141593f * 0.5f);
 
-    YF_vec3 svals[] = {
+    yf_vec3_t svals[] = {
         {0.5f, 1.0f, 1.0f}, {1.0f, 0.5f, 1.0f}, {1.0f, 1.0f, 0.5f}
     };
 
-    YF_kfinput ins[] = {
+    yf_kfin_t ins[] = {
         {.timeline = tmln, .n = 1},
         {.timeline = tmln, .n = 3}
     };
 
-    YF_kfoutput outs[] = {
+    yf_kfout_t outs[] = {
         {.kfprop = YF_KFPROP_T, .t = tvals, .n = 1},
         {.kfprop = YF_KFPROP_R, .r = rvals, .n = 1},
         {.kfprop = YF_KFPROP_S, .s = svals, .n = 1},
@@ -238,7 +238,7 @@ int yf_test_animation(void)
         {.kfprop = YF_KFPROP_S, .s = svals, .n = 3}
     };
 
-    YF_kfaction acts[] = {
+    yf_kfact_t acts[] = {
         {.kferp = YF_KFERP_STEP, .in_i = 0, .out_i = 0},
         {.kferp = YF_KFERP_STEP, .in_i = 0, .out_i = 1},
         {.kferp = YF_KFERP_STEP, .in_i = 0, .out_i = 2},
@@ -250,126 +250,125 @@ int yf_test_animation(void)
     unsigned in_n, out_n, act_n;
 
     YF_TEST_PRINT("init", "ins, 1, outs, 2, acts, 2", "anim");
-    YF_animation anim = yf_animation_init(ins, 1, outs, 2, acts, 2);
+    yf_kfanim_t *anim = yf_kfanim_init(ins, 1, outs, 2, acts, 2);
     if (anim == NULL)
         return -1;
 
     YF_TEST_PRINT("gettarget", "anim, 1", "");
-    if (yf_animation_gettarget(anim, 1) != NULL)
+    if (yf_kfanim_gettarget(anim, 1) != NULL)
         return -1;
 
     YF_TEST_PRINT("gettarget", "anim, 0", "");
-    if (yf_animation_gettarget(anim, 0) != NULL)
+    if (yf_kfanim_gettarget(anim, 0) != NULL)
         return -1;
 
     YF_TEST_PRINT("settarget", "anim, 0, tgt", "");
-    yf_animation_settarget(anim, 0, tgt);
+    yf_kfanim_settarget(anim, 0, tgt);
 
     YF_TEST_PRINT("settarget", "anim, 1, tgt", "");
-    yf_animation_settarget(anim, 1, tgt);
+    yf_kfanim_settarget(anim, 1, tgt);
 
     YF_TEST_PRINT("gettarget", "anim, 1", "");
-    if (yf_animation_gettarget(anim, 1) != tgt)
+    if (yf_kfanim_gettarget(anim, 1) != tgt)
         return -1;
 
     YF_TEST_PRINT("gettarget", "anim, 0", "");
-    if (yf_animation_gettarget(anim, 0) != tgt)
+    if (yf_kfanim_gettarget(anim, 0) != tgt)
         return -1;
 
     YF_TEST_PRINT("getins", "anim, &in_n", "");
-    if (yf_animation_getins(anim, &in_n) == NULL || in_n != 1)
+    if (yf_kfanim_getins(anim, &in_n) == NULL || in_n != 1)
         return -1;
 
     YF_TEST_PRINT("getouts", "anim, &out_n", "");
-    if (yf_animation_getouts(anim, &out_n) == NULL || out_n != 2)
+    if (yf_kfanim_getouts(anim, &out_n) == NULL || out_n != 2)
         return -1;
 
     YF_TEST_PRINT("getacts", "anim, &act_n", "");
-    if (yf_animation_getacts(anim, &act_n) == NULL || act_n != 2)
+    if (yf_kfanim_getacts(anim, &act_n) == NULL || act_n != 2)
         return -1;
 
     yf_print_anim(anim);
 
     YF_TEST_PRINT("init", "ins, 2, outs, 6, acts, 6", "anim2");
-    YF_animation anim2 = yf_animation_init(ins, 2, outs, 6, acts, 6);
+    yf_kfanim_t *anim2 = yf_kfanim_init(ins, 2, outs, 6, acts, 6);
     if (anim2 == NULL)
         return -1;
 
     YF_TEST_PRINT("gettarget", "anim2, 0", "");
-    if (yf_animation_gettarget(anim2, 0) != NULL)
+    if (yf_kfanim_gettarget(anim2, 0) != NULL)
         return -1;
 
     YF_TEST_PRINT("gettarget", "anim2, 2", "");
-    if (yf_animation_gettarget(anim2, 2) != NULL)
+    if (yf_kfanim_gettarget(anim2, 2) != NULL)
         return -1;
 
     YF_TEST_PRINT("gettarget", "anim2, 5", "");
-    if (yf_animation_gettarget(anim2, 5) != NULL)
+    if (yf_kfanim_gettarget(anim2, 5) != NULL)
         return -1;
 
     YF_TEST_PRINT("settarget", "anim2, 0, tgt", "");
-    yf_animation_settarget(anim2, 0, tgt);
+    yf_kfanim_settarget(anim2, 0, tgt);
 
     YF_TEST_PRINT("settarget", "anim2, 2, tgt", "");
-    yf_animation_settarget(anim2, 2, tgt);
+    yf_kfanim_settarget(anim2, 2, tgt);
 
     YF_TEST_PRINT("settarget", "anim2, 5, tgt", "");
-    yf_animation_settarget(anim2, 5, tgt);
+    yf_kfanim_settarget(anim2, 5, tgt);
 
     YF_TEST_PRINT("settarget", "anim2, 2, NULL", "");
-    yf_animation_settarget(anim2, 2, NULL);
+    yf_kfanim_settarget(anim2, 2, NULL);
 
     YF_TEST_PRINT("gettarget", "anim2, 0", "");
-    if (yf_animation_gettarget(anim2, 0) != tgt)
+    if (yf_kfanim_gettarget(anim2, 0) != tgt)
         return -1;
 
     YF_TEST_PRINT("gettarget", "anim2, 2", "");
-    if (yf_animation_gettarget(anim2, 2) != NULL)
+    if (yf_kfanim_gettarget(anim2, 2) != NULL)
         return -1;
 
     YF_TEST_PRINT("gettarget", "anim2, 5", "");
-    if (yf_animation_gettarget(anim2, 5) != tgt)
+    if (yf_kfanim_gettarget(anim2, 5) != tgt)
         return -1;
 
     YF_TEST_PRINT("getins", "anim2, &in_n", "");
-    if (yf_animation_getins(anim2, &in_n) == NULL || in_n != 2)
+    if (yf_kfanim_getins(anim2, &in_n) == NULL || in_n != 2)
         return -1;
 
     YF_TEST_PRINT("getouts", "anim2, &out_n", "");
-    if (yf_animation_getouts(anim2, &out_n) == NULL || out_n != 6)
+    if (yf_kfanim_getouts(anim2, &out_n) == NULL || out_n != 6)
         return -1;
 
     YF_TEST_PRINT("getacts", "anim2, &act_n", "");
-    if (yf_animation_getacts(anim2, &act_n) == NULL || act_n != 6)
+    if (yf_kfanim_getacts(anim2, &act_n) == NULL || act_n != 6)
         return -1;
 
     yf_print_anim(anim2);
 
     YF_TEST_PRINT("deinit", "anim", "");
-    yf_animation_deinit(anim);
+    yf_kfanim_deinit(anim);
 
     YF_TEST_PRINT("deinit", "anim2", "");
-    yf_animation_deinit(anim2);
+    yf_kfanim_deinit(anim2);
 
     yf_node_deinit(tgt);
 
     puts("\n- collection animation loading -\n");
 
-    vars_.coll = yf_collection_init("tmp/animation.glb");
+    vars_.coll = yf_collec_init("tmp/animation.glb");
     assert(vars_.coll != NULL);
 
-    yf_collection_each(vars_.coll, YF_CITEM_ANIMATION, each_anim, NULL);
+    yf_collec_each(vars_.coll, YF_CITEM_KFANIM, each_anim, NULL);
 
-    vars_.anim = yf_collection_getitem(vars_.coll, YF_CITEM_ANIMATION,
-                                       "Animation");
+    vars_.anim = yf_collec_getitem(vars_.coll, YF_CITEM_KFANIM, "Animation");
     assert(vars_.anim != NULL);
 
-    vars_.scn = yf_collection_getitem(vars_.coll, YF_CITEM_SCENE, "Scene");
+    vars_.scn = yf_collec_getitem(vars_.coll, YF_CITEM_SCENE, "Scene");
     assert(vars_.scn != NULL);
 
-    const YF_vec3 light_clr = {1.0f, 1.0f, 1.0f};
-    YF_light light = yf_light_init(YF_LIGHTT_POINT, light_clr, 1000.0f, 100.0f,
-                                   0.0f, 0.0f);
+    const yf_vec3_t light_clr = {1.0f, 1.0f, 1.0f};
+    yf_light_t *light = yf_light_init(YF_LIGHTT_POINT, light_clr, 1000.0f,
+                                      100.0f, 0.0f, 0.0f);
     assert(light != NULL);
     yf_mat4_xlate(*yf_node_getxform(yf_light_getnode(light)),
                   10.0f, 10.0f, 10.0f);
@@ -383,7 +382,7 @@ int yf_test_animation(void)
 
     puts("\n- no explicit 'deinit()' call for managed animation -\n");
 
-    yf_collection_deinit(vars_.coll);
+    yf_collec_deinit(vars_.coll);
     yf_light_deinit(light);
     yf_view_deinit(vars_.view);
     yf_window_deinit(vars_.win);

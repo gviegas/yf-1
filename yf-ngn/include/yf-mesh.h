@@ -2,7 +2,7 @@
  * YF
  * yf-mesh.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_MESH_H
@@ -12,7 +12,7 @@
 
 #include "yf/com/yf-defs.h"
 
-#include "yf-collection.h"
+#include "yf-collec.h"
 #include "yf-material.h"
 
 YF_DECLS_BEGIN
@@ -20,7 +20,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a mesh.
  */
-typedef struct YF_mesh_o *YF_mesh;
+typedef struct yf_mesh yf_mesh_t;
 
 /**
  * Loads a new mesh from file.
@@ -31,7 +31,7 @@ typedef struct YF_mesh_o *YF_mesh;
  * @return: On success, returns a new mesh. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_mesh yf_mesh_load(const char *pathname, size_t index, YF_collection coll);
+yf_mesh_t *yf_mesh_load(const char *pathname, size_t index, yf_collec_t *coll);
 
 /**
  * Vertex attribute semantics.
@@ -48,17 +48,17 @@ YF_mesh yf_mesh_load(const char *pathname, size_t index, YF_collection coll);
 /**
  * Type defining vertex attribute data.
  */
-typedef struct {
+typedef struct yf_attrdt {
     int vsemt;
     int vfmt;
     /* Offset into 'meshdt.data', relative to 'primdt.data_off'. */
     size_t data_off;
-} YF_attrdt;
+} yf_attrdt_t;
 
 /**
  * Type defining primitive data.
  */
-typedef struct {
+typedef struct yf_primdt {
     int topology;
     unsigned vert_n;
     unsigned indx_n;
@@ -66,7 +66,7 @@ typedef struct {
     size_t data_off;
 
     unsigned vsemt_mask;
-    YF_attrdt *attrs;
+    yf_attrdt_t *attrs;
     unsigned attr_n;
 
     int itype;
@@ -74,18 +74,18 @@ typedef struct {
     size_t indx_data_off;
 
     /* XXX: Does not take ownership. */
-    YF_material matl;
-} YF_primdt;
+    yf_material_t *matl;
+} yf_primdt_t;
 
 /**
  * Type defining mesh data.
  */
-typedef struct {
-    YF_primdt *prims;
+typedef struct yf_meshdt {
+    yf_primdt_t *prims;
     unsigned prim_n;
     void *data;
     size_t data_sz;
-} YF_meshdt;
+} yf_meshdt_t;
 
 /**
  * Initializes a new mesh.
@@ -94,7 +94,7 @@ typedef struct {
  * @return: On success, returns a new mesh. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_mesh yf_mesh_init(const YF_meshdt *data);
+yf_mesh_t *yf_mesh_init(const yf_meshdt_t *data);
 
 /**
  * Gets the number of primitives of a mesh.
@@ -103,7 +103,7 @@ YF_mesh yf_mesh_init(const YF_meshdt *data);
  * @return: The number of primitives of 'mesh'. This value corresponds to the
  *  number of draw calls required to render the mesh.
  */
-unsigned yf_mesh_getprimn(YF_mesh mesh);
+unsigned yf_mesh_getprimn(yf_mesh_t *mesh);
 
 /**
  * Gets the material of a mesh's primitive.
@@ -112,7 +112,7 @@ unsigned yf_mesh_getprimn(YF_mesh mesh);
  * @param prim: The primitive's index.
  * @return: The material used by the given primitive.
  */
-YF_material yf_mesh_getmatl(YF_mesh mesh, unsigned prim);
+yf_material_t *yf_mesh_getmatl(yf_mesh_t *mesh, unsigned prim);
 
 /**
  * Sets the material for a mesh's primitive.
@@ -122,14 +122,15 @@ YF_material yf_mesh_getmatl(YF_mesh mesh, unsigned prim);
  * @param matl: The material to set. Can be 'NULL'.
  * @return: The replaced material.
  */
-YF_material yf_mesh_setmatl(YF_mesh mesh, unsigned prim, YF_material matl);
+yf_material_t *yf_mesh_setmatl(yf_mesh_t *mesh, unsigned prim,
+                               yf_material_t *matl);
 
 /**
  * Deinitializes a mesh.
  *
  * @param mesh: The mesh to deinitialize. Can be 'NULL'.
  */
-void yf_mesh_deinit(YF_mesh mesh);
+void yf_mesh_deinit(yf_mesh_t *mesh);
 
 YF_DECLS_END
 

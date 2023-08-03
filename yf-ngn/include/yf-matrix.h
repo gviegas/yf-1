@@ -2,7 +2,7 @@
  * YF
  * yf-matrix.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_MATRIX_H
@@ -17,18 +17,18 @@ YF_DECLS_BEGIN
 /**
  * Quadratic matrices.
  */
-typedef float YF_mat2[4];
-typedef float YF_mat3[9];
-typedef float YF_mat4[16];
+typedef float yf_mat2_t[2*2];
+typedef float yf_mat3_t[3*3];
+typedef float yf_mat4_t[4*4];
 
 /**
  * Makes a given matrix an identity matrix.
  *
  * @param m: The matrix.
  */
-void yf_mat2_iden(YF_mat2 m);
-void yf_mat3_iden(YF_mat3 m);
-void yf_mat4_iden(YF_mat4 m);
+void yf_mat2_iden(yf_mat2_t m);
+void yf_mat3_iden(yf_mat3_t m);
+void yf_mat4_iden(yf_mat4_t m);
 
 /**
  * Sets all components of a matrix to a given scalar.
@@ -36,9 +36,9 @@ void yf_mat4_iden(YF_mat4 m);
  * @param m: The matrix.
  * @param s: The scalar.
  */
-void yf_mat2_set(YF_mat2 m, float s);
-void yf_mat3_set(YF_mat3 m, float s);
-void yf_mat4_set(YF_mat4 m, float s);
+void yf_mat2_set(yf_mat2_t m, float s);
+void yf_mat3_set(yf_mat3_t m, float s);
+void yf_mat4_set(yf_mat4_t m, float s);
 
 /**
  * Copies one matrix to another.
@@ -46,9 +46,9 @@ void yf_mat4_set(YF_mat4 m, float s);
  * @param dst: The destination matrix.
  * @param m: The source matrix.
  */
-void yf_mat2_copy(YF_mat2 dst, const YF_mat2 m);
-void yf_mat3_copy(YF_mat3 dst, const YF_mat3 m);
-void yf_mat4_copy(YF_mat4 dst, const YF_mat4 m);
+void yf_mat2_copy(yf_mat2_t dst, const yf_mat2_t m);
+void yf_mat3_copy(yf_mat3_t dst, const yf_mat3_t m);
+void yf_mat4_copy(yf_mat4_t dst, const yf_mat4_t m);
 
 /**
  * Computes the transpose of a matrix.
@@ -56,9 +56,9 @@ void yf_mat4_copy(YF_mat4 dst, const YF_mat4 m);
  * @param dst: The destination matrix.
  * @param m: The source matrix.
  */
-void yf_mat2_xpose(YF_mat2 dst, const YF_mat2 m);
-void yf_mat3_xpose(YF_mat3 dst, const YF_mat3 m);
-void yf_mat4_xpose(YF_mat4 dst, const YF_mat4 m);
+void yf_mat2_xpose(yf_mat2_t dst, const yf_mat2_t m);
+void yf_mat3_xpose(yf_mat3_t dst, const yf_mat3_t m);
+void yf_mat4_xpose(yf_mat4_t dst, const yf_mat4_t m);
 
 /**
  * Subtracts two matrices.
@@ -67,9 +67,9 @@ void yf_mat4_xpose(YF_mat4 dst, const YF_mat4 m);
  * @param a: The first matrix.
  * @param b: The second matrix.
  */
-void yf_mat2_sub(YF_mat2 dst, const YF_mat2 a, const YF_mat2 b);
-void yf_mat3_sub(YF_mat3 dst, const YF_mat3 a, const YF_mat3 b);
-void yf_mat4_sub(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b);
+void yf_mat2_sub(yf_mat2_t dst, const yf_mat2_t a, const yf_mat2_t b);
+void yf_mat3_sub(yf_mat3_t dst, const yf_mat3_t a, const yf_mat3_t b);
+void yf_mat4_sub(yf_mat4_t dst, const yf_mat4_t a, const yf_mat4_t b);
 
 /**
  * Adds two matrices.
@@ -78,9 +78,9 @@ void yf_mat4_sub(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b);
  * @param a: The first matrix.
  * @param b: The second matrix.
  */
-void yf_mat2_add(YF_mat2 dst, const YF_mat2 a, const YF_mat2 b);
-void yf_mat3_add(YF_mat3 dst, const YF_mat3 a, const YF_mat3 b);
-void yf_mat4_add(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b);
+void yf_mat2_add(yf_mat2_t dst, const yf_mat2_t a, const yf_mat2_t b);
+void yf_mat3_add(yf_mat3_t dst, const yf_mat3_t a, const yf_mat3_t b);
+void yf_mat4_add(yf_mat4_t dst, const yf_mat4_t a, const yf_mat4_t b);
 
 /**
  * Multiplies two matrices.
@@ -89,9 +89,9 @@ void yf_mat4_add(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b);
  * @param a: The first matrix.
  * @param b: The second matrix.
  */
-void yf_mat2_mul(YF_mat2 dst, const YF_mat2 a, const YF_mat2 b);
-void yf_mat3_mul(YF_mat3 dst, const YF_mat3 a, const YF_mat3 b);
-void yf_mat4_mul(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b);
+void yf_mat2_mul(yf_mat2_t dst, const yf_mat2_t a, const yf_mat2_t b);
+void yf_mat3_mul(yf_mat3_t dst, const yf_mat3_t a, const yf_mat3_t b);
+void yf_mat4_mul(yf_mat4_t dst, const yf_mat4_t a, const yf_mat4_t b);
 
 /**
  * Multiplies a matrix and a vector.
@@ -100,9 +100,9 @@ void yf_mat4_mul(YF_mat4 dst, const YF_mat4 a, const YF_mat4 b);
  * @param m: The matrix.
  * @param v: The vector.
  */
-void yf_mat2_mulv(YF_vec2 dst, const YF_mat2 m, const YF_vec2 v);
-void yf_mat3_mulv(YF_vec3 dst, const YF_mat3 m, const YF_vec3 v);
-void yf_mat4_mulv(YF_vec4 dst, const YF_mat4 m, const YF_vec4 v);
+void yf_mat2_mulv(yf_vec2_t dst, const yf_mat2_t m, const yf_vec2_t v);
+void yf_mat3_mulv(yf_vec3_t dst, const yf_mat3_t m, const yf_vec3_t v);
+void yf_mat4_mulv(yf_vec4_t dst, const yf_mat4_t m, const yf_vec4_t v);
 
 /**
  * Computes the inverse of a matrix.
@@ -110,9 +110,9 @@ void yf_mat4_mulv(YF_vec4 dst, const YF_mat4 m, const YF_vec4 v);
  * @param dst: The destination matrix.
  * @param m: The source matrix.
  */
-void yf_mat2_inv(YF_mat2 dst, const YF_mat2 m);
-void yf_mat3_inv(YF_mat3 dst, const YF_mat3 m);
-void yf_mat4_inv(YF_mat4 dst, const YF_mat4 m);
+void yf_mat2_inv(yf_mat2_t dst, const yf_mat2_t m);
+void yf_mat3_inv(yf_mat3_t dst, const yf_mat3_t m);
+void yf_mat4_inv(yf_mat4_t dst, const yf_mat4_t m);
 
 /**
  * Computes a rotation matrix for the x-, y- or z-axis.
@@ -120,12 +120,12 @@ void yf_mat4_inv(YF_mat4 dst, const YF_mat4 m);
  * @param m: The destination matrix.
  * @param angle: The rotation angle, in radians.
  */
-void yf_mat3_rotx(YF_mat3 m, float angle);
-void yf_mat3_roty(YF_mat3 m, float angle);
-void yf_mat3_rotz(YF_mat3 m, float angle);
-void yf_mat4_rotx(YF_mat4 m, float angle);
-void yf_mat4_roty(YF_mat4 m, float angle);
-void yf_mat4_rotz(YF_mat4 m, float angle);
+void yf_mat3_rotx(yf_mat3_t m, float angle);
+void yf_mat3_roty(yf_mat3_t m, float angle);
+void yf_mat3_rotz(yf_mat3_t m, float angle);
+void yf_mat4_rotx(yf_mat4_t m, float angle);
+void yf_mat4_roty(yf_mat4_t m, float angle);
+void yf_mat4_rotz(yf_mat4_t m, float angle);
 
 /**
  * Computes a rotation matrix for a given axis.
@@ -134,8 +134,8 @@ void yf_mat4_rotz(YF_mat4 m, float angle);
  * @param angle: The rotation angle, in radians.
  * @param axis: The rotation axis.
  */
-void yf_mat3_rot(YF_mat3 m, float angle, const YF_vec3 axis);
-void yf_mat4_rot(YF_mat4 m, float angle, const YF_vec3 axis);
+void yf_mat3_rot(yf_mat3_t m, float angle, const yf_vec3_t axis);
+void yf_mat4_rot(yf_mat4_t m, float angle, const yf_vec3_t axis);
 
 /**
  * Computes a rotation matrix from a quaternion rotation.
@@ -143,8 +143,8 @@ void yf_mat4_rot(YF_mat4 m, float angle, const YF_vec3 axis);
  * @param m: The destination matrix.
  * @param q: The quaternion rotation.
  */
-void yf_mat3_rotq(YF_mat3 m, const YF_vec4 q);
-void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q);
+void yf_mat3_rotq(yf_mat3_t m, const yf_vec4_t q);
+void yf_mat4_rotq(yf_mat4_t m, const yf_vec4_t q);
 
 /**
  * Computes a scaling matrix.
@@ -154,8 +154,8 @@ void yf_mat4_rotq(YF_mat4 m, const YF_vec4 q);
  * @param sy: The y-axis scale.
  * @param sz: The z-axis scale.
  */
-void yf_mat3_scale(YF_mat3 m, float sx, float sy, float sz);
-void yf_mat4_scale(YF_mat4 m, float sx, float sy, float sz);
+void yf_mat3_scale(yf_mat3_t m, float sx, float sy, float sz);
+void yf_mat4_scale(yf_mat4_t m, float sx, float sy, float sz);
 
 /**
  * Computes a translation matrix.
@@ -165,7 +165,7 @@ void yf_mat4_scale(YF_mat4 m, float sx, float sy, float sz);
  * @param ty: The y-axis translation.
  * @param tz: The z-axis translation.
  */
-void yf_mat4_xlate(YF_mat4 m, float tx, float ty, float tz);
+void yf_mat4_xlate(yf_mat4_t m, float tx, float ty, float tz);
 
 /**
  * Computes a view matrix.
@@ -175,8 +175,8 @@ void yf_mat4_xlate(YF_mat4 m, float tx, float ty, float tz);
  * @param center: The center (target) vector.
  * @param up: The up vector.
  */
-void yf_mat4_lookat(YF_mat4 m, const YF_vec3 eye, const YF_vec3 center,
-                    const YF_vec3 up);
+void yf_mat4_lookat(yf_mat4_t m, const yf_vec3_t eye, const yf_vec3_t center,
+                    const yf_vec3_t up);
 
 /**
  * Computes a finite perspective projection matrix.
@@ -187,7 +187,7 @@ void yf_mat4_lookat(YF_mat4 m, const YF_vec3 eye, const YF_vec3 center,
  * @param znear: The distance to the near clipping plane.
  * @param zfar: The distance to the far clipping plane.
  */
-void yf_mat4_persp(YF_mat4 m, float yfov, float aspect, float znear,
+void yf_mat4_persp(yf_mat4_t m, float yfov, float aspect, float znear,
                    float zfar);
 
 /**
@@ -198,7 +198,7 @@ void yf_mat4_persp(YF_mat4 m, float yfov, float aspect, float znear,
  * @param aspect: The aspect ratio of the field of view.
  * @param znear: The distance to the near clipping plane.
  */
-void yf_mat4_infpersp(YF_mat4 m, float yfov, float aspect, float znear);
+void yf_mat4_infpersp(yf_mat4_t m, float yfov, float aspect, float znear);
 
 /**
  * Computes an orthographic projection matrix.
@@ -209,7 +209,8 @@ void yf_mat4_infpersp(YF_mat4 m, float yfov, float aspect, float znear);
  * @param znear: The distance to the near clipping plane.
  * @param zfar: The distance to the far clipping plane.
  */
-void yf_mat4_ortho(YF_mat4 m, float xmag, float ymag, float znear, float zfar);
+void yf_mat4_ortho(yf_mat4_t m, float xmag, float ymag, float znear,
+                   float zfar);
 
 YF_DECLS_END
 

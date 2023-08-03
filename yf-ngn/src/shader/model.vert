@@ -22,7 +22,7 @@
 /**
  * Instance-specific data.
  */
-struct T_inst {
+struct inst {
     mat4 m;
     mat4 norm;
     mat4 mv;
@@ -33,8 +33,8 @@ struct T_inst {
 /**
  * Instance's uniform data.
  */
-layout(set=1, binding=0) uniform U_inst {
-    T_inst i[INST_N];
+layout(set=1, binding=0) uniform uinst {
+    inst i[INST_N];
 } inst_;
 
 layout(location=0) in vec3 pos_;
@@ -46,7 +46,7 @@ layout(location=5) in vec4 clr_;
 layout(location=6) in uvec4 jnts_;
 layout(location=7) in vec4 wgts_;
 
-layout(location=0) out IO_v {
+layout(location=0) out iov {
     vec3 pos;
     vec3 norm;
     vec2 tc;

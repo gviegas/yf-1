@@ -12,7 +12,7 @@
 #include "light.glsl"
 #include "material.glsl"
 
-layout(location=0) in IO_v {
+layout(location=0) in iov {
     vec3 pos;
     vec3 norm;
     vec2 tc;

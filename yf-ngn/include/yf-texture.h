@@ -2,7 +2,7 @@
  * YF
  * yf-texture.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_TEXTURE_H
@@ -14,14 +14,14 @@
 #include "yf/com/yf-types.h"
 #include "yf/core/yf-sampler.h"
 
-#include "yf-collection.h"
+#include "yf-collec.h"
 
 YF_DECLS_BEGIN
 
 /**
  * Opaque type defining a texture.
  */
-typedef struct YF_texture_o *YF_texture;
+typedef struct yf_texture yf_texture_t;
 
 /**
  * Loads a new texture from file.
@@ -32,8 +32,8 @@ typedef struct YF_texture_o *YF_texture;
  * @return: On success, returns a new texture. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_texture yf_texture_load(const char *pathname, size_t index,
-                           YF_collection coll);
+yf_texture_t *yf_texture_load(const char *pathname, size_t index,
+                              yf_collec_t *coll);
 
 /**
  * Texture coordinate sets.
@@ -44,13 +44,13 @@ YF_texture yf_texture_load(const char *pathname, size_t index,
 /**
  * Type defining texture data.
  */
-typedef struct {
+typedef struct yf_texdt {
     void *data;
     int pixfmt;
-    YF_dim2 dim;
-    YF_sampler splr;
+    yf_dim2_t dim;
+    yf_sampler_t splr;
     int uvset;
-} YF_texdt;
+} yf_texdt_t;
 
 /**
  * Initializes a new texture.
@@ -59,16 +59,16 @@ typedef struct {
  * @return: On success, returns a new texture. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_texture yf_texture_init(const YF_texdt *data);
+yf_texture_t *yf_texture_init(const yf_texdt_t *data);
 
 /**
  * Type defining a texture with custom sampler and coordinate set.
  */
 typedef struct {
-    YF_texture tex;
-    YF_sampler splr;
+    yf_texture_t *tex;
+    yf_sampler_t splr;
     int uvset;
-} YF_texref;
+} yf_texref_t;
 
 /**
  * Gets the default reference of a texture.
@@ -77,7 +77,7 @@ typedef struct {
  * @param ref: The destination for the reference.
  * @return: 'ref'.
  */
-YF_texref *yf_texture_getref(YF_texture tex, YF_texref *ref);
+yf_texref_t *yf_texture_getref(yf_texture_t *tex, yf_texref_t *ref);
 
 /**
  * Gets the dimensions of a texture.
@@ -85,7 +85,7 @@ YF_texref *yf_texture_getref(YF_texture tex, YF_texref *ref);
  * @param tex: The texture.
  * @return: The texture dimensions, in pixels.
  */
-YF_dim2 yf_texture_getdim(YF_texture tex);
+yf_dim2_t yf_texture_getdim(yf_texture_t *tex);
 
 /**
  * Gets the sampler of a texture.
@@ -93,7 +93,7 @@ YF_dim2 yf_texture_getdim(YF_texture tex);
  * @param tex: The texture.
  * @return: The texture sampler.
  */
-YF_sampler *yf_texture_getsplr(YF_texture tex);
+yf_sampler_t *yf_texture_getsplr(yf_texture_t *tex);
 
 /**
  * Gets the 'UVSET' value of a texture.
@@ -101,7 +101,7 @@ YF_sampler *yf_texture_getsplr(YF_texture tex);
  * @param tex: The texture.
  * @return: The texture 'UVSET'.
  */
-int yf_texture_getuv(YF_texture tex);
+int yf_texture_getuv(yf_texture_t *tex);
 
 /**
  * Sets the 'UVSET' value for a texture.
@@ -109,14 +109,14 @@ int yf_texture_getuv(YF_texture tex);
  * @param tex: The texture.
  * @param uvset: The 'UVSET' value to set.
  */
-void yf_texture_setuv(YF_texture tex, int uvset);
+void yf_texture_setuv(yf_texture_t *tex, int uvset);
 
 /**
  * Deinitializes a texture.
  *
  * @param tex: The texture to deinitialize. Can be 'NULL'.
  */
-void yf_texture_deinit(YF_texture tex);
+void yf_texture_deinit(yf_texture_t *tex);
 
 YF_DECLS_END
 

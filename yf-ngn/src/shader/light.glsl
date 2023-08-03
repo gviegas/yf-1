@@ -18,7 +18,8 @@ layout(std140, column_major) uniform;
 /**
  * Light source type.
  */
-struct T_light {
+/* TODO: Fix alignment. */
+struct light {
     int unused;
     int type;
     float inten;
@@ -33,8 +34,8 @@ struct T_light {
 /**
  * Light.
  */
-layout(set=0, binding=1) uniform U_light {
-    T_light l[LIGHT_N];
+layout(set=0, binding=1) uniform ulight {
+    light l[LIGHT_N];
 } light_;
 
 /**

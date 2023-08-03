@@ -14,7 +14,7 @@ layout(std140, column_major) uniform;
 /**
  * Viewport.
  */
-struct T_vport {
+struct vport {
     float x;
     float y;
     float wdt;
@@ -26,10 +26,10 @@ struct T_vport {
 /**
  * Global uniform data.
  */
-layout(set=0, binding=0) uniform U_globl {
+layout(set=0, binding=0) uniform uglobl {
     mat4 v;
     mat4 p;
     mat4 o;
     mat4 vp;
-    T_vport vport[VPORT_N];
+    vport vport[VPORT_N];
 } globl_;

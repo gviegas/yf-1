@@ -42,10 +42,10 @@ typedef struct {
     uint32_t len;
     uint32_t type;
     uint8_t var[];
-} T_chunk;
+} chunk_t;
 
 #define YF_PNG_VARSZ 4096
-static_assert(sizeof(T_chunk) == 8, "!sizeof");
+static_assert(sizeof(chunk_t) == 8, "!sizeof");
 
 /* Image header. */
 #define YF_PNG_IHDR YF_PNG_MAKETYPE('I', 'H', 'D', 'R')
@@ -58,10 +58,10 @@ typedef struct {
     uint8_t compression;
     uint8_t filter;
     uint8_t interlace;
-} T_ihdr;
+} ihdr_t;
 
 #define YF_PNG_IHDRSZ 13
-static_assert(offsetof(T_ihdr, interlace) == YF_PNG_IHDRSZ-1, "!offsetof");
+static_assert(offsetof(ihdr_t, interlace) == YF_PNG_IHDRSZ-1, "!offsetof");
 
 /* Palette. */
 #define YF_PNG_PLTE YF_PNG_MAKETYPE('P', 'L', 'T', 'E')
@@ -102,12 +102,12 @@ static int crcspin_ = 1;
 
 /* Processed PNG chunks. */
 typedef struct {
-    T_ihdr *ihdr;
+    ihdr_t *ihdr;
     uint8_t *plte;
     size_t plte_sz;
     uint8_t *idat;
     size_t idat_sz;
-} T_png;
+} png_t;
 
 /* Code tree. */
 typedef struct {
@@ -116,17 +116,17 @@ typedef struct {
         uint16_t next[2];
         uint32_t value;
     };
-} T_tree;
+} tree_t;
 
 #if defined(YF_DEVEL) && defined(YF_PRINT)
 static void print_codes(const uint8_t *lengths, size_t length_n,
-                        const uint32_t *codes, const T_tree *tree,
+                        const uint32_t *codes, const tree_t *tree,
                         size_t tree_n, size_t tree_max);
 #endif
 
 /* Generates Huffman codes from a sequence of code lengths and returns its
    tree representation. */
-static T_tree *gen_codes(const uint8_t *lengths, size_t length_n,
+static tree_t *gen_codes(const uint8_t *lengths, size_t length_n,
                          uint32_t *codes)
 {
     assert(lengths != NULL);
@@ -170,7 +170,7 @@ static T_tree *gen_codes(const uint8_t *lengths, size_t length_n,
 
     /* tree creation */
     size_t tree_n = code_n << 1;
-    T_tree *tree = calloc(tree_n, sizeof *tree);
+    tree_t *tree = calloc(tree_n, sizeof *tree);
     if (tree == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -267,8 +267,8 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
 
         } else {
             /* compressed */
-            struct { uint32_t codes[288]; T_tree *tree; } literal = {0};
-            struct { uint32_t codes[32]; T_tree *tree; } distance = {0};
+            struct { uint32_t codes[288]; tree_t *tree; } literal = {0};
+            struct { uint32_t codes[32]; tree_t *tree; } distance = {0};
 
             if (btype == 1) {
                 /* fixed H. codes */
@@ -311,7 +311,7 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
                     lengths[clen_map[i]] = len;
                 }
 
-                struct { uint32_t codes[19]; T_tree *tree; } clength;
+                struct { uint32_t codes[19]; tree_t *tree; } clength;
                 clength.tree = gen_codes(lengths, 19, clength.codes);
                 if (clength.tree == NULL)
                     return -1;
@@ -467,7 +467,7 @@ static int inflate(const uint8_t *strm, uint8_t *buf, size_t buf_sz)
 }
 
 /* Loads texture data from processed chunks. */
-static int load_texdt(const T_png *png, YF_texdt *data)
+static int load_texdt(const png_t *png, yf_texdt_t *data)
 {
     assert(png != NULL);
     assert(data != NULL);
@@ -479,7 +479,6 @@ static int load_texdt(const T_png *png, YF_texdt *data)
     int pixfmt;
     uint8_t channels;
 
-    /* TODO: Check color profile. */
     /* TODO: Check format support. */
     /* TODO: Choose sRGB formats whenever possible. */
     switch (png->ihdr->color_type) {
@@ -771,13 +770,13 @@ static int load_texdt(const T_png *png, YF_texdt *data)
     data->dim.width = width;
     data->dim.height = height;
     /* XXX: Default sampler params. and 'UVSET' value. */
-    data->splr = (YF_sampler){0};
+    data->splr = (yf_sampler_t){0};
     data->uvset = YF_UVSET_0;
 
     return 0;
 }
 
-static int load_png(FILE *file, YF_texdt *data)
+static int load_png(FILE *file, yf_texdt_t *data)
 {
     assert(file != NULL && !feof(file));
     assert(data != NULL);
@@ -789,7 +788,7 @@ static int load_png(FILE *file, YF_texdt *data)
         return -1;
     }
 
-    T_chunk *chunk = malloc(sizeof(T_chunk)+YF_PNG_VARSZ);
+    chunk_t *chunk = malloc(sizeof(chunk_t)+YF_PNG_VARSZ);
     if (chunk == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return -1;
@@ -800,7 +799,7 @@ static int load_png(FILE *file, YF_texdt *data)
     YF_PNG_INITCRC();
 
     /* IHDR */
-    if (fread(chunk, sizeof(T_chunk), 1, file) < 1) {
+    if (fread(chunk, sizeof(chunk_t), 1, file) < 1) {
         yf_seterr(YF_ERR_INVFILE, __func__);
         free(chunk);
         return -1;
@@ -830,7 +829,7 @@ static int load_png(FILE *file, YF_texdt *data)
         return -1;
     }
 
-    T_ihdr ihdr;
+    ihdr_t ihdr;
     memcpy(&ihdr, chunk->var, len);
     ihdr.width = be32toh(ihdr.width);
     ihdr.height = be32toh(ihdr.height);
@@ -860,7 +859,7 @@ static int load_png(FILE *file, YF_texdt *data)
     size_t idat_sz = 0;
 
     while (1) {
-        if (fread(chunk, sizeof(T_chunk), 1, file) < 1) {
+        if (fread(chunk, sizeof(chunk_t), 1, file) < 1) {
             yf_seterr(YF_ERR_NOMEM, __func__);
             free(chunk);
             return -1;
@@ -870,7 +869,7 @@ static int load_png(FILE *file, YF_texdt *data)
         type = be32toh(chunk->type);
 
         if (len > var_sz) {
-            const size_t new_sz = sizeof(T_chunk)+len;
+            const size_t new_sz = sizeof(chunk_t)+len;
             void *tmp = realloc(chunk, new_sz);
             if (tmp != NULL) {
                 chunk = tmp;
@@ -992,7 +991,7 @@ static int load_png(FILE *file, YF_texdt *data)
     }
 
     /* data processing */
-    const T_png png = {
+    const png_t png = {
         .ihdr = &ihdr,
         .plte = plte,
         .plte_sz = plte_sz,
@@ -1006,7 +1005,7 @@ static int load_png(FILE *file, YF_texdt *data)
     return r;
 }
 
-int yf_loadpng(const char *pathname, YF_texdt *data)
+int yf_loadpng(const char *pathname, yf_texdt_t *data)
 {
     assert(pathname != NULL);
     assert(data != NULL);
@@ -1022,7 +1021,7 @@ int yf_loadpng(const char *pathname, YF_texdt *data)
     return r;
 }
 
-int yf_loadpng2(FILE *file, YF_texdt *data)
+int yf_loadpng2(FILE *file, yf_texdt_t *data)
 {
     assert(file != NULL && !feof(file));
     assert(data != NULL);
@@ -1037,7 +1036,7 @@ int yf_loadpng2(FILE *file, YF_texdt *data)
 #if defined(YF_DEVEL) && defined(YF_PRINT)
 
 static void print_codes(const uint8_t *lengths, size_t length_n,
-                        const uint32_t *codes, const T_tree *tree,
+                        const uint32_t *codes, const tree_t *tree,
                         size_t tree_n, size_t tree_max)
 {
     printf("\n[YF] OUTPUT (%s):\n", __func__);

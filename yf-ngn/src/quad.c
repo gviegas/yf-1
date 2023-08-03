@@ -2,7 +2,7 @@
  * YF
  * quad.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -20,12 +20,12 @@
 #define YF_VQUAD_CLRN (4 << 2)
 #define YF_VQUAD_N    (YF_VQUAD_POSN + YF_VQUAD_TCN + YF_VQUAD_CLRN)
 
-struct YF_quad_o {
-    YF_node node;
+struct yf_quad {
+    yf_node_t *node;
     float verts[YF_VQUAD_N];
-    YF_mesh mesh;
-    YF_texture tex;
-    YF_rect rect;
+    yf_mesh_t *mesh;
+    yf_texture_t *tex;
+    yf_rect_t rect;
 #define YF_PEND_NONE 0
 #define YF_PEND_TC   0x01 /* 'rect' changed, 'verts.tc' not up to date */
 #define YF_PEND_CLR  0x02 /* 'verts.clr' set but 'mesh' not up to date */
@@ -34,7 +34,7 @@ struct YF_quad_o {
 };
 
 /* Initializes a quad's mesh rectangle. */
-static int init_rect(YF_quad quad)
+static int init_rect(yf_quad_t *quad)
 {
     assert(quad != NULL);
 
@@ -85,14 +85,14 @@ static int init_rect(YF_quad quad)
     memcpy(dt, quad->verts, sizeof quad->verts);
     memcpy((char *)dt + sizeof quad->verts, indx, sizeof indx);
 
-    const YF_meshdt data = {
-        .prims = &(YF_primdt){
+    const yf_meshdt_t data = {
+        .prims = &(yf_primdt_t){
             .topology = YF_TOPOLOGY_TRIANGLE,
             .vert_n = 4,
             .indx_n = 6,
             .data_off = 0,
             .vsemt_mask = YF_VSEMT_POS | YF_VSEMT_TC | YF_VSEMT_CLR,
-            .attrs =  (YF_attrdt[]){
+            .attrs =  (yf_attrdt_t[]){
                 [0] = {YF_VSEMT_POS, YF_VFMT_FLOAT3, 0},
                 [1] = {YF_VSEMT_TC, YF_VFMT_FLOAT2, sizeof pos},
                 [2] = {YF_VSEMT_CLR, YF_VFMT_FLOAT4, sizeof pos + sizeof tc}
@@ -113,7 +113,7 @@ static int init_rect(YF_quad quad)
 }
 
 /* Updates a quad's mesh rectangle. */
-static void update_rect(YF_quad quad)
+static void update_rect(yf_quad_t *quad)
 {
     assert(quad != NULL);
     assert(quad->pend_mask != YF_PEND_NONE);
@@ -128,7 +128,7 @@ static void update_rect(YF_quad quad)
             /* XXX: This assumes that the rect values are valid. */
             assert(quad->tex != NULL);
 
-            const YF_dim2 dim = yf_texture_getdim(quad->tex);
+            const yf_dim2_t dim = yf_texture_getdim(quad->tex);
             const float wdt = dim.width;
             const float hgt = dim.height;
             s0 = quad->rect.origin.x / wdt;
@@ -183,13 +183,13 @@ static void update_rect(YF_quad quad)
 /* Quad deinitialization callback. */
 static void deinit_quad(void *quad)
 {
-    yf_mesh_deinit(((YF_quad)quad)->mesh);
+    yf_mesh_deinit(((yf_quad_t *)quad)->mesh);
     free(quad);
 }
 
-YF_quad yf_quad_init(void)
+yf_quad_t *yf_quad_init(void)
 {
-    YF_quad quad = calloc(1, sizeof(struct YF_quad_o));
+    yf_quad_t *quad = calloc(1, sizeof(yf_quad_t));
     if (quad == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -207,13 +207,13 @@ YF_quad yf_quad_init(void)
     return quad;
 }
 
-YF_node yf_quad_getnode(YF_quad quad)
+yf_node_t *yf_quad_getnode(yf_quad_t *quad)
 {
     assert(quad != NULL);
     return quad->node;
 }
 
-YF_mesh yf_quad_getmesh(YF_quad quad)
+yf_mesh_t *yf_quad_getmesh(yf_quad_t *quad)
 {
     assert(quad != NULL);
 
@@ -224,29 +224,29 @@ YF_mesh yf_quad_getmesh(YF_quad quad)
     return quad->mesh;
 }
 
-YF_texture yf_quad_gettex(YF_quad quad)
+yf_texture_t *yf_quad_gettex(yf_quad_t *quad)
 {
     assert(quad != NULL);
     return quad->tex;
 }
 
-void yf_quad_settex(YF_quad quad, YF_texture tex)
+void yf_quad_settex(yf_quad_t *quad, yf_texture_t *tex)
 {
     assert(quad != NULL);
 
     quad->tex = tex;
-    quad->rect.origin = (YF_off2){0};
-    quad->rect.size = tex != NULL ? yf_texture_getdim(tex) : (YF_dim2){0};
+    quad->rect.origin = (yf_off2_t){0};
+    quad->rect.size = tex != NULL ? yf_texture_getdim(tex) : (yf_dim2_t){0};
     quad->pend_mask |= YF_PEND_TC;
 }
 
-const YF_rect *yf_quad_getrect(YF_quad quad)
+const yf_rect_t *yf_quad_getrect(yf_quad_t *quad)
 {
     assert(quad != NULL);
     return &quad->rect;
 }
 
-void yf_quad_setrect(YF_quad quad, const YF_rect *rect)
+void yf_quad_setrect(yf_quad_t *quad, const yf_rect_t *rect)
 {
     assert(quad != NULL);
     assert(rect != NULL);
@@ -255,7 +255,7 @@ void yf_quad_setrect(YF_quad quad, const YF_rect *rect)
     quad->pend_mask |= YF_PEND_TC;
 }
 
-YF_color yf_quad_getcolor(YF_quad quad, int corner)
+yf_color_t yf_quad_getcolor(yf_quad_t *quad, int corner)
 {
     assert(quad != NULL);
 
@@ -279,10 +279,10 @@ YF_color yf_quad_getcolor(YF_quad quad, int corner)
         break;
     }
 
-    return (YF_color){clr[0], clr[1], clr[2], clr[3]};
+    return (yf_color_t){clr[0], clr[1], clr[2], clr[3]};
 }
 
-void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color)
+void yf_quad_setcolor(yf_quad_t *quad, unsigned corner_mask, yf_color_t color)
 {
     assert(quad != NULL);
 
@@ -318,7 +318,7 @@ void yf_quad_setcolor(YF_quad quad, unsigned corner_mask, YF_color color)
     quad->pend_mask |= YF_PEND_CLR;
 }
 
-void yf_quad_deinit(YF_quad quad)
+void yf_quad_deinit(yf_quad_t *quad)
 {
     if (quad != NULL)
         yf_node_deinit(quad->node);

@@ -2,7 +2,7 @@
  * YF
  * mesh.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdint.h>
@@ -24,6 +24,8 @@
 #include "data-gltf.h"
 
 /* TODO: Thread-safe. */
+/* TODO: Use a bit map for buffer management. */
+/* TODO: Fix alignment within buffer. */
 
 /* TODO: Should be defined elsewhere. */
 #undef YF_BUFLEN
@@ -32,16 +34,16 @@
 #undef YF_BLKMAX
 #define YF_BLKMAX 256
 
-struct YF_mesh_o {
-    YF_primdt *prims;
+struct yf_mesh {
+    yf_primdt_t *prims;
     unsigned prim_n;
     size_t offset;
     size_t size;
 
     /* mesh whose buffer location precedes this one's */
-    YF_mesh prev;
+    yf_mesh_t *prev;
     /* mesh whose buffer location succeeds this one's */
-    YF_mesh next;
+    yf_mesh_t *next;
 
     /* indicates that deinitialization failed */
     int invalid;
@@ -53,24 +55,24 @@ typedef struct {
     size_t size;
 
     /* mesh whose buffer location precedes this block */
-    YF_mesh prev_mesh;
-} T_memblk;
+    yf_mesh_t *prev_mesh;
+} memblk_t;
 
 /* Global context. */
-static YF_context ctx_ = NULL;
+static yf_context_t *ctx_ = NULL;
 
 /* Buffer instance. */
-static YF_buffer buf_ = NULL;
+static yf_buffer_t *buf_ = NULL;
 
 /* Ordered list of unused memory block ranges. */
-static T_memblk blks_[YF_BLKMAX] = {0};
+static memblk_t blks_[YF_BLKMAX] = {0};
 static size_t blk_n_ = 1;
 
 /* First mesh relative to locations in the buffer. */
-static YF_mesh head_ = NULL;
+static yf_mesh_t *head_ = NULL;
 
 /* Last mesh relative to locations in the buffer. */
-static YF_mesh tail_ = NULL;
+static yf_mesh_t *tail_ = NULL;
 
 /* Number of invalid meshes. */
 static size_t inval_n_ = 0;
@@ -88,7 +90,7 @@ static size_t resize_buf(size_t new_len)
     const size_t buf_len = yf_buffer_getsize(buf_);
 
     if (sz != buf_len) {
-        YF_buffer new_buf;
+        yf_buffer_t *new_buf;
         if ((new_buf = yf_buffer_init(ctx_, sz)) == NULL) {
             if ((new_buf = yf_buffer_init(ctx_, new_len)) == NULL)
                 return buf_len;
@@ -96,7 +98,7 @@ static size_t resize_buf(size_t new_len)
                 sz = new_len;
         }
 
-        YF_cmdbuf cb = yf_cmdbuf_get(ctx_, YF_CMDBUF_XFER);
+        yf_cmdbuf_t *cb = yf_cmdbuf_get(ctx_, YF_CMDBUF_XFER);
         if (cb == NULL) {
             yf_buffer_deinit(new_buf);
             return buf_len;
@@ -133,11 +135,11 @@ static int trim_mem(void)
 
     /* trimmed data will be copied into a new buffer */
     const size_t buf_sz = yf_buffer_getsize(buf_);
-    YF_buffer new_buf = yf_buffer_init(ctx_, buf_sz);
+    yf_buffer_t *new_buf = yf_buffer_init(ctx_, buf_sz);
     if (new_buf == NULL)
         return -1;
 
-    YF_cmdbuf cb = yf_cmdbuf_get(ctx_, YF_CMDBUF_XFER);
+    yf_cmdbuf_t *cb = yf_cmdbuf_get(ctx_, YF_CMDBUF_XFER);
     if (cb == NULL) {
         yf_buffer_deinit(new_buf);
         return -1;
@@ -187,8 +189,8 @@ static int trim_mem(void)
     size_t diff = 0;
 
     for (size_t i = 1; i < blk_n_; i++) {
-        YF_mesh prev = blks_[i-1].prev_mesh;
-        YF_mesh mesh = blks_[i].prev_mesh;
+        yf_mesh_t *prev = blks_[i-1].prev_mesh;
+        yf_mesh_t *mesh = blks_[i].prev_mesh;
         diff += blks_[i-1].size;
         do
             mesh->offset -= diff;
@@ -196,8 +198,8 @@ static int trim_mem(void)
     }
 
     if (blks_[blk_n_-1].prev_mesh != tail_) {
-        YF_mesh prev = blks_[blk_n_-1].prev_mesh;
-        YF_mesh mesh = tail_;
+        yf_mesh_t *prev = blks_[blk_n_-1].prev_mesh;
+        yf_mesh_t *mesh = tail_;
         diff += blks_[blk_n_-1].size;
         do
             mesh->offset -= diff;
@@ -216,21 +218,21 @@ static int trim_mem(void)
 /* Tries to deinitialize invalid meshes. */
 static void try_release(void)
 {
-    YF_mesh mesh = head_;
+    yf_mesh_t *mesh = head_;
     size_t n = inval_n_;
 
     /* TODO: Store first/last invalid meshes to speed this up. */
     while (n-- > 0) {
         while (!mesh->invalid)
             mesh = mesh->next;
-        YF_mesh next = mesh->next;
+        yf_mesh_t *next = mesh->next;
         yf_mesh_deinit(mesh);
         mesh = next;
     }
 }
 
 /* Copies mesh data to buffer instance and updates mesh object. */
-static int copy_data(YF_mesh mesh, const void *data, size_t size)
+static int copy_data(yf_mesh_t *mesh, const void *data, size_t size)
 {
     assert(mesh != NULL);
     assert(data != NULL);
@@ -265,7 +267,7 @@ static int copy_data(YF_mesh mesh, const void *data, size_t size)
         int merge_last = 0;
 
         if (blk_n_ > 0) {
-            T_memblk *last = blks_+blk_n_-1;
+            memblk_t *last = blks_+blk_n_-1;
             if (last->offset + last->size == buf_len) {
                 new_len -= last->size;
                 merge_last = 1;
@@ -335,7 +337,7 @@ no_resz:
 }
 
 /* Invalidates a mesh. */
-static void invalidate(YF_mesh mesh)
+static void invalidate(yf_mesh_t *mesh)
 {
     if (!mesh->invalid) {
         mesh->invalid = 1;
@@ -343,15 +345,15 @@ static void invalidate(YF_mesh mesh)
     }
 }
 
-YF_mesh yf_mesh_load(const char *pathname, size_t index, YF_collection coll)
+yf_mesh_t *yf_mesh_load(const char *pathname, size_t index, yf_collec_t *coll)
 {
     /* TODO: Consider checking the type of the file. */
     if (coll == NULL)
-        coll = yf_collection_get();
-    return yf_collection_loaditem(coll, YF_CITEM_MESH, pathname, index);
+        coll = yf_collec_get();
+    return yf_collec_loaditem(coll, YF_CITEM_MESH, pathname, index);
 }
 
-YF_mesh yf_mesh_init(const YF_meshdt *data)
+yf_mesh_t *yf_mesh_init(const yf_meshdt_t *data)
 {
     assert(data != NULL);
     assert(data->prims != NULL);
@@ -385,7 +387,7 @@ YF_mesh yf_mesh_init(const YF_meshdt *data)
         inval_n_ = 0;
     }
 
-    YF_mesh mesh = calloc(1, sizeof(struct YF_mesh_o));
+    yf_mesh_t *mesh = calloc(1, sizeof(yf_mesh_t));
     if (mesh == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -426,13 +428,13 @@ YF_mesh yf_mesh_init(const YF_meshdt *data)
     return mesh;
 }
 
-unsigned yf_mesh_getprimn(YF_mesh mesh)
+unsigned yf_mesh_getprimn(yf_mesh_t *mesh)
 {
     assert(mesh != NULL);
     return mesh->prim_n;
 }
 
-YF_material yf_mesh_getmatl(YF_mesh mesh, unsigned prim)
+yf_material_t *yf_mesh_getmatl(yf_mesh_t *mesh, unsigned prim)
 {
     assert(mesh != NULL);
     assert(prim < mesh->prim_n);
@@ -440,17 +442,18 @@ YF_material yf_mesh_getmatl(YF_mesh mesh, unsigned prim)
     return mesh->prims[prim].matl;
 }
 
-YF_material yf_mesh_setmatl(YF_mesh mesh, unsigned prim, YF_material matl)
+yf_material_t *yf_mesh_setmatl(yf_mesh_t *mesh, unsigned prim,
+                               yf_material_t *matl)
 {
     assert(mesh != NULL);
     assert(prim < mesh->prim_n);
 
-    YF_material prev = mesh->prims[prim].matl;
+    yf_material_t *prev = mesh->prims[prim].matl;
     mesh->prims[prim].matl = matl;
     return prev;
 }
 
-void yf_mesh_deinit(YF_mesh mesh)
+void yf_mesh_deinit(yf_mesh_t *mesh)
 {
     if (mesh == NULL)
         return;
@@ -472,7 +475,7 @@ void yf_mesh_deinit(YF_mesh mesh)
 
     } else if (blk_i == blk_n_) {
         /* no next blocks */
-        T_memblk *prev = blks_+blk_i-1;
+        memblk_t *prev = blks_+blk_i-1;
         if (prev->offset + prev->size == mesh->offset) {
             prev->size += mesh->size;
         } else if (blk_n_ < YF_BLKMAX) {
@@ -490,7 +493,7 @@ void yf_mesh_deinit(YF_mesh mesh)
 
     } else if (blk_i == 0) {
         /* no previous blocks */
-        T_memblk *next = blks_;
+        memblk_t *next = blks_;
         if (mesh->offset + mesh->size == next->offset) {
             next->offset = mesh->offset;
             next->size += mesh->size;
@@ -511,8 +514,8 @@ void yf_mesh_deinit(YF_mesh mesh)
 
     } else {
         /* previous & next blocks */
-        T_memblk *prev = blks_+blk_i-1;
-        T_memblk *next = blks_+blk_i;
+        memblk_t *prev = blks_+blk_i-1;
+        memblk_t *next = blks_+blk_i;
         int prev_merged = 0;
         int next_merged = 0;
         if (prev->offset + prev->size == mesh->offset) {
@@ -579,7 +582,8 @@ void yf_mesh_deinit(YF_mesh mesh)
     free(mesh);
 }
 
-int yf_mesh_setdata(YF_mesh mesh, size_t offset, const void *data, size_t size)
+int yf_mesh_setdata(yf_mesh_t *mesh, size_t offset, const void *data,
+                    size_t size)
 {
     assert(mesh != NULL);
     assert(data != NULL);
@@ -593,7 +597,7 @@ int yf_mesh_setdata(YF_mesh mesh, size_t offset, const void *data, size_t size)
     return yf_buffer_copy(buf_, mesh->offset + offset, data, size);
 }
 
-void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
+void yf_mesh_draw(yf_mesh_t *mesh, yf_cmdbuf_t *cmdb, unsigned inst_n)
 {
     assert(mesh != NULL);
     assert(cmdb != NULL);
@@ -603,7 +607,7 @@ void yf_mesh_draw(YF_mesh mesh, YF_cmdbuf cmdb, unsigned inst_n)
 
     /* FIXME: Multiple primitives may require different states. */
     for (unsigned i = 0; i < mesh->prim_n; i++) {
-        const YF_primdt *prim = mesh->prims+i;
+        const yf_primdt_t *prim = mesh->prims+i;
         const size_t off = mesh->offset + prim->data_off;
 
         for (unsigned j = 0; j < prim->attr_n; j++) {
@@ -634,12 +638,12 @@ void yf_unsetmesh(void)
     inval_n_ = 0;
     tail_ = NULL;
     while (head_ != NULL) {
-        YF_mesh tmp = head_;
+        yf_mesh_t *tmp = head_;
         head_ = head_->next;
         yf_mesh_deinit(tmp);
     }
     blk_n_ = 1;
-    blks_[0] = (T_memblk){0};
+    blks_[0] = (memblk_t){0};
     yf_buffer_deinit(buf_);
     buf_ = NULL;
     ctx_ = NULL;
@@ -656,7 +660,7 @@ void yf_unsetmesh(void)
     end = (mesh)->size; \
     end += beg; } while (0)
 
-void yf_print_mesh(YF_mesh mesh)
+void yf_print_mesh(yf_mesh_t *mesh)
 {
     assert(ctx_ != NULL);
 
@@ -681,7 +685,7 @@ void yf_print_mesh(YF_mesh mesh)
         }
 
         puts("\n meshes:");
-        YF_mesh next = head_;
+        yf_mesh_t *next = head_;
         while (next != NULL) {
             YF_SPANOFMESH(next, beg, end);
             printf("  [%zu, %zu)%s\n", beg, end,

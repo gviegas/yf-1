@@ -2,7 +2,7 @@
  * YF
  * test-model.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -18,17 +18,17 @@
 #define YF_WINH 480
 #define YF_WINT "Model"
 #define YF_FPS 60
-#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
-#define YF_POINT (YF_vec3){0}
+#define YF_PLACE (yf_vec3_t){20.0f, 20.0f, 20.0f}
+#define YF_POINT (yf_vec3_t){0}
 
 /* Shared variables. */
-struct T_vars {
-    YF_window win;
-    YF_view view;
-    YF_scene scn;
-    YF_mesh mesh;
-    YF_material matl;
-    YF_model mdl;
+struct vars {
+    yf_window_t *win;
+    yf_view_t *view;
+    yf_scene_t *scn;
+    yf_mesh_t *mesh;
+    yf_material_t *matl;
+    yf_model_t *mdl;
 
     struct {
         int quit;
@@ -40,10 +40,10 @@ struct T_vars {
         int prev;
     } input;
 };
-static struct T_vars vars_ = {0};
+static struct vars vars_ = {0};
 
 /* Model transforms. */
-static const YF_mat4 xforms_[] = {
+static const yf_mat4_t xforms_[] = {
     {
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, 1.0f, 0.0f, 0.0f,
@@ -141,7 +141,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
     if (vars_.input.quit)
         return -1;
 
-    YF_camera cam = yf_scene_getcam(vars_.scn);
+    yf_camera_t *cam = yf_scene_getcam(vars_.scn);
     const float md = 16.0 * elapsed_time;
     const float td = 2.0 * elapsed_time;
 
@@ -189,7 +189,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
 /* Tests model. */
 int yf_test_model(void)
 {
-    YF_evtfn evtfn = {.key_kb = on_key};
+    yf_evtfn_t evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
     vars_.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
@@ -204,9 +204,9 @@ int yf_test_model(void)
     vars_.mesh = yf_mesh_load("tmp/cube.glb", 0, NULL);
     assert(vars_.mesh != NULL);
 
-    YF_texture tex = yf_texture_load("tmp/cube.png", 0, NULL);
+    yf_texture_t *tex = yf_texture_load("tmp/cube.png", 0, NULL);
     assert(tex != NULL);
-    YF_matlprop mprop = {
+    yf_matlprop_t mprop = {
         .pbr = YF_PBR_NONE,
         .nopbr = {{tex}, {1.0f, 1.0f, 1.0f, 1.0f}},
         .alphamode = YF_ALPHAMODE_OPAQUE
@@ -222,7 +222,7 @@ int yf_test_model(void)
         return -1;
 
     YF_TEST_PRINT("getnode", "mdl", "");
-    YF_node node = yf_model_getnode(vars_.mdl);
+    yf_node_t *node = yf_model_getnode(vars_.mdl);
     if (node == NULL)
         return -1;
 
@@ -237,7 +237,7 @@ int yf_test_model(void)
     if (yf_model_getmesh(vars_.mdl) != vars_.mesh)
         return -1;
 
-    YF_skeleton skel;
+    yf_skeleton_t *skel;
 
     YF_TEST_PRINT("getskin", "mdl, &skel", "");
     if (yf_model_getskin(vars_.mdl, &skel) != NULL)

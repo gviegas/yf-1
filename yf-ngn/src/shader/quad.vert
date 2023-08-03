@@ -14,7 +14,7 @@
 /**
  * Instance's uniform data.
  */
-layout(set=1, binding=0) uniform U_inst {
+layout(set=1, binding=0) uniform uinst {
     mat4 m;
     mat4 mv;
     float wdt;

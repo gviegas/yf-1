@@ -20,18 +20,18 @@
 #define YF_FPS  60
 
 /* Shared variables. */
-struct T_vars {
-    YF_window win;
-    YF_view view;
-    YF_scene scn;
-    YF_quad quad;
-    YF_texture tex;
+struct vars {
+    yf_window_t *win;
+    yf_view_t *view;
+    yf_scene_t *scn;
+    yf_quad_t *quad;
+    yf_texture_t *tex;
 
     struct {
         int quit;
     } input;
 };
-static struct T_vars vars_ = {0};
+static struct vars vars_ = {0};
 
 /* Handles key events. */
 static void on_key(int key, int state,
@@ -59,7 +59,7 @@ static int update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
 
     if (tm > 0.3333) {
         static unsigned idx = 0;
-        const struct { char *params; YF_color color; } call_info[] = {
+        const struct { char *params; yf_color_t color; } call_info[] = {
             {"quad, CORNER_ALL, COLOR_BLUE", YF_COLOR_BLUE},
             {"quad, CORNER_ALL, COLOR_GREEN", YF_COLOR_GREEN},
             {"quad, CORNER_ALL, COLOR_RED", YF_COLOR_RED},
@@ -71,7 +71,7 @@ static int update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
         yf_quad_setcolor(vars_.quad, YF_CORNER_ALL, call_info[idx].color);
 
         YF_TEST_PRINT("getcolor", "quad, CORNER_ALL", "");
-        YF_color clr = yf_quad_getcolor(vars_.quad, YF_CORNER_ALL);
+        yf_color_t clr = yf_quad_getcolor(vars_.quad, YF_CORNER_ALL);
         assert(clr.r == call_info[idx].color.r &&
                clr.g == call_info[idx].color.g &&
                clr.b == call_info[idx].color.b &&
@@ -83,7 +83,7 @@ static int update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
 
     if (tm2 > 2.0) {
         static unsigned sub = 0;
-        YF_rect rect = {{0}, yf_texture_getdim(yf_quad_gettex(vars_.quad))};
+        yf_rect_t rect = {{0}, yf_texture_getdim(yf_quad_gettex(vars_.quad))};
         if (++sub & 1) {
             rect.size.width >>= 2;
             rect.size.height >>= 2;
@@ -95,7 +95,7 @@ static int update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
         yf_quad_setrect(vars_.quad, &rect);
 
         YF_TEST_PRINT("getrect", "quad", "");
-        const YF_rect *other = yf_quad_getrect(vars_.quad);
+        const yf_rect_t *other = yf_quad_getrect(vars_.quad);
         assert(other->origin.x == rect.origin.x &&
                other->origin.y == rect.origin.y &&
                other->size.width == rect.size.width &&
@@ -110,7 +110,7 @@ static int update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
 /* Tests quad. */
 int yf_test_quad(void)
 {
-    YF_evtfn evtfn = {.key_kb = on_key};
+    yf_evtfn_t evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
     vars_.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
@@ -131,7 +131,7 @@ int yf_test_quad(void)
         return -1;
 
     YF_TEST_PRINT("getnode", "quad", "");
-    YF_node node = yf_quad_getnode(vars_.quad);
+    yf_node_t *node = yf_quad_getnode(vars_.quad);
     if (node == NULL)
         return -1;
 
@@ -151,15 +151,15 @@ int yf_test_quad(void)
         return -1;
 
     YF_TEST_PRINT("getrect", "quad", "");
-    const YF_rect *rect = yf_quad_getrect(vars_.quad);
-    YF_dim2 dim = yf_texture_getdim(vars_.tex);
+    const yf_rect_t *rect = yf_quad_getrect(vars_.quad);
+    yf_dim2_t dim = yf_texture_getdim(vars_.tex);
     if (rect->origin.x != 0 || rect->origin.y != 0 ||
         rect->size.width != dim.width || rect->size.height != dim.height)
         return -1;
 
     YF_TEST_PRINT("getcolor", "quad, CORNER_ALL", "");
-    YF_color clr = yf_quad_getcolor(vars_.quad, YF_CORNER_ALL);
-    YF_color white = YF_COLOR_WHITE;
+    yf_color_t clr = yf_quad_getcolor(vars_.quad, YF_CORNER_ALL);
+    yf_color_t white = YF_COLOR_WHITE;
     if (clr.r != white.r || clr.g != white.g || clr.b != white.b ||
         clr.a != white.a)
         return -1;

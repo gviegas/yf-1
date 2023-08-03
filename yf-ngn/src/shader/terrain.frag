@@ -12,7 +12,7 @@
  */
 layout(set=1, binding=1) uniform sampler2D tex_;
 
-layout(location=0) in IO_v {
+layout(location=0) in iov {
     vec3 norm;
     vec2 tc;
 } v_;

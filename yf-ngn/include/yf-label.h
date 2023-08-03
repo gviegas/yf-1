@@ -2,7 +2,7 @@
  * YF
  * yf-label.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_LABEL_H
@@ -22,7 +22,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a drawable text label.
  */
-typedef struct YF_label_o *YF_label;
+typedef struct yf_label yf_label_t;
 
 /**
  * Initializes a new label.
@@ -30,7 +30,7 @@ typedef struct YF_label_o *YF_label;
  * @return: On success, returns a new label. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_label yf_label_init(void);
+yf_label_t *yf_label_init(void);
 
 /**
  * Gets the node of a label.
@@ -38,7 +38,7 @@ YF_label yf_label_init(void);
  * @param labl: The label.
  * @return: The label's node.
  */
-YF_node yf_label_getnode(YF_label labl);
+yf_node_t *yf_label_getnode(yf_label_t *labl);
 
 /**
  * Gets the mesh of a label.
@@ -46,7 +46,7 @@ YF_node yf_label_getnode(YF_label labl);
  * @param labl: The label.
  * @return: The mesh used by the label.
  */
-YF_mesh yf_label_getmesh(YF_label labl);
+yf_mesh_t *yf_label_getmesh(yf_label_t *labl);
 
 /**
  * Gets the texture of a label.
@@ -54,7 +54,7 @@ YF_mesh yf_label_getmesh(YF_label labl);
  * @param labl: The label.
  * @return: The texture used by the label.
  */
-YF_texture yf_label_gettex(YF_label labl);
+yf_texture_t *yf_label_gettex(yf_label_t *labl);
 
 /**
  * Gets the font of a label.
@@ -62,7 +62,7 @@ YF_texture yf_label_gettex(YF_label labl);
  * @param labl: The label.
  * @return: The font used by the label, or 'NULL' if none is set.
  */
-YF_font yf_label_getfont(YF_label labl);
+yf_font_t *yf_label_getfont(yf_label_t *labl);
 
 /**
  * Sets the font for a label.
@@ -70,7 +70,7 @@ YF_font yf_label_getfont(YF_label labl);
  * @param labl: The label.
  * @param font: The font to set. Can be 'NULL'.
  */
-void yf_label_setfont(YF_label labl, YF_font font);
+void yf_label_setfont(yf_label_t *labl, yf_font_t *font);
 
 /**
  * Gets the string of a label.
@@ -84,7 +84,7 @@ void yf_label_setfont(YF_label labl, YF_font font);
  *  terminating null wide character) is less than or equal '*n', returns 'dst'.
  *  Otherwise, 'NULL' is returned and no copy is performed.
  */
-wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t *n);
+wchar_t *yf_label_getstr(yf_label_t *labl, wchar_t *dst, size_t *n);
 
 /**
  * Sets the string for a label.
@@ -94,7 +94,7 @@ wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t *n);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_label_setstr(YF_label labl, const wchar_t *str);
+int yf_label_setstr(yf_label_t *labl, const wchar_t *str);
 
 /**
  * Gets the font size of a label.
@@ -102,7 +102,7 @@ int yf_label_setstr(YF_label labl, const wchar_t *str);
  * @param labl: The label.
  * @return: The size used for the label's font, in points.
  */
-unsigned short yf_label_getpt(YF_label labl);
+unsigned short yf_label_getpt(yf_label_t *labl);
 
 /**
  * Sets the font size for a label.
@@ -112,7 +112,7 @@ unsigned short yf_label_getpt(YF_label labl);
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_label_setpt(YF_label labl, unsigned short pt);
+int yf_label_setpt(yf_label_t *labl, unsigned short pt);
 
 /**
  * Gets the color of a label.
@@ -122,7 +122,7 @@ int yf_label_setpt(YF_label labl, unsigned short pt);
  *  retrieve the color.
  * @return: The color currently set for 'corner'.
  */
-YF_color yf_label_getcolor(YF_label labl, int corner);
+yf_color_t yf_label_getcolor(yf_label_t *labl, int corner);
 
 /**
  * Sets the color for a label.
@@ -132,7 +132,8 @@ YF_color yf_label_getcolor(YF_label labl, int corner);
  *  to be updated with 'color'.
  * @param color: The color to set.
  */
-void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color);
+void yf_label_setcolor(yf_label_t *labl, unsigned corner_mask,
+                       yf_color_t color);
 
 /**
  * Gets the dimensions of a label.
@@ -140,14 +141,14 @@ void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color);
  * @param labl: The label.
  * @return: The dimensions of the label's rasterized output, in pixels.
  */
-YF_dim2 yf_label_getdim(YF_label labl);
+yf_dim2_t yf_label_getdim(yf_label_t *labl);
 
 /**
  * Deinitializes a label.
  *
  * @param labl: The label to deinitialize. Can be 'NULL'.
  */
-void yf_label_deinit(YF_label labl);
+void yf_label_deinit(yf_label_t *labl);
 
 YF_DECLS_END
 

@@ -2,7 +2,7 @@
  * YF
  * font.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -18,9 +18,9 @@
 #include "data-sfnt.h"
 #include "texture.h"
 
-struct YF_font_o {
-    YF_fontdt data;
-    YF_dict glyphs;
+struct yf_font {
+    yf_fontdt_t data;
+    yf_dict_t *glyphs;
     uint16_t pt;
     uint16_t dpi;
 };
@@ -28,24 +28,24 @@ struct YF_font_o {
 /* Deinitializes a glyph. */
 static int deinit_glyph(YF_UNUSED void *key, void *val, YF_UNUSED void *arg)
 {
-    free(((YF_glyph *)val)->bm8);
+    free(((yf_glyph_t *)val)->bm8);
     free(val);
     return 0;
 }
 
-YF_font yf_font_load(const char *pathname, size_t index, YF_collection coll)
+yf_font_t *yf_font_load(const char *pathname, size_t index, yf_collec_t *coll)
 {
     /* TODO: Consider checking the type of the file. */
     if (coll == NULL)
-        coll = yf_collection_get();
-    return yf_collection_loaditem(coll, YF_CITEM_FONT, pathname, index);
+        coll = yf_collec_get();
+    return yf_collec_loaditem(coll, YF_CITEM_FONT, pathname, index);
 }
 
-YF_font yf_font_init(const YF_fontdt *data)
+yf_font_t *yf_font_init(const yf_fontdt_t *data)
 {
     assert(data != NULL);
 
-    YF_font font = calloc(1, sizeof(struct YF_font_o));
+    yf_font_t *font = calloc(1, sizeof(yf_font_t));
     if (font == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -62,7 +62,7 @@ YF_font yf_font_init(const YF_fontdt *data)
     return font;
 }
 
-void yf_font_deinit(YF_font font)
+void yf_font_deinit(yf_font_t *font)
 {
     if (font == NULL)
         return;
@@ -76,8 +76,8 @@ void yf_font_deinit(YF_font font)
     free(font);
 }
 
-int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
-                      uint16_t dpi, YF_fontrz *rz)
+int yf_font_rasterize(yf_font_t *font, const wchar_t *str, uint16_t pt,
+                      uint16_t dpi, yf_fontrz_t *rz)
 {
     assert(font != NULL);
     assert(str != NULL && wcslen(str) != 0);
@@ -94,10 +94,10 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
 
     /* XXX: Caller must ensure 'str' is not empty. */
     const size_t len = wcslen(str);
-    struct { uint16_t code; YF_off2 off; } chrs[len];
+    struct { uint16_t code; yf_off2_t off; } chrs[len];
     size_t chr_i = 0;
-    YF_off2 off = {0};
-    YF_dim2 dim = {0};
+    yf_off2_t off = {0};
+    yf_dim2_t dim = {0};
     int16_t y_min, y_max;
     font->data.metrics(font->data.font, pt, dpi, NULL, &y_min, NULL, &y_max);
 
@@ -105,7 +105,7 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
         /* TODO: Other special characters. */
         switch (str[i]) {
         case '\n':
-            dim.height += y_max-y_min;
+            dim.height += y_max - y_min;
             off.x = 0;
             off.y = dim.height;
             continue;
@@ -114,7 +114,7 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
         }
 
         const void *key = (void *)(uintptr_t)str[i];
-        YF_glyph *glyph = yf_dict_search(font->glyphs, key);
+        yf_glyph_t *glyph = yf_dict_search(font->glyphs, key);
 
         if (glyph == NULL) {
             glyph = malloc(sizeof *glyph);
@@ -154,7 +154,7 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
 
     if (off.x != 0)
         /* last valid character is not eol */
-        dim.height += y_max-y_min;
+        dim.height += y_max - y_min;
     else
         off.y -= y_max-y_min;
 
@@ -164,13 +164,13 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
         rz->tex = NULL;
     }
 
-    rz->off = (YF_off2){0};
+    rz->off = (yf_off2_t){0};
     rz->dim = dim;
     /* XXX: Sampler params. set to zero. */
-    YF_texdt data = {0};
+    yf_texdt_t data = {0};
     data.dim = dim;
 
-    switch (((YF_glyph *)yf_dict_next(font->glyphs, NULL, NULL))->bpp) {
+    switch (((yf_glyph_t *)yf_dict_next(font->glyphs, NULL, NULL))->bpp) {
     case 8:
         data.pixfmt = YF_PIXFMT_R8UNORM;
         data.data = calloc(1, dim.width * dim.height);
@@ -196,19 +196,19 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
     if (rz->tex == NULL)
         return -1;
 
-    const YF_off2 bias = {rz->off.x, rz->off.y + off.y};
+    const yf_off2_t bias = {rz->off.x, rz->off.y + off.y};
 
     /* TODO: Consider copying glyphs to 'data' buffer instead. */
     for (size_t i = 0; i < chr_i; i++) {
         const uintptr_t code = chrs[i].code;
-        YF_glyph *glyph = yf_dict_search(font->glyphs, (void *)code);
+        yf_glyph_t *glyph = yf_dict_search(font->glyphs, (void *)code);
 
         if (glyph->bm8 == NULL)
             continue;
 
         off.x = bias.x + chrs[i].off.x;
         off.y = bias.y - chrs[i].off.y + (glyph->base_h - y_min);
-        dim = (YF_dim2){glyph->width, glyph->height};
+        dim = (yf_dim2_t){glyph->width, glyph->height};
 
         if (yf_texture_setdata(rz->tex, off, dim, glyph->bm8) != 0)
             return -1;
@@ -217,7 +217,7 @@ int yf_font_rasterize(YF_font font, const wchar_t *str, uint16_t pt,
     return 0;
 }
 
-void yf_font_yieldrz(YF_font font, YF_fontrz *rz)
+void yf_font_yieldrz(yf_font_t *font, yf_fontrz_t *rz)
 {
     assert(font != NULL);
     assert(rz != NULL);

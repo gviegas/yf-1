@@ -2,7 +2,7 @@
  * YF
  * scene.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 /* XXX */
@@ -73,23 +73,23 @@
 # endif
 #endif /* !YF_SCN_DYNAMIC */
 
-#define YF_CAMORIG (YF_vec3){-20.0f, 20.0f, 20.0f}
-#define YF_CAMTGT  (YF_vec3){0.0f, 0.0f, 0.0f}
+#define YF_CAMORIG (yf_vec3_t){-20.0f, 20.0f, 20.0f}
+#define YF_CAMTGT  (yf_vec3_t){0.0f, 0.0f, 0.0f}
 #define YF_CAMASP  1.0f
 
 /* TODO: These should be defined elsewhere. */
 #define YF_LIGHTN 16
 #define YF_JOINTN 64
 
-#define YF_GLOBLSZ     ((sizeof(YF_mat4) << 2) + 32)
-#define YF_LIGHTSZ     ((sizeof(YF_vec4) << 2) * YF_LIGHTN)
-#define YF_INSTSZ_MDL  ((sizeof(YF_mat4) * 3) + \
-                        (sizeof(YF_mat4) * (YF_JOINTN << 1)))
-#define YF_INSTSZ_TERR (sizeof(YF_mat4) << 1)
-#define YF_INSTSZ_PART (sizeof(YF_mat4) << 1)
-#define YF_INSTSZ_QUAD ((sizeof(YF_mat4) << 1) + 16)
-#define YF_INSTSZ_LABL ((sizeof(YF_mat4) << 1) + 16)
-#define YF_MATLSZ      (sizeof(YF_vec4) << 2)
+#define YF_GLOBLSZ     ((sizeof(yf_mat4_t) << 2) + 32)
+#define YF_LIGHTSZ     ((sizeof(yf_vec4_t) << 2) * YF_LIGHTN)
+#define YF_INSTSZ_MDL  ((sizeof(yf_mat4_t) * 3) + \
+                        (sizeof(yf_mat4_t) * (YF_JOINTN << 1)))
+#define YF_INSTSZ_TERR (sizeof(yf_mat4_t) << 1)
+#define YF_INSTSZ_PART (sizeof(yf_mat4_t) << 1)
+#define YF_INSTSZ_QUAD ((sizeof(yf_mat4_t) << 1) + 16)
+#define YF_INSTSZ_LABL ((sizeof(yf_mat4_t) << 1) + 16)
+#define YF_MATLSZ      (sizeof(yf_vec4_t) << 2)
 
 #define YF_PEND_NONE 0
 #define YF_PEND_MDL  0x01
@@ -101,18 +101,18 @@
 #define YF_INSTCAP 16
 static_assert(YF_INSTCAP > 1);
 
-struct YF_scene_o {
-    YF_node node;
-    YF_camera cam;
-    YF_color color;
-    YF_viewport vport;
-    YF_rect sciss;
+struct yf_scene {
+    yf_node_t *node;
+    yf_camera_t *cam;
+    yf_color_t color;
+    yf_viewport_t vport;
+    yf_rect_t sciss;
 };
 
 /* Shared variables available to all scenes. */
 typedef struct {
-    YF_context ctx;
-    YF_buffer buf;
+    yf_context_t *ctx;
+    yf_buffer_t *buf;
     size_t buf_off;
     unsigned globlpd;
     unsigned lightpd;
@@ -123,52 +123,52 @@ typedef struct {
     unsigned instpd_labl;
     unsigned matlpd;
     unsigned insts[YF_RESRQ_N];
-    YF_list res_obtd;
-    YF_cmdbuf cb;
-    YF_dict mdls;
-    YF_list terrs;
-    YF_list parts;
-    YF_list quads;
-    YF_list labls;
-    YF_light lights[YF_LIGHTN];
+    yf_list_t *res_obtd;
+    yf_cmdbuf_t *cb;
+    yf_dict_t *mdls;
+    yf_list_t *terrs;
+    yf_list_t *parts;
+    yf_list_t *quads;
+    yf_list_t *labls;
+    yf_light_t *lights[YF_LIGHTN];
     unsigned light_n;
-} T_vars;
+} vars_t;
 
 /* Entry in the list of obtained resources. */
 typedef struct {
     int resrq;
     unsigned inst_alloc;
-} T_reso;
+} reso_t;
 
 /* Key/value pair for the model dictionary. */
 typedef struct {
     struct {
-        YF_mesh mesh;
+        yf_mesh_t *mesh;
     } key;
     union {
-        YF_model mdl;
-        YF_model *mdls;
+        yf_model_t *mdl;
+        yf_model_t **mdls;
     };
     unsigned mdl_n;
     unsigned mdl_cap;
-} T_kv_mdl;
+} kv_mdl_t;
 
 /* Variables' instance. */
-static T_vars vars_ = {0};
+static vars_t vars_ = {0};
 
 /* Traverses a scene graph to process its objects. */
-static int traverse_scn(YF_node node, void *arg)
+static int traverse_scn(yf_node_t *node, void *arg)
 {
     void *obj = NULL;
     const int nodeobj = yf_node_getobj(node, &obj);
 
     switch (nodeobj) {
     case YF_NODEOBJ_MODEL: {
-        YF_model mdl = obj;
-        YF_mesh mesh = yf_model_getmesh(mdl);
+        yf_model_t *mdl = obj;
+        yf_mesh_t *mesh = yf_model_getmesh(mdl);
 
-        T_kv_mdl key = {{mesh}, {NULL}, 0, 0};
-        T_kv_mdl *val = yf_dict_search(vars_.mdls, &key);
+        kv_mdl_t key = {{mesh}, {NULL}, 0, 0};
+        kv_mdl_t *val = yf_dict_search(vars_.mdls, &key);
 
         if (val == NULL) {
             /* new unique model */
@@ -195,7 +195,7 @@ static int traverse_scn(YF_node node, void *arg)
             /* model with shared resources */
             if (val->mdl_n == val->mdl_cap) {
                 if (val->mdl_cap == 1) {
-                    YF_model *mdls = malloc(YF_INSTCAP * sizeof mdl);
+                    yf_model_t **mdls = malloc(YF_INSTCAP * sizeof mdl);
                     if (mdls == NULL) {
                         yf_seterr(YF_ERR_NOMEM, __func__);
                         *(int *)arg = -1;
@@ -207,8 +207,8 @@ static int traverse_scn(YF_node node, void *arg)
                     val->mdl_cap = YF_INSTCAP;
 
                 } else {
-                    YF_model *mdls = realloc(val->mdls,
-                                             (val->mdl_cap * sizeof mdl) << 1);
+                    yf_model_t **mdls =
+                        realloc(val->mdls, (val->mdl_cap * sizeof mdl) << 1);
                     if (mdls == NULL) {
                         yf_seterr(YF_ERR_NOMEM, __func__);
                         *(int *)arg = -1;
@@ -271,11 +271,11 @@ static int traverse_scn(YF_node node, void *arg)
     }
 
     /* transforms */
-    YF_mat4 *wld = yf_node_getwldxform(node);
-    YF_mat4 *inv = yf_node_getwldinv(node);
-    YF_mat4 *norm = yf_node_getwldnorm(node);
-    YF_mat4 *pnt = yf_node_getwldxform(yf_node_getparent(node));
-    YF_mat4 *loc = yf_node_getxform(node);
+    yf_mat4_t *wld = yf_node_getwldxform(node);
+    yf_mat4_t *inv = yf_node_getwldinv(node);
+    yf_mat4_t *norm = yf_node_getwldnorm(node);
+    yf_mat4_t *pnt = yf_node_getwldxform(yf_node_getparent(node));
+    yf_mat4_t *loc = yf_node_getxform(node);
     yf_mat4_mul(*wld, *pnt, *loc);
     yf_mat4_inv(*inv, *wld);
     yf_mat4_xpose(*norm, *inv);
@@ -308,8 +308,8 @@ static int prepare_res(void)
     vars_.insts[YF_RESRQ_QUAD]  = yf_list_getlen(vars_.quads);
     vars_.insts[YF_RESRQ_LABL]  = yf_list_getlen(vars_.labls);
 
-    YF_iter it = YF_NILIT;
-    T_kv_mdl *kv_mdl;
+    yf_iter_t it = YF_NILIT;
+    kv_mdl_t *kv_mdl;
 
     while ((kv_mdl = yf_dict_next(vars_.mdls, &it, NULL)) != NULL) {
         unsigned n = kv_mdl->mdl_n;
@@ -472,13 +472,13 @@ static int prepare_res(void)
 }
 
 /* Obtains a resource for rendering. */
-static YF_gstate obtain_res(int resrq, unsigned *inst_alloc)
+static yf_gstate_t *obtain_res(int resrq, unsigned *inst_alloc)
 {
-    YF_gstate gst = yf_resmgr_obtain(resrq, inst_alloc);
+    yf_gstate_t *gst = yf_resmgr_obtain(resrq, inst_alloc);
     if (gst == NULL)
         return NULL;
 
-    T_reso *reso = malloc(sizeof *reso);
+    reso_t *reso = malloc(sizeof *reso);
     if (reso == NULL || yf_list_insert(vars_.res_obtd, reso) != 0) {
         if (reso == NULL)
             yf_seterr(YF_ERR_NOMEM, __func__);
@@ -494,41 +494,41 @@ static YF_gstate obtain_res(int resrq, unsigned *inst_alloc)
 }
 
 /* Copies global uniform to buffer and updates dtable. */
-static int copy_globl(YF_scene scn)
+static int copy_globl(yf_scene_t *scn)
 {
-    YF_dtable dtb = yf_resmgr_getglobl();
+    yf_dtable_t *dtb = yf_resmgr_getglobl();
     if (dtb == NULL)
         return -1;
 
-    const YF_slice elems = {0, 1};
+    const yf_slice_t elems = {0, 1};
     const size_t sz = YF_GLOBLSZ;
     size_t off = vars_.buf_off;
 
     /* view matrix */
     if (yf_buffer_copy(vars_.buf, vars_.buf_off,
-                       *yf_camera_getview(scn->cam), sizeof(YF_mat4)) != 0)
+                       *yf_camera_getview(scn->cam), sizeof(yf_mat4_t)) != 0)
         return -1;
-    vars_.buf_off += sizeof(YF_mat4);
+    vars_.buf_off += sizeof(yf_mat4_t);
 
     /* projection matrix (persp.) */
     if (yf_buffer_copy(vars_.buf, vars_.buf_off,
-                       *yf_camera_getproj(scn->cam), sizeof(YF_mat4)) != 0)
+                       *yf_camera_getproj(scn->cam), sizeof(yf_mat4_t)) != 0)
         return -1;
-    vars_.buf_off += sizeof(YF_mat4);
+    vars_.buf_off += sizeof(yf_mat4_t);
 
     /* projection matrix (ortho.) */
     /* TODO: This matrix should be taken from the camera. */
-    YF_mat4 ortho;
+    yf_mat4_t ortho;
     yf_mat4_ortho(ortho, 1.0f, 1.0f, 0.0f, -1.0f);
     if (yf_buffer_copy(vars_.buf, vars_.buf_off, ortho, sizeof ortho) != 0)
         return -1;
-    vars_.buf_off += sizeof(YF_mat4);
+    vars_.buf_off += sizeof(yf_mat4_t);
 
     /* view-projection matrix */
     if (yf_buffer_copy(vars_.buf, vars_.buf_off,
-                       *yf_camera_getxform(scn->cam), sizeof(YF_mat4)) != 0)
+                       *yf_camera_getxform(scn->cam), sizeof(yf_mat4_t)) != 0)
         return -1;
-    vars_.buf_off += sizeof(YF_mat4);
+    vars_.buf_off += sizeof(yf_mat4_t);
 
     /* viewport #0 */
     if (yf_buffer_copy(vars_.buf, vars_.buf_off,
@@ -552,7 +552,7 @@ static int copy_light(void)
 #define YF_TSPOT   1
 #define YF_TDIRECT 2
 
-    YF_dtable dtb = yf_resmgr_getglobl();
+    yf_dtable_t *dtb = yf_resmgr_getglobl();
     if (dtb == NULL)
         return -1;
 
@@ -560,11 +560,11 @@ static int copy_light(void)
         /* 0 */
         int unused, type; float inten, range;
         /* 16 */
-        YF_vec3 clr; float ang_scale;
+        yf_vec3_t clr; float ang_scale;
         /* 32 */
-        YF_vec3 pos; float ang_off;
+        yf_vec3_t pos; float ang_off;
         /* 48 */
-        YF_vec3 dir; float pad;
+        yf_vec3_t dir; float pad;
     } unif[YF_LIGHTN];
 
     static_assert(sizeof unif == YF_LIGHTSZ, "!sizeof");
@@ -608,7 +608,7 @@ static int copy_light(void)
             unif[i].ang_off = unif[i].ang_scale * -outer_cos;
         }
 
-        YF_mat4 *m = yf_node_getwldxform(yf_light_getnode(vars_.lights[i]));
+        yf_mat4_t *m = yf_node_getwldxform(yf_light_getnode(vars_.lights[i]));
 
         /* position */
         if (lightt != YF_LIGHTT_DIRECT)
@@ -616,12 +616,12 @@ static int copy_light(void)
 
         /* direction */
         if (lightt != YF_LIGHTT_POINT) {
-            YF_mat3 rs = {
+            yf_mat3_t rs = {
                 (*m)[0], (*m)[1], (*m)[2],
                 (*m)[4], (*m)[5], (*m)[6],
                 (*m)[8], (*m)[9], (*m)[10]
             };
-            YF_vec3 dir = {0.0f, 0.0f, -1.0f};
+            yf_vec3_t dir = {0.0f, 0.0f, -1.0f};
             yf_mat3_mulv(unif[i].dir, rs, dir);
             yf_vec3_normi(unif[i].dir);
         }
@@ -629,7 +629,7 @@ static int copy_light(void)
 
     const size_t sz = YF_LIGHTSZ / YF_LIGHTN *
                       YF_MIN(vars_.light_n + 1, YF_LIGHTN);
-    const YF_slice elems = {0, 1};
+    const yf_slice_t elems = {0, 1};
 
     /* copy */
     if (yf_buffer_copy(vars_.buf, vars_.buf_off, unif, sz) != 0 ||
@@ -646,12 +646,12 @@ static int copy_light(void)
 }
 
 /* Copies model's instance uniform to buffer and updates dtable. */
-static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
-                         YF_dtable inst_dtb, unsigned inst_alloc)
+static int copy_inst_mdl(yf_scene_t *scn, yf_model_t **mdls, unsigned mdl_n,
+                         yf_dtable_t *inst_dtb, unsigned inst_alloc)
 {
-    const YF_mat4 *v = yf_camera_getview(scn->cam);
-    YF_node node;
-    YF_mat4 mv, *m, *norm;
+    const yf_mat4_t *v = yf_camera_getview(scn->cam);
+    yf_node_t *node;
+    yf_mat4_t mv, *m, *norm;
 
     const size_t off = vars_.buf_off;
 
@@ -664,34 +664,34 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
         /* model matrix */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, *m, sizeof *m) != 0)
             return -1;
-        vars_.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(yf_mat4_t);
 
         /* normal matrix */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, *norm,
                            sizeof *norm) != 0)
             return -1;
-        vars_.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(yf_mat4_t);
 
         /* model-view matrix */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, mv, sizeof mv) != 0)
             return -1;
-        vars_.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(yf_mat4_t);
 
         /* skinning matrices */
-        YF_skeleton skel;
-        YF_skin skin = yf_model_getskin(mdls[i], &skel);
+        yf_skeleton_t *skel;
+        yf_skin_t *skin = yf_model_getskin(mdls[i], &skel);
         unsigned jnt_n = 0;
-        YF_mat4 jm[YF_JOINTN << 1];
+        yf_mat4_t jm[YF_JOINTN << 1];
         if (skin != NULL) {
-            const YF_joint *jnts = yf_skin_getjnts(skin, &jnt_n);
+            const yf_joint_t *jnts = yf_skin_getjnts(skin, &jnt_n);
             assert(jnt_n <= YF_JOINTN);
             for (unsigned j = 0; j < jnt_n; j++) {
-                YF_node jnt = yf_skin_getjntnode(skin, skel, j);
+                yf_node_t *jnt = yf_skin_getjntnode(skin, skel, j);
                 assert(jnt != NULL);
                 /* joint matrix */
                 yf_mat4_mul(jm[j], *yf_node_getwldxform(jnt), jnts[j].ibm);
                 /* joint normal matrix */
-                YF_mat4 inv;
+                yf_mat4_t inv;
                 yf_mat4_inv(inv, jm[j]);
                 yf_mat4_xpose(jm[YF_JOINTN + j], inv);
             }
@@ -707,7 +707,7 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
         vars_.buf_off += sizeof jm;
     }
 
-    const YF_slice elems = {0, 1};
+    const yf_slice_t elems = {0, 1};
     const size_t sz = mdl_n * YF_INSTSZ_MDL;
 
     /* copy */
@@ -720,12 +720,13 @@ static int copy_inst_mdl(YF_scene scn, YF_model *mdls, unsigned mdl_n,
 }
 
 /* Copies terrain's instance uniform to buffer and updates dtable. */
-static int copy_inst_terr(YF_scene scn, YF_terrain *terrs, unsigned terr_n,
-                          YF_dtable inst_dtb, unsigned inst_alloc)
+static int copy_inst_terr(yf_scene_t *scn, yf_terrain_t **terrs,
+                          unsigned terr_n, yf_dtable_t *inst_dtb,
+                          unsigned inst_alloc)
 {
-    const YF_mat4 *v = yf_camera_getview(scn->cam);
-    YF_node node;
-    YF_mat4 mv, *m;
+    const yf_mat4_t *v = yf_camera_getview(scn->cam);
+    yf_node_t *node;
+    yf_mat4_t mv, *m;
 
     const size_t off = vars_.buf_off;
 
@@ -737,15 +738,15 @@ static int copy_inst_terr(YF_scene scn, YF_terrain *terrs, unsigned terr_n,
         /* model matrix */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, *m, sizeof *m) != 0)
             return -1;
-        vars_.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(yf_mat4_t);
 
         /* model-view matrix */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, mv, sizeof mv) != 0)
             return -1;
-        vars_.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(yf_mat4_t);
     }
 
-    const YF_slice elems = {0, 1};
+    const yf_slice_t elems = {0, 1};
     const size_t sz = terr_n * YF_INSTSZ_TERR;
 
     /* copy */
@@ -758,12 +759,13 @@ static int copy_inst_terr(YF_scene scn, YF_terrain *terrs, unsigned terr_n,
 }
 
 /* Copies particle's instance uniform to buffer and updates dtable. */
-static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
-                          YF_dtable inst_dtb, unsigned inst_alloc)
+static int copy_inst_part(yf_scene_t *scn, yf_particle_t **parts,
+                          unsigned part_n, yf_dtable_t *inst_dtb,
+                          unsigned inst_alloc)
 {
-    const YF_mat4 *v = yf_camera_getview(scn->cam);
-    YF_node node;
-    YF_mat4 mv, *m;
+    const yf_mat4_t *v = yf_camera_getview(scn->cam);
+    yf_node_t *node;
+    yf_mat4_t mv, *m;
 
     const size_t off = vars_.buf_off;
 
@@ -775,15 +777,15 @@ static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
         /* model matrix */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, *m, sizeof *m) != 0)
             return -1;
-        vars_.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(yf_mat4_t);
 
         /* model-view matrix */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, mv, sizeof mv) != 0)
             return -1;
-        vars_.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(yf_mat4_t);
     }
 
-    const YF_slice elems = {0, 1};
+    const yf_slice_t elems = {0, 1};
     const size_t sz = part_n * YF_INSTSZ_PART;
 
     /* copy */
@@ -796,13 +798,13 @@ static int copy_inst_part(YF_scene scn, YF_particle *parts, unsigned part_n,
 }
 
 /* Copies quad's instance uniform to buffer and updates dtable. */
-static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
-                          YF_dtable inst_dtb, unsigned inst_alloc)
+static int copy_inst_quad(yf_scene_t *scn, yf_quad_t **quads, unsigned quad_n,
+                          yf_dtable_t *inst_dtb, unsigned inst_alloc)
 {
-    const YF_mat4 *v = yf_camera_getview(scn->cam);
-    YF_node node;
-    YF_mat4 mv, *m;
-    const YF_rect *rect;
+    const yf_mat4_t *v = yf_camera_getview(scn->cam);
+    yf_node_t *node;
+    yf_mat4_t mv, *m;
+    const yf_rect_t *rect;
     float dim[2];
 
     const size_t off = vars_.buf_off;
@@ -818,12 +820,12 @@ static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
         /* model matrix */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, *m, sizeof *m) != 0)
             return -1;
-        vars_.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(yf_mat4_t);
 
         /* model-view matrix */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, mv, sizeof mv) != 0)
             return -1;
-        vars_.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(yf_mat4_t);
 
         /* dimensions */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, dim, sizeof dim) != 0)
@@ -831,7 +833,7 @@ static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
         vars_.buf_off += 16;
     }
 
-    const YF_slice elems = {0, 1};
+    const yf_slice_t elems = {0, 1};
     const size_t sz = quad_n * YF_INSTSZ_QUAD;
 
     /* copy */
@@ -844,13 +846,13 @@ static int copy_inst_quad(YF_scene scn, YF_quad *quads, unsigned quad_n,
 }
 
 /* Copies label's instance uniform to buffer and updates dtable. */
-static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
-                          YF_dtable inst_dtb, unsigned inst_alloc)
+static int copy_inst_labl(yf_scene_t *scn, yf_label_t **labls, unsigned labl_n,
+                          yf_dtable_t *inst_dtb, unsigned inst_alloc)
 {
-    const YF_mat4 *v = yf_camera_getview(scn->cam);
-    YF_node node;
-    YF_mat4 mv, *m;
-    YF_dim2 udim;
+    const yf_mat4_t *v = yf_camera_getview(scn->cam);
+    yf_node_t *node;
+    yf_mat4_t mv, *m;
+    yf_dim2_t udim;
     float dim[2];
 
     const size_t off = vars_.buf_off;
@@ -866,12 +868,12 @@ static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
         /* model matrix */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, *m, sizeof *m) != 0)
             return -1;
-        vars_.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(yf_mat4_t);
 
         /* model-view matrix */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, mv, sizeof mv) != 0)
             return -1;
-        vars_.buf_off += sizeof(YF_mat4);
+        vars_.buf_off += sizeof(yf_mat4_t);
 
         /* dimensions */
         if (yf_buffer_copy(vars_.buf, vars_.buf_off, dim, sizeof dim) != 0)
@@ -879,7 +881,7 @@ static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
         vars_.buf_off += 16;
     }
 
-    const YF_slice elems = {0, 1};
+    const yf_slice_t elems = {0, 1};
     const size_t sz = labl_n * YF_INSTSZ_LABL;
 
     /* copy */
@@ -892,7 +894,8 @@ static int copy_inst_labl(YF_scene scn, YF_label *labls, unsigned labl_n,
 }
 
 /* Copies material uniform to buffer and updates dtable. */
-static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
+static int copy_matl(yf_material_t *matl, yf_dtable_t *inst_dtb,
+                     unsigned inst_alloc)
 {
 #define YF_MPBRSG 0
 #define YF_MPBRMR 1
@@ -911,16 +914,16 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
         /* 0 */
         int method, blend; float norm_fac, occ_fac;
         /* 16 */
-        YF_vec4 clr_fac;
+        yf_vec4_t clr_fac;
         /* 32 */
-        YF_vec4 pbr_fac;
+        yf_vec4_t pbr_fac;
         /* 48 */
-        YF_vec3 emis_fac; unsigned tex_mask;
+        yf_vec3_t emis_fac; unsigned tex_mask;
     } unif;
 
     static_assert(sizeof unif == YF_MATLSZ, "!sizeof");
 
-    const YF_matlprop *prop = yf_material_getprop(matl);
+    const yf_matlprop_t *prop = yf_material_getprop(matl);
     unif.tex_mask = 0;
 
     /* normal map */
@@ -1031,7 +1034,7 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
     }
 
     const size_t sz = YF_MATLSZ;
-    const YF_slice elems = {0, 1};
+    const yf_slice_t elems = {0, 1};
 
     /* copy */
     if (yf_buffer_copy(vars_.buf, vars_.buf_off, &unif, sz) != 0 ||
@@ -1057,7 +1060,7 @@ static int copy_matl(YF_material matl, YF_dtable inst_dtb, unsigned inst_alloc)
 }
 
 /* Renders model objects. */
-static int render_mdl(YF_scene scn)
+static int render_mdl(yf_scene_t *scn)
 {
     assert(YF_RESRQ_MDL == 0 && YF_RESRQ_MDL2 == 1 && YF_RESRQ_MDL4 == 2 &&
            YF_RESRQ_MDL8 == 3 && YF_RESRQ_MDL16 == 4 && YF_RESRQ_MDL32 == 5 &&
@@ -1074,19 +1077,19 @@ static int render_mdl(YF_scene scn)
         }
     }
 
-    YF_list done = yf_list_init(NULL);
+    yf_list_t *done = yf_list_init(NULL);
     if (done == NULL)
         return -1;
 
-    YF_iter it = YF_NILIT;
-    T_kv_mdl *val;
+    yf_iter_t it = YF_NILIT;
+    kv_mdl_t *val;
 
     while (1) {
         val = yf_dict_next(vars_.mdls, &it, NULL);
         if (YF_IT_ISNIL(it))
             break;
 
-        YF_model *mdls;
+        yf_model_t **mdls;
         if (val->mdl_cap == 1)
             mdls = &val->mdl;
         else
@@ -1102,7 +1105,7 @@ static int render_mdl(YF_scene scn)
                     break;
             }
 
-            YF_gstate gst = NULL;
+            yf_gstate_t *gst = NULL;
             unsigned inst_alloc;
             for (int i = rq_i; i >= 0; i--) {
                 gst = obtain_res(resrq[i], &inst_alloc);
@@ -1126,7 +1129,7 @@ static int render_mdl(YF_scene scn)
                 }
             }
 
-            YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+            yf_dtable_t *inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
             if (copy_inst_mdl(scn, mdls+rem, n, inst_dtb, inst_alloc) != 0) {
                 yf_list_deinit(done);
                 return -1;
@@ -1135,10 +1138,10 @@ static int render_mdl(YF_scene scn)
             yf_cmdbuf_setgstate(vars_.cb, gst);
             yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_INST, inst_alloc);
 
-            YF_mesh mesh = yf_model_getmesh(mdls[rem]);
+            yf_mesh_t *mesh = yf_model_getmesh(mdls[rem]);
             if (mesh != NULL) {
                 /* TODO: Multiple materials. */
-                YF_material matl = yf_mesh_getmatl(mesh, 0);
+                yf_material_t *matl = yf_mesh_getmatl(mesh, 0);
                 if (matl != NULL) {
                     if (copy_matl(matl, inst_dtb, inst_alloc) != 0) {
                         yf_list_deinit(done);
@@ -1179,17 +1182,17 @@ static int render_mdl(YF_scene scn)
 }
 
 /* Renders terrain objects. */
-static int render_terr(YF_scene scn)
+static int render_terr(yf_scene_t *scn)
 {
-    YF_iter it = YF_NILIT;
+    yf_iter_t it = YF_NILIT;
 
     while (1) {
-        YF_terrain terr = yf_list_next(vars_.terrs, &it);
+        yf_terrain_t *terr = yf_list_next(vars_.terrs, &it);
         if (YF_IT_ISNIL(it))
             break;
 
         unsigned inst_alloc;
-        YF_gstate gst = obtain_res(YF_RESRQ_TERR, &inst_alloc);
+        yf_gstate_t *gst = obtain_res(YF_RESRQ_TERR, &inst_alloc);
         if (gst == NULL) {
             switch (yf_geterr()) {
             case YF_ERR_INUSE:
@@ -1200,11 +1203,11 @@ static int render_terr(YF_scene scn)
             }
         }
 
-        YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+        yf_dtable_t *inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
         if (copy_inst_terr(scn, &terr, 1, inst_dtb, inst_alloc) != 0)
             return -1;
 
-        YF_texture hmap = yf_terrain_gethmap(terr);
+        yf_texture_t *hmap = yf_terrain_gethmap(terr);
         if (hmap != NULL) {
             yf_texture_copyres(hmap, inst_dtb, inst_alloc, YF_RESBIND_HMAP, 0);
         } else {
@@ -1213,7 +1216,7 @@ static int render_terr(YF_scene scn)
             abort();
         }
 
-        YF_texture tex = yf_terrain_gettex(terr);
+        yf_texture_t *tex = yf_terrain_gettex(terr);
         if (tex != NULL) {
             yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
         } else {
@@ -1225,7 +1228,7 @@ static int render_terr(YF_scene scn)
         yf_cmdbuf_setgstate(vars_.cb, gst);
         yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_INST, inst_alloc);
 
-        YF_mesh mesh = yf_terrain_getmesh(terr);
+        yf_mesh_t *mesh = yf_terrain_getmesh(terr);
         yf_mesh_draw(mesh, vars_.cb, 1);
 
         yf_list_removeat(vars_.terrs, &it);
@@ -1236,17 +1239,17 @@ static int render_terr(YF_scene scn)
 }
 
 /* Renders particle system objects. */
-static int render_part(YF_scene scn)
+static int render_part(yf_scene_t *scn)
 {
-    YF_iter it = YF_NILIT;
+    yf_iter_t it = YF_NILIT;
 
     while (1) {
-        YF_particle part = yf_list_next(vars_.parts, &it);
+        yf_particle_t *part = yf_list_next(vars_.parts, &it);
         if (YF_IT_ISNIL(it))
             break;
 
         unsigned inst_alloc;
-        YF_gstate gst = obtain_res(YF_RESRQ_PART, &inst_alloc);
+        yf_gstate_t *gst = obtain_res(YF_RESRQ_PART, &inst_alloc);
         if (gst == NULL) {
             switch (yf_geterr()) {
             case YF_ERR_INUSE:
@@ -1257,11 +1260,11 @@ static int render_part(YF_scene scn)
             }
         }
 
-        YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+        yf_dtable_t *inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
         if (copy_inst_part(scn, &part, 1, inst_dtb, inst_alloc) != 0)
             return -1;
 
-        YF_texture tex = yf_particle_gettex(part);
+        yf_texture_t *tex = yf_particle_gettex(part);
         if (tex != NULL) {
             yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
         } else {
@@ -1273,7 +1276,7 @@ static int render_part(YF_scene scn)
         yf_cmdbuf_setgstate(vars_.cb, gst);
         yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_INST, inst_alloc);
 
-        YF_mesh mesh = yf_particle_getmesh(part);
+        yf_mesh_t *mesh = yf_particle_getmesh(part);
         yf_mesh_draw(mesh, vars_.cb, 1);
 
         yf_list_removeat(vars_.parts, &it);
@@ -1284,17 +1287,17 @@ static int render_part(YF_scene scn)
 }
 
 /* Renders quad objects. */
-static int render_quad(YF_scene scn)
+static int render_quad(yf_scene_t *scn)
 {
-    YF_iter it = YF_NILIT;
+    yf_iter_t it = YF_NILIT;
 
     while (1) {
-        YF_quad quad = yf_list_next(vars_.quads, &it);
+        yf_quad_t *quad = yf_list_next(vars_.quads, &it);
         if (YF_IT_ISNIL(it))
             break;
 
         unsigned inst_alloc;
-        YF_gstate gst = obtain_res(YF_RESRQ_QUAD, &inst_alloc);
+        yf_gstate_t *gst = obtain_res(YF_RESRQ_QUAD, &inst_alloc);
         if (gst == NULL) {
             switch (yf_geterr()) {
             case YF_ERR_INUSE:
@@ -1305,11 +1308,11 @@ static int render_quad(YF_scene scn)
             }
         }
 
-        YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+        yf_dtable_t *inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
         if (copy_inst_quad(scn, &quad, 1, inst_dtb, inst_alloc) != 0)
             return -1;
 
-        YF_texture tex = yf_quad_gettex(quad);
+        yf_texture_t *tex = yf_quad_gettex(quad);
         if (tex != NULL) {
             yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
         } else {
@@ -1321,7 +1324,7 @@ static int render_quad(YF_scene scn)
         yf_cmdbuf_setgstate(vars_.cb, gst);
         yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_INST, inst_alloc);
 
-        YF_mesh mesh = yf_quad_getmesh(quad);
+        yf_mesh_t *mesh = yf_quad_getmesh(quad);
         yf_mesh_draw(mesh, vars_.cb, 1);
 
         yf_list_removeat(vars_.quads, &it);
@@ -1332,17 +1335,17 @@ static int render_quad(YF_scene scn)
 }
 
 /* Renders label objects. */
-static int render_labl(YF_scene scn)
+static int render_labl(yf_scene_t *scn)
 {
-    YF_iter it = YF_NILIT;
+    yf_iter_t it = YF_NILIT;
 
     while (1) {
-        YF_label labl = yf_list_next(vars_.labls, &it);
+        yf_label_t *labl = yf_list_next(vars_.labls, &it);
         if (YF_IT_ISNIL(it))
             break;
 
         unsigned inst_alloc;
-        YF_gstate gst = obtain_res(YF_RESRQ_LABL, &inst_alloc);
+        yf_gstate_t *gst = obtain_res(YF_RESRQ_LABL, &inst_alloc);
         if (gst == NULL) {
             switch (yf_geterr()) {
             case YF_ERR_INUSE:
@@ -1353,18 +1356,18 @@ static int render_labl(YF_scene scn)
             }
         }
 
-        YF_dtable inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
+        yf_dtable_t *inst_dtb = yf_gstate_getdtb(gst, YF_RESIDX_INST);
         if (copy_inst_labl(scn, &labl, 1, inst_dtb, inst_alloc) != 0)
             return -1;
 
         /* FIXME: Texture may be invalid. */
-        YF_texture tex = yf_label_gettex(labl);
+        yf_texture_t *tex = yf_label_gettex(labl);
         yf_texture_copyres(tex, inst_dtb, inst_alloc, YF_RESBIND_TEX, 0);
 
         yf_cmdbuf_setgstate(vars_.cb, gst);
         yf_cmdbuf_setdtable(vars_.cb, YF_RESIDX_INST, inst_alloc);
 
-        YF_mesh mesh = yf_label_getmesh(labl);
+        yf_mesh_t *mesh = yf_label_getmesh(labl);
         yf_mesh_draw(mesh, vars_.cb, 1);
 
         yf_list_removeat(vars_.labls, &it);
@@ -1374,28 +1377,28 @@ static int render_labl(YF_scene scn)
     return 0;
 }
 
-/* Hashes a 'T_kv_mdl'. */
+/* Hashes a 'kv_mdl_t'. */
 static size_t hash_mdl(const void *x)
 {
-    const T_kv_mdl *kv = x;
+    const kv_mdl_t *kv = x;
     return yf_hashv(&kv->key, sizeof kv->key, NULL);
 
     static_assert(sizeof kv->key == sizeof(void *), "!sizeof");
 }
 
-/* Compares a 'T_kv_mdl' to another. */
+/* Compares a 'kv_mdl_t' to another. */
 static int cmp_mdl(const void *a, const void *b)
 {
-    const T_kv_mdl *kv1 = a;
-    const T_kv_mdl *kv2 = b;
+    const kv_mdl_t *kv1 = a;
+    const kv_mdl_t *kv2 = b;
 
     return kv1->key.mesh != kv2->key.mesh;
 }
 
-/* Deallocates a 'T_kv_mdl'. */
+/* Deallocates a 'kv_mdl_t'. */
 static int dealloc_mdl(YF_UNUSED void *key, void *val, YF_UNUSED void *arg)
 {
-    T_kv_mdl *kv = val;
+    kv_mdl_t *kv = val;
 
     if (kv->mdl_cap > 1)
         free(kv->mdls);
@@ -1407,7 +1410,7 @@ static int dealloc_mdl(YF_UNUSED void *key, void *val, YF_UNUSED void *arg)
 /* Yields all previously obtained resources. */
 static void yield_res(void)
 {
-    T_reso *val;
+    reso_t *val;
     while ((val = yf_list_removeat(vars_.res_obtd, NULL)) != NULL) {
         yf_resmgr_yield(val->resrq, val->inst_alloc);
         free(val);
@@ -1499,9 +1502,9 @@ static int init_vars(void)
     return 0;
 }
 
-YF_scene yf_scene_init(void)
+yf_scene_t *yf_scene_init(void)
 {
-    YF_scene scn = calloc(1, sizeof(struct YF_scene_o));
+    yf_scene_t *scn = calloc(1, sizeof(yf_scene_t));
     if (scn == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -1519,31 +1522,31 @@ YF_scene yf_scene_init(void)
     return scn;
 }
 
-YF_node yf_scene_getnode(YF_scene scn)
+yf_node_t *yf_scene_getnode(yf_scene_t *scn)
 {
     assert(scn != NULL);
     return scn->node;
 }
 
-YF_camera yf_scene_getcam(YF_scene scn)
+yf_camera_t *yf_scene_getcam(yf_scene_t *scn)
 {
     assert(scn != NULL);
     return scn->cam;
 }
 
-YF_color yf_scene_getcolor(YF_scene scn)
+yf_color_t yf_scene_getcolor(yf_scene_t *scn)
 {
     assert(scn != NULL);
     return scn->color;
 }
 
-void yf_scene_setcolor(YF_scene scn, YF_color color)
+void yf_scene_setcolor(yf_scene_t *scn, yf_color_t color)
 {
     assert(scn != NULL);
     scn->color = color;
 }
 
-void yf_scene_deinit(YF_scene scn)
+void yf_scene_deinit(yf_scene_t *scn)
 {
     if (scn == NULL)
         return;
@@ -1553,7 +1556,8 @@ void yf_scene_deinit(YF_scene scn)
     free(scn);
 }
 
-int yf_scene_render(YF_scene scn, YF_pass pass, YF_target tgt, YF_dim2 dim)
+int yf_scene_render(yf_scene_t *scn, yf_pass_t *pass, yf_target_t *tgt,
+                    yf_dim2_t dim)
 {
     assert(scn != NULL);
     assert(pass != NULL);

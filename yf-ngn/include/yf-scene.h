@@ -2,7 +2,7 @@
  * YF
  * yf-scene.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_YF_SCENE_H
@@ -23,7 +23,7 @@ YF_DECLS_BEGIN
  * nodes in a scene - the underlying objects represented by these nodes
  * will be rendered when rendering the scene itself.
  */
-typedef struct YF_scene_o *YF_scene;
+typedef struct yf_scene yf_scene_t;
 
 /**
  * Initializes a new scene.
@@ -31,7 +31,7 @@ typedef struct YF_scene_o *YF_scene;
  * @return: On success, returns a new scene. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_scene yf_scene_init(void);
+yf_scene_t *yf_scene_init(void);
 
 /**
  * Gets the root node of a scene.
@@ -42,7 +42,7 @@ YF_scene yf_scene_init(void);
  * @param scn: The scene.
  * @return: The scene's node.
  */
-YF_node yf_scene_getnode(YF_scene scn);
+yf_node_t *yf_scene_getnode(yf_scene_t *scn);
 
 /**
  * Gets the camera of a scene.
@@ -50,7 +50,7 @@ YF_node yf_scene_getnode(YF_scene scn);
  * @param scn: The scene.
  * @return: The scene's camera.
  */
-YF_camera yf_scene_getcam(YF_scene scn);
+yf_camera_t *yf_scene_getcam(yf_scene_t *scn);
 
 /**
  * Gets the color used when clearing a scene for rendering.
@@ -58,7 +58,7 @@ YF_camera yf_scene_getcam(YF_scene scn);
  * @param scn: The scene.
  * @return: The color value.
  */
-YF_color yf_scene_getcolor(YF_scene scn);
+yf_color_t yf_scene_getcolor(yf_scene_t *scn);
 
 /**
  * Sets the color to use when clearing a scene for rendering.
@@ -66,7 +66,7 @@ YF_color yf_scene_getcolor(YF_scene scn);
  * @param scn: The scene.
  * @param color: The color value to set.
  */
-void yf_scene_setcolor(YF_scene scn, YF_color color);
+void yf_scene_setcolor(yf_scene_t *scn, yf_color_t color);
 
 /**
  * Deinitializes a scene.
@@ -76,7 +76,7 @@ void yf_scene_setcolor(YF_scene scn, YF_color color);
  *
  * @param scn: The scene to deinitialize. Can be 'NULL'.
  */
-void yf_scene_deinit(YF_scene scn);
+void yf_scene_deinit(yf_scene_t *scn);
 
 YF_DECLS_END
 

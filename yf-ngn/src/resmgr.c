@@ -2,7 +2,7 @@
  * YF
  * resmgr.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdio.h>
@@ -29,68 +29,68 @@
 
 /* Resource entry. */
 typedef struct {
-    YF_gstate gst;
+    yf_gstate_t *gst;
     char *obtained;
     unsigned n;
     unsigned i;
-} T_entry;
+} entry_t;
 
 /* List of resources, indexed by 'resrq' values. */
-static T_entry entries_[YF_RESRQ_N] = {0};
+static entry_t entries_[YF_RESRQ_N] = {0};
 
 /* Global descriptor table. */
-static YF_dtable globl_ = NULL;
+static yf_dtable_t *globl_ = NULL;
 
 /* Sizes used for instance allocations, indexed by 'resrq' values. */
 static unsigned allocn_[YF_RESRQ_N] = {0};
 
 /* Vertex inputs. */
 /* TODO: This should be shared with mesh. */
-static const YF_vinput vins_[] = {
+static const yf_vinput_t vins_[] = {
     [0] = {
-        .attrs = &(YF_vattr){YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
+        .attrs = &(yf_vattr_t){YF_RESLOC_POS, YF_VFMT_FLOAT3, 0},
         .attr_n = 1,
         .stride = sizeof(float[3]),
         .vrate = YF_VRATE_VERT
     },
     [1] = {
-        .attrs = &(YF_vattr){YF_RESLOC_NORM, YF_VFMT_FLOAT3, 0},
+        .attrs = &(yf_vattr_t){YF_RESLOC_NORM, YF_VFMT_FLOAT3, 0},
         .attr_n = 1,
         .stride = sizeof(float[3]),
         .vrate = YF_VRATE_VERT
     },
     [2] = {
-        .attrs = &(YF_vattr){YF_RESLOC_TGNT, YF_VFMT_FLOAT4, 0},
+        .attrs = &(yf_vattr_t){YF_RESLOC_TGNT, YF_VFMT_FLOAT4, 0},
         .attr_n = 1,
         .stride = sizeof(float[4]),
         .vrate = YF_VRATE_VERT
     },
     [3] = {
-        .attrs = &(YF_vattr){YF_RESLOC_TC, YF_VFMT_FLOAT2, 0},
+        .attrs = &(yf_vattr_t){YF_RESLOC_TC, YF_VFMT_FLOAT2, 0},
         .attr_n = 1,
         .stride = sizeof(float[2]),
         .vrate = YF_VRATE_VERT
     },
     [4] = {
-        .attrs = &(YF_vattr){YF_RESLOC_TC1, YF_VFMT_FLOAT2, 0},
+        .attrs = &(yf_vattr_t){YF_RESLOC_TC1, YF_VFMT_FLOAT2, 0},
         .attr_n = 1,
         .stride = sizeof(float[2]),
         .vrate = YF_VRATE_VERT
     },
     [5] = {
-        .attrs = &(YF_vattr){YF_RESLOC_CLR, YF_VFMT_FLOAT4, 0},
+        .attrs = &(yf_vattr_t){YF_RESLOC_CLR, YF_VFMT_FLOAT4, 0},
         .attr_n = 1,
         .stride = sizeof(float[4]),
         .vrate = YF_VRATE_VERT
     },
     [6] = {
-        .attrs = &(YF_vattr){YF_RESLOC_JNTS, YF_VFMT_UBYTE4, 0},
+        .attrs = &(yf_vattr_t){YF_RESLOC_JNTS, YF_VFMT_UBYTE4, 0},
         .attr_n = 1,
         .stride = 4,
         .vrate = YF_VRATE_VERT
     },
     [7] = {
-        .attrs = &(YF_vattr){YF_RESLOC_WGTS, YF_VFMT_FLOAT4, 0},
+        .attrs = &(yf_vattr_t){YF_RESLOC_WGTS, YF_VFMT_FLOAT4, 0},
         .attr_n = 1,
         .stride = sizeof(float[4]),
         .vrate = YF_VRATE_VERT
@@ -178,10 +178,10 @@ static char *make_shdpath(int nodeobj, int stage, unsigned elements)
 }
 
 /* Initializes the entry of a model resource. */
-static int init_mdl(T_entry *entry, unsigned elements)
+static int init_mdl(entry_t *entry, unsigned elements)
 {
-    YF_context ctx = yf_getctx();
-    YF_pass pass = yf_getpass();
+    yf_context_t *ctx = yf_getctx();
+    yf_pass_t *pass = yf_getpass();
 
     assert(ctx != NULL && pass != NULL);
 
@@ -194,7 +194,7 @@ static int init_mdl(T_entry *entry, unsigned elements)
         return -1;
     }
 
-    YF_shdid vert_shd;
+    yf_shdid_t vert_shd;
     if (yf_loadshd(ctx, vert_path, &vert_shd) != 0) {
         free(vert_path);
         free(frag_path);
@@ -202,7 +202,7 @@ static int init_mdl(T_entry *entry, unsigned elements)
     }
     free(vert_path);
 
-    YF_shdid frag_shd;
+    yf_shdid_t frag_shd;
     if (yf_loadshd(ctx, frag_path, &frag_shd) != 0) {
         yf_unldshd(ctx, vert_shd);
         free(frag_path);
@@ -210,14 +210,14 @@ static int init_mdl(T_entry *entry, unsigned elements)
     }
     free(frag_path);
 
-    const YF_stage stgs[] = {
+    const yf_stage_t stgs[] = {
         {YF_STAGE_VERT, vert_shd, "main"},
         {YF_STAGE_FRAG, frag_shd, "main"}
     };
     const unsigned stg_n = sizeof stgs / sizeof *stgs;
 
     /* descriptor table */
-    const YF_dentry inst_ents[] = {
+    const yf_dentry_t inst_ents[] = {
         {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
         {YF_RESBIND_MATL, YF_DTYPE_UNIFORM, 1, NULL},
         {YF_RESBIND_CLR, YF_DTYPE_ISAMPLER, 1, NULL},
@@ -227,8 +227,8 @@ static int init_mdl(T_entry *entry, unsigned elements)
         {YF_RESBIND_EMIS, YF_DTYPE_ISAMPLER, 1, NULL}
     };
 
-    YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
-                                        sizeof inst_ents / sizeof *inst_ents);
+    yf_dtable_t *inst_dtb =
+        yf_dtable_init(ctx, inst_ents, sizeof inst_ents / sizeof *inst_ents);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
         yf_unldshd(ctx, vert_shd);
@@ -237,15 +237,15 @@ static int init_mdl(T_entry *entry, unsigned elements)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {globl_, inst_dtb};
+    yf_dtable_t *const dtbs[] = {globl_, inst_dtb};
     const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
-    const YF_vinput *vins = vins_;
+    const yf_vinput_t *vins = vins_;
     const unsigned vin_n = sizeof vins_ / sizeof *vins_;
 
     /* graphics state */
-    const YF_gconf conf = {
+    const yf_gconf_t conf = {
         pass,
         stgs,
         stg_n,
@@ -271,10 +271,10 @@ static int init_mdl(T_entry *entry, unsigned elements)
 }
 
 /* Initializes the entry of a terrain resource. */
-static int init_terr(T_entry *entry)
+static int init_terr(entry_t *entry)
 {
-    YF_context ctx = yf_getctx();
-    YF_pass pass = yf_getpass();
+    yf_context_t *ctx = yf_getctx();
+    yf_pass_t *pass = yf_getpass();
 
     assert(ctx != NULL && pass != NULL);
 
@@ -287,7 +287,7 @@ static int init_terr(T_entry *entry)
         return -1;
     }
 
-    YF_shdid vert_shd;
+    yf_shdid_t vert_shd;
     if (yf_loadshd(ctx, vert_path, &vert_shd) != 0) {
         free(vert_path);
         free(frag_path);
@@ -295,7 +295,7 @@ static int init_terr(T_entry *entry)
     }
     free(vert_path);
 
-    YF_shdid frag_shd;
+    yf_shdid_t frag_shd;
     if (yf_loadshd(ctx, frag_path, &frag_shd) != 0) {
         yf_unldshd(ctx, vert_shd);
         free(frag_path);
@@ -303,21 +303,21 @@ static int init_terr(T_entry *entry)
     }
     free(frag_path);
 
-    const YF_stage stgs[] = {
+    const yf_stage_t stgs[] = {
         {YF_STAGE_VERT, vert_shd, "main"},
         {YF_STAGE_FRAG, frag_shd, "main"}
     };
     const unsigned stg_n = sizeof stgs / sizeof *stgs;
 
     /* descriptor table */
-    const YF_dentry inst_ents[] = {
+    const yf_dentry_t inst_ents[] = {
         {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
         {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL},
         {YF_RESBIND_HMAP, YF_DTYPE_ISAMPLER, 1, NULL}
     };
 
-    YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
-                                        sizeof inst_ents / sizeof *inst_ents);
+    yf_dtable_t *inst_dtb =
+        yf_dtable_init(ctx, inst_ents, sizeof inst_ents / sizeof *inst_ents);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
         yf_unldshd(ctx, vert_shd);
@@ -326,15 +326,15 @@ static int init_terr(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {globl_, inst_dtb};
+    yf_dtable_t *const dtbs[] = {globl_, inst_dtb};
     const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
-    const YF_vinput *vins = vins_;
+    const yf_vinput_t *vins = vins_;
     const unsigned vin_n = sizeof vins_ / sizeof *vins_;
 
     /* graphics state */
-    const YF_gconf conf = {
+    const yf_gconf_t conf = {
         pass,
         stgs,
         stg_n,
@@ -360,10 +360,10 @@ static int init_terr(T_entry *entry)
 }
 
 /* Initializes the entry of a particle system resource. */
-static int init_part(T_entry *entry)
+static int init_part(entry_t *entry)
 {
-    YF_context ctx = yf_getctx();
-    YF_pass pass = yf_getpass();
+    yf_context_t *ctx = yf_getctx();
+    yf_pass_t *pass = yf_getpass();
 
     assert(ctx != NULL && pass != NULL);
 
@@ -376,7 +376,7 @@ static int init_part(T_entry *entry)
         return -1;
     }
 
-    YF_shdid vert_shd;
+    yf_shdid_t vert_shd;
     if (yf_loadshd(ctx, vert_path, &vert_shd) != 0) {
         free(vert_path);
         free(frag_path);
@@ -384,7 +384,7 @@ static int init_part(T_entry *entry)
     }
     free(vert_path);
 
-    YF_shdid frag_shd;
+    yf_shdid_t frag_shd;
     if (yf_loadshd(ctx, frag_path, &frag_shd) != 0) {
         yf_unldshd(ctx, vert_shd);
         free(frag_path);
@@ -392,20 +392,20 @@ static int init_part(T_entry *entry)
     }
     free(frag_path);
 
-    const YF_stage stgs[] = {
+    const yf_stage_t stgs[] = {
         {YF_STAGE_VERT, vert_shd, "main"},
         {YF_STAGE_FRAG, frag_shd, "main"}
     };
     const unsigned stg_n = sizeof stgs / sizeof *stgs;
 
     /* descriptor table */
-    const YF_dentry inst_ents[] = {
+    const yf_dentry_t inst_ents[] = {
         {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
         {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL}
     };
 
-    YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
-                                        sizeof inst_ents / sizeof *inst_ents);
+    yf_dtable_t *inst_dtb =
+        yf_dtable_init(ctx, inst_ents, sizeof inst_ents / sizeof *inst_ents);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
         yf_unldshd(ctx, vert_shd);
@@ -414,15 +414,15 @@ static int init_part(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {globl_, inst_dtb};
+    yf_dtable_t *const dtbs[] = {globl_, inst_dtb};
     const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
-    const YF_vinput *vins = vins_;
+    const yf_vinput_t *vins = vins_;
     const unsigned vin_n = sizeof vins_ / sizeof *vins_;
 
     /* graphics state */
-    const YF_gconf conf = {
+    const yf_gconf_t conf = {
         pass,
         stgs,
         stg_n,
@@ -448,10 +448,10 @@ static int init_part(T_entry *entry)
 }
 
 /* Initializes the entry of a quad resource. */
-static int init_quad(T_entry *entry)
+static int init_quad(entry_t *entry)
 {
-    YF_context ctx = yf_getctx();
-    YF_pass pass = yf_getpass();
+    yf_context_t *ctx = yf_getctx();
+    yf_pass_t *pass = yf_getpass();
 
     assert(ctx != NULL && pass != NULL);
 
@@ -464,7 +464,7 @@ static int init_quad(T_entry *entry)
         return -1;
     }
 
-    YF_shdid vert_shd;
+    yf_shdid_t vert_shd;
     if (yf_loadshd(ctx, vert_path, &vert_shd) != 0) {
         free(vert_path);
         free(frag_path);
@@ -472,7 +472,7 @@ static int init_quad(T_entry *entry)
     }
     free(vert_path);
 
-    YF_shdid frag_shd;
+    yf_shdid_t frag_shd;
     if (yf_loadshd(ctx, frag_path, &frag_shd) != 0) {
         yf_unldshd(ctx, vert_shd);
         free(frag_path);
@@ -480,20 +480,20 @@ static int init_quad(T_entry *entry)
     }
     free(frag_path);
 
-    const YF_stage stgs[] = {
+    const yf_stage_t stgs[] = {
         {YF_STAGE_VERT, vert_shd, "main"},
         {YF_STAGE_FRAG, frag_shd, "main"}
     };
     const unsigned stg_n = sizeof stgs / sizeof *stgs;
 
     /* descriptor table */
-    const YF_dentry inst_ents[] = {
+    const yf_dentry_t inst_ents[] = {
         {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
         {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL}
     };
 
-    YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
-                                        sizeof inst_ents / sizeof *inst_ents);
+    yf_dtable_t *inst_dtb =
+        yf_dtable_init(ctx, inst_ents, sizeof inst_ents / sizeof *inst_ents);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
         yf_unldshd(ctx, vert_shd);
@@ -502,15 +502,15 @@ static int init_quad(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {globl_, inst_dtb};
+    yf_dtable_t *const dtbs[] = {globl_, inst_dtb};
     const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
-    const YF_vinput *vins = vins_;
+    const yf_vinput_t *vins = vins_;
     const unsigned vin_n = sizeof vins_ / sizeof *vins_;
 
     /* graphics state */
-    const YF_gconf conf = {
+    const yf_gconf_t conf = {
         pass,
         stgs,
         stg_n,
@@ -536,10 +536,10 @@ static int init_quad(T_entry *entry)
 }
 
 /* Initializes the entry of a label resource. */
-static int init_labl(T_entry *entry)
+static int init_labl(entry_t *entry)
 {
-    YF_context ctx = yf_getctx();
-    YF_pass pass = yf_getpass();
+    yf_context_t *ctx = yf_getctx();
+    yf_pass_t *pass = yf_getpass();
 
     assert(ctx != NULL && pass != NULL);
 
@@ -552,7 +552,7 @@ static int init_labl(T_entry *entry)
         return -1;
     }
 
-    YF_shdid vert_shd;
+    yf_shdid_t vert_shd;
     if (yf_loadshd(ctx, vert_path, &vert_shd) != 0) {
         free(vert_path);
         free(frag_path);
@@ -560,7 +560,7 @@ static int init_labl(T_entry *entry)
     }
     free(vert_path);
 
-    YF_shdid frag_shd;
+    yf_shdid_t frag_shd;
     if (yf_loadshd(ctx, frag_path, &frag_shd) != 0) {
         yf_unldshd(ctx, vert_shd);
         free(frag_path);
@@ -568,20 +568,20 @@ static int init_labl(T_entry *entry)
     }
     free(frag_path);
 
-    const YF_stage stgs[] = {
+    const yf_stage_t stgs[] = {
         {YF_STAGE_VERT, vert_shd, "main"},
         {YF_STAGE_FRAG, frag_shd, "main"}
     };
     const unsigned stg_n = sizeof stgs / sizeof *stgs;
 
     /* descriptor table */
-    const YF_dentry inst_ents[] = {
+    const yf_dentry_t inst_ents[] = {
         {YF_RESBIND_INST, YF_DTYPE_UNIFORM, 1, NULL},
         {YF_RESBIND_TEX, YF_DTYPE_ISAMPLER, 1, NULL}
     };
 
-    YF_dtable inst_dtb = yf_dtable_init(ctx, inst_ents,
-                                        sizeof inst_ents / sizeof *inst_ents);
+    yf_dtable_t *inst_dtb =
+        yf_dtable_init(ctx, inst_ents, sizeof inst_ents / sizeof *inst_ents);
 
     if (inst_dtb == NULL || yf_dtable_alloc(inst_dtb, entry->n) != 0) {
         yf_unldshd(ctx, vert_shd);
@@ -590,15 +590,15 @@ static int init_labl(T_entry *entry)
         return -1;
     }
 
-    const YF_dtable dtbs[] = {globl_, inst_dtb};
+    yf_dtable_t *const dtbs[] = {globl_, inst_dtb};
     const unsigned dtb_n = sizeof dtbs / sizeof *dtbs;
 
     /* vertex input */
-    const YF_vinput *vins = vins_;
+    const yf_vinput_t *vins = vins_;
     const unsigned vin_n = sizeof vins_ / sizeof *vins_;
 
     /* graphics state */
-    const YF_gconf conf = {
+    const yf_gconf_t conf = {
         pass,
         stgs,
         stg_n,
@@ -708,7 +708,8 @@ static void deinit_entry(int resrq)
     };
 
     for (size_t i = 0; i < (sizeof stages / sizeof *stages); i++) {
-        const YF_stage *stg = yf_gstate_getstg(entries_[resrq].gst, stages[i]);
+        const yf_stage_t *stg = yf_gstate_getstg(entries_[resrq].gst,
+                                                 stages[i]);
         if (stg != NULL)
             yf_unldshd(yf_getctx(), stg->shd);
     }
@@ -716,10 +717,10 @@ static void deinit_entry(int resrq)
     yf_dtable_deinit(yf_gstate_getdtb(entries_[resrq].gst, YF_RESIDX_INST));
     yf_gstate_deinit(entries_[resrq].gst);
     free(entries_[resrq].obtained);
-    memset(entries_+resrq, 0, sizeof(T_entry));
+    memset(entries_+resrq, 0, sizeof(entry_t));
 }
 
-YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc)
+yf_gstate_t *yf_resmgr_obtain(int resrq, unsigned *inst_alloc)
 {
     assert(resrq >= 0 && resrq < YF_RESRQ_N);
     assert(inst_alloc != NULL);
@@ -729,7 +730,7 @@ YF_gstate yf_resmgr_obtain(int resrq, unsigned *inst_alloc)
         return NULL;
     }
 
-    YF_gstate gst = NULL;
+    yf_gstate_t *gst = NULL;
     if (entries_[resrq].gst == NULL) {
         if (init_entry(resrq) == 0) {
             gst = entries_[resrq].gst;
@@ -764,15 +765,15 @@ void yf_resmgr_yield(int resrq, unsigned inst_alloc)
     entries_[resrq].i = inst_alloc;
 }
 
-YF_dtable yf_resmgr_getglobl(void)
+yf_dtable_t *yf_resmgr_getglobl(void)
 {
     if (globl_ != NULL)
         return globl_;
 
-    YF_context ctx = yf_getctx();
+    yf_context_t *ctx = yf_getctx();
     assert(ctx != NULL);
 
-    const YF_dentry ents[] = {
+    const yf_dentry_t ents[] = {
         {YF_RESBIND_GLOBL, YF_DTYPE_UNIFORM, 1, NULL},
         {YF_RESBIND_LIGHT, YF_DTYPE_UNIFORM, 1, NULL}
     };
@@ -802,8 +803,8 @@ int yf_resmgr_setallocn(int resrq, unsigned n)
 
     if (entries_[resrq].gst != NULL) {
         if (n > 0) {
-            YF_dtable dtb = yf_gstate_getdtb(entries_[resrq].gst,
-                                             YF_RESIDX_INST);
+            yf_dtable_t *dtb = yf_gstate_getdtb(entries_[resrq].gst,
+                                                YF_RESIDX_INST);
             if (yf_dtable_alloc(dtb, n) != 0) {
                 deinit_entry(resrq);
                 return -1;

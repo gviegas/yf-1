@@ -7,12 +7,14 @@
 
 #version 460 core
 
+/* TODO: Should be quads rather than points. */
+
 /**
  * Primary texture.
  */
 layout(set=1, binding=1) uniform sampler2D tex_;
 
-layout(location=0) in IO_v {
+layout(location=0) in iov {
     vec4 clr;
 } v_;
 

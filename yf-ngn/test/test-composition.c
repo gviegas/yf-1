@@ -18,19 +18,19 @@
 #define YF_WINH 480
 #define YF_WINT "Composition"
 #define YF_FPS  60
-#define YF_PLACE (YF_vec3){20.0f, 20.0f, 20.0f}
-#define YF_POINT (YF_vec3){0}
+#define YF_PLACE (yf_vec3_t){20.0f, 20.0f, 20.0f}
+#define YF_POINT (yf_vec3_t){0}
 
 /* Shared variables. */
-struct T_vars {
-    YF_window win;
-    YF_view view;
-    YF_scene scn;
-    YF_collection coll;
-    YF_model mdl;
-    YF_node labl_node;
-    YF_label labls[2];
-    YF_light light;
+struct vars {
+    yf_window_t *win;
+    yf_view_t *view;
+    yf_scene_t *scn;
+    yf_collec_t *coll;
+    yf_model_t *mdl;
+    yf_node_t *labl_node;
+    yf_label_t *labls[2];
+    yf_light_t *light;
 
     struct {
         int camera;
@@ -46,7 +46,7 @@ struct T_vars {
         int secondary;
     } input;
 };
-static struct T_vars vars_ = {0};
+static struct vars vars_ = {0};
 
 /* Handles key events. */
 static void on_key(int key, int state,
@@ -138,7 +138,7 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
     if (vars_.input.quit)
         return -1;
 
-    YF_camera cam = yf_scene_getcam(vars_.scn);
+    yf_camera_t *cam = yf_scene_getcam(vars_.scn);
 
     if (vars_.input.primary) {
         const float ld = 0.25 * elapsed_time;
@@ -196,11 +196,11 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
         const float md = 10.0 * elapsed_time;
         const float td = 6.0 * elapsed_time;
 
-        YF_vec3 t = {0};
-        YF_vec4 r = {0.0f, 0.0f, 0.0f, 1.0f};
+        yf_vec3_t t = {0};
+        yf_vec4_t r = {0.0f, 0.0f, 0.0f, 1.0f};
 
         if (vars_.input.place) {
-            YF_mat4 *xform = yf_node_getxform(yf_model_getnode(vars_.mdl));
+            yf_mat4_t *xform = yf_node_getxform(yf_model_getnode(vars_.mdl));
             (*xform)[12] = (*xform)[13] = (*xform)[14] = 0.0f;
             vars_.input.place = 0;
         }
@@ -219,31 +219,31 @@ static int update(double elapsed_time, YF_UNUSED void *arg)
             t[1] -= md;
 
         if (vars_.input.turn[0]) {
-            YF_vec4 q;
+            yf_vec4_t q;
             yf_vec4_rotqx(q, td);
             yf_vec4_mulqi(r, q);
         }
         if (vars_.input.turn[1]) {
-            YF_vec4 q;
+            yf_vec4_t q;
             yf_vec4_rotqx(q, -td);
             yf_vec4_mulqi(r, q);
         }
         if (vars_.input.turn[2]) {
-            YF_vec4 q;
+            yf_vec4_t q;
             yf_vec4_rotqy(q, td);
             yf_vec4_mulqi(r, q);
         }
         if (vars_.input.turn[3]) {
-            YF_vec4 q;
+            yf_vec4_t q;
             yf_vec4_rotqy(q, -td);
             yf_vec4_mulqi(r, q);
         }
 
-        YF_mat4 mt, mr;
+        yf_mat4_t mt, mr;
         yf_mat4_xlate(mt, t[0], t[1], t[2]);
         yf_mat4_rotq(mr, r);
 
-        YF_mat4 m, tr;
+        yf_mat4_t m, tr;
         yf_mat4_copy(m, *yf_node_getxform(yf_model_getnode(vars_.mdl)));
         yf_mat4_mul(tr, mt, mr);
         yf_mat4_mul(*yf_node_getxform(yf_model_getnode(vars_.mdl)), m, tr);
@@ -265,7 +265,7 @@ int yf_test_composition(void)
 {
     srand(time(NULL));
 
-    YF_evtfn evtfn = {.key_kb = on_key};
+    yf_evtfn_t evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
     evtfn.motion_pt = on_motion;
@@ -286,41 +286,41 @@ int yf_test_composition(void)
     vars_.labl_node = yf_node_init();
     assert(vars_.labl_node != NULL);
 
-    vars_.coll = yf_collection_init(NULL);
+    vars_.coll = yf_collec_init(NULL);
     assert(vars_.coll != NULL);
 
-    if (yf_collection_manage(vars_.coll, YF_CITEM_SCENE, "scn",
-                             vars_.scn) != 0 ||
-        yf_collection_manage(vars_.coll, YF_CITEM_NODE, "labl",
-                             vars_.labl_node) != 0)
+    if (yf_collec_manage(vars_.coll, YF_CITEM_SCENE, "scn",
+                         vars_.scn) != 0 ||
+        yf_collec_manage(vars_.coll, YF_CITEM_NODE, "labl",
+                         vars_.labl_node) != 0)
         assert(0);
 
-    YF_mesh mesh1 = yf_collection_loaditem(vars_.coll, YF_CITEM_MESH,
-                                           "tmp/cube.glb", 0);
-    YF_mesh mesh2 = yf_collection_loaditem(vars_.coll, YF_CITEM_MESH,
-                                           "tmp/cube2.glb", 0);
+    yf_mesh_t *mesh1 = yf_collec_loaditem(vars_.coll, YF_CITEM_MESH,
+                                          "tmp/cube.glb", 0);
+    yf_mesh_t *mesh2 = yf_collec_loaditem(vars_.coll, YF_CITEM_MESH,
+                                          "tmp/cube2.glb", 0);
     assert(mesh1 != NULL);
     assert(mesh2 != NULL);
 
-    YF_texture tex1 = yf_collection_loaditem(vars_.coll, YF_CITEM_TEXTURE,
-                                             "tmp/cube.png", 0);
-    YF_texture tex2 = yf_collection_loaditem(vars_.coll, YF_CITEM_TEXTURE,
-                                             "tmp/cube2.png", 0);
+    yf_texture_t *tex1 = yf_collec_loaditem(vars_.coll, YF_CITEM_TEXTURE,
+                                            "tmp/cube.png", 0);
+    yf_texture_t *tex2 = yf_collec_loaditem(vars_.coll, YF_CITEM_TEXTURE,
+                                            "tmp/cube2.png", 0);
     assert(tex1 != NULL);
     assert(tex2 != NULL);
 
-    YF_font font1 = yf_collection_loaditem(vars_.coll, YF_CITEM_FONT,
-                                           "tmp/serif.ttf", 0);
-    YF_font font2 = yf_collection_loaditem(vars_.coll, YF_CITEM_FONT,
-                                           "tmp/sans.ttf", 0);
+    yf_font_t *font1 = yf_collec_loaditem(vars_.coll, YF_CITEM_FONT,
+                                          "tmp/serif.ttf", 0);
+    yf_font_t *font2 = yf_collec_loaditem(vars_.coll, YF_CITEM_FONT,
+                                          "tmp/sans.ttf", 0);
     assert(font1 != NULL);
     assert(font2 != NULL);
 
-    YF_material matl1 = yf_material_init(NULL);
-    YF_material matl2 = yf_material_init(NULL);
+    yf_material_t *matl1 = yf_material_init(NULL);
+    yf_material_t *matl2 = yf_material_init(NULL);
     assert(matl1 != NULL);
     assert(matl2 != NULL);
-    YF_matlprop *mprop;
+    yf_matlprop_t *mprop;
     mprop = yf_material_getprop(matl1);
     mprop->pbr = YF_PBR_METALROUGH;
     mprop->pbrmr.color_tex.tex = tex1;
@@ -328,8 +328,8 @@ int yf_test_composition(void)
     mprop->pbr = YF_PBR_METALROUGH;
     mprop->pbrmr.color_tex.tex = tex2;
 
-    if (yf_collection_manage(vars_.coll, YF_CITEM_MATERIAL, "m1", matl1) != 0 ||
-        yf_collection_manage(vars_.coll, YF_CITEM_MATERIAL, "m2", matl2) != 0)
+    if (yf_collec_manage(vars_.coll, YF_CITEM_MATERIAL, "m1", matl1) != 0 ||
+        yf_collec_manage(vars_.coll, YF_CITEM_MATERIAL, "m2", matl2) != 0)
         assert(0);
 
     vars_.mdl = yf_model_init();
@@ -337,8 +337,8 @@ int yf_test_composition(void)
 
     const int mdl_num = rand()&1 ? 1 : 2;
     yf_model_setmesh(vars_.mdl, mdl_num == 1 ? mesh1 : mesh2);
-    yf_mesh_setmatl(yf_model_getmesh(vars_.mdl), 0,
-                    mdl_num == 1 ? matl1 : matl2);
+    yf_mesh_setmatl(yf_model_getmesh(vars_.mdl), 0, mdl_num == 1 ? matl1 :
+                                                                   matl2);
 
     yf_node_insert(yf_scene_getnode(vars_.scn), yf_model_getnode(vars_.mdl));
 
@@ -348,7 +348,7 @@ int yf_test_composition(void)
         assert(vars_.labls[i] != NULL);
 
         yf_label_setfont(vars_.labls[i], i ? font2 : font1);
-        YF_mat4 *m = yf_node_getxform(yf_label_getnode(vars_.labls[i]));
+        yf_mat4_t *m = yf_node_getxform(yf_label_getnode(vars_.labls[i]));
 
         switch (i) {
         case 0:
@@ -373,46 +373,45 @@ int yf_test_composition(void)
             (*m)[13] = i*-0.15;
         }
 
-        if (yf_collection_getitem(vars_.coll, YF_CITEM_NODE,
-                                  "labl") != vars_.labl_node)
+        if (yf_collec_getitem(vars_.coll, YF_CITEM_NODE, "labl")
+            != vars_.labl_node)
             assert(0);
 
         yf_node_insert(vars_.labl_node, yf_label_getnode(vars_.labls[i]));
     }
 
-    if (yf_collection_getitem(vars_.coll, YF_CITEM_SCENE,
-                              "scn") != vars_.scn)
+    if (yf_collec_getitem(vars_.coll, YF_CITEM_SCENE, "scn") != vars_.scn)
         assert(0);
 
     yf_node_insert(yf_scene_getnode(vars_.scn), vars_.labl_node);
 
-    const YF_vec3 light_clr = {1.0f, 1.0f, 1.0f};
+    const yf_vec3_t light_clr = {1.0f, 1.0f, 1.0f};
     vars_.light = yf_light_init(YF_LIGHTT_SPOT, light_clr, 1000.0f, 100.0f,
                                 0.0f, 0.785398f);
     assert(vars_.light != NULL);
 
-    YF_mat4 t;
+    yf_mat4_t t;
     yf_mat4_xlate(t, 10.0f, 10.0f, 10.0f);
 
-    YF_vec4 qx, qy;
+    yf_vec4_t qx, qy;
     yf_vec4_rotqx(qx, 3.141593f * -0.25f);
     yf_vec4_rotqy(qy, 3.141593f * 0.25f);
     yf_vec4_mulqi(qx, qy);
 
-    YF_mat4 r;
+    yf_mat4_t r;
     yf_mat4_rotq(r, qx);
 
     yf_mat4_mul(*yf_node_getxform(yf_light_getnode(vars_.light)), t, r);
 
-    if (yf_collection_manage(vars_.coll, YF_CITEM_NODE, "light",
-                             yf_light_getnode(vars_.light)) != 0)
+    if (yf_collec_manage(vars_.coll, YF_CITEM_NODE, "light",
+                         yf_light_getnode(vars_.light)) != 0)
         assert(0);
 
     yf_node_insert(yf_scene_getnode(vars_.scn), yf_light_getnode(vars_.light));
 
-    YF_camera cam = yf_scene_getcam(vars_.scn);
-    const YF_vec3 pos = {-4.0f, 6.0f, 15.0f};
-    const YF_vec3 tgt = {0};
+    yf_camera_t *cam = yf_scene_getcam(vars_.scn);
+    const yf_vec3_t pos = {-4.0f, 6.0f, 15.0f};
+    const yf_vec3_t tgt = {0};
     yf_camera_place(cam, pos);
     yf_camera_point(cam, tgt);
 
@@ -426,7 +425,7 @@ int yf_test_composition(void)
     for (size_t i = 0; i < labl_n; i++)
         yf_label_deinit(vars_.labls[i]);
 
-    yf_collection_deinit(vars_.coll);
+    yf_collec_deinit(vars_.coll);
 
     return 0;
 }

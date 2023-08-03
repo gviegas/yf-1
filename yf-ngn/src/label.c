@@ -2,7 +2,7 @@
  * YF
  * label.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -31,12 +31,12 @@
 #define YF_VLABL_CLRN (4 << 2)
 #define YF_VLABL_N    (YF_VLABL_POSN + YF_VLABL_TCN + YF_VLABL_CLRN)
 
-struct YF_label_o {
-    YF_node node;
+struct yf_label {
+    yf_node_t *node;
     float verts[YF_VLABL_N];
-    YF_mesh mesh;
-    YF_fontrz rz;
-    YF_font font;
+    yf_mesh_t *mesh;
+    yf_fontrz_t rz;
+    yf_font_t *font;
     wchar_t *str;
     unsigned short pt;
 #define YF_PEND_NONE 0
@@ -47,7 +47,7 @@ struct YF_label_o {
 };
 
 /* Initializes a label's mesh rectangle. */
-static int init_rect(YF_label labl)
+static int init_rect(yf_label_t *labl)
 {
     assert(labl != NULL);
 
@@ -92,14 +92,14 @@ static int init_rect(YF_label labl)
     memcpy(dt, labl->verts, sizeof labl->verts);
     memcpy((char *)dt + sizeof labl->verts, indx, sizeof indx);
 
-    const YF_meshdt data = {
-        .prims = &(YF_primdt){
+    const yf_meshdt_t data = {
+        .prims = &(yf_primdt_t){
             .topology = YF_TOPOLOGY_TRIANGLE,
             .vert_n = 4,
             .indx_n = 6,
             .data_off = 0,
             .vsemt_mask = YF_VSEMT_POS | YF_VSEMT_TC | YF_VSEMT_CLR,
-            .attrs =  (YF_attrdt[]){
+            .attrs =  (yf_attrdt_t[]){
                 [0] = {YF_VSEMT_POS, YF_VFMT_FLOAT3, 0},
                 [1] = {YF_VSEMT_TC, YF_VFMT_FLOAT2, sizeof pos},
                 [2] = {YF_VSEMT_CLR, YF_VFMT_FLOAT4, sizeof pos + sizeof tc}
@@ -120,20 +120,20 @@ static int init_rect(YF_label labl)
 }
 
 /* Updates a label's mesh rectangle. */
-static void update_rect(YF_label labl)
+static void update_rect(yf_label_t *labl)
 {
     assert(labl != NULL);
     assert(labl->pend_mask != YF_PEND_NONE);
 
     if (labl->pend_mask & YF_PEND_TC) {
-        const YF_fontrz *rz = &labl->rz;
+        const yf_fontrz_t *rz = &labl->rz;
         float s0, t0, s1, t1;
 
         if (rz->tex == NULL || rz->dim.width == 0 || rz->dim.height == 0) {
             s0 = t0 = 0.0;
             s1 = t1 = 1.0;
         } else {
-            const YF_dim2 dim = yf_texture_getdim(rz->tex);
+            const yf_dim2_t dim = yf_texture_getdim(rz->tex);
             const float wdt = dim.width;
             const float hgt = dim.height;
             s0 = rz->off.x / wdt;
@@ -180,7 +180,7 @@ static void update_rect(YF_label labl)
 }
 
 /* Copies label glyphs to texture. */
-static int copy_glyphs(YF_label labl)
+static int copy_glyphs(yf_label_t *labl)
 {
     assert(labl != NULL);
     assert(labl->font != NULL);
@@ -200,7 +200,7 @@ static int copy_glyphs(YF_label labl)
 /* Label deinitialization callback. */
 static void deinit_labl(void *obj)
 {
-    YF_label labl = obj;
+    yf_label_t *labl = obj;
 
     yf_mesh_deinit(labl->mesh);
 
@@ -211,9 +211,9 @@ static void deinit_labl(void *obj)
     free(labl);
 }
 
-YF_label yf_label_init(void)
+yf_label_t *yf_label_init(void)
 {
-    YF_label labl = calloc(1, sizeof(struct YF_label_o));
+    yf_label_t *labl = calloc(1, sizeof(yf_label_t));
     if (labl == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -233,13 +233,13 @@ YF_label yf_label_init(void)
     return labl;
 }
 
-YF_node yf_label_getnode(YF_label labl)
+yf_node_t *yf_label_getnode(yf_label_t *labl)
 {
     assert(labl != NULL);
     return labl->node;
 }
 
-YF_mesh yf_label_getmesh(YF_label labl)
+yf_mesh_t *yf_label_getmesh(yf_label_t *labl)
 {
     assert(labl != NULL);
 
@@ -255,7 +255,7 @@ YF_mesh yf_label_getmesh(YF_label labl)
     return labl->mesh;
 }
 
-YF_texture yf_label_gettex(YF_label labl)
+yf_texture_t *yf_label_gettex(yf_label_t *labl)
 {
     assert(labl != NULL);
 
@@ -267,13 +267,13 @@ YF_texture yf_label_gettex(YF_label labl)
     return labl->rz.tex;
 }
 
-YF_font yf_label_getfont(YF_label labl)
+yf_font_t *yf_label_getfont(yf_label_t *labl)
 {
     assert(labl != NULL);
     return labl->font;
 }
 
-void yf_label_setfont(YF_label labl, YF_font font)
+void yf_label_setfont(yf_label_t *labl, yf_font_t *font)
 {
     assert(labl != NULL);
 
@@ -286,7 +286,7 @@ void yf_label_setfont(YF_label labl, YF_font font)
     labl->pend_mask |= YF_PEND_RZ;
 }
 
-wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t *n)
+wchar_t *yf_label_getstr(yf_label_t *labl, wchar_t *dst, size_t *n)
 {
     assert(labl != NULL);
     assert(n != NULL);
@@ -312,7 +312,7 @@ wchar_t *yf_label_getstr(YF_label labl, wchar_t *dst, size_t *n)
     return NULL;
 }
 
-int yf_label_setstr(YF_label labl, const wchar_t *str)
+int yf_label_setstr(yf_label_t *labl, const wchar_t *str)
 {
     assert(labl != NULL);
 
@@ -347,13 +347,13 @@ int yf_label_setstr(YF_label labl, const wchar_t *str)
     return 0;
 }
 
-unsigned short yf_label_getpt(YF_label labl)
+unsigned short yf_label_getpt(yf_label_t *labl)
 {
     assert(labl != NULL);
     return labl->pt;
 }
 
-int yf_label_setpt(YF_label labl, unsigned short pt)
+int yf_label_setpt(yf_label_t *labl, unsigned short pt)
 {
     assert(labl != NULL);
 
@@ -369,7 +369,7 @@ int yf_label_setpt(YF_label labl, unsigned short pt)
     return 0;
 }
 
-YF_color yf_label_getcolor(YF_label labl, int corner)
+yf_color_t yf_label_getcolor(yf_label_t *labl, int corner)
 {
     assert(labl != NULL);
 
@@ -393,10 +393,11 @@ YF_color yf_label_getcolor(YF_label labl, int corner)
         break;
     }
 
-    return (YF_color){clr[0], clr[1], clr[2], clr[3]};
+    return (yf_color_t){clr[0], clr[1], clr[2], clr[3]};
 }
 
-void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color)
+void yf_label_setcolor(yf_label_t *labl, unsigned corner_mask,
+                       yf_color_t color)
 {
     assert(labl != NULL);
 
@@ -432,7 +433,7 @@ void yf_label_setcolor(YF_label labl, unsigned corner_mask, YF_color color)
     labl->pend_mask |= YF_PEND_CLR;
 }
 
-YF_dim2 yf_label_getdim(YF_label labl)
+yf_dim2_t yf_label_getdim(yf_label_t *labl)
 {
     assert(labl != NULL);
 
@@ -444,7 +445,7 @@ YF_dim2 yf_label_getdim(YF_label labl)
     return labl->rz.dim;
 }
 
-void yf_label_deinit(YF_label labl)
+void yf_label_deinit(yf_label_t *labl)
 {
     if (labl != NULL)
         yf_node_deinit(labl->node);

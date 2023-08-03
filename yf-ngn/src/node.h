@@ -2,7 +2,7 @@
  * YF
  * node.h
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #ifndef YF_NODE_H
@@ -11,16 +11,16 @@
 #include "yf-node.h"
 
 /* Sets the object which a given node is to represent. */
-void yf_node_setobj(YF_node node, int nodeobj, void *obj,
+void yf_node_setobj(yf_node_t *node, int nodeobj, void *obj,
                     void (*deinit)(void *obj));
 
 /* Gets the world transform of a node. */
-YF_mat4 *yf_node_getwldxform(YF_node node);
+yf_mat4_t *yf_node_getwldxform(yf_node_t *node);
 
 /* Gets the inverse world transform of a node. */
-YF_mat4 *yf_node_getwldinv(YF_node node);
+yf_mat4_t *yf_node_getwldinv(yf_node_t *node);
 
 /* Gets the normal matrix of a node. */
-YF_mat4 *yf_node_getwldnorm(YF_node node);
+yf_mat4_t *yf_node_getwldnorm(yf_node_t *node);
 
 #endif /* YF_NODE_H */

@@ -2,7 +2,7 @@
  * YF
  * model.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -13,11 +13,11 @@
 #include "yf-model.h"
 #include "node.h"
 
-struct YF_model_o {
-    YF_node node;
-    YF_mesh mesh;
-    YF_skin skin;
-    YF_skeleton skel;
+struct yf_model {
+    yf_node_t *node;
+    yf_mesh_t *mesh;
+    yf_skin_t *skin;
+    yf_skeleton_t *skel;
 };
 
 /* Model deinitialization callback. */
@@ -26,9 +26,9 @@ static void deinit_mdl(void *mdl)
     free(mdl);
 }
 
-YF_model yf_model_init(void)
+yf_model_t *yf_model_init(void)
 {
-    YF_model mdl = calloc(1, sizeof(struct YF_model_o));
+    yf_model_t *mdl = calloc(1, sizeof(yf_model_t));
     if (mdl == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -43,25 +43,25 @@ YF_model yf_model_init(void)
     return mdl;
 }
 
-YF_node yf_model_getnode(YF_model mdl)
+yf_node_t *yf_model_getnode(yf_model_t *mdl)
 {
     assert(mdl != NULL);
     return mdl->node;
 }
 
-YF_mesh yf_model_getmesh(YF_model mdl)
+yf_mesh_t *yf_model_getmesh(yf_model_t *mdl)
 {
     assert(mdl != NULL);
     return mdl->mesh;
 }
 
-void yf_model_setmesh(YF_model mdl, YF_mesh mesh)
+void yf_model_setmesh(yf_model_t *mdl, yf_mesh_t *mesh)
 {
     assert(mdl != NULL);
     mdl->mesh = mesh;
 }
 
-YF_skin yf_model_getskin(YF_model mdl, YF_skeleton *skel)
+yf_skin_t *yf_model_getskin(yf_model_t *mdl, yf_skeleton_t **skel)
 {
     assert(mdl != NULL);
     assert(skel != NULL);
@@ -70,7 +70,7 @@ YF_skin yf_model_getskin(YF_model mdl, YF_skeleton *skel)
     return mdl->skin;
 }
 
-void yf_model_setskin(YF_model mdl, YF_skin skin, YF_skeleton skel)
+void yf_model_setskin(yf_model_t *mdl, yf_skin_t *skin, yf_skeleton_t *skel)
 {
     assert(mdl != NULL);
 
@@ -78,7 +78,7 @@ void yf_model_setskin(YF_model mdl, YF_skin skin, YF_skeleton skel)
     mdl->skel = skel;
 }
 
-void yf_model_deinit(YF_model mdl)
+void yf_model_deinit(yf_model_t *mdl)
 {
     if (mdl != NULL)
         yf_node_deinit(mdl->node);

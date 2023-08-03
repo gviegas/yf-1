@@ -18,7 +18,7 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a light source.
  */
-typedef struct YF_light_o *YF_light;
+typedef struct yf_light yf_light_t;
 
 /**
  * Types of light source.
@@ -39,8 +39,8 @@ typedef struct YF_light_o *YF_light;
  * @return: On success, returns a new light source. Otherwise, 'NULL' is
  *  returned and the global error is set to indicate the cause.
  */
-YF_light yf_light_init(int lightt, const YF_vec3 color, float intensity,
-                       float range, float inner_angle, float outer_angle);
+yf_light_t *yf_light_init(int lightt, const yf_vec3_t color, float intensity,
+                          float range, float inner_angle, float outer_angle);
 
 /**
  * Gets the node of a light source.
@@ -48,7 +48,7 @@ YF_light yf_light_init(int lightt, const YF_vec3 color, float intensity,
  * @param light: The light.
  * @return: The light's node.
  */
-YF_node yf_light_getnode(YF_light light);
+yf_node_t *yf_light_getnode(yf_light_t *light);
 
 /**
  * Gets values of a light source.
@@ -63,7 +63,7 @@ YF_node yf_light_getnode(YF_light light);
  * @param outer_angle: The destination for the outer cone angle value.
  *  Can be 'NULL'.
  */
-void yf_light_getval(YF_light light, int *lightt, YF_vec3 color,
+void yf_light_getval(yf_light_t *light, int *lightt, yf_vec3_t color,
                      float *intensity, float *range, float *inner_angle,
                      float *outer_angle);
 
@@ -77,7 +77,7 @@ void yf_light_getval(YF_light light, int *lightt, YF_vec3 color,
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_light_setpoint(YF_light light, const YF_vec3 color, float intensity,
+int yf_light_setpoint(yf_light_t *light, const yf_vec3_t color, float intensity,
                       float range);
 
 /**
@@ -92,7 +92,7 @@ int yf_light_setpoint(YF_light light, const YF_vec3 color, float intensity,
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_light_setspot(YF_light light, const YF_vec3 color, float intensity,
+int yf_light_setspot(yf_light_t *light, const yf_vec3_t color, float intensity,
                      float range, float inner_angle, float outer_angle);
 
 /**
@@ -104,14 +104,15 @@ int yf_light_setspot(YF_light light, const YF_vec3 color, float intensity,
  * @return: On success, returns zero. Otherwise, a non-zero value is returned
  *  and the global error is set to indicate the cause.
  */
-int yf_light_setdirect(YF_light light, const YF_vec3 color, float intensity);
+int yf_light_setdirect(yf_light_t *light, const yf_vec3_t color,
+                       float intensity);
 
 /**
  * Deinitializes a light source.
  *
  * @param light: The light to deinitialize. Can be 'NULL'.
  */
-void yf_light_deinit(YF_light light);
+void yf_light_deinit(yf_light_t *light);
 
 YF_DECLS_END
 

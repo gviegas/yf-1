@@ -18,43 +18,43 @@ YF_DECLS_BEGIN
 /**
  * Opaque type defining a skin.
  */
-typedef struct YF_skin_o *YF_skin;
+typedef struct yf_skin yf_skin_t;
 
 /**
  * Opaque type defining an instance of a skin's joint hierarchy.
  */
-typedef struct YF_skeleton_o *YF_skeleton;
+typedef struct yf_skeleton yf_skeleton_t;
 
 /**
  * Type describing a joint for skinning.
  */
-typedef struct {
-    YF_mat4 xform;
-    YF_mat4 ibm;
+typedef struct yf_joint {
+    yf_mat4_t xform;
+    yf_mat4_t ibm;
     char name[32];
     /* Index of the joint's parent in the array used to initialize a skin.
        A negative value indicates that the joint has no parent. */
     long pnt_i;
-} YF_joint;
+} yf_joint_t;
 
 /**
  * Initializes a new skin.
  *
- * @param jnts: The array of 'YF_joint' describing the skin's skeleton.
+ * @param jnts: The array of 'yf_joint_t' describing the skin's skeleton.
  * @param jnt_n: The size of the 'jnts' array. Must be greater than zero.
  * @return: On success, returns a new skin. Otherwise, 'NULL' is returned and
  *  the global error is set to indicate the cause.
  */
-YF_skin yf_skin_init(const YF_joint *jnts, unsigned jnt_n);
+yf_skin_t *yf_skin_init(const yf_joint_t *jnts, unsigned jnt_n);
 
 /**
  * Gets the joint descriptions of a skin.
  *
  * @param skin: The skin.
- * @param jnt_n: The destination for the size of the 'YF_joint' array.
- * @return: The skin's 'YF_joint' array.
+ * @param jnt_n: The destination for the size of the 'yf_joint_t' array.
+ * @return: The skin's 'yf_joint_t' array.
  */
-const YF_joint *yf_skin_getjnts(YF_skin skin, unsigned *jnt_n);
+const yf_joint_t *yf_skin_getjnts(yf_skin_t *skin, unsigned *jnt_n);
 
 /**
  * Executes a given function for each instantiated skeleton of a skin.
@@ -69,7 +69,7 @@ const YF_joint *yf_skin_getjnts(YF_skin skin, unsigned *jnt_n);
  * @param callb: The callback to execute for each instance.
  * @param arg: The generic argument to pass on 'callb' calls. Can be 'NULL'.
  */
-void yf_skin_each(YF_skin skin, int (*callb)(YF_skeleton skel, void *arg),
+void yf_skin_each(yf_skin_t *skin, int (*callb)(yf_skeleton_t *skel, void *arg),
                   void *arg);
 
 /**
@@ -78,7 +78,7 @@ void yf_skin_each(YF_skin skin, int (*callb)(YF_skeleton skel, void *arg),
  * @param skin: The skin.
  * @return: The newest skeleton of 'skin', or 'NULL' if no instances exist.
  */
-YF_skeleton yf_skin_newest(YF_skin skin);
+yf_skeleton_t *yf_skin_newest(yf_skin_t *skin);
 
 /**
  * Makes a new skeleton from a given skin.
@@ -92,7 +92,7 @@ YF_skeleton yf_skin_newest(YF_skin skin);
  * @return: On success, returns a new skeleton. Otherwise, 'NULL' is returned
  *  and the global error is set to indicate the cause.
  */
-YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes);
+yf_skeleton_t *yf_skin_makeskel(yf_skin_t *skin, yf_node_t *const *nodes);
 
 /**
  * Gets the root node of a skin's skeleton.
@@ -101,7 +101,7 @@ YF_skeleton yf_skin_makeskel(YF_skin skin, const YF_node *nodes);
  * @param skel: The skeleton.
  * @return: The skeleton's root node.
  */
-YF_node yf_skin_getnode(YF_skin skin, YF_skeleton skel);
+yf_node_t *yf_skin_getnode(yf_skin_t *skin, yf_skeleton_t *skel);
 
 /**
  * Gets a joint node of a skin's skeleton.
@@ -112,7 +112,8 @@ YF_node yf_skin_getnode(YF_skin skin, YF_skeleton skel);
  *  the skin.
  * @return: The skeleton's joint node for 'index'.
  */
-YF_node yf_skin_getjntnode(YF_skin skin, YF_skeleton skel, unsigned index);
+yf_node_t *yf_skin_getjntnode(yf_skin_t *skin, yf_skeleton_t *skel,
+                              unsigned index);
 
 /**
  * Unmakes a skin's skeleton.
@@ -120,7 +121,7 @@ YF_node yf_skin_getjntnode(YF_skin skin, YF_skeleton skel, unsigned index);
  * @param skin: The skin that produced 'skel'.
  * @param skel: The skeleton to unmake.
  */
-void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel);
+void yf_skin_unmkskel(yf_skin_t *skin, yf_skeleton_t *skel);
 
 /**
  * Deinitializes a skin.
@@ -129,7 +130,7 @@ void yf_skin_unmkskel(YF_skin skin, YF_skeleton skel);
  *
  * @param skin: The skin to deinitialize. Can be 'NULL'.
  */
-void yf_skin_deinit(YF_skin skin);
+void yf_skin_deinit(yf_skin_t *skin);
 
 YF_DECLS_END
 

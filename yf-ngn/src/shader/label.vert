@@ -14,7 +14,7 @@
 /**
  * Instance's uniform data.
  */
-layout(set=1, binding=0) uniform U_inst {
+layout(set=1, binding=0) uniform uinst {
     mat4 m;
     mat4 mv;
     float wdt;
@@ -25,7 +25,7 @@ layout(location=0) in vec3 pos_;
 layout(location=3) in vec2 tc_;
 layout(location=5) in vec4 clr_;
 
-layout(location=0) out IO_v {
+layout(location=0) out iov {
     vec2 tc;
     vec4 clr;
 } v_;

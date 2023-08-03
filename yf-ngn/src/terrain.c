@@ -2,7 +2,7 @@
  * YF
  * terrain.c
  *
- * Copyright © 2020-2021 Gustavo C. Viegas.
+ * Copyright © 2020 Gustavo C. Viegas.
  */
 
 #include <stdlib.h>
@@ -14,18 +14,18 @@
 #include "node.h"
 #include "mesh.h"
 
-struct YF_terrain_o {
-    YF_node node;
+struct yf_terrain {
+    yf_node_t *node;
     unsigned width;
     unsigned depth;
-    YF_mesh mesh;
-    YF_texture hmap;
-    YF_texture tex;
+    yf_mesh_t *mesh;
+    yf_texture_t *hmap;
+    yf_texture_t *tex;
     /* TODO: Other terrain properties. */
 };
 
 /* Initializes grid mesh. */
-static int init_grid(YF_terrain terr)
+static int init_grid(yf_terrain_t *terr)
 {
     assert(terr != NULL);
 
@@ -56,14 +56,14 @@ static int init_grid(YF_terrain terr)
         return -1;
     }
 
-    const YF_meshdt data = {
-        .prims = &(YF_primdt){
+    const yf_meshdt_t data = {
+        .prims = &(yf_primdt_t){
             .topology = YF_TOPOLOGY_TRIANGLE,
             .vert_n = vert_n,
             .indx_n = indx_n,
             .data_off = 0,
             .vsemt_mask = YF_VSEMT_POS | YF_VSEMT_NORM | YF_VSEMT_TC,
-            .attrs = (YF_attrdt[]){
+            .attrs = (yf_attrdt_t[]){
                 [0] = {YF_VSEMT_POS, YF_VFMT_FLOAT3, 0},
                 [1] = {YF_VSEMT_NORM, YF_VFMT_FLOAT3, pos_sz},
                 [2] = {YF_VSEMT_TC, YF_VFMT_FLOAT2, pos_sz + norm_sz}
@@ -151,18 +151,18 @@ static int init_grid(YF_terrain terr)
 /* Terrain deinitialization callback. */
 static void deinit_terr(void *terr)
 {
-    yf_mesh_deinit(((YF_terrain)terr)->mesh);
+    yf_mesh_deinit(((yf_terrain_t *)terr)->mesh);
     free(terr);
 }
 
-YF_terrain yf_terrain_init(unsigned width, unsigned depth)
+yf_terrain_t *yf_terrain_init(unsigned width, unsigned depth)
 {
     if (width == 0 || depth == 0) {
         yf_seterr(YF_ERR_INVARG, __func__);
         return NULL;
     }
 
-    YF_terrain terr = calloc(1, sizeof(struct YF_terrain_o));
+    yf_terrain_t *terr = calloc(1, sizeof(yf_terrain_t));
     if (terr == NULL) {
         yf_seterr(YF_ERR_NOMEM, __func__);
         return NULL;
@@ -182,43 +182,43 @@ YF_terrain yf_terrain_init(unsigned width, unsigned depth)
     return terr;
 }
 
-YF_node yf_terrain_getnode(YF_terrain terr)
+yf_node_t *yf_terrain_getnode(yf_terrain_t *terr)
 {
     assert(terr != NULL);
     return terr->node;
 }
 
-YF_mesh yf_terrain_getmesh(YF_terrain terr)
+yf_mesh_t *yf_terrain_getmesh(yf_terrain_t *terr)
 {
     assert(terr != NULL);
     return terr->mesh;
 }
 
-YF_texture yf_terrain_gethmap(YF_terrain terr)
+yf_texture_t *yf_terrain_gethmap(yf_terrain_t *terr)
 {
     assert(terr != NULL);
     return terr->hmap;
 }
 
-void yf_terrain_sethmap(YF_terrain terr, YF_texture hmap)
+void yf_terrain_sethmap(yf_terrain_t *terr, yf_texture_t *hmap)
 {
     assert(terr != NULL);
     terr->hmap = hmap;
 }
 
-YF_texture yf_terrain_gettex(YF_terrain terr)
+yf_texture_t *yf_terrain_gettex(yf_terrain_t *terr)
 {
     assert(terr != NULL);
     return terr->tex;
 }
 
-void yf_terrain_settex(YF_terrain terr, YF_texture tex)
+void yf_terrain_settex(yf_terrain_t *terr, yf_texture_t *tex)
 {
     assert(terr != NULL);
     terr->tex = tex;
 }
 
-void yf_terrain_deinit(YF_terrain terr)
+void yf_terrain_deinit(yf_terrain_t *terr)
 {
     if (terr != NULL)
         yf_node_deinit(terr->node);

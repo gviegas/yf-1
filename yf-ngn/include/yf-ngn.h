@@ -11,10 +11,10 @@
 /**
  * NGN interface.
  */
-#include "yf-animation.h"
 #include "yf-camera.h"
-#include "yf-collection.h"
+#include "yf-collec.h"
 #include "yf-font.h"
+#include "yf-kfanim.h"
 #include "yf-label.h"
 #include "yf-light.h"
 #include "yf-material.h"

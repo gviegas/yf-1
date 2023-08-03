@@ -21,27 +21,27 @@
 #define YF_FPS  60
 
 /* Shared variables. */
-struct T_vars {
-    YF_window win;
-    YF_view view;
-    YF_scene scn;
-    YF_label labl;
-    YF_font font;
+struct vars {
+    yf_window_t *win;
+    yf_view_t *view;
+    yf_scene_t *scn;
+    yf_label_t *labl;
+    yf_font_t *font;
 
     struct {
         int insert;
         int quit;
     } input;
 };
-static struct T_vars vars_ = {0};
+static struct vars vars_ = {0};
 
 /* Sets label color from a string. */
 static void set_color(const wchar_t *wcs)
 {
     YF_TEST_PRINT("getcolor", "labl, CORENER_ALL", "");
-    YF_color cur_clr = yf_label_getcolor(vars_.labl, YF_CORNER_ALL);
+    yf_color_t cur_clr = yf_label_getcolor(vars_.labl, YF_CORNER_ALL);
 
-    YF_color clr;
+    yf_color_t clr;
     char *params;
     if (wcscmp(wcs, L"red") == 0) {
         clr = YF_COLOR_RED;
@@ -273,7 +273,7 @@ static int update(YF_UNUSED double elapsed_time, YF_UNUSED void *arg)
 /* Tests label. */
 int yf_test_label(void)
 {
-    YF_evtfn evtfn = {.key_kb = on_key};
+    yf_evtfn_t evtfn = {.key_kb = on_key};
     yf_setevtfn(YF_EVT_KEYKB, evtfn, NULL);
 
     vars_.win = yf_window_init(YF_WINW, YF_WINH, YF_WINT, 0);
@@ -294,7 +294,7 @@ int yf_test_label(void)
         return -1;
 
     YF_TEST_PRINT("getnode", "labl", "");
-    YF_node node = yf_label_getnode(vars_.labl);
+    yf_node_t *node = yf_label_getnode(vars_.labl);
     if (node == NULL)
         return -1;
 
