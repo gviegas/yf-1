@@ -1,89 +1,75 @@
 #!/usr/bin/env -S make -f
 
-#
-# YF
-# Lib.mk
-#
-# Copyright © 2020-2021 Gustavo C. Viegas.
-#
-
 SHELL := /bin/sh
+
 .SUFFIXES: .c .o .d
 
+VAR_DIR := ~/.local/share/yf/
 INCLUDE_DIR := include/
 SRC_DIR := src/
-ETC_DIR := etc/
-BUILD_DIR := build/
-INSTALL_DIR := /usr/local/
-INCLIB_DIR := $(INSTALL_DIR)include/yf/ngn/
+CACHE_DIR := $(VAR_DIR)cache/ngn/
+LIB_DIR := $(VAR_DIR)
+LIB_BIN_DIR := $(LIB_DIR)lib/
+LIB_INC_DIR := $(LIB_DIR)include/yf/ngn/
 
 SO_LINK := libyf-ngn.so
 SO_NAME := $(SO_LINK).0
 SO_FILE := $(SO_NAME).1.0
+LIB_FILE := $(LIB_BIN_DIR)$(SO_FILE)
+LIB_NAME := $(LIB_BIN_DIR)$(SO_NAME)
+LIB_LINK := $(LIB_BIN_DIR)$(SO_LINK)
 
-LIB_FILE := $(INSTALL_DIR)lib/$(SO_FILE)
-LIB_NAME := $(INSTALL_DIR)lib/$(SO_NAME)
-LIB_LINK := $(INSTALL_DIR)lib/$(SO_LINK)
+SRC := $(wildcard $(SRC_DIR)*.c)
 
-SRC := \
-	$(wildcard $(SRC_DIR)*.c) \
-	$(wildcard $(ETC_DIR)*.c)
-
-OBJ := $(subst $(SRC_DIR),$(BUILD_DIR),$(SRC:.c=.o))
-OBJ := $(subst $(ETC_DIR),$(BUILD_DIR),$(OBJ))
+OBJ := $(subst $(SRC_DIR),$(CACHE_DIR),$(SRC:.c=.o))
 
 DEP := $(OBJ:.o=.d)
 
 CC := /usr/bin/cc
-CC_FLAGS := -std=gnu17 -Wpedantic -Wall -Wextra -g #-O3
+CC_FLAGS := -std=gnu17 -Wpedantic -Wall -Wextra -O3
 
-LD_LIBS := -lm -lyf-com -lyf-core -lyf-wsys
-LD_FLAGS := -iquote $(INCLUDE_DIR) -iquote $(SRC_DIR)
+LD_LIBS := -lm -lyf-core -lyf-wsys -lyf-com
+LD_FLAGS := -I $(VAR_DIR)include/ \
+	    -iquote $(INCLUDE_DIR) \
+	    -iquote $(SRC_DIR) \
+	    -L $(LIB_BIN_DIR)
 
 PP := $(CC) -E
-PP_FLAGS := -D YF_NGN
+PP_FLAGS := -D YF -D YF_NGN
 
-all:
-
-install: $(LIB_FILE)
-	mkdir -p $(INCLIB_DIR)
-	cp $(INCLUDE_DIR)*.h $(INCLIB_DIR)
-	ln -sf $(LIB_FILE) $(LIB_LINK)
-	ldconfig -n $(INSTALL_DIR)lib/
+lib: $(LIB_FILE)
+	mkdir -pv $(LIB_INC_DIR)
+	cp -v $(INCLUDE_DIR)*.h $(LIB_INC_DIR)
+	ln -sfv $(LIB_FILE) $(LIB_LINK)
+	sudo ldconfig -v $(LIB_BIN_DIR)
 
 $(LIB_FILE): $(OBJ)
 	$(CC) -shared -Wl,-soname,$(SO_NAME) \
-	$(CC_FLAGS) $(LD_FLAGS) $^ $(LD_LIBS) -o $@
+		$(CC_FLAGS) $(LD_FLAGS) $^ $(LD_LIBS) -o $@
 
 compile: $(OBJ)
 	@echo Done.
 
--include $(DEP)
-
-.PHONY: uninstall
-uninstall:
-	rm -f $(LIB_LINK) $(LIB_NAME) $(LIB_FILE) $(INCLIB_DIR)*.h
-	rmdir --ignore-fail-on-non-empty $(INCLIB_DIR)
-
 .PHONY: clean-obj
 clean-obj:
-	rm -f $(OBJ)
+	rm -fv $(OBJ)
 
 .PHONY: clean-dep
 clean-dep:
-	rm -f $(DEP)
+	rm -fv $(DEP)
+
+.PHONY: clean-lib
+clean-lib:
+	rm -fv $(LIB_LINK) $(LIB_NAME) $(LIB_FILE) $(LIB_INC_DIR)*.h
+	rmdir -v --ignore-fail-on-non-empty $(LIB_INC_DIR)
 
 .PHONY: clean
-clean: clean-obj clean-dep
+clean: clean-obj clean-dep clean-lib
 
-$(BUILD_DIR)%.o: $(SRC_DIR)%.c
+$(CACHE_DIR)%.o: $(SRC_DIR)%.c
 	$(CC) $(CC_FLAGS) $(LD_FLAGS) $(PP_FLAGS) -fPIC -c $< -o $@
 
-$(BUILD_DIR)%.o: $(ETC_DIR)%.c
-	$(CC) $(CC_FLAGS) $(LD_FLAGS) $(PP_FLAGS) -fPIC -c $< -o $@
-
-$(BUILD_DIR)%.d: $(SRC_DIR)%.c
+$(CACHE_DIR)%.d: $(SRC_DIR)%.c
 	@$(PP) $(LD_FLAGS) $(PP_FLAGS) $< -MM -MT $(@:.d=.o) > $@
 
-$(BUILD_DIR)%.d: $(ETC_DIR)%.c
-	@$(PP) $(LD_FLAGS) $(PP_FLAGS) $< -MM -MT $(@:.d=.o) > $@
+-include $(DEP)

@@ -1,11 +1,5 @@
-# general
-etc/
 tmp/
 cache/
-bin/
-build/
-local/
-local.*
 *.o
 *.d
 *.out
@@ -13,9 +7,7 @@ local.*
 *.log
 *.swp
 *.backup
-*.local
 
-#sym links
 */test/test.c
 */test/test.h
 !/test/test.c

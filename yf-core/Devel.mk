@@ -1,43 +1,46 @@
 #!/usr/bin/env -S make -f
 
-#
-# YF
-# Devel.mk
-#
-# Copyright © 2020-2021 Gustavo C. Viegas.
-#
-
 SHELL := /bin/sh
+
 .SUFFIXES: .c .o .d
 
+VAR_DIR := ~/.local/share/yf/
 INCLUDE_DIR := include/
 SRC_DIR := src/
 TEST_DIR := test/
-ETC_DIR := etc/
-BIN_DIR := bin/
-BUILD_DIR := build/
+SCRIPT_DIR := script/
+BIN_DIR := $(VAR_DIR)bin/
+CACHE_DIR := $(VAR_DIR)cache/core/
 
-SRC := \
-	$(wildcard $(SRC_DIR)*.c) \
-	$(wildcard $(TEST_DIR)*.c) \
-	$(wildcard $(ETC_DIR)*.c)
+SRC := $(wildcard $(SRC_DIR)*.c) $(wildcard $(TEST_DIR)*.c)
 
-OBJ := $(subst $(SRC_DIR),$(BUILD_DIR),$(SRC:.c=.o))
-OBJ := $(subst $(TEST_DIR),$(BUILD_DIR),$(OBJ))
-OBJ := $(subst $(ETC_DIR),$(BUILD_DIR),$(OBJ))
+OBJ := $(subst $(SRC_DIR),$(CACHE_DIR),$(SRC:.c=.o))
+OBJ := $(subst $(TEST_DIR),$(CACHE_DIR),$(OBJ))
 
 DEP := $(OBJ:.o=.d)
 
 CC := /usr/bin/cc
 CC_FLAGS := -std=gnu17 -Wpedantic -Wall -Wextra -g
 
-LD_LIBS := -ldl -lm -lyf-com -lyf-wsys
-LD_FLAGS := -iquote $(INCLUDE_DIR) -iquote $(SRC_DIR)
+LD_LIBS := -lm -lyf-wsys -lyf-com
+LD_FLAGS := -I $(VAR_DIR)include/ \
+	    -iquote $(INCLUDE_DIR) \
+	    -iquote $(SRC_DIR) \
+	    -L $(VAR_DIR)lib/
 
 PP := $(CC) -E
-PP_FLAGS := -D YF_CORE -D YF_DEVEL -D YF_NO_VALIDATION
+PP_FLAGS := -D YF -D YF_CORE -D YF_DEVEL
 
-OUT := $(BIN_DIR)devel
+OUT := $(BIN_DIR)core-devel
+
+INC_SCRIPT := $(SCRIPT_DIR)inc.sh
+
+.PHONY: all
+all: inc devel
+
+.PHONY: inc
+inc:
+	./$(INC_SCRIPT)
 
 devel: $(OBJ)
 	$(CC) $(CC_FLAGS) $(LD_FLAGS) $^ $(LD_LIBS) -o $(OUT)
@@ -45,37 +48,31 @@ devel: $(OBJ)
 compile: $(OBJ)
 	@echo Done.
 
--include $(DEP)
-
 .PHONY: clean-out
 clean-out:
-	rm -f $(OUT)
+	rm -fv $(OUT)
 
 .PHONY: clean-obj
 clean-obj:
-	rm -f $(OBJ)
+	rm -fv $(OBJ)
 
 .PHONY: clean-dep
 clean-dep:
-	rm -f $(DEP)
+	rm -fv $(DEP)
 
 .PHONY: clean
 clean: clean-out clean-obj clean-dep
 
-$(BUILD_DIR)%.o: $(SRC_DIR)%.c
+$(CACHE_DIR)%.o: $(SRC_DIR)%.c
 	$(CC) $(CC_FLAGS) $(LD_FLAGS) $(PP_FLAGS) -c $< -o $@
 
-$(BUILD_DIR)%.o: $(TEST_DIR)%.c
+$(CACHE_DIR)%.o: $(TEST_DIR)%.c
 	$(CC) $(CC_FLAGS) $(LD_FLAGS) $(PP_FLAGS) -c $< -o $@
 
-$(BUILD_DIR)%.o: $(ETC_DIR)%.c
-	$(CC) $(CC_FLAGS) $(LD_FLAGS) $(PP_FLAGS) -c $< -o $@
-
-$(BUILD_DIR)%.d: $(SRC_DIR)%.c
+$(CACHE_DIR)%.d: $(SRC_DIR)%.c
 	@$(PP) $(LD_FLAGS) $(PP_FLAGS) $< -MM -MT $(@:.d=.o) > $@
 
-$(BUILD_DIR)%.d: $(TEST_DIR)%.c
+$(CACHE_DIR)%.d: $(TEST_DIR)%.c
 	@$(PP) $(LD_FLAGS) $(PP_FLAGS) $< -MM -MT $(@:.d=.o) > $@
 
-$(BUILD_DIR)%.d: $(ETC_DIR)%.c
-	@$(PP) $(LD_FLAGS) $(PP_FLAGS) $< -MM -MT $(@:.d=.o) > $@
+-include $(DEP)
