@@ -57,28 +57,34 @@ static _Noreturn void exit_fatal(const char *info)
 
 yf_context_t *yf_getctx(void)
 {
-    static atomic_flag flag = ATOMIC_FLAG_INIT;
+    static atomic_int a = 0;
+    int expect = 0;
 
-    if (atomic_flag_test_and_set(&flag)) {
-        while (ctx_ == NULL)
-            ;
-    } else if (ctx_ == NULL) {
+    if (atomic_compare_exchange_strong(&a, &expect, -1)) {
         if (atexit(handle_exit) != 0 || (ctx_ = yf_context_init()) == NULL)
             exit_fatal(__func__);
+        atomic_store(&a, 1);
+    } else {
+        while (atomic_load(&a) != 1)
+            ;
     }
 
     return ctx_;
 }
 
+/* TODO: Remove. */
 yf_pass_t *yf_getpass(void)
 {
-    static atomic_flag flag = ATOMIC_FLAG_INIT;
+    static atomic_int a = 0;
+    int expect = 0;
 
-    if (atomic_flag_test_and_set(&flag)) {
-        while (yf_g_pass == NULL)
+    if (atomic_compare_exchange_strong(&a, &expect, -1)) {
+        while (yf_g_pass == NULL) // XXX: May hang here forever.
             ;
-    } else if (yf_g_pass == NULL) {
-        exit_fatal(__func__);
+        atomic_store(&a, 1);
+    } else {
+        while (atomic_load(&a) != 1)
+            ;
     }
 
     return yf_g_pass;

@@ -77,21 +77,21 @@ static const uint8_t sign_[8] = {137, 80, 78, 71, 13, 10, 26, 10};
 
 /* CRC table. */
 static uint32_t crctab_[256] = {0};
-static atomic_flag crcflag_ = ATOMIC_FLAG_INIT;
-static int crcspin_ = 1;
+static atomic_int crcsync_ = 0;
 
 #define YF_PNG_INITCRC() do { \
-    if (atomic_flag_test_and_set(&crcflag_)) { \
-        while (crcspin_) \
-            ; \
-    } else { \
+    int expect = 0; \
+    if (atomic_compare_exchange_strong(&crcsync_, &expect, -1)) { \
         for (uint32_t i = 0; i < 256; i++) { \
             uint32_t crc = i, j = 8; \
             while (j--) \
                 crc = (crc & 1) ? (0xedb88320 ^ (crc >> 1)) : (crc >> 1); \
             crctab_[i] = crc; \
         } \
-        crcspin_ = 0; \
+        atomic_store(&crcsync_, 1); \
+    } else { \
+        while (atomic_load(&crcsync_) != 1) \
+            ; \
     } } while (0)
 
 #define YF_PNG_CALCCRC(crc, data, len) do { \
