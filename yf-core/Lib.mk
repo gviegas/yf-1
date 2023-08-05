@@ -41,7 +41,7 @@ lib: $(LIB_FILE)
 	mkdir -pv $(LIB_INC_DIR)
 	cp -v $(INCLUDE_DIR)*.h $(LIB_INC_DIR)
 	ln -sfv $(LIB_FILE) $(LIB_LINK)
-	sudo ldconfig -v $(LIB_BIN_DIR)
+	sudo ldconfig $(LIB_BIN_DIR)
 
 $(LIB_FILE): $(OBJ)
 	$(CC) -shared -Wl,-soname,$(SO_NAME) \
