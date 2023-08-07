@@ -175,7 +175,7 @@ void yf_mat4_xlate(yf_mat4_t m, float tx, float ty, float tz);
  * @param center: The center (target) vector.
  * @param up: The up vector.
  */
-void yf_mat4_lookat(yf_mat4_t m, const yf_vec3_t eye, const yf_vec3_t center,
+void yf_mat4_lookat(yf_mat4_t m, const yf_vec3_t center, const yf_vec3_t eye,
                     const yf_vec3_t up);
 
 /**

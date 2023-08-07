@@ -49,7 +49,7 @@ static void update_view(yf_camera_t *cam)
 {
     yf_vec3_t center;
     yf_vec3_add(center, cam->pos, cam->dir);
-    yf_mat4_lookat(cam->view, cam->pos, center, wld_up_);
+    yf_mat4_lookat(cam->view, center, cam->pos, wld_up_);
 
     cam->pend_mask &= ~YF_PEND_V;
     cam->pend_mask |= YF_PEND_VP;

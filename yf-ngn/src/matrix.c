@@ -442,7 +442,7 @@ void yf_mat4_xlate(yf_mat4_t m, float tx, float ty, float tz)
     m[14] = tz;
 }
 
-void yf_mat4_lookat(yf_mat4_t m, const yf_vec3_t eye, const yf_vec3_t center,
+void yf_mat4_lookat(yf_mat4_t m, const yf_vec3_t center, const yf_vec3_t eye,
                     const yf_vec3_t up)
 {
     yf_vec3_t f, s, u;
