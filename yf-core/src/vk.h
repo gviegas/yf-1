@@ -21,6 +21,8 @@
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
 
+#include "yf/com/yf-defs.h"
+
 /* Loads vk lib. */
 int yf_loadvk(void);
 
@@ -33,7 +35,7 @@ int yf_setiprocvk(VkInstance instance);
 /* Sets device-level function pointers. */
 int yf_setdprocvk(VkDevice device);
 
-#define YF_DECLVK(name) extern PFN_##name name
+#define YF_DECLVK(name) extern YF_HIDDEN PFN_##name name
 #define YF_DEFVK(name)  PFN_##name name
 
 #define YF_IPROCVK(inst, name) \
