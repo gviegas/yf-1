@@ -316,8 +316,7 @@ static int create_swapchain(yf_wsi_t *wsi)
                                      VK_IMAGE_LAYOUT_UNDEFINED);
         if (wsi->imgs[i] == NULL) {
             memset(wsi->imgs+i, 0, (img_n - i) * sizeof *wsi->imgs);
-            memset(wsi->imgs_sem, VK_NULL_HANDLE,
-                   img_n * sizeof *wsi->imgs_sem);
+            memset(wsi->imgs_sem, 0, img_n * sizeof *wsi->imgs_sem);
             free(imgs);
             return -1;
         }
@@ -335,7 +334,7 @@ static int create_swapchain(yf_wsi_t *wsi)
                                 wsi->imgs_sem+i);
         if (res != VK_SUCCESS) {
             size_t sz = (img_n - 1) * sizeof *wsi->imgs_sem;
-            memset(wsi->imgs_sem+i, VK_NULL_HANDLE, sz);
+            memset(wsi->imgs_sem+i, 0, sz);
             return -1;
         }
     }
