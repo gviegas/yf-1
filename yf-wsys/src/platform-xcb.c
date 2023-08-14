@@ -27,7 +27,7 @@
 #endif
 
 #undef YF_STR_MAXLEN
-#define YF_STR_MAXLEN 60
+#define YF_STR_MAXLEN 128
 
 #define YF_LIBXCB "libxcb.so"
 
@@ -525,12 +525,12 @@ static void *init_win(unsigned width, unsigned height, const char *title,
         return NULL;
     }
 
-    len = strnlen(YF_APP_NAME, YF_STR_MAXLEN);
-    size_t len2 = strnlen(YF_APP_ID, YF_STR_MAXLEN);
+    len = strlen(YF_APP_NAME);
+    size_t len2 = strlen(YF_APP_ID);
     char clss[YF_STR_MAXLEN * 2] = {'\0', '\0'};
-    if (len < YF_STR_MAXLEN && len2 < YF_STR_MAXLEN){
-        strcpy(clss, YF_APP_NAME);
-        strcpy(clss+len+1, YF_APP_ID);
+    if (len < YF_STR_MAXLEN && len2 < YF_STR_MAXLEN) {
+        strncpy(clss, YF_APP_NAME, len);
+        strncpy(clss+len+1, YF_APP_ID, len2);
         len += len2 + 2;
     } else {
         len = 2;
